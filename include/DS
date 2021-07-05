@@ -1,0 +1,24 @@
+// Tensors
+#include "DataStructures/Arrays/Arrays.hpp"
+#include "DataStructures/Arrays/CoordVector.hpp"
+#include "DataStructures/Arrays/OffsetVector.hpp"
+#include "DataStructures/Arrays/Tensor/PlainTensor.hpp"
+#include "DataStructures/Arrays/Tensor/TensorBase.hpp"
+#include "DataStructures/Arrays/Tensor/TensorTrait.hpp"
+
+// Geometry
+#include "DataStructures/Geometry/BasicElements.hpp"
+#include "DataStructures/Geometry/KdTree.hpp"
+
+// Index
+#include "DataStructures/Index/MDIndex.hpp"
+#include "DataStructures/Index/RangedIndex.hpp"
+
+// Range
+#include "DataStructures/Range/Ranges.hpp"
+
+// DataTypes
+#include "DataStructures/StencilPad.hpp"
+
+// Simple structs
+#include "DataStructures/Pair.hpp"

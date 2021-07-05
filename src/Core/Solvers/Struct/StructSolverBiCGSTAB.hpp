@@ -1,0 +1,72 @@
+#ifndef OPFLOW_STRUCTSOLVERBICGSTAB_HPP
+#define OPFLOW_STRUCTSOLVERBICGSTAB_HPP
+
+#include "StructSolver.hpp"
+
+namespace OpFlow {
+    template <>
+    struct StructSolverParams<StructSolverType::BICGSTAB> : StructSolverParamsBase {
+        std::optional<Real> absTol;
+        std::optional<int> logging, printLevel;
+    };
+
+    template <>
+    struct StructSolver<StructSolverType::BICGSTAB> {
+        using Param = StructSolverParams<StructSolverType::BICGSTAB>;
+        constexpr auto static type = StructSolverType::BICGSTAB;
+        Param params;
+
+        StructSolver() { HYPRE_StructBiCGSTABCreate(params.comm, &solver); }
+        StructSolver(const Param& p) : params(p) { HYPRE_StructBiCGSTABCreate(params.comm, &solver); }
+        ~StructSolver() { HYPRE_StructBiCGSTABDestroy(solver); }
+        StructSolver(const StructSolver& s) : params(s.params) {
+            HYPRE_StructBiCGSTABCreate(params.comm, &solver);
+        }
+        StructSolver(StructSolver&& s) noexcept : params(std::move(s.params)), solver(std::move(s.solver)) {
+            s.solver = nullptr;
+        }
+
+        void init() {
+            if (params.tol) HYPRE_StructBiCGSTABSetTol(solver, params.tol.value());
+            if (params.absTol) HYPRE_StructBiCGSTABSetAbsoluteTol(solver, params.absTol.value());
+            if (params.maxIter) HYPRE_StructBiCGSTABSetMaxIter(solver, params.maxIter.value());
+            if (params.logging) HYPRE_StructBiCGSTABSetLogging(solver, params.logging.value());
+            if (params.printLevel) HYPRE_StructBiCGSTABSetPrintLevel(solver, params.printLevel.value());
+        }
+
+        void setPrecond(HYPRE_PtrToStructSolverFcn precond, HYPRE_PtrToStructSolverFcn precond_setup,
+                        HYPRE_StructSolver& precond_solver) {
+            HYPRE_StructBiCGSTABSetPrecond(solver, precond, precond_setup, precond_solver);
+        }
+
+        auto& getSolver() { return solver; }
+        const auto& getSolver() const { return solver; }
+        auto getSolveFunc() const { return HYPRE_StructBiCGSTABSolve; }
+        auto getSetUpFunc() const { return HYPRE_StructBiCGSTABSetup; }
+
+        auto solve(HYPRE_StructMatrix& A, HYPRE_StructVector& b, HYPRE_StructVector& x) {
+            return HYPRE_StructBiCGSTABSolve(solver, A, b, x);
+        }
+
+        auto setup(HYPRE_StructMatrix& A, HYPRE_StructVector& b, HYPRE_StructVector& x) {
+            return HYPRE_StructBiCGSTABSetup(solver, A, b, x);
+        }
+
+        auto getIterNum() {
+            int ret;
+            HYPRE_StructBiCGSTABGetNumIterations(solver, &ret);
+            return ret;
+        }
+
+        auto getFinalRes() const {
+            Real ret;
+            HYPRE_StructBiCGSTABGetFinalRelativeResidualNorm(solver, &ret);
+            return ret;
+        }
+
+    private:
+        HYPRE_StructSolver solver;
+    };
+
+}// namespace OpFlow
+#endif//OPFLOW_STRUCTSOLVERBICGSTAB_HPP

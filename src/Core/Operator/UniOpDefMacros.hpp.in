@@ -1,0 +1,101 @@
+#define DEFINE_UNIOP(Name, op)                                                                               \
+    struct Name##Op {                                                                                        \
+        constexpr static auto bc_width = 0;                                                                  \
+                                                                                                             \
+        template <ExprType T1>                                                                               \
+        OPFLOW_STRONG_INLINE static auto couldSafeEval(const T1& t1, auto&& i) {                             \
+            return DS::inRange(t1.accessibleRange, i);                                                       \
+        }                                                                                                    \
+        template <ExprType T1>                                                                               \
+        OPFLOW_STRONG_INLINE static auto eval_safe(const T1& t1, auto&&... i) {                              \
+            return op t1.evalSafeAt(OP_PERFECT_FOWD(i)...);                                                  \
+        }                                                                                                    \
+                                                                                                             \
+        template <ExprType T1>                                                                               \
+        static inline auto eval(const T1& t1, auto&&... i) {                                                 \
+            return op t1.evalAt(OP_PERFECT_FOWD(i)...);                                                      \
+        }                                                                                                    \
+                                                                                                             \
+        template <FieldExprType T1>                                                                          \
+        static void prepare(Expression<Name##Op, T1>& expr) {                                                \
+            expr.initPropsFrom(expr.arg1);                                                                   \
+            expr.name = fmt::format("{} {}", #op, expr.arg1.name);                                           \
+            if constexpr (StructuredFieldExprType<T1>) {                                                     \
+                expr.assignableRange.setEmpty();                                                             \
+            } else if constexpr (SemiStructuredFieldExprType<T1>) {                                          \
+                for (auto& _1 : expr.assignableRanges)                                                       \
+                    for (auto& _2 : _1) _2.setEmpty();                                                       \
+            }                                                                                                \
+        }                                                                                                    \
+    };                                                                                                       \
+                                                                                                             \
+    template <FieldExprType T>                                                                               \
+    struct ResultType<Name##Op, T> {                                                                         \
+        using type = typename internal::FieldExprTrait<T>::template twin_type<Expression<Name##Op, T>>;      \
+        using core_type = Expression<Name##Op, T>;                                                           \
+    };                                                                                                       \
+    namespace internal {                                                                                     \
+        template <FieldExprType T>                                                                           \
+        struct ExprTrait<Expression<Name##Op, T>> : ExprTrait<T> {                                           \
+            static constexpr int access_flag = 0;                                                            \
+            using elem_type                                                                                  \
+                    = Meta::RealType<decltype(op(std::declval<typename FieldExprTrait<T>::elem_type>()))>;   \
+            using type = typename FieldExprTrait<T>::template other_type<elem_type>;                         \
+            using mesh_type = decltype(std::declval<typename FieldExprTrait<T>::mesh_type&>().getView());    \
+        };                                                                                                   \
+    }                                                                                                        \
+                                                                                                             \
+    template <typename T>                                                                                    \
+    requires ExprType<Meta::RealType<T>>                                                                     \
+    auto operator op(T&& expr1) { return makeExpression<Name##Op>(OP_PERFECT_FOWD(expr1)); }
+
+#define DEFINE_UNIFUNC(Name, op, func)                                                                       \
+    struct Name##Op {                                                                                        \
+        constexpr static auto bc_width = 0;                                                                  \
+                                                                                                             \
+        template <ExprType T1>                                                                               \
+        OPFLOW_STRONG_INLINE static auto couldSafeEval(const T1& t1, auto&& i) {                             \
+            return DS::inRange(t1.accessibleRange, i);                                                       \
+        }                                                                                                    \
+        template <ExprType T1>                                                                               \
+        OPFLOW_STRONG_INLINE static auto eval_safe(const T1& t1, auto&&... i) {                              \
+            return op(t1.evalSafeAt(OP_PERFECT_FOWD(i)...));                                                 \
+        }                                                                                                    \
+                                                                                                             \
+        template <ExprType T1>                                                                               \
+        static inline auto eval(const T1& t1, auto&&... i) {                                                 \
+            return op(t1.evalAt(OP_PERFECT_FOWD(i)...));                                                     \
+        }                                                                                                    \
+                                                                                                             \
+        template <FieldExprType T1>                                                                          \
+        static void prepare(Expression<Name##Op, T1>& expr) {                                                \
+            expr.initPropsFrom(expr.arg1);                                                                   \
+            expr.name = fmt::format("{}({})", #func, expr.arg1.name);                                        \
+            if constexpr (StructuredFieldExprType<T1>) {                                                     \
+                expr.assignableRange.setEmpty();                                                             \
+            } else if constexpr (SemiStructuredFieldExprType<T1>) {                                          \
+                for (auto& _1 : expr.assignableRanges)                                                       \
+                    for (auto& _2 : _1) _2.setEmpty();                                                       \
+            }                                                                                                \
+        }                                                                                                    \
+    };                                                                                                       \
+                                                                                                             \
+    template <FieldExprType T>                                                                               \
+    struct ResultType<Name##Op, T> {                                                                         \
+        using type = typename internal::FieldExprTrait<T>::template twin_type<Expression<Name##Op, T>>;      \
+        using core_type = Expression<Name##Op, T>;                                                           \
+    };                                                                                                       \
+    namespace internal {                                                                                     \
+        template <FieldExprType T>                                                                           \
+        struct ExprTrait<Expression<Name##Op, T>> : ExprTrait<T> {                                           \
+            static constexpr int access_flag = 0;                                                            \
+            using elem_type                                                                                  \
+                    = Meta::RealType<decltype(op(std::declval<typename FieldExprTrait<T>::elem_type>()))>;   \
+            using type = typename FieldExprTrait<T>::template other_type<elem_type>;                         \
+            using mesh_type = decltype(std::declval<typename FieldExprTrait<T>::mesh_type&>().getView());    \
+        };                                                                                                   \
+    }                                                                                                        \
+                                                                                                             \
+    template <typename T>                                                                                    \
+    requires ExprType<Meta::RealType<T>>                                                                     \
+    auto func(T&& expr1) { return makeExpression<Name##Op>(OP_PERFECT_FOWD(expr1)); }

@@ -1,0 +1,10 @@
+[submodule "external/fmt"]
+	path = external/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "external/spdlog"]
+	path = external/spdlog
+	url = https://github.com/gabime/spdlog.git
+	branch = v1.x
+[submodule "external/morse_cmake"]
+	path = external/morse_cmake
+	url = https://gitlab.inria.fr/solverstack/morse_cmake.git

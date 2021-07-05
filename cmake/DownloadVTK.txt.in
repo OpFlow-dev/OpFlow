@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.10)
+
+project(vtk-download NONE)
+
+include(ExternalProject)
+ExternalProject_Add(vtk
+  GIT_REPOSITORY    https://gitee.com/luohaothu/vtk.git
+  GIT_TAG           master
+  SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/vtk-src"
+  BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/vtk-build"
+  CMAKE_ARGS        -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/vtk
+  TEST_COMMAND      ""
+)

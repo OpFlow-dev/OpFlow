@@ -1,0 +1,333 @@
+#ifndef OPFLOW_PLAINTENSOR_HPP
+#define OPFLOW_PLAINTENSOR_HPP
+
+#include "Core/Macros.hpp"
+#include "Core/Meta.hpp"
+#include "DataStructures/Index/MDIndex.hpp"
+#include "DataStructures/Index/RangedIndex.hpp"
+#include "TensorBase.hpp"
+#include <array>
+#include <concepts>
+#include <cstdlib>
+#include <memory>
+#include <sys/mman.h>
+
+namespace OpFlow::DS {
+    namespace internal {
+        template <typename T>
+        struct AllocatorTrait;
+    }
+
+    template <typename T, std::size_t align = 64>
+    struct AlignedAllocator {
+        static auto allocate(std::size_t size) {
+            if constexpr (Meta::is_numerical_v<T>) {
+                T* raw = reinterpret_cast<T*>(
+                        aligned_alloc(align, std::max<std::size_t>(sizeof(T) * next_pow2(size), align)));
+                assert(raw);
+                return raw;
+            } else {
+                T* raw = new T[size];
+                assert(raw);
+                return raw;
+            }
+        }
+
+        static void deallocate(T* ptr, std::size_t size) {
+            OP_DEBUG("Delete called on {:#x}", (std::size_t) ptr);
+            if (!ptr) return;
+            if constexpr (Meta::is_numerical_v<T>) free(ptr);
+            else
+                delete[] ptr;
+        }
+
+    private:
+        OPFLOW_STRONG_INLINE constexpr static auto next_pow2(unsigned long long x) {
+            x--;
+            x |= x >> 1;
+            x |= x >> 2;
+            x |= x >> 4;
+            x |= x >> 8;
+            x |= x >> 16;
+            x |= x >> 32;
+            x++;
+            return x;
+        }
+    };
+
+    namespace internal {
+        template <typename T, std::size_t align>
+        struct AllocatorTrait<AlignedAllocator<T, align>> {
+            template <typename U>
+            using other_type = AlignedAllocator<U, align>;
+        };
+    }// namespace internal
+
+    template <typename T>
+    struct VirtualMemAllocator {
+        static auto allocate(std::size_t size) {
+            auto ptr = (T*) mmap(0, size * sizeof(T), PROT_READ | PROT_WRITE,
+                                 MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
+            if (ptr == MAP_FAILED) OP_CRITICAL("mmap for size {} of mem failed.", size);
+            return ptr;
+        }
+
+        static void deallocate(T* ptr, std::size_t size) {
+            auto ret = munmap((void*) ptr, size * sizeof(T));
+            if (ret == -1) OP_CRITICAL("munmap failed for ptr = {:#x} size = {}", (std::size_t) ptr, size);
+        }
+    };
+
+    namespace internal {
+        template <typename T>
+        struct AllocatorTrait<VirtualMemAllocator<T>> {
+            template <typename U>
+            using other_type = VirtualMemAllocator<U>;
+        };
+    }// namespace internal
+
+    template <typename ScalarType, int d, typename Allocator>
+    struct PlainTensor;
+
+    namespace internal {
+        template <typename ScalarType, int d, typename Allocator>
+        struct TensorTrait<PlainTensor<ScalarType, d, Allocator>> {
+            using scalar_type = ScalarType;
+            static constexpr auto dim = d;
+            using allocator_type = Allocator;
+            template <typename T>
+            using other_type = PlainTensor<T, d, typename AllocatorTrait<Allocator>::template other_type<T>>;
+            template <typename T>
+            using other_alloc_type = PlainTensor<ScalarType, d, T>;
+            template <int t>
+            using other_dim_type = PlainTensor<ScalarType, t, Allocator>;
+        };
+    }// namespace internal
+
+    template <typename ScalarType, int d, typename Allocator = VirtualMemAllocator<ScalarType>>
+    struct PlainTensor : public Tensor<PlainTensor<ScalarType, d, Allocator>> {
+    private:
+        ScalarType* data = nullptr;
+
+    public:
+        std::array<int, d> dims;
+        long long total_size = 1;
+
+        using Scalar = ScalarType;
+
+        PlainTensor() { dims.fill(0); }
+        ~PlainTensor() { Allocator::deallocate(data, total_size); }
+
+        explicit PlainTensor(std::integral auto size, std::integral auto... sizes) {
+            reShape(size, sizes...);
+        }
+
+        auto& reShape(std::integral auto size, std::integral auto... sizes) {
+            return reShape(std::array {size, sizes...});
+        }
+
+        auto& reShape(const std::array<int, d>& sizes) {
+            if (data) Allocator::deallocate(data, total_size);
+            dims = sizes;
+            total_size = 1;
+            for (auto i = 0; i < d; ++i) { total_size *= dims[i]; }
+            data = Allocator::allocate(total_size);
+            return *this;
+        }
+
+        template <typename OtherScalar>
+        explicit PlainTensor(const PlainTensor<OtherScalar, d>& other)
+            : dims(other.dims), total_size(other.total_size) {
+            if (other.raw() == nullptr) return;
+            data = Allocator::allocate(total_size);
+            // deep copy of data, assuming OtherScalar can be converted to Scalar
+            std::copy(other.raw(), other.raw() + total_size, this->raw());
+        }
+
+        PlainTensor(const PlainTensor& other)// copy the above impl because we can't call a templated ctor
+            : dims(other.dims), total_size(other.total_size) {
+            if (other.raw() == nullptr) return;
+            data = Allocator::allocate(total_size);
+            // deep copy of data, assuming OtherScalar can be converted to Scalar
+            std::copy(other.raw(), other.raw() + total_size, this->raw());
+        }
+
+        PlainTensor(PlainTensor&& other) noexcept
+            : dims(std::move(other.dims)), total_size(other.total_size) {
+            data = other.data;
+            other.data = nullptr;
+        }
+
+        // operator= is simply treated as assignment
+        template <typename OtherScalar>
+        requires(!std::is_same_v<Scalar, OtherScalar>) auto&
+        operator=(const PlainTensor<OtherScalar, d>& other) {
+            OP_ASSERT(other.raw())// assign to an empty tensor is an error
+            if (!data) {
+                reShape(other);
+            } else {
+                assert(total_size == other.total_size);
+            }
+            std::copy(other.raw(), other.raw() + total_size, data);
+            return *this;
+        }
+
+        auto& operator=(const PlainTensor& other) {
+            if (this == &other) return *this;
+            OP_ASSERT(other.raw())
+            if (data == nullptr) {
+                reShape(other);
+            } else {
+                assert(total_size == other.total_size);
+            }
+            std::copy(other.raw(), other.raw() + total_size, data);
+            return *this;
+        }
+
+        auto& operator=(PlainTensor&& other) noexcept {
+            dims = std::move(other.dims);
+            total_size = other.total_size;
+            data = other.data;
+            other.data = nullptr;
+            return *this;
+        }
+
+        template <typename OtherScalar>
+        void reShape(const PlainTensor<OtherScalar, d>& other) {
+            if (data) Allocator::deallocate(data, total_size);
+            dims = other.dims;
+            total_size = other.total_size;
+            data = Allocator::allocate(total_size);
+        }
+
+        auto operator==(const PlainTensor& other) const { return raw() == other.raw(); }
+
+        void setConstant(Scalar t) { std::fill(data, data + total_size, t); }
+
+        void setZero() { setConstant(Scalar(0)); }
+
+        auto begin() { return data; }
+        auto begin() const { return data; }
+
+        auto end() { return data + total_size; }
+        auto end() const { return data + total_size; }
+
+        auto size() const { return total_size; }
+        auto getDims() const { return dims; }
+
+    private:
+        template <Meta::BracketIndexable Idx>
+        auto getOffset(const Idx& index) const {
+            auto pos = 0;
+            for (auto i = d - 1; i >= 1; --i) {
+                pos += index[i];
+                pos *= dims[i - 1];
+            }
+            pos += index[0];
+            return pos;
+        }
+
+        template <typename... I>
+        requires(std::integral<Meta::RealType<I>>&&...) auto getOffset(I&&... i) const {
+            return getOffset(DS::MDIndex<d> {i...});
+        }
+
+    public:
+        // operator() version of indexing (lsj prefers this :)
+        template <typename... T>
+        const auto& operator()(T&&... index) const {
+            return data[getOffset(std::forward<T>(index)...)];
+        }
+
+        template <typename... T>
+        auto& operator()(T&&... index) {
+            return data[getOffset(std::forward<T>(index)...)];
+        }
+
+        // operator[] version of indexing
+        template <typename T>
+        const auto& operator[](T&& index) const {
+            return data[getOffset(std::forward<T>(index))];
+        }
+
+        template <typename T>
+        auto& operator[](T&& index) {
+            return data[getOffset(std::forward<T>(index))];
+        }
+
+        // linear index getter
+        const auto& get(const std::integral auto& idx) const { return data[idx]; }
+
+        auto& get(const std::integral auto& idx) { return data[idx]; }
+
+        auto raw() { return data; }
+
+        auto raw() const { return data; }
+
+        void swap(PlainTensor& other) {
+            OP_ASSERT(dims == other.dims);
+            std::swap(data, other.data);
+        }
+    };
+
+    template <typename ScalarType>
+    struct PlainTensor<ScalarType, 0> : public Tensor<PlainTensor<ScalarType, 0>> {
+    private:
+        ScalarType val;
+
+    public:
+        std::array<int, 0> dims {};
+        long long total_size = 1;
+
+        using Scalar = ScalarType;
+
+        PlainTensor() = default;
+
+        auto& reShape(auto&&) { return *this; }
+
+        template <typename OtherScalar>
+        explicit PlainTensor(const PlainTensor<OtherScalar, 0>& other) : val(*other.raw()) {}
+
+        PlainTensor(const PlainTensor& other) = default;
+        PlainTensor(PlainTensor&& other) noexcept = default;
+
+        template <typename OtherScalar>
+        auto& operator=(const PlainTensor<OtherScalar, 0>& other) {
+            this->val = *other.raw();
+            return *this;
+        }
+
+        auto& operator=(const PlainTensor& other) { return this->template operator=<Scalar>(other); }
+
+        auto& operator==(const PlainTensor& other) const { return this->val == other.val; }
+
+        void setConstant(Scalar t) { val = t; }
+
+        void setZero() { val = 0; }
+
+        auto begin() { return &val; }
+        auto begin() const { return &val; }
+
+        auto end() { return &val + 1; }
+        auto end() const { return &val + 1; }
+
+        auto size() const { return 1; }
+        auto shape() const { return dims; }
+
+        const auto& operator()(auto&&...) const { return val; }
+        auto& operator()(auto&&...) { return val; }
+        const auto& operator[](auto&&) const { return val; }
+        auto& operator[](auto&&) { return val; }
+        const auto& get(const std::integral auto&) const { return val; }
+        auto& get(const std::integral auto&) { return val; }
+        auto raw() { return &val; }
+        auto raw() const { return &val; }
+        void swap(PlainTensor& other) {
+            auto t = val;
+            val = other.val;
+            other.val = t;
+        }
+    };
+}// namespace OpFlow::DS
+
+#endif//OPFLOW_PLAINTENSOR_HPP

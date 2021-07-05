@@ -1,0 +1,14 @@
+cmake_minimum_required(VERSION 3.10)
+
+project(hypre-download NONE)
+
+include(ExternalProject)
+ExternalProject_Add(hypre
+  GIT_REPOSITORY    https://gitee.com/luohaothu/hypre.git
+  GIT_TAG           master
+  SOURCE_DIR        "${CMAKE_CURRENT_BINARY_DIR}/hypre-src"
+  BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/hypre-build"
+  SOURCE_SUBDIR     "./src"
+  CMAKE_ARGS        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DHYPRE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DHYPRE_ENABLE_SINGLE=${OpFlow_single_precision} -DHYPRE_WITH_OPENMP=${OpFlow_with_openmp} -DHYPRE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/hypre
+  TEST_COMMAND      ""
+)

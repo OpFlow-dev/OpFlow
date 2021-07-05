@@ -1,0 +1,6 @@
+#ifndef OPFLOW_FIELDMACROS_HPP
+#define OPFLOW_FIELDMACROS_HPP
+
+#include "Core/Meta.hpp"
+
+#endif//OPFLOW_FIELDMACROS_HPP
