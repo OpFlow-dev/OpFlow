@@ -1,0 +1,167 @@
+#include "fmt/chrono.h"
+#include "fmt/compile.h"
+#include "pch.hpp"
+
+using namespace OpFlow;
+
+template <std::size_t d>
+using DU = DecableOp<D1WENO53Upwind<d>, D1FirstOrderBiasedUpwind<d>>;
+template <std::size_t d>
+using DD = DecableOp<D1WENO53Downwind<d>, D1FirstOrderBiasedDownwind<d>>;
+
+void amrls() {
+    using Mesh = CartesianAMRMesh<Meta::int_<2>>;
+    using Field = CartAMRField<Real, Mesh>;
+
+    int n = 65, maxlevel = 1, ratio = 2, buffWidth = 5;
+    auto h = 1. / (n - 1);
+    auto m = MeshBuilder<Mesh>()
+                     .setBaseMesh(MeshBuilder<CartesianMesh<Meta::int_<2>>>()
+                                          .newMesh(n, n)
+                                          .setMeshOfDim(0, 0., 1.)
+                                          .setMeshOfDim(1, 0., 1.)
+                                          .build())
+                     .setRefinementRatio(ratio)
+                     .setFillRateThreshold(0.8)
+                     .setSlimThreshold(buffWidth)
+                     .setBuffWidth(buffWidth)
+                     .setMaxLevel(maxlevel)
+                     .setMarkerFunction([&](auto&& i) {
+                         auto l = i.l;
+                         double cx = 0.5, cy = 0.75;
+                         double radius = 0.15;
+                         double ht = h / Math::int_pow(ratio, l);
+                         double eps = buffWidth * h / Math::int_pow(ratio, maxlevel - 1);
+                         double x[4], y[4];
+                         x[0] = x[2] = ht * i[0];
+                         x[1] = x[3] = ht * (i[0] + 1);
+                         y[0] = y[1] = ht * i[1];
+                         y[2] = y[3] = ht * (i[1] + 1);
+                         double r[4];
+                         r[0] = (x[0] - cx) * (x[0] - cx) + (y[0] - cy) * (y[0] - cy);
+                         r[1] = (x[1] - cx) * (x[1] - cx) + (y[1] - cy) * (y[1] - cy);
+                         r[2] = (x[2] - cx) * (x[2] - cx) + (y[2] - cy) * (y[2] - cy);
+                         r[3] = (x[3] - cx) * (x[3] - cx) + (y[3] - cy) * (y[3] - cy);
+                         bool allin = true, allout = true;
+                         auto r_min = std::max(0., radius - eps);
+                         for (double k : r) {
+                             allin &= (k < r_min * r_min);
+                             allout &= (k > (radius + eps) * (radius + eps));
+                         }
+                         if (!allin && !allout) return true;
+                         else
+                             return false;
+                     })
+                     .build();
+    auto u = ExprBuilder<Field>()
+                     .setMesh(m)
+                     .setName("u")
+                     .setLoc({LocOnMesh::Center, LocOnMesh ::Center})
+                     .setBC(0, DimPos::start, BCType::Dirc, 0.)
+                     .setBC(0, DimPos::end, BCType::Dirc, 0.)
+                     .setBC(1, DimPos::start, BCType::Dirc, 0.)
+                     .setBC(1, DimPos::end, BCType::Dirc, 0.)
+                     .build();
+    auto v = u;
+    v.name = "v";
+    auto p = ExprBuilder<Field>()
+                     .setName("p")
+                     .setMesh(m)
+                     .setBC(0, DimPos::start, BCType::Neum, 0.)
+                     .setBC(0, DimPos::end, BCType::Neum, 0.)
+                     .setBC(1, DimPos::start, BCType::Neum, 0.)
+                     .setBC(1, DimPos::end, BCType::Neum, 0.)
+                     .setLoc({LocOnMesh::Center, LocOnMesh::Center})
+                     .build();
+    p.initBy([](auto&& x) { return std::sqrt(Math::pow2(x[0] - 0.5) + Math::pow2(x[1] - 0.75)) - 0.15; });
+    auto p1 = p, p2 = p, p3 = p;
+
+    u.initBy([](auto&& x) {
+        return 2 * std::sin(PI * x[1]) * std::cos(PI * x[1]) * Math::pow2(std::sin(PI * x[0]));
+    });
+    v.initBy([](auto&& x) {
+        return -2 * std::sin(PI * x[0]) * std::cos(PI * x[0]) * Math::pow2(std::sin(PI * x[1]));
+    });
+
+    auto _fmt = FMT_COMPILE("Result_{:%m-%d_%H-%M-%S}/");
+    auto root = fmt::format(_fmt, fmt::localtime(std::time(nullptr)));
+    Utils::VTKAMRStream uf(root + "u"), vf(root + "v"), pf(root + "p"), p1f(root + "p1"), p2f(root + "p2"),
+            p3f(root + "p3");
+    uf << Utils::TimeStamp(0) << u;
+    vf << Utils::TimeStamp(0) << v;
+    pf << Utils::TimeStamp(0) << p;
+
+    auto dt = 1. / ((n - 1) * Math::int_pow(ratio, maxlevel - 1));
+    auto refine_cond = (p > buffWidth * -h / Math::int_pow(ratio, maxlevel - 1))
+                               && (p < buffWidth * h / Math::int_pow(ratio, maxlevel - 1))
+                       || (p < 0);
+    auto _eps = 1e-6;
+    auto _1 = [&](auto&& _p, auto&& _pp) {
+        return _p / OpFlow::sqrt(_p * _p + _eps)
+               * (OpFlow::sqrt(
+                          OpFlow::pow(
+                                  OpFlow::max(-OpFlow::min(0., dx<DU>(_pp)), OpFlow::max(dx<DD>(_pp), 0.)), 2)
+                          + OpFlow::pow(
+                                  OpFlow::max(-OpFlow::min(0., dy<DU>(_pp)), OpFlow::max(dy<DD>(_pp), 0.)),
+                                  2))
+                  - 1.);
+    };
+    auto _2 = [&](auto&& _p, auto&& _pp) {
+        return _p / OpFlow::sqrt(_p * _p + _eps)
+               * (OpFlow::sqrt(
+                          OpFlow::pow(
+                                  OpFlow::max(OpFlow::max(0., dx<DU>(_pp)), -OpFlow::min(dx<DD>(_pp), 0.)), 2)
+                          + OpFlow::pow(
+                                  OpFlow::max(OpFlow::max(0., dy<DU>(_pp)), -OpFlow::min(dy<DD>(_pp), 0.)),
+                                  2))
+                  - 1.);
+    };
+
+    for (auto i = 1; i < 2. / dt; ++i) {
+        p1 = p
+             - dt
+                       * (u * conditional(u > 0., dx<DD>(p), dx<DU>(p))
+                          + v * conditional(v > 0., dy<DD>(p), dy<DU>(p)));
+        p2 = (p1
+              - dt
+                        * (u * conditional(u > 0., dx<DD>(p1), dx<DU>(p1))
+                           + v * conditional(v > 0., dy<DD>(p1), dy<DU>(p1))))
+                     / 4.
+             + 0.75 * p;
+        p3 = (p2
+              - dt
+                        * (u * conditional(u > 0., dx<DD>(p2), dx<DU>(p2))
+                           + v * conditional(v > 0., dy<DD>(p2), dy<DU>(p2))))
+                     * 2. / 3.
+             + p / 3.;
+        p = p3;
+        // reinit
+        for (auto _ = 0; _ < 10; ++_) {
+            auto h1 = conditional(p > 0, _1(p, p), _2(p, p));
+            p1 = p - dt * h1;
+            auto h2 = conditional(p > 0, _1(p, p1), _2(p, p1));
+            p2 = p1 - dt / 4. * (-3 * h1 + h2);
+            auto h3 = conditional(p > 0, _1(p, p2), _2(p, p2));
+            p3 = p2 - dt / 12. * (-h1 - h2 + 8 * h3);
+            p = p3;
+        }
+        pf << Utils::TimeStamp(i) << p;
+        refine_cond.prepare();
+        auto m2 = MeshBuilder<Mesh>()
+                          .setRefMesh(p.mesh)
+                          .setRefinementRatio(ratio)
+                          .setFillRateThreshold(0.8)
+                          .setSlimThreshold(buffWidth)
+                          .setMaxLevel(maxlevel)
+                          .setBuffWidth(buffWidth)
+                          .setMarkerFunction([&](auto&& k) { return refine_cond.evalAt(k); })
+                          .build();
+        p.replaceMeshBy(m2);
+        p1.replaceMeshBy(m2);
+        p2.replaceMeshBy(m2);
+        p3.replaceMeshBy(m2);
+        u.replaceMeshBy(m2);
+        v.replaceMeshBy(m2);
+        OP_INFO("Current step: {}", i);
+    }
+}

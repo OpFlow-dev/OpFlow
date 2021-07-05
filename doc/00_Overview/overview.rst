@@ -24,7 +24,8 @@ context for backend optimization. The aims of developing OpFlow include:
   to support more situations.
 
 Currently, OpFlow is in its very early stage of development. It currently supports finite
-difference method (FDM) on Cartesian grid. It uses CPU as the backend target
+difference method (FDM) on Cartesian grid, as well as an adaptive version based on the
+structured adaptive mesh refinement (SAMR) method. It uses CPU as the backend target
 and uses OpenMP & MPI for shared memory and distributed memory parallelization. We plan to
 introduce finer controlled thread models, as long as explicit vectorization for better
 performance. Flux and inner product semantics for finite volume method (FVM) and finite

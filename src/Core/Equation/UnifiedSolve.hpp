@@ -16,6 +16,7 @@
 #include "Core/Equation/EqnSolveHandler.hpp"
 #include "Core/Equation/Equation.hpp"
 #include "Core/Solvers/SemiStruct/SemiStructSolver.hpp"
+#include "Core/Solvers/SemiStruct/SemiStructSolverFAC.hpp"
 #include "Core/Solvers/Struct/StructSolver.hpp"
 #include "Core/Solvers/Struct/StructSolverBiCGSTAB.hpp"
 #include "Core/Solvers/Struct/StructSolverCycRed.hpp"
@@ -38,5 +39,24 @@ namespace OpFlow {
         auto handler = EqnSolveHandler(func, target, solver);
         handler.solve();
     }
+
+    template <SemiStructSolverType type = SemiStructSolverType::FAC,
+              SemiStructSolverType pType = SemiStructSolverType::None, typename F,
+              SemiStructuredFieldExprType T>
+    void Solve(const F& func, T&& target,
+               SemiStructSolverParams<type> params = SemiStructSolverParams<type> {},
+               SemiStructSolverParams<pType> precParams = SemiStructSolverParams<pType> {}) {
+        if constexpr (pType != SemiStructSolverType::None) {
+            auto solver = PrecondSemiStructSolver<type, pType>(params, precParams);
+            auto handler = EqnSolveHandler(func, target, solver);
+            handler.solve();
+        } else {
+            auto solver = SemiStructSolver<type>(params);
+            auto handler = EqnSolveHandler<Meta::RealType<F>, Meta::RealType<T>, SemiStructSolver<type>>(
+                    func, target, solver);
+            handler.solve();
+        }
+    }
+
 }// namespace OpFlow
 #endif//OPFLOW_UNIFIEDSOLVE_HPP

@@ -14,6 +14,7 @@
 #define OPFLOW_FIRSTORDERWENO_HPP
 
 #include "Core/Expr/Expression.hpp"
+#include "Core/Field/MeshBased/SemiStructured/CartAMRFieldExprTrait.hpp"
 #include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
 #include "Core/Macros.hpp"
 #include "DataStructures/Range/Ranges.hpp"
@@ -29,12 +30,36 @@ namespace OpFlow {
             auto cond = e.accessibleRange.start[d] <= i[d] - 3 && i[d] + 3 < e.accessibleRange.end[d];
             return cond;
         }
+        template <CartAMRFieldExprType E>
+        OPFLOW_STRONG_INLINE static auto couldSafeEval(const E& e, auto&& i) {
+            auto r = e.accessibleRanges[i.l][i.p];
+            auto cond = r.start[d] <= i[d] - 3 && i[d] + 3 < r.end[d];
+            return cond;
+        }
 
         template <CartesianFieldExprType E, typename I>
         OPFLOW_STRONG_INLINE static auto eval_safe(const E& e, I i) {
             if (e.accessibleRange.start[d] <= i[d] - 3 && i[d] + 3 < e.accessibleRange.end[d]) {
                 // inner case
                 auto h = e.getMesh().dx(d, i);// uniform mesh is assumed here
+                auto pm3 = e.evalSafeAt(i.template prev<d>(3));
+                auto pm2 = e.evalSafeAt(i.template prev<d>(2));
+                auto pm1 = e.evalSafeAt(i.template prev<d>(1));
+                auto p0 = e.evalSafeAt(i);
+                auto pp1 = e.evalSafeAt(i.template next<d>(1));
+                auto pp2 = e.evalSafeAt(i.template next<d>(2));
+                return kernel(pm3, pm2, pm1, p0, pp1, pp2, h);
+            }
+            // for other cases WENO53 cannot handle, the user should downgrade to lower order schemes.
+            OP_ERROR("Cannot eval safe at {} for {} with WENO53.", i.toString(), e.getName());
+            OP_ABORT;
+        }
+        template <CartAMRFieldExprType E>
+        OPFLOW_STRONG_INLINE static auto eval_safe(const E& e, auto&& i) {
+            auto r = e.accessibleRanges[i.l][i.p];
+            if (r.start[d] <= i[d] - 3 && i[d] + 3 < r.end[d]) {
+                // inner case
+                auto h = e.getMesh().dx(d, i.l, i[d]);// uniform mesh is assumed here
                 auto pm3 = e.evalSafeAt(i.template prev<d>(3));
                 auto pm2 = e.evalSafeAt(i.template prev<d>(2));
                 auto pm1 = e.evalSafeAt(i.template prev<d>(1));
@@ -59,6 +84,17 @@ namespace OpFlow {
             auto pp2 = e.evalAt(i.template next<d>(2));
             return kernel(pm3, pm2, pm1, p0, pp1, pp2, h);
         }
+        template <CartAMRFieldExprType E, typename I>
+        OPFLOW_STRONG_INLINE static auto eval(const E& e, I i) {
+            auto h = e.getMesh().dx(d, i.l, i[d]);// uniform mesh is assumed here
+            auto pm3 = e.evalAt(i.template prev<d>(3));
+            auto pm2 = e.evalAt(i.template prev<d>(2));
+            auto pm1 = e.evalAt(i.template prev<d>(1));
+            auto p0 = e.evalAt(i);
+            auto pp1 = e.evalAt(i.template next<d>(1));
+            auto pp2 = e.evalAt(i.template next<d>(2));
+            return kernel(pm3, pm2, pm1, p0, pp1, pp2, h);
+        }
 
         template <CartesianFieldExprType E>
         static void prepare(Expression<D1WENO53Downwind, E>& expr) {
@@ -74,6 +110,26 @@ namespace OpFlow {
             expr.localRange.start[d] += 3;
             expr.localRange.end[d] -= 3;
             expr.assignableRange.setEmpty();
+        }
+        template <CartAMRFieldExprType E>
+        static void prepare(Expression<D1WENO53Downwind, E>& expr) {
+            constexpr auto dim = internal::CartesianFieldExprTrait<E>::dim;
+            expr.initPropsFrom(expr.arg1);
+
+            // name
+            expr.name = fmt::format("d1<D1WENO53Downwind<{}>>({})", d, expr.arg1.name);
+            // ranges
+            auto levels = expr.getLevels();
+            for (auto l = 0; l < levels; ++l) {
+                auto parts = expr.accessibleRanges[l].size();
+                for (auto p = 0; p < parts; ++p) {
+                    expr.accessibleRanges[l][p].start[d] += 3;
+                    expr.accessibleRanges[l][p].end[d] -= 3;
+                    expr.localRanges[l][p].start[d] += 3;
+                    expr.localRanges[l][p].end[d] -= 3;
+                    expr.assignableRanges[l][p].setEmpty();
+                }
+            }
         }
 
     private:
@@ -103,6 +159,11 @@ namespace OpFlow {
         using type = CartesianFieldExpr<Expression<D1WENO53Downwind<d>, T>>;
         using core_type = Expression<D1WENO53Downwind<d>, T>;
     };
+    template <std::size_t d, CartAMRFieldExprType T>
+    struct ResultType<D1WENO53Downwind<d>, T> {
+        using type = CartAMRFieldExpr<Expression<D1WENO53Downwind<d>, T>>;
+        using core_type = Expression<D1WENO53Downwind<d>, T>;
+    };
 
     namespace internal {
         template <std::size_t d, CartesianFieldExprType T>
@@ -112,6 +173,14 @@ namespace OpFlow {
             static constexpr int access_flag = 0;
             using mesh_type
                     = decltype(std::declval<typename CartesianFieldExprTrait<T>::mesh_type&>().getView());
+        };
+        template <std::size_t d, CartAMRFieldExprType T>
+        struct ExprTrait<Expression<D1WENO53Downwind<d>, T>> : ExprTrait<T> {
+            static constexpr int bc_width
+                    = D1WENO53Downwind<d>::bc_width + CartAMRFieldExprTrait<T>::bc_width;
+            static constexpr int access_flag = 0;
+            using mesh_type
+                    = decltype(std::declval<typename CartAMRFieldExprTrait<T>::mesh_type&>().getView());
         };
 
     }// namespace internal
@@ -124,12 +193,35 @@ namespace OpFlow {
         OPFLOW_STRONG_INLINE static auto couldSafeEval(const E& e, auto&& i) {
             return e.accessibleRange.start[d] <= i[d] - 3 && i[d] + 3 < e.accessibleRange.end[d];
         }
+        template <CartAMRFieldExprType E>
+        OPFLOW_STRONG_INLINE static auto couldSafeEval(const E& e, auto&& i) {
+            auto r = e.accessibleRanges[i.l][i.p];
+            return r.start[d] <= i[d] - 3 && i[d] + 3 < r.end[d];
+        }
 
         template <CartesianFieldExprType E, typename I>
         OPFLOW_STRONG_INLINE static auto eval_safe(const E& e, I i) {
             if (e.accessibleRange.start[d] <= i[d] - 3 && i[d] + 3 < e.accessibleRange.end[d]) {
                 // inner case
                 auto h = e.getMesh().dx(d, i);// uniform mesh is assumed here
+                auto pm2 = e.evalSafeAt(i.template prev<d>(2));
+                auto pm1 = e.evalSafeAt(i.template prev<d>(1));
+                auto p0 = e.evalSafeAt(i);
+                auto pp1 = e.evalSafeAt(i.template next<d>(1));
+                auto pp2 = e.evalSafeAt(i.template next<d>(2));
+                auto pp3 = e.evalSafeAt(i.template next<d>(3));
+                return kernel(pm2, pm1, p0, pp1, pp2, pp3, h);
+            }
+            // for other cases WENO53 cannot handle, the user should downgrade to lower order schemes.
+            OP_ERROR("Cannot eval safe at {} for {} with WENO53.", i.toString(), e.getName());
+            OP_ABORT;
+        }
+        template <CartAMRFieldExprType E, typename I>
+        OPFLOW_STRONG_INLINE static auto eval_safe(const E& e, I i) {
+            auto r = e.accessibleRanges[i.l][i.p];
+            if (r.start[d] <= i[d] - 3 && i[d] + 3 < r.end[d]) {
+                // inner case
+                auto h = e.getMesh().dx(d, i.l, i[d]);// uniform mesh is assumed here
                 auto pm2 = e.evalSafeAt(i.template prev<d>(2));
                 auto pm1 = e.evalSafeAt(i.template prev<d>(1));
                 auto p0 = e.evalSafeAt(i);
@@ -154,6 +246,17 @@ namespace OpFlow {
             auto pp3 = e.evalAt(i.template next<d>(3));
             return kernel(pm2, pm1, p0, pp1, pp2, pp3, h);
         }
+        template <CartAMRFieldExprType E, typename I>
+        OPFLOW_STRONG_INLINE static auto eval(const E& e, I i) {
+            auto h = e.getMesh().dx(d, i.l, i[d]);// uniform mesh is assumed here
+            auto pm2 = e.evalAt(i.template prev<d>(2));
+            auto pm1 = e.evalAt(i.template prev<d>(1));
+            auto p0 = e.evalAt(i);
+            auto pp1 = e.evalAt(i.template next<d>(1));
+            auto pp2 = e.evalAt(i.template next<d>(2));
+            auto pp3 = e.evalAt(i.template next<d>(3));
+            return kernel(pm2, pm1, p0, pp1, pp2, pp3, h);
+        }
 
         template <CartesianFieldExprType E>
         static void prepare(Expression<D1WENO53Upwind, E>& expr) {
@@ -167,6 +270,27 @@ namespace OpFlow {
             expr.localRange.start[d] += 3;
             expr.localRange.end[d] -= 3;
             expr.assignableRange.setEmpty();
+        }
+        template <CartAMRFieldExprType E>
+        static void prepare(Expression<D1WENO53Upwind, E>& expr) {
+            constexpr auto dim = internal::CartesianFieldExprTrait<E>::dim;
+            expr.initPropsFrom(expr.arg1);
+
+            // name
+            expr.name = fmt::format("d1<D1WENO53Upwind<{}>>({})", d, expr.arg1.name);
+
+            // ranges
+            auto levels = expr.getLevels();
+            for (auto l = 0; l < levels; ++l) {
+                auto parts = expr.accessibleRanges[l].size();
+                for (auto p = 0; p < parts; ++p) {
+                    expr.accessibleRanges[l][p].start[d] += 3;
+                    expr.accessibleRanges[l][p].end[d] -= 3;
+                    expr.localRanges[l][p].start[d] += 3;
+                    expr.localRanges[l][p].end[d] -= 3;
+                    expr.assignableRanges[l][p].setEmpty();
+                }
+            }
         }
 
     private:
@@ -196,6 +320,11 @@ namespace OpFlow {
         using type = CartesianFieldExpr<Expression<D1WENO53Upwind<d>, T>>;
         using core_type = Expression<D1WENO53Upwind<d>, T>;
     };
+    template <std::size_t d, CartAMRFieldExprType T>
+    struct ResultType<D1WENO53Upwind<d>, T> {
+        using type = CartAMRFieldExpr<Expression<D1WENO53Upwind<d>, T>>;
+        using core_type = Expression<D1WENO53Upwind<d>, T>;
+    };
 
     namespace internal {
         template <std::size_t d, CartesianFieldExprType T>
@@ -206,6 +335,14 @@ namespace OpFlow {
             using mesh_type
                     = decltype(std::declval<typename CartesianFieldExprTrait<T>::mesh_type&>().getView());
         };
+        template <std::size_t d, CartAMRFieldExprType T>
+        struct ExprTrait<Expression<D1WENO53Upwind<d>, T>> : ExprTrait<T> {
+            static constexpr int bc_width = D1WENO53Upwind<d>::bc_width + CartAMRFieldExprTrait<T>::bc_width;
+            static constexpr int access_flag = 0;
+            using mesh_type
+                    = decltype(std::declval<typename CartAMRFieldExprTrait<T>::mesh_type&>().getView());
+        };
+
     }// namespace internal
 }// namespace OpFlow
 #endif//OPFLOW_FIRSTORDERWENO_HPP

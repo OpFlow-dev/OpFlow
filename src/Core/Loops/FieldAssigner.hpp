@@ -14,6 +14,8 @@
 #define OPFLOW_FIELDASSIGNER_HPP
 
 #include "Core/Field/FieldExprTrait.hpp"
+#include "Core/Field/MeshBased/SemiStructured/CartAMRFieldExprTrait.hpp"
+#include "Core/Field/MeshBased/SemiStructured/CartAMRFieldTrait.hpp"
 #include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
 #include "Core/Field/MeshBased/Structured/CartesianFieldTrait.hpp"
 #include "RangeFor.hpp"
@@ -45,6 +47,27 @@ namespace OpFlow::internal {
             auto inner_range = src.accessibleRange.getInnerRange(width + 1);
             rangeFor(DS::commonRange(DS::commonRange(dst.assignableRange, dst.localRange), inner_range),
                      [&](auto&& i) { dst[i] = src.evalAt(i); });
+            dst.updateBC();
+            return dst;
+        }
+        template <CartAMRFieldType To, CartAMRFieldExprType From>
+        static auto& assign_impl(From& src, To& dst) {
+            src.prepare();
+            constexpr auto width = CartAMRFieldExprTrait<From>::bc_width;
+            auto levels = dst.getLevels();
+            for (auto i = 0; i < levels; ++i) {
+                auto parts = dst.accessibleRanges[i].size();
+                for (auto j = 0; j < parts; ++j) {
+                    auto bc_ranges = src.accessibleRanges[i][j].getBCRanges(width + 1);
+                    for (const auto& r : bc_ranges) {
+                        rangeFor(DS::commonRange(dst.assignableRanges[i][j], r),
+                                 [&](auto&& k) { dst[k] = src.evalSafeAt(k); });
+                    }
+                    auto inner_range = src.accessibleRanges[i][j].getInnerRange(width + 1);
+                    rangeFor(DS::commonRange(dst.assignableRanges[i][j], inner_range),
+                             [&](auto&& k) { dst[k] = src.evalAt(k); });
+                }
+            }
             dst.updateBC();
             return dst;
         }

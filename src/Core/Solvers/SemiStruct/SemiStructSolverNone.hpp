@@ -14,9 +14,6 @@
 #define OPFLOW_SEMISTRUCTSOLVERNONE_HPP
 
 #include "SemiStructSolver.hpp"
-#include <HYPRE.h>
-#include <HYPRE_sstruct_ls.h>
-#include <HYPRE_sstruct_mv.h>
 
 namespace OpFlow {
 
