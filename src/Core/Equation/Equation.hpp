@@ -1,9 +1,21 @@
+// ----------------------------------------------------------------------------
+//
+// Copyright (c) 2019 - 2021 by the OpFlow developers
+//
+// This file is part of OpFlow.
+// 
+// OpFlow is free software and is distributed under the MPL v2.0 license. 
+// The full text of the license can be found in the file LICENSE at the top
+// level directory of OpFlow.
+//
+// ----------------------------------------------------------------------------
+
 #ifndef OPFLOW_EQUATION_HPP
 #define OPFLOW_EQUATION_HPP
 
 #include "Core/BasicDataTypes.hpp"
-#include "Core/Expr/ExprTrait.hpp"
 #include "Core/Expr/Expr.hpp"
+#include "Core/Expr/ExprTrait.hpp"
 #include "Core/Expr/ScalarExpr.hpp"
 #include "Core/Field/FieldExprTrait.hpp"
 #include "DataStructures/Range/Ranges.hpp"
@@ -16,8 +28,7 @@ namespace OpFlow {
     struct Equation {
         using LhsType = Lhs;
         using RhsType = Rhs;
-        Equation(auto&& lhs, auto&& rhs)
-            : lhs(OP_PERFECT_FOWD(lhs)), rhs(OP_PERFECT_FOWD(rhs)) {}
+        Equation(auto&& lhs, auto&& rhs) : lhs(OP_PERFECT_FOWD(lhs)), rhs(OP_PERFECT_FOWD(rhs)) {}
         typename internal::ExprProxy<Lhs>::type lhs;
         typename internal::ExprProxy<Rhs>::type rhs;
 

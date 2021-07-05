@@ -1,3 +1,15 @@
+// ----------------------------------------------------------------------------
+//
+// Copyright (c) 2019 - 2021 by the OpFlow developers
+//
+// This file is part of OpFlow.
+// 
+// OpFlow is free software and is distributed under the MPL v2.0 license. 
+// The full text of the license can be found in the file LICENSE at the top
+// level directory of OpFlow.
+//
+// ----------------------------------------------------------------------------
+
 #ifndef OPFLOW_FIRSTORDERBIASEDUPWIND_HPP
 #define OPFLOW_FIRSTORDERBIASEDUPWIND_HPP
 
@@ -61,10 +73,9 @@ namespace OpFlow {
         }
 
         template <typename Op, CartesianFieldExprType E>
-        requires std::same_as<Op, D1FirstOrderBiasedUpwind> ||(
-                DecableOpType<Op>&& std::same_as<
-                        typename LastOpOfDecableOp<Op>::type,
-                        D1FirstOrderBiasedUpwind>) static inline void prepare(Expression<Op, E>& expr) {
+                requires std::same_as<
+                        Op,
+                        D1FirstOrderBiasedUpwind> || (DecableOpType<Op> && std::same_as<typename LastOpOfDecableOp<Op>::type, D1FirstOrderBiasedUpwind>) static inline void prepare(Expression<Op, E>& expr) {
             constexpr auto dim = internal::CartesianFieldExprTrait<E>::dim;
 
             // name

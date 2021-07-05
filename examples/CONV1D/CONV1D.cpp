@@ -8,11 +8,11 @@ int main() {
 
     auto mesh = MeshBuilder<Mesh>().newMesh(11).setMeshOfDim(0, 0., 1.).build();
     auto u = ExprBuilder<Field>()
-            .setMesh(mesh)
-            .setName("u")
-            .setBC(0, DimPos::start, BCType::Dirc, 0.)
-            .setBC(0, DimPos::end, BCType::Dirc, 0.)
-            .build();
+                     .setMesh(mesh)
+                     .setName("u")
+                     .setBC(0, DimPos::start, BCType::Dirc, 0.)
+                     .setBC(0, DimPos::end, BCType::Dirc, 0.)
+                     .build();
 
     u.initBy([](auto&& i) { return 0.2 < i[0] && i[0] < 0.4 ? 1.0 : 0.0; });
 

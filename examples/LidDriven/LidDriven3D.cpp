@@ -95,11 +95,11 @@ int main(int argc, char* argv[]) {
     params.maxIter = 100;
     StructSolverParams<StructSolverType::PCG> poisson_params;
     StructSolverParams<StructSolverType::PFMG> p_params {.useZeroGuess = true,
-                                                   .relaxType = 1,
-                                                   .rapType = 0,
-                                                   .numPreRelax = 1,
-                                                   .numPostRelax = 1,
-                                                   .skipRelax = 0};
+                                                         .relaxType = 1,
+                                                         .rapType = 0,
+                                                         .numPreRelax = 1,
+                                                         .numPostRelax = 1,
+                                                         .skipRelax = 0};
     p_params.tol = 1e-10;
     auto solver = PrecondStructSolver<StructSolverType::GMRES, StructSolverType::PFMG>(params, p_params);
     auto u_handler = makeEqnSolveHandler(
@@ -127,7 +127,8 @@ int main(int argc, char* argv[]) {
             dw, solver);
     poisson_params.staticMat = true;
     poisson_params.pinValue = true;
-    auto p_solver = PrecondStructSolver<StructSolverType::PCG, StructSolverType::PFMG>(poisson_params, p_params);
+    auto p_solver
+            = PrecondStructSolver<StructSolverType::PCG, StructSolverType::PFMG>(poisson_params, p_params);
     auto p_handler = makeEqnSolveHandler(
             [&](auto&& e) {
                 return laplace(e) * -1.0
