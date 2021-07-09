@@ -20,11 +20,11 @@
 namespace OpFlow {
 
     template <FieldExprType From, FieldExprType To>
-    requires std::convertible_to < typename internal::FieldExprTrait<From>::elem_type,
-            typename internal::FieldExprTrait<To>::elem_type
-    > &&std::convertible_to<typename internal::FieldExprTrait<To>::index_type,
-            typename internal::FieldExprTrait<From>::index_type> struct ProxyBC
-            : BCBase<To> {
+    requires std::convertible_to<typename internal::FieldExprTrait<From>::elem_type,
+                                 typename internal::FieldExprTrait<To>::elem_type>&&
+            std::convertible_to<typename internal::FieldExprTrait<To>::index_type,
+                                typename internal::FieldExprTrait<From>::index_type> struct ProxyBC
+        : BCBase<To> {
         ProxyBC() = default;
         explicit ProxyBC(const BCBase<From>& src) : _src(&src) {}
         ProxyBC(BCBase<From>&& src) = delete;
@@ -43,8 +43,8 @@ namespace OpFlow {
         std::unique_ptr<BCBase<To>> getCopy() const override { return std::make_unique<ProxyBC>(*this); }
         std::unique_ptr<BCBase<To>>
         getFunctorBC(std::function<typename internal::FieldExprTrait<To>::elem_type(
-                const typename internal::FieldExprTrait<To>::index_type&)>
-                f) const override {
+                             const typename internal::FieldExprTrait<To>::index_type&)>
+                             f) const override {
             switch (getBCType()) {
                 case BCType::Dirc:
                     return std::make_unique<FunctorDircBC<To>>(f);
@@ -74,5 +74,5 @@ namespace OpFlow {
     inline auto genProxyBC(const BCBase<From>& src) {
         return std::make_unique<ProxyBC<From, To>>(src);
     }
-}
+}// namespace OpFlow
 #endif//OPFLOW_PROXYBC_HPP

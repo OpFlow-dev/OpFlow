@@ -139,8 +139,8 @@ namespace OpFlow {
 
         std::unique_ptr<BCBase<F>>
         getFunctorBC(std::function<typename internal::FieldExprTrait<F>::elem_type(
-                const typename internal::FieldExprTrait<F>::index_type&)>
-                     f) const override {
+                             const typename internal::FieldExprTrait<F>::index_type&)>
+                             f) const override {
             return std::make_unique<FunctorDircBC<F>>(f);
         }
 

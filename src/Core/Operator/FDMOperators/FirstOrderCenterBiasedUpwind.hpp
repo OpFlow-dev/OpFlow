@@ -60,7 +60,7 @@ namespace OpFlow {
             }
             // not handled case
             OP_ERROR("Cannot handle current case.");
-            //OP_ERROR("Expr and index are: \n{}\nIndex = {}", e.toString(), i.toString());
+            OP_ERROR("Expr and index are: \n{}\nIndex = {}", e.getName(), i.toString());
             OP_ABORT;
         }
 

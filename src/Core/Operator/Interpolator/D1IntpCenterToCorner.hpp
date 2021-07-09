@@ -41,15 +41,25 @@ namespace OpFlow {
                 auto y2 = e.evalSafeAt(i);
                 auto x = e.mesh.x(d, i[d]);
                 return Math::Interpolator1D::intp(x1, y1, x2, y2, x);
-            } else if (i[d] == e.accessibleRange.start[d] && e.bc[d].start
-                       && e.bc[d].start->getBCType() == BCType::Dirc) {
+            } else if (i[d] == e.accessibleRange.start[d] && e.bc[d].start) {
                 // left bc case
-                return e.bc[d].start->evalAt(i);
-            } else if (i[d] == e.accessibleRange.end[d] && e.bc[d].end
-                       && e.bc[d].end->getBCType() == BCType::Dirc) {
+                if (e.bc[d].start->getBCType() == BCType::Dirc) {
+                    return e.bc[d].start->evalAt(i);
+                } else if (e.bc[d].start->getBCType() == BCType::Neum) {
+                    return e.evalSafeAt(i) - e.bc[d].start->evalAt(i) * e.mesh.dx(d, i[d]) / 2;
+                } else
+                    goto error_case;
+            } else if (i[d] == e.accessibleRange.end[d] && e.bc[d].end) {
                 // right bc case
-                return e.bc[d].end->evalAt(i);
+                if (e.bc[d].end->getBCType() == BCType::Dirc) {
+                    return e.bc[d].end->evalAt(i);
+                } else if (e.bc[d].end->getBCType() == BCType::Neum) {
+                    return e.evalSafeAt(i.template prev<d>())
+                           + e.bc[d].end->evalAt(i) * e.mesh.dx(d, i[d] - 1) / 2;
+                } else
+                    goto error_case;
             } else {
+            error_case:
                 OP_ERROR("Cannot eval D1IntpCenterToCorner<{}>({}) at {}", d, e.name, i.toString());
                 OP_ABORT;
             }
@@ -82,6 +92,12 @@ namespace OpFlow {
                 expr.localRange.end[d]++;
             }
             expr.assignableRange.setEmpty();
+            for (auto i = 0; i < internal::CartesianFieldExprTrait<T>::dim; ++i) {
+                // todo: introduce bc type detection and correct the impl here
+
+                expr.bc[i].start = expr.arg1.bc[i].start ? expr.arg1.bc[i].start->getCopy() : nullptr;
+                expr.bc[i].end = expr.arg1.bc[i].end ? expr.arg1.bc[i].end->getCopy() : nullptr;
+            }
         }
     };
 
