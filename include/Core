@@ -84,6 +84,7 @@
 //#include "Core/BC/InternalBC.hpp"
 #include "Core/BC/LogicalBC.hpp"
 #include "Core/BC/NeumBC.hpp"
+#include "Core/BC/ProxyBC.hpp"
 
 // Equation
 #include "Core/Equation/EqnSolveHandler.hpp"

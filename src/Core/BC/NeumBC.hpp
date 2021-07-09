@@ -29,6 +29,9 @@ namespace OpFlow {
         [[nodiscard]] BCType getBCType() const override { return type; }
     };
 
+    template <MeshBasedFieldExprType F>
+    struct FunctorNeumBC;
+
     template <FieldExprType F>
     struct ConstNeumBC : virtual public NeumBCBase<F> {
     public:
@@ -52,6 +55,13 @@ namespace OpFlow {
         }
 
         std::unique_ptr<BCBase<F>> getCopy() const override { return std::make_unique<ConstNeumBC>(*this); }
+
+        std::unique_ptr<BCBase<F>>
+        getFunctorBC(std::function<typename internal::FieldExprTrait<F>::elem_type(
+                             const typename internal::FieldExprTrait<F>::index_type&)>
+                             f) const override {
+            return std::make_unique<FunctorNeumBC<F>>(f);
+        }
 
     protected:
         void assignImpl(const BCBase<F>& other) override {
@@ -110,7 +120,7 @@ namespace OpFlow {
         explicit FunctorNeumBC(Functor f) : _f(std::move(f)) {}
 
         typename internal::MeshBasedFieldExprTrait<F>::elem_type
-        evalAt(const typename internal::MeshBasedFieldExprTrait<F>::index_type& index) override {
+        evalAt(const typename internal::MeshBasedFieldExprTrait<F>::index_type& index) const override {
             return _f(index - this->offset);
         }
 
@@ -124,9 +134,16 @@ namespace OpFlow {
 
         std::unique_ptr<BCBase<F>> getCopy() const override { return std::make_unique<FunctorNeumBC>(*this); }
 
+        std::unique_ptr<BCBase<F>>
+        getFunctorBC(std::function<typename internal::FieldExprTrait<F>::elem_type(
+                const typename internal::FieldExprTrait<F>::index_type&)>
+                f) const override {
+            return std::make_unique<FunctorNeumBC<F>>(f);
+        }
+
     protected:
         void assignImpl(const BCBase<F>& other) override {
-            _f = [=](auto&& i) { return other.evalAt(i); };
+            _f = [&](auto&& i) { return other.evalAt(i); };
         }
         Functor _f;
     };
