@@ -13,6 +13,7 @@
 project(OpFlow_Misc_Tests)
 
 add_gmock(FmtlibTest ${CMAKE_CURRENT_SOURCE_DIR}/FmtlibTest.cpp)
-target_link_libraries(FmtlibTest fmt::fmt)
+target_link_libraries(FmtlibTest opflow::opflow)
 
 add_gmock(SpdlogTest ${CMAKE_CURRENT_SOURCE_DIR}/SpdlogTest.cpp)
+target_link_libraries(SpdlogTest opflow::opflow)

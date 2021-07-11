@@ -1,41 +1,61 @@
-# config HYPRE. Download & build if not previously installed
+# ----------------------------------------------------------------------------
+#
+# Copyright (c) 2019 - 2021 by the OpFlow developers
+#
+# This file is part of OpFlow.
+#
+# OpFlow is free software and is distributed under the MPL v2.0 license.
+# The full text of the license can be found in the file LICENSE at the top
+# level directory of OpFlow.
+#
+# ----------------------------------------------------------------------------
+#
+# Config & build HYPRE from source
+#
+# ----------------------------------------------------------------------------
+
 macro(CONFIG_HYPRE)
-    include(MorseInit)
-    if (OpFlow_with_openmp)
+    # try build HYPRE from source
+    string(JOIN " " HYPRE_OPTIONS
+            "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
+            "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+            "-DHYPRE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+            "-DHYPRE_ENABLE_SINGLE=${OPFLOW_SINGLE_PRECISION}"
+            "-DHYPRE_WITH_OPENMP=${OPFLOW_WITH_OPENMP}"
+            "-DHYPRE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/hypre")
+    string(REPLACE " " "\t\n" _hypre_options ${HYPRE_OPTIONS})
+    message(STATUS "HYPRE is to be configured with:\t\n${_hypre_options}")
+
+    if (${OPFLOW_HYPRE_PRE_DOWNLOAD})
+        # use pre-downloaded source file
+        if (NOT OPFLOW_HYPRE_SOURCE_DIR)
+            message(FATAL_ERROR "OPFLOW_HYPRE_SOURCE_DIR must be defined when
+            OPFLOW_HYPRE_PRE_DOWNLOAD is enabled")
+        endif ()
+
+        configure_file(cmake/UseExistingHYPRE.txt.in
+                ${CMAKE_CURRENT_BINARY_DIR}/hypre-download/CMakeLists.txt)
+    else ()
+        configure_file(cmake/DownloadHYPRE.txt.in
+                ${CMAKE_CURRENT_BINARY_DIR}/hypre-download/CMakeLists.txt)
+    endif ()
+    execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+            RESULT_VARIABLE _result
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/hypre-download)
+    if (_result)
+        message(FATAL_ERROR "CMake step for HYPRE failed: ${_result}")
+    endif ()
+
+    execute_process(COMMAND ${CMAKE_COMMAND} --build . -j
+            RESULT_VARIABLE _result
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/hypre-download)
+    if (_result)
+        message(FATAL_ERROR "Build step for HYPRE failed: ${_result}")
+    endif ()
+
+    if (OPFLOW_WITH_OPENMP)
         set(CMAKE_REQUIRED_FLAGS "-fopenmp")
     endif ()
-    find_package(HYPRE)
-    if (HYPRE_FOUND)
-        include_directories(${HYPRE_INCLUDE_DIRS})
-        link_directories(${HYPRE_LIBRARY_DIRS})
-    else ()
-        #Build hypre and include
-        configure_file(cmake/DownloadHYPRE.txt.in hypre-download/CMakeLists.txt)
-        execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-                        RESULT_VARIABLE result
-                        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/hypre-download)
-        if (result)
-            message(FATAL_ERROR "CMake step for HYPRE failed: ${result}")
-        endif ()
-
-        set(HYPRE_OPTIONS "-DHYPRE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DHYPRE_ENABLE_SINGLE=${OpFlow_single_precision} \
-     -DHYPRE_WITH_OPENMP=${OpFlow_with_openmp} -DHYPRE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/hypre")
-
-        message(STATUS "HYPRE is configed with: ${HYPRE_OPTIONS}")
-
-        execute_process(COMMAND ${CMAKE_COMMAND} --build . -j
-                        RESULT_VARIABLE result
-                        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/hypre-download)
-        if (result)
-            message(FATAL_ERROR "Build step for HYPRE failed: ${result}")
-        endif ()
-
-        set(HYPRE_DIR ${CMAKE_CURRENT_BINARY_DIR}/hypre)
-        if (OpFlow_with_openmp)
-            set(CMAKE_REQUIRED_FLAGS "-fopenmp")
-        endif ()
-        find_package(HYPRE REQUIRED)
-        include_directories(${HYPRE_INCLUDE_DIRS})
-        link_directories(${HYPRE_LIBRARY_DIRS})
-    endif ()
+    find_package(HYPRE CONFIG REQUIRED
+            PATHS ${CMAKE_CURRENT_BINARY_DIR}/hypre/lib/cmake/HYPRE)
 endmacro()

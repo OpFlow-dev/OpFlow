@@ -1,5 +1,22 @@
-# Copied from https://gist.github.com/UnaNancyOwen/263c243ae1e05a2f9d0e
+# ----------------------------------------------------------------------------
+#
+# Copyright (c) 2019 - 2021 by the OpFlow developers
+#
+# This file is part of OpFlow.
+#
+# OpFlow is free software and is distributed under the MPL v2.0 license.
+# The full text of the license can be found in the file LICENSE at the top
+# level directory of OpFlow.
+#
+# ----------------------------------------------------------------------------
+#
 # Check for the presence of AVX and figure out the flags to use for it.
+#
+# ----------------------------------------------------------------------------
+#
+# Copied from https://gist.github.com/UnaNancyOwen/263c243ae1e05a2f9d0e
+#
+# ----------------------------------------------------------------------------
 macro(CHECK_FOR_AVX)
     set(AVX_FLAGS)
 

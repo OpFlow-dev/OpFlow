@@ -10,15 +10,20 @@
 //
 // ----------------------------------------------------------------------------
 
+#include "Core/Mesh/Structured/CartesianMeshView.hpp"
+#include "Core/Mesh/Structured/CartesianMeshViewTrait.hpp"
+#include "Core/Mesh/Structured/CartesianMeshTrait.hpp"
 #include "Core/Mesh/Structured/CartesianMesh.hpp"
 #include "Core/BasicDataTypes.hpp"
-#include <fmt/include/fmt/format.h>
+#include <fmt/format.h>
 #include <gmock/gmock.h>
 #include <iostream>
 
 using namespace OpFlow;
 using namespace OpFlow::Meta;
 
+template struct OpFlow::CartesianMesh<Meta::int_<2>>;
+template struct OpFlow::CartesianMesh<Meta::int_<3>>;
 using Mesh3 = CartesianMesh<int_<3>>;
 
 TEST(CartesianMeshTest, SetMeshPointsByFunctor) {

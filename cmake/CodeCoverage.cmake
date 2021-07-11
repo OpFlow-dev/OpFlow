@@ -1,3 +1,18 @@
+# ----------------------------------------------------------------------------
+#
+# Copyright (c) 2019 - 2021 by the OpFlow developers
+#
+# This file is part of OpFlow.
+#
+# OpFlow is free software and is distributed under the MPL v2.0 license.
+# The full text of the license can be found in the file LICENSE at the top
+# level directory of OpFlow.
+#
+# ----------------------------------------------------------------------------
+#
+# Config for auto code coverage test
+#
+# ----------------------------------------------------------------------------
 #
 # Boost Software License - Version 1.0 - August 17th, 2003
 #
@@ -61,37 +76,38 @@
 #
 #
 
+cmake_minimum_required(VERSION 3.0)
 # Check prereqs
-IF(APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    FIND_PROGRAM( GCOV_PATH gcov-10)
+IF (APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    FIND_PROGRAM(GCOV_PATH gcov-11)
     MESSAGE("${GCOV_PATH}")
-ELSE()
-    FIND_PROGRAM( GCOV_PATH gcov)
-ENDIF()
-FIND_PROGRAM( LCOV_PATH lcov )
-FIND_PROGRAM( GENHTML_PATH genhtml )
-FIND_PROGRAM( GCOVR_PATH gcovr PATHS ${CMAKE_SOURCE_DIR}/tests)
+ELSE ()
+    FIND_PROGRAM(GCOV_PATH gcov)
+ENDIF ()
+FIND_PROGRAM(LCOV_PATH lcov)
+FIND_PROGRAM(GENHTML_PATH genhtml)
+FIND_PROGRAM(GCOVR_PATH gcovr PATHS ${CMAKE_SOURCE_DIR}/tests)
 
-IF(NOT GCOV_PATH)
+IF (NOT GCOV_PATH)
     MESSAGE(FATAL_ERROR "gcov not found! Aborting...")
-ENDIF() # NOT GCOV_PATH
+ENDIF () # NOT GCOV_PATH
 
-IF(NOT CMAKE_COMPILER_IS_GNUCC)
+IF (NOT CMAKE_COMPILER_IS_GNUCC)
     # Clang version 3.0.0 and greater now supports gcov as well.
-    EXECUTE_PROCESS( COMMAND ${CMAKE_CXX_COMPILER} --version OUTPUT_VARIABLE clang_full_version_string )
-    string (REGEX REPLACE ".*clang version ([0-9]+\\.[0-9]+).*" "\\1" CLANG_VERSION_STRING ${clang_full_version_string})
+    EXECUTE_PROCESS(COMMAND ${CMAKE_CXX_COMPILER} --version OUTPUT_VARIABLE clang_full_version_string)
+    string(REGEX REPLACE ".*clang version ([0-9]+\\.[0-9]+).*" "\\1" CLANG_VERSION_STRING ${clang_full_version_string})
     if (NOT CLANG_VERSION_STRING VERSION_GREATER 3.0)
         MESSAGE(FATAL_ERROR "Compiler is not GNU gcc! Clang Version lower than 3.0.0. Aborting...")
-    endif()
+    endif ()
 
-    IF(NOT "${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
+    IF (NOT "${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
         MESSAGE(FATAL_ERROR "Compiler is not GNU gcc! Aborting...")
-    ENDIF()
-ENDIF() # NOT CMAKE_COMPILER_IS_GNUCC
+    ENDIF ()
+ENDIF () # NOT CMAKE_COMPILER_IS_GNUCC
 
-IF ( NOT CMAKE_BUILD_TYPE STREQUAL "Debug" )
-    MESSAGE( WARNING "Code coverage results with an optimized (non-Debug) build may be misleading" )
-ENDIF() # NOT CMAKE_BUILD_TYPE STREQUAL "Debug"
+IF (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    MESSAGE(WARNING "Code coverage results with an optimized (non-Debug) build may be misleading")
+ENDIF () # NOT CMAKE_BUILD_TYPE STREQUAL "Debug"
 
 
 # Param _targetname     The name of new the custom make target
@@ -104,13 +120,13 @@ ENDIF() # NOT CMAKE_BUILD_TYPE STREQUAL "Debug"
 #   Pass them in list form, e.g.: "-j;2" for -j 2
 FUNCTION(SETUP_TARGET_FOR_COVERAGE _targetname _testrunner _outputname)
 
-    IF(NOT LCOV_PATH)
+    IF (NOT LCOV_PATH)
         MESSAGE(FATAL_ERROR "lcov not found! Aborting...")
-    ENDIF() # NOT LCOV_PATH
+    ENDIF () # NOT LCOV_PATH
 
-    IF(NOT GENHTML_PATH)
+    IF (NOT GENHTML_PATH)
         MESSAGE(FATAL_ERROR "genhtml not found! Aborting...")
-    ENDIF() # NOT GENHTML_PATH
+    ENDIF () # NOT GENHTML_PATH
 
     # Setup target
     ADD_CUSTOM_TARGET(${_targetname}
@@ -123,7 +139,7 @@ FUNCTION(SETUP_TARGET_FOR_COVERAGE _targetname _testrunner _outputname)
 
             # Capturing lcov counters and generating report
             COMMAND ${LCOV_PATH} --rc lcov_branch_coverage=1 --gcov-tool=${GCOV_PATH} --directory . --capture --output-file ${_outputname}.info
-            COMMAND ${LCOV_PATH} --rc lcov_branch_coverage=1 -e ${_outputname}.info '*OperatorFlow/src/*' --output-file ${_outputname}.info.cleaned
+            COMMAND ${LCOV_PATH} --rc lcov_branch_coverage=1 -e ${_outputname}.info '*OpFlow/src/*' --output-file ${_outputname}.info.cleaned
             COMMAND ${GENHTML_PATH} --rc genhtml_branch_coverage=1 --legend -o ${_outputname} ${_outputname}.info.cleaned
             COMMAND ${CMAKE_COMMAND} -E remove ${_outputname}.info ${_outputname}.info.cleaned
 
@@ -136,6 +152,15 @@ FUNCTION(SETUP_TARGET_FOR_COVERAGE _targetname _testrunner _outputname)
             COMMAND ;
             COMMENT "Open ./${_outputname}/index.html in your browser to view the coverage report."
             )
+    if (APPLE)
+        FIND_PROGRAM(OPEN_PATH open)
+        if (OPEN_PATH)
+            # Use open utility on macOS to open the result file
+            ADD_CUSTOM_COMMAND(TARGET ${_targetname} POST_BUILD
+                    COMMAND open ${CMAKE_BINARY_DIR}/${_outputname}/index.html;
+                    )
+        endif ()
+    endif ()
 
 ENDFUNCTION() # SETUP_TARGET_FOR_COVERAGE
 
@@ -146,13 +171,13 @@ ENDFUNCTION() # SETUP_TARGET_FOR_COVERAGE
 #   Pass them in list form, e.g.: "-j;2" for -j 2
 FUNCTION(SETUP_TARGET_FOR_COVERAGE_COBERTURA _targetname _testrunner _outputname)
 
-    IF(NOT PYTHON_EXECUTABLE)
+    IF (NOT PYTHON_EXECUTABLE)
         MESSAGE(FATAL_ERROR "Python not found! Aborting...")
-    ENDIF() # NOT PYTHON_EXECUTABLE
+    ENDIF () # NOT PYTHON_EXECUTABLE
 
-    IF(NOT GCOVR_PATH)
+    IF (NOT GCOVR_PATH)
         MESSAGE(FATAL_ERROR "gcovr not found! Aborting...")
-    ENDIF() # NOT GCOVR_PATH
+    ENDIF () # NOT GCOVR_PATH
 
     ADD_CUSTOM_TARGET(${_targetname}
 
@@ -160,7 +185,7 @@ FUNCTION(SETUP_TARGET_FOR_COVERAGE_COBERTURA _targetname _testrunner _outputname
             ${_testrunner} ${ARGV3}
 
             # Running gcovr
-            COMMAND ${GCOVR_PATH} -x -r ${CMAKE_SOURCE_DIR} -e '${CMAKE_SOURCE_DIR}/tests/'  -o ${_outputname}.xml
+            COMMAND ${GCOVR_PATH} -x -r ${CMAKE_SOURCE_DIR} -e '${CMAKE_SOURCE_DIR}/tests/' -o ${_outputname}.xml
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMENT "Running gcovr to produce Cobertura code coverage report."
             )

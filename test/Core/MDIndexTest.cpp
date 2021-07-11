@@ -11,7 +11,6 @@
 // ----------------------------------------------------------------------------
 
 #include "DataStructures/Index/MDIndex.hpp"
-#include "DataStructures/Index/RangedIndex.hpp"
 #include <gmock/gmock.h>
 
 using namespace OpFlow;

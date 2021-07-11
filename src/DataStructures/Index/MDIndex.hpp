@@ -15,8 +15,8 @@
 
 #include "Core/Interfaces/Serializable.hpp"
 #include "Core/Macros.hpp"
+#include "Utils/xxHash.hpp"
 #include "fmt/format.h"
-#include "xxHash.hpp"
 #include <array>
 #include <cassert>
 #include <compare>

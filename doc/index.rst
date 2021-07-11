@@ -27,6 +27,7 @@ Contents:
     :caption: Examples
     :maxdepth: 2
 
+    02_Examples/conv1d
     02_Examples/heat_equation
     02_Examples/poisson_equation
     02_Examples/levelset

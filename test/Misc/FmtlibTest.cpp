@@ -10,7 +10,8 @@
 //
 // ----------------------------------------------------------------------------
 
-#include "fmt/include/fmt/core.h"
+#define FMT_HEADER_ONLY
+#include <fmt/core.h>
 #include <gmock/gmock.h>
 
 using namespace testing;
