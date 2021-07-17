@@ -55,6 +55,10 @@ endif ()
 if (NOT CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 20)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
+elseif(CMAKE_CXX_STANDARD LESS 20)
+    message(WARNING "OpFlow needs C++20 to compile. Changing the standard to C++20.")
+    set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif ()
 
 # make sure __cplusplus is defined when using msvc

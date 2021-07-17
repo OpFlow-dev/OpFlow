@@ -1,5 +1,5 @@
 Overview
-========
+++++++++
 
 **OpFlow** is a header-only C++ embedded domain specific language (EDSL) designed for numerical
 simulation. It adopts the meta programming facilities provided by modern C++ heavily
@@ -28,4 +28,4 @@ difference method (FDM) on Cartesian grid. It uses CPU as the backend target
 and uses OpenMP for parallelization. We plan to support the CPU clusters backend by MPI
 in the near future.
 
-The source code is available under liberal MIT license at https://github.com/OpFlow-dev/OpFlow.
+The source code is available under the MPL v2.0 license at https://github.com/OpFlow-dev/OpFlow.
