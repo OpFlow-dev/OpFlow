@@ -55,7 +55,7 @@ endif ()
 if (NOT CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 20)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
-elseif(CMAKE_CXX_STANDARD LESS 20)
+elseif (CMAKE_CXX_STANDARD LESS 20)
     message(WARNING "OpFlow needs C++20 to compile. Changing the standard to C++20.")
     set(CMAKE_CXX_STANDARD 20)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -300,13 +300,17 @@ endif ()
 # Build docs
 # ----------------------------------------------------------------------------
 if (OPFLOW_BUILD_DOCS OR OPFLOW_BUILD_ALL)
-    find_program(SPHINX_PATH sphinx-build)
+    message(STATUS "Generating docs")
+    find_program(SPHINX_PATH sphinx-build
+            HINTS $ENV{PATH})
     if (NOT SPHINX_PATH)
         message(FATAL_ERROR "sphinx-build not found. Please install it via \
         instructions at https://www.sphinx-doc.org/en/master/usage/installation.html")
+    else ()
+        message(STATUS "Found sphinx-build at ${SPHINX_PATH}")
     endif ()
     add_custom_target(doc
-            COMMAND sphinx-build ${CMAKE_CURRENT_LIST_DIR}/doc ${CMAKE_CURRENT_BINARY_DIR}/doc
+            COMMAND ${SPHINX_PATH} ${CMAKE_CURRENT_LIST_DIR}/doc ${CMAKE_CURRENT_BINARY_DIR}/doc
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 endif ()
 

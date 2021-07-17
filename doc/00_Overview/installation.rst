@@ -10,6 +10,9 @@ fully functional. We recommend two ways to introduce OpFlow to your existing pro
     Currently we only support using CMake to configure OpFlow. For other build system users, please
     find an alternative approach to convert the build process from CMake to your build system.
 
+.. caution::
+    OpFlow is currently only tested on Linux and macOS. Windows users are recommended to use WSL for now.
+
 Approach 1: Via ``add_subdirectory()``
 ---------------------------------------------------------------------
 
