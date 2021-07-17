@@ -43,5 +43,7 @@ add_subdirectory(LidDriven)
 add_subdirectory(FTCS)
 add_subdirectory(CONV1D)
 add_subdirectory(EqnHandler)
-add_subdirectory(AMR)
 add_subdirectory(FTCS2D)
+# AMR Cases
+add_subdirectory(AMR)
+add_subdirectory(LevelSet)
