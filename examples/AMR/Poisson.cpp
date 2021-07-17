@@ -1,4 +1,5 @@
 #include "Poisson.hpp"
+#define FMT_HEADER_ONLY
 #include "fmt/chrono.h"
 #include "fmt/compile.h"
 #include "pch.hpp"
