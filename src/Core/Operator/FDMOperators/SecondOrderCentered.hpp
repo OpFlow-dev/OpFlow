@@ -14,6 +14,7 @@
 #define OPFLOW_SECONDORDERCENTERED_HPP
 
 #include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
+#include "Core/Field/MeshBased/SemiStructured/CartAMRFieldExprTrait.hpp"
 #include "Core/Macros.hpp"
 #include "DataStructures/Range/Ranges.hpp"
 
