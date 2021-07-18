@@ -22,7 +22,7 @@ void ls() {
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<Real, Mesh>;
 
-    auto n = 10;
+    auto n = 100;
     auto m = MeshBuilder<Mesh>().newMesh(n, n).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
     auto u = ExprBuilder<Field>()
                      .setName("u")

@@ -13,9 +13,9 @@
 #ifndef OPFLOW_FIRSTORDERCENTERBIASEDDOWNWIND_HPP
 #define OPFLOW_FIRSTORDERCENTERBIASEDDOWNWIND_HPP
 
+#include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
 #include "Core/Operator/Interpolator/IndexShift.hpp"
 #include "DataStructures/Range/Ranges.hpp"
-#include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
 
 namespace OpFlow {
     template <std::size_t d>

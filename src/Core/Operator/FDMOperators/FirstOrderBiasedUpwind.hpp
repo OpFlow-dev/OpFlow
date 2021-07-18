@@ -13,8 +13,8 @@
 #ifndef OPFLOW_FIRSTORDERBIASEDUPWIND_HPP
 #define OPFLOW_FIRSTORDERBIASEDUPWIND_HPP
 
-#include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
 #include "Core/Field/MeshBased/SemiStructured/CartAMRFieldExprTrait.hpp"
+#include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
 #include "Core/Macros.hpp"
 #include "Core/Operator/DecableOp.hpp"
 #include "DataStructures/Range/Ranges.hpp"

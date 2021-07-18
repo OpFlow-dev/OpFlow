@@ -10,10 +10,14 @@
 //
 //  ----------------------------------------------------------------------------
 
-#include "AMRLS.hpp"
-#include "UniLS.hpp"
+#ifndef OPFLOW_CONVOLUTION_HPP
+#define OPFLOW_CONVOLUTION_HPP
 
-int main(int argc, char* argv[]) {
-    amrls();
-    return 0;
-}
+#include "Core/Field/MeshBased/SemiStructured/CartAMRFieldExprTrait.hpp"
+#include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
+
+namespace OpFlow {
+    template <std::size_t d>
+    struct Convolution {};
+}// namespace OpFlow
+#endif//OPFLOW_CONVOLUTION_HPP
