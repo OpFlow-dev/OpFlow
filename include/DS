@@ -17,6 +17,7 @@
 #include "DataStructures/Arrays/Tensor/PlainTensor.hpp"
 #include "DataStructures/Arrays/Tensor/TensorBase.hpp"
 #include "DataStructures/Arrays/Tensor/TensorTrait.hpp"
+#include "DataStructures/Arrays/Tensor/FixedSizeTensor.hpp"
 
 // Geometry
 #include "DataStructures/Geometry/BasicElements.hpp"
