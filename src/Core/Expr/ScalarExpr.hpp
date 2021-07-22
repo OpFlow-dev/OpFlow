@@ -14,6 +14,7 @@
 #define OPFLOW_SCALAREXPR_HPP
 
 #include "Core/Expr/Expr.hpp"
+#include "Core/Expr/ScalarExprTrait.hpp"
 #include "Core/Meta.hpp"
 #include <type_traits>
 
@@ -59,17 +60,5 @@ namespace OpFlow {
 
         bool contains(const ScalarExpr& t) const { return this == &t; }
     };
-
-    namespace internal {
-        template <typename T>
-        struct ExprTrait<ScalarExpr<T>> {
-            using type = std::decay_t<T>;
-            static constexpr int access_flag = HasWriteAccess | HasDirectAccess;
-        };
-        template <typename T>
-        struct ExprProxy<ScalarExpr<T>> {
-            using type = ScalarExpr<T>;
-        };
-    }// namespace internal
 }// namespace OpFlow
 #endif//OPFLOW_SCALAREXPR_HPP

@@ -59,6 +59,30 @@ void ls() {
     uf << Utils::TimeStamp(0) << u;
     vf << Utils::TimeStamp(0) << v;
 
+    int buffWidth = 5;
+    auto h = 1. / (n - 1);
+    auto _eps = 1e-6;
+    auto _1 = [&](auto&& _p, auto&& _pp) {
+        return _p / OpFlow::sqrt(_p * _p + _eps)
+               * (OpFlow::sqrt(
+                          OpFlow::pow(
+                                  OpFlow::max(-OpFlow::min(0., dx<DU>(_pp)), OpFlow::max(dx<DD>(_pp), 0.)), 2)
+                          + OpFlow::pow(
+                                  OpFlow::max(-OpFlow::min(0., dy<DU>(_pp)), OpFlow::max(dy<DD>(_pp), 0.)),
+                                  2))
+                  - 1.);
+    };
+    auto _2 = [&](auto&& _p, auto&& _pp) {
+        return _p / OpFlow::sqrt(_p * _p + _eps)
+               * (OpFlow::sqrt(
+                          OpFlow::pow(
+                                  OpFlow::max(OpFlow::max(0., dx<DU>(_pp)), -OpFlow::min(dx<DD>(_pp), 0.)), 2)
+                          + OpFlow::pow(
+                                  OpFlow::max(OpFlow::max(0., dy<DU>(_pp)), -OpFlow::min(dy<DD>(_pp), 0.)),
+                                  2))
+                  - 1.);
+    };
+
     auto dt = 1. / n;
     for (auto i = 0; i < 2. / dt; ++i) {
         p1 = p
@@ -78,6 +102,17 @@ void ls() {
                      * 2. / 3.
              + p / 3.;
         p = p3;
+        // reinit
+        for (auto _ = 0; _ < 10; ++_) {
+            auto h1 = conditional(p > 0, _1(p, p), _2(p, p));
+            p1 = p - dt * h1;
+            auto h2 = conditional(p > 0, _1(p, p1), _2(p, p1));
+            p2 = p1 - dt / 4. * (-3 * h1 + h2);
+            auto h3 = conditional(p > 0, _1(p, p2), _2(p, p2));
+            p3 = p2 - dt / 12. * (-h1 - h2 + 8 * h3);
+            p = p3;
+        }
         pf << Utils::TimeStamp(i) << p;
+        OP_INFO("Current step: {}", i);
     }
 }

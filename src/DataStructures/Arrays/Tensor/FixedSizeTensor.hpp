@@ -40,7 +40,17 @@ namespace OpFlow::DS {
             using scalar_type = T;
             static constexpr auto dim = N;
         };
+
+        template <typename T>
+        struct is_fixed_size_tensor : std::false_type {};
+
+        template < Meta::Numerical T, std::size_t N, auto ... n>
+        requires(sizeof...(n) == N) && (std::integral<decltype(n)> && ...)
+        struct is_fixed_size_tensor<FixedSizeTensor<T, N, n...>> : std::true_type {};
     }// namespace internal
+
+    template <typename T>
+    concept FixedSizeTensorType = internal::is_fixed_size_tensor<T>::value;
 
     template <Meta::Numerical T, std::size_t N, auto... n>
             requires(sizeof...(n) == N)
@@ -69,6 +79,12 @@ namespace OpFlow::DS {
         constexpr static auto size() { return _sizes; }
         constexpr static auto total_size() { return _total_size; }
         constexpr static auto size_of(int d) { return _sizes[d]; }
+        constexpr static auto max_half_width() {
+            if constexpr (N == 0) return 0;
+            auto max_dim = _sizes[0];
+            for (auto i = 1; i < N; ++i) max_dim = std::max(max_dim, _sizes[i]);
+            return max_dim / 2;
+        }
 
         constexpr void fill(T val) { _val.fill(val); }
 

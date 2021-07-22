@@ -43,6 +43,7 @@
 #include "Core/Expr/ExprTrait.hpp"
 #include "Core/Expr/Expression.hpp"
 #include "Core/Expr/ScalarExpr.hpp"
+#include "Core/Expr/ScalarExprTrait.hpp"
 
 // Field
 #include "Core/Field/Analytical/AnalyticalFieldExpr.hpp"
@@ -85,6 +86,7 @@
 #include "Core/Operator/Logical/Boolean.hpp"
 #include "Core/Operator/Logical/Compare.hpp"
 #include "Core/Operator/Operator.hpp"
+#include "Core/Operator/IdentityOp.hpp"
 #include "Core/Operator/Convolution/Convolution.hpp"
 
 // BC
