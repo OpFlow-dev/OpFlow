@@ -46,7 +46,7 @@ void ls() {
                      .build();
 
     p.initBy([](auto&& x) { return std::sqrt(Math::pow2(x[0] - 0.5) + Math::pow2(x[1] - 0.75)) - 0.15; });
-    auto p1 = p, p2 = p, p3 = p;
+    auto p1 = p, p2 = p, p3 = p, p0 = p;
 
     u.initBy([](auto&& x) {
         return 2 * std::sin(PI * x[1]) * std::cos(PI * x[1]) * Math::pow2(std::sin(PI * x[0]));
@@ -102,14 +102,24 @@ void ls() {
                      * 2. / 3.
              + p / 3.;
         p = p3;
+        p0 = p;
         // reinit
-        for (auto _ = 0; _ < 10; ++_) {
+        for (auto _ = 0; _ < 4; ++_) {
             auto h1 = conditional(p > 0, _1(p, p), _2(p, p));
             p1 = p - dt * h1;
             auto h2 = conditional(p > 0, _1(p, p1), _2(p, p1));
             p2 = p1 - dt / 4. * (-3 * h1 + h2);
             auto h3 = conditional(p > 0, _1(p, p2), _2(p, p2));
             p3 = p2 - dt / 12. * (-h1 - h2 + 8 * h3);
+            constexpr auto _c = 16. / 24., _o = 1. / 24.;
+            constexpr DS::FixedSizeTensor<double, 2, 3, 3> conv_ker {_o, _o, _o, _o, _c, _o, _o, _o, _o};
+            constexpr auto func = [](Real eps) { return Math::smoothDelta(eps, 0); };
+            constexpr auto functor = Utils::NamedFunctor<func, Utils::makeCXprString("smoothDelta")>();
+
+            auto lambda = -makeExpression<DecableOp<Convolution<conv_ker>, IdentityOp>>(
+                                  makeExpression<UniOpAdaptor<functor>>(p) * (p3 - p0) / (_))
+                          / makeExpression<DecableOp<Convolution<conv_ker>, IdentityOp>>(
+                                  pow(makeExpression<UniOpAdaptor<functor>>(p0), 2));
             p = p3;
         }
         pf << Utils::TimeStamp(i) << p;

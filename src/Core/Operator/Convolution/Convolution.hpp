@@ -21,8 +21,7 @@
 
 namespace OpFlow {
     template <auto kernel>
-    requires DS::FixedSizeTensorType<decltype(kernel)>
-    struct Convolution {
+    requires DS::FixedSizeTensorType<decltype(kernel)> struct Convolution {
         constexpr static int d = DS::internal::TensorTrait<decltype(kernel)>::dim;
         constexpr static auto bc_width = kernel.max_half_width();
 
@@ -88,25 +87,32 @@ namespace OpFlow {
     };
 
     template <auto kernel, CartesianFieldExprType T>
-    requires DS::FixedSizeTensorType<decltype(kernel)>
-    struct ResultType<Convolution<kernel>, T> {
+    requires DS::FixedSizeTensorType<decltype(kernel)> struct ResultType<Convolution<kernel>, T> {
         using type = CartesianFieldExpr<Expression<Convolution<kernel>, T>>;
         using core_type = Expression<Convolution<kernel>, T>;
     };
 
     template <auto kernel, CartAMRFieldExprType T>
-    requires DS::FixedSizeTensorType<decltype(kernel)>
-    struct ResultType<Convolution<kernel>, T> {
+    requires DS::FixedSizeTensorType<decltype(kernel)> struct ResultType<Convolution<kernel>, T> {
         using type = CartAMRFieldExpr<Expression<Convolution<kernel>, T>>;
         using core_type = Expression<Convolution<kernel>, T>;
     };
 
     namespace internal {
         template <auto kernel, CartesianFieldExprType T>
-        struct ExprTrait<Expression<Convolution<kernel>, T>> : ExprTrait<T> {};
+        struct ExprTrait<Expression<Convolution<kernel>, T>> : ExprTrait<T> {
+            static constexpr int access_flag = 0;
+        };
 
         template <auto kernel, CartAMRFieldExprType T>
-        struct ExprTrait<Expression<Convolution<kernel>, T>> : ExprTrait<T> {};
+        struct ExprTrait<Expression<Convolution<kernel>, T>> : ExprTrait<T> {
+            static constexpr int access_flag = 0;
+        };
     }// namespace internal
+
+    template <typename Kernel, StructuredFieldExprType E>
+    auto conv(const E& expr) {
+        return makeExpression<Kernel>(expr);
+    }
 }// namespace OpFlow
 #endif//OPFLOW_CONVOLUTION_HPP

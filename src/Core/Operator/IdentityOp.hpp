@@ -25,14 +25,12 @@ namespace OpFlow {
         constexpr static auto bc_width = 0;
 
         template <typename E>
-        requires FieldExprType<E> || ScalarExprType<E> OPFLOW_STRONG_INLINE static auto eval(const E& e,
-                                                                                             auto&& i) {
+                requires FieldExprType<E> || ScalarExprType<E> OPFLOW_STRONG_INLINE static auto eval(const E& e, auto&& i) {
             return e.evalAt(OP_PERFECT_FOWD(i));
         }
 
         template <typename E>
-        requires FieldExprType<E> || ScalarExprType<E> OPFLOW_STRONG_INLINE static auto eval_safe(const E& e,
-                                                                                                  auto&& i) {
+                requires FieldExprType<E> || ScalarExprType<E> OPFLOW_STRONG_INLINE static auto eval_safe(const E& e, auto&& i) {
             return e.evalSafeAt(OP_PERFECT_FOWD(i));
         }
 
@@ -52,7 +50,9 @@ namespace OpFlow {
 
     namespace internal {
         template <ExprType T>
-        struct ExprTrait<Expression<IdentityOp, T>> : ExprTrait<T> {};
-    }
+        struct ExprTrait<Expression<IdentityOp, T>> : ExprTrait<T> {
+            static constexpr int access_flag = 0;
+        };
+    }// namespace internal
 }// namespace OpFlow
 #endif//OPFLOW_IDENTITYOP_HPP

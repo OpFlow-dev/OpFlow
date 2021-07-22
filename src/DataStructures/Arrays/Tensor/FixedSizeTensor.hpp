@@ -44,13 +44,14 @@ namespace OpFlow::DS {
         template <typename T>
         struct is_fixed_size_tensor : std::false_type {};
 
-        template < Meta::Numerical T, std::size_t N, auto ... n>
-        requires(sizeof...(n) == N) && (std::integral<decltype(n)> && ...)
-        struct is_fixed_size_tensor<FixedSizeTensor<T, N, n...>> : std::true_type {};
+        template <Meta::Numerical T, std::size_t N, auto... n>
+                requires(sizeof...(n) == N)
+                && (std::integral<decltype(n)> && ...) struct is_fixed_size_tensor<
+                        FixedSizeTensor<T, N, n...>> : std::true_type {};
     }// namespace internal
 
     template <typename T>
-    concept FixedSizeTensorType = internal::is_fixed_size_tensor<T>::value;
+    concept FixedSizeTensorType = internal::is_fixed_size_tensor<Meta::RealType<T>>::value;
 
     template <Meta::Numerical T, std::size_t N, auto... n>
             requires(sizeof...(n) == N)
@@ -58,6 +59,7 @@ namespace OpFlow::DS {
         : Tensor<FixedSizeTensor<T, N, n...>> {
         constexpr FixedSizeTensor() = default;
         constexpr explicit FixedSizeTensor(T val) { _val.fill(val); }
+        constexpr explicit FixedSizeTensor(auto... vals) : _val {vals...} {}
 
         constexpr const auto& operator[](const MDIndex<N>& idx) const {
             int _pos = idx[N - 1];

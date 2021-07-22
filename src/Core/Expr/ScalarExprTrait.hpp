@@ -29,10 +29,10 @@ namespace OpFlow {
         struct ExprProxy<ScalarExpr<T>> {
             using type = ScalarExpr<T>;
         };
-    }
+    }// namespace internal
 
     template <typename T>
     concept ScalarExprType = Meta::isTemplateInstance<ScalarExpr, T>::value;
-}
+}// namespace OpFlow
 
 #endif//OPFLOW_SCALAREXPRTRAIT_HPP

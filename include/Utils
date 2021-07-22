@@ -30,5 +30,11 @@
 // Hash
 #include "Utils/xxHash.hpp"
 
+// Strings
+#include "Utils/ConstexprString.hpp"
+
+// Functors
+#include "Utils/NamedFunctor.hpp"
+
 // Logger
 #include "Utils/StackTracer.hpp"
