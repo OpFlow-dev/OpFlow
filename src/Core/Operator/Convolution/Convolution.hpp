@@ -30,7 +30,7 @@ namespace OpFlow {
             auto ret = true;
             for (auto j = 0; j < d; ++j) {
                 ret &= (i[j] - kernel.size_of(j) / 2 >= e.arg1.accessibleRange.start[j])
-                && (i[j] + kernel.size_of(j) / 2 < e.arg1.accessibleRange.end[j]);
+                       && (i[j] + kernel.size_of(j) / 2 < e.arg1.accessibleRange.end[j]);
             }
             return ret;
         }

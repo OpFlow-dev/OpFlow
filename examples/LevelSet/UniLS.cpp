@@ -115,11 +115,11 @@ void ls() {
             constexpr DS::FixedSizeTensor<double, 2, 3, 3> conv_ker {_o, _o, _o, _o, _c, _o, _o, _o, _o};
             constexpr auto func = [=](Real d) { return Math::smoothDelta(h, d); };
             constexpr auto functor = Utils::NamedFunctor<func, Utils::makeCXprString("smoothDelta")>();
-            constexpr auto delta_op = [=](auto&& e) {
-                return makeExpression<UniOpAdaptor<functor>>(OP_PERFECT_FOWD(e));
-            };
+            constexpr auto delta_op
+                    = [=](auto&& e) { return makeExpression<UniOpAdaptor<functor>>(OP_PERFECT_FOWD(e)); };
             constexpr auto int_op = [=](auto&& e) {
-                return h*h * makeExpression<DecableOp<Convolution<conv_ker>, IdentityOp>>(OP_PERFECT_FOWD(e));
+                return h * h
+                       * makeExpression<DecableOp<Convolution<conv_ker>, IdentityOp>>(OP_PERFECT_FOWD(e));
             };
 
             auto lambda = -int_op(delta_op(p0) * (p3 - p0) / (_ + 1)) / int_op(pow(delta_op(p0), 2) + 1e-14);

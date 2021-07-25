@@ -15,12 +15,10 @@
 //
 // ----------------------------------------------------------------------------
 
-#include <concepts>
 #include <array>
+#include <concepts>
 
 template <auto>
-struct any{};
+struct any {};
 
-int main() {
-    any<1.0> a;
-}
+int main() { any<1.0> a; }

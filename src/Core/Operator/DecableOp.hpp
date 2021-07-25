@@ -51,8 +51,10 @@ namespace OpFlow {
     };
 
     template <typename Op, typename DstOp>
-    concept DecableTo = std::same_as<Op, DstOp> ||(
-            DecableOpType<Op>&& std::same_as<typename LastOpOfDecableOp<Op>::type, DstOp>);
+    concept DecableTo
+            = std::same_as<
+                      Op,
+                      DstOp> || (DecableOpType<Op> && std::same_as<typename LastOpOfDecableOp<Op>::type, DstOp>);
 
     template <typename Op, typename DecayedOp, typename... Args>
     struct ResultType<DecableOp<Op, DecayedOp>, Args...> {

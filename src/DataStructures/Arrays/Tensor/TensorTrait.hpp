@@ -31,6 +31,6 @@ namespace OpFlow::DS {
 
         template <typename T>
         struct TensorTrait<T&> : TensorTrait<T> {};
-    }
+    }// namespace internal
 }// namespace OpFlow::DS
 #endif//OPFLOW_TENSORTRAIT_HPP

@@ -34,8 +34,8 @@ namespace OpFlow {
             return e.evalSafeAt(OP_PERFECT_FOWD(i));
         }
 
-        template <typename Op, typename E> requires DecableTo<Op, IdentityOp>
-        static void prepare(Expression<Op, E>& expr) {
+        template <typename Op, typename E>
+        requires DecableTo<Op, IdentityOp> static void prepare(Expression<Op, E>& expr) {
             expr.initPropsFrom(expr.arg1);
             // name
             expr.name = fmt::format("Identity({})", expr.arg1.name);

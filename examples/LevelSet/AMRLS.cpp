@@ -25,8 +25,8 @@ void amrls() {
     using Mesh = CartesianAMRMesh<Meta::int_<2>>;
     using Field = CartAMRField<Real, Mesh>;
 
-    int n = 65, maxlevel = 1, ratio = 2, buffWidth = 5;
-    auto h = 1. / (n - 1);
+    constexpr int n = 65, maxlevel = 1, ratio = 2, buffWidth = 5;
+    constexpr auto h = 1. / (n - 1);
     auto m = MeshBuilder<Mesh>()
                      .setBaseMesh(MeshBuilder<CartesianMesh<Meta::int_<2>>>()
                                           .newMesh(n, n)
@@ -86,7 +86,7 @@ void amrls() {
                      .setLoc({LocOnMesh::Center, LocOnMesh::Center})
                      .build();
     p.initBy([](auto&& x) { return std::sqrt(Math::pow2(x[0] - 0.5) + Math::pow2(x[1] - 0.75)) - 0.15; });
-    auto p1 = p, p2 = p, p3 = p;
+    auto p1 = p, p2 = p, p3 = p, p0 = p;
 
     u.initBy([](auto&& x) {
         return 2 * std::sin(PI * x[1]) * std::cos(PI * x[1]) * Math::pow2(std::sin(PI * x[0]));
@@ -147,15 +147,28 @@ void amrls() {
                      * 2. / 3.
              + p / 3.;
         p = p3;
+        p0 = p;
         // reinit
         for (auto _ = 0; _ < 10; ++_) {
-            auto h1 = conditional(p > 0, _1(p, p), _2(p, p));
+            auto h1 = conditional(p0 > 0, _1(p0, p), _2(p0, p));
             p1 = p - dt * h1;
-            auto h2 = conditional(p > 0, _1(p, p1), _2(p, p1));
+            auto h2 = conditional(p0 > 0, _1(p0, p1), _2(p0, p1));
             p2 = p1 - dt / 4. * (-3 * h1 + h2);
-            auto h3 = conditional(p > 0, _1(p, p2), _2(p, p2));
+            auto h3 = conditional(p0 > 0, _1(p0, p2), _2(p0, p2));
             p3 = p2 - dt / 12. * (-h1 - h2 + 8 * h3);
-            p = p3;
+            constexpr auto _c = 16. / 24., _o = 1. / 24.;
+            constexpr DS::FixedSizeTensor<double, 2, 3, 3> conv_ker {_o, _o, _o, _o, _c, _o, _o, _o, _o};
+            constexpr auto func = [=](Real d) { return Math::smoothDelta(h, d); };
+            constexpr auto functor = Utils::NamedFunctor<func, Utils::makeCXprString("smoothDelta")>();
+            constexpr auto delta_op
+                    = [=](auto&& e) { return makeExpression<UniOpAdaptor<functor>>(OP_PERFECT_FOWD(e)); };
+            constexpr auto int_op = [=](auto&& e) {
+                return h * h
+                       * makeExpression<DecableOp<Convolution<conv_ker>, IdentityOp>>(OP_PERFECT_FOWD(e));
+            };
+
+            auto lambda = -int_op(delta_op(p0) * (p3 - p0) / (_ + 1)) / int_op(pow(delta_op(p0), 2) + 1e-14);
+            p = p3 + lambda * (_ + 1) * delta_op(p0);
         }
         pf << Utils::TimeStamp(i) << p;
         refine_cond.prepare();
