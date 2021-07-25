@@ -26,6 +26,16 @@ namespace OpFlow {
         constexpr static auto bc_width = kernel.max_half_width();
 
         template <StructuredFieldExprType E, typename I>
+        OPFLOW_STRONG_INLINE static auto couldSafeEval(const E& e, I&& i) {
+            auto ret = true;
+            for (auto j = 0; j < d; ++j) {
+                ret &= (i[j] - kernel.size_of(j) / 2 >= e.arg1.accessibleRange.start[j])
+                && (i[j] + kernel.size_of(j) / 2 < e.arg1.accessibleRange.end[j]);
+            }
+            return ret;
+        }
+
+        template <StructuredFieldExprType E, typename I>
         requires(internal::ExprTrait<E>::dim == d) OPFLOW_STRONG_INLINE static auto eval(const E& e, I&& i) {
             constexpr auto sizes = kernel.size();
             DS::Range<d> range;

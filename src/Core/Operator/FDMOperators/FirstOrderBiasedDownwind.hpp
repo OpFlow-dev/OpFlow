@@ -131,9 +131,8 @@ namespace OpFlow {
         }
 
         template <typename Op, CartesianFieldExprType E>
-                requires std::same_as<
-                        Op,
-                        D1FirstOrderBiasedDownwind> || (DecableOpType<Op> && std::same_as<typename LastOpOfDecableOp<Op>::type, D1FirstOrderBiasedDownwind>) static inline void prepare(Expression<Op, E>& expr) {
+        requires DecableTo<Op, D1FirstOrderBiasedDownwind>
+        static inline void prepare(Expression<Op, E>& expr) {
             constexpr auto dim = internal::CartesianFieldExprTrait<E>::dim;
 
             // name
@@ -170,9 +169,10 @@ namespace OpFlow {
         }
 
         template <typename Op, CartAMRFieldExprType E>
-                requires std::same_as<
-                        Op,
-                        D1FirstOrderBiasedDownwind> || (DecableOpType<Op> && std::same_as<typename LastOpOfDecableOp<Op>::type, D1FirstOrderBiasedDownwind>) static void prepare(Expression<Op, E>& expr) {
+        requires std::same_as<Op, D1FirstOrderBiasedDownwind> ||(
+                DecableOpType<Op>&& std::same_as<
+                        typename LastOpOfDecableOp<Op>::type,
+                        D1FirstOrderBiasedDownwind>) static void prepare(Expression<Op, E>& expr) {
             constexpr auto dim = internal::CartAMRFieldExprTrait<E>::dim;
             expr.initPropsFrom(expr.arg1);
 

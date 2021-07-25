@@ -63,12 +63,12 @@ namespace OpFlow::DS {
 
         constexpr const auto& operator[](const MDIndex<N>& idx) const {
             int _pos = idx[N - 1];
-            for (auto i = N - 2; i >= 0; --i) { _pos = _pos * _sizes[i] + idx[i]; }
+            for (int i = N - 2; i >= 0; --i) { _pos = _pos * _sizes[i] + idx[i]; }
             return _val[_pos];
         }
         constexpr auto& operator[](const MDIndex<N>& idx) {
             int _pos = idx[N - 1];
-            for (auto i = N - 2; i >= 0; --i) { _pos = _pos * _sizes[i] + idx[i]; }
+            for (int i = N - 2; i >= 0; --i) { _pos = _pos * _sizes[i] + idx[i]; }
             return _val[_pos];
         }
         constexpr const auto& operator[](const int& idx) const { return _val[idx]; }
@@ -84,7 +84,7 @@ namespace OpFlow::DS {
         constexpr static auto max_half_width() {
             if constexpr (N == 0) return 0;
             auto max_dim = _sizes[0];
-            for (auto i = 1; i < N; ++i) max_dim = std::max(max_dim, _sizes[i]);
+            for (int i = 1; i < N; ++i) max_dim = std::max(max_dim, _sizes[i]);
             return max_dim / 2;
         }
 

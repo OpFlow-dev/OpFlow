@@ -24,7 +24,7 @@ namespace OpFlow::Utils {
             for (auto i = 0; i < N; ++i) _str[i] = str[i];
         }
 
-        constexpr char* c_str() const { return _str.begin(); }
+        constexpr const char* c_str() const { return _str.begin(); }
         constexpr char* c_str() { return _str.begin(); }
 
         std::string to_string() const { return std::string(c_str()); }

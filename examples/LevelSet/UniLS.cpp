@@ -22,7 +22,7 @@ void ls() {
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<Real, Mesh>;
 
-    auto n = 100;
+    constexpr auto n = 100;
     auto m = MeshBuilder<Mesh>().newMesh(n, n).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
     auto u = ExprBuilder<Field>()
                      .setName("u")
@@ -60,7 +60,7 @@ void ls() {
     vf << Utils::TimeStamp(0) << v;
 
     int buffWidth = 5;
-    auto h = 1. / (n - 1);
+    constexpr auto h = 1. / (n - 1);
     auto _eps = 1e-6;
     auto _1 = [&](auto&& _p, auto&& _pp) {
         return _p / OpFlow::sqrt(_p * _p + _eps)
@@ -105,22 +105,25 @@ void ls() {
         p0 = p;
         // reinit
         for (auto _ = 0; _ < 4; ++_) {
-            auto h1 = conditional(p > 0, _1(p, p), _2(p, p));
+            auto h1 = conditional(p0 > 0, _1(p0, p), _2(p0, p));
             p1 = p - dt * h1;
-            auto h2 = conditional(p > 0, _1(p, p1), _2(p, p1));
+            auto h2 = conditional(p0 > 0, _1(p0, p1), _2(p0, p1));
             p2 = p1 - dt / 4. * (-3 * h1 + h2);
-            auto h3 = conditional(p > 0, _1(p, p2), _2(p, p2));
+            auto h3 = conditional(p0 > 0, _1(p0, p2), _2(p0, p2));
             p3 = p2 - dt / 12. * (-h1 - h2 + 8 * h3);
             constexpr auto _c = 16. / 24., _o = 1. / 24.;
             constexpr DS::FixedSizeTensor<double, 2, 3, 3> conv_ker {_o, _o, _o, _o, _c, _o, _o, _o, _o};
-            constexpr auto func = [](Real eps) { return Math::smoothDelta(eps, 0); };
+            constexpr auto func = [=](Real d) { return Math::smoothDelta(h, d); };
             constexpr auto functor = Utils::NamedFunctor<func, Utils::makeCXprString("smoothDelta")>();
+            constexpr auto delta_op = [=](auto&& e) {
+                return makeExpression<UniOpAdaptor<functor>>(OP_PERFECT_FOWD(e));
+            };
+            constexpr auto int_op = [=](auto&& e) {
+                return h*h * makeExpression<DecableOp<Convolution<conv_ker>, IdentityOp>>(OP_PERFECT_FOWD(e));
+            };
 
-            auto lambda = -makeExpression<DecableOp<Convolution<conv_ker>, IdentityOp>>(
-                                  makeExpression<UniOpAdaptor<functor>>(p) * (p3 - p0) / (_))
-                          / makeExpression<DecableOp<Convolution<conv_ker>, IdentityOp>>(
-                                  pow(makeExpression<UniOpAdaptor<functor>>(p0), 2));
-            p = p3;
+            auto lambda = -int_op(delta_op(p0) * (p3 - p0) / (_ + 1)) / int_op(pow(delta_op(p0), 2) + 1e-14);
+            p = p3 + lambda * (_ + 1) * delta_op(p0);
         }
         pf << Utils::TimeStamp(i) << p;
         OP_INFO("Current step: {}", i);

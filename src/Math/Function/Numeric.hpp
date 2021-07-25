@@ -86,11 +86,11 @@ namespace OpFlow::Math {
         else if (d > eps)
             return 1.;
         else
-            return 0.5 * (1 + d / eps + 1 / PI * sin(d * PI / eps));
+            return 0.5 * (1 + d / eps + 1 / PI * std::sin(d * PI / eps));
     }
 
     inline auto smoothDelta(Real eps, Real d) {
-        return abs(d) > eps ? 0. : 1. / 2. / eps * (1 + cos(d * PI / eps));
+        return std::abs(d) > eps ? 0. : 1. / 2. / eps * (1 + std::cos(d * PI / eps));
     }
 
     inline auto int_pow(int a, int n) {

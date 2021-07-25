@@ -50,6 +50,10 @@ namespace OpFlow {
         using type = typename LastOpOfDecableOp<U>::type;
     };
 
+    template <typename Op, typename DstOp>
+    concept DecableTo = std::same_as<Op, DstOp> ||(
+            DecableOpType<Op>&& std::same_as<typename LastOpOfDecableOp<Op>::type, DstOp>);
+
     template <typename Op, typename DecayedOp, typename... Args>
     struct ResultType<DecableOp<Op, DecayedOp>, Args...> {
         using type = typename internal::ExprTrait<typename ResultType<DecayedOp, Args...>::core_type>::
