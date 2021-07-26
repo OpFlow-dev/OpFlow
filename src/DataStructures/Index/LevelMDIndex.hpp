@@ -1,6 +1,7 @@
 #ifndef OPFLOW_LEVELMDINDEX_HPP
 #define OPFLOW_LEVELMDINDEX_HPP
 
+#include "DataStructures/Index/MDIndex.hpp"
 #include "Math/Function/Numeric.hpp"
 #include <array>
 
@@ -87,6 +88,8 @@ namespace OpFlow::DS {
         }
 
         bool operator>(const LevelMDIndex& other) const { return other < *this; }
+
+        explicit operator MDIndex<d>() const { return MDIndex<d>(get()); }
     };
 }// namespace OpFlow::DS
 #endif//OPFLOW_LEVELMDINDEX_HPP

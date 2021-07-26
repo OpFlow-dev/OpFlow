@@ -22,7 +22,7 @@ void ls() {
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<Real, Mesh>;
 
-    constexpr auto n = 100;
+    constexpr auto n = 65;
     auto m = MeshBuilder<Mesh>().newMesh(n, n).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
     auto u = ExprBuilder<Field>()
                      .setName("u")
@@ -83,7 +83,7 @@ void ls() {
                   - 1.);
     };
 
-    auto dt = 1. / n;
+    auto dt = 1. / (n - 1);
     for (auto i = 0; i < 2. / dt; ++i) {
         p1 = p
              - dt

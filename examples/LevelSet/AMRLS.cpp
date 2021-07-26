@@ -25,7 +25,7 @@ void amrls() {
     using Mesh = CartesianAMRMesh<Meta::int_<2>>;
     using Field = CartAMRField<Real, Mesh>;
 
-    constexpr int n = 65, maxlevel = 1, ratio = 2, buffWidth = 5;
+    constexpr int n = 65, maxlevel = 3, ratio = 2, buffWidth = 5;
     constexpr auto h = 1. / (n - 1);
     auto m = MeshBuilder<Mesh>()
                      .setBaseMesh(MeshBuilder<CartesianMesh<Meta::int_<2>>>()
@@ -105,8 +105,7 @@ void amrls() {
 
     auto dt = 1. / ((n - 1) * Math::int_pow(ratio, maxlevel - 1));
     auto refine_cond = (p > buffWidth * -h / Math::int_pow(ratio, maxlevel - 1))
-                               && (p < buffWidth * h / Math::int_pow(ratio, maxlevel - 1))
-                       || (p < 0);
+                       && (p < buffWidth * h / Math::int_pow(ratio, maxlevel - 1));
     auto _eps = 1e-6;
     auto _1 = [&](auto&& _p, auto&& _pp) {
         return _p / OpFlow::sqrt(_p * _p + _eps)
@@ -149,7 +148,8 @@ void amrls() {
         p = p3;
         p0 = p;
         // reinit
-        for (auto _ = 0; _ < 10; ++_) {
+        for (auto _ = 0; _ < 4; ++_) {
+            constexpr auto h_min = h / Math::int_pow(ratio, maxlevel - 1);
             auto h1 = conditional(p0 > 0, _1(p0, p), _2(p0, p));
             p1 = p - dt * h1;
             auto h2 = conditional(p0 > 0, _1(p0, p1), _2(p0, p1));
@@ -158,7 +158,7 @@ void amrls() {
             p3 = p2 - dt / 12. * (-h1 - h2 + 8 * h3);
             constexpr auto _c = 16. / 24., _o = 1. / 24.;
             constexpr DS::FixedSizeTensor<double, 2, 3, 3> conv_ker {_o, _o, _o, _o, _c, _o, _o, _o, _o};
-            constexpr auto func = [=](Real d) { return Math::smoothDelta(h, d); };
+            constexpr auto func = [=](Real d) { return Math::smoothDelta(h_min, d); };
             constexpr auto functor = Utils::NamedFunctor<func, Utils::makeCXprString("smoothDelta")>();
             constexpr auto delta_op
                     = [=](auto&& e) { return makeExpression<UniOpAdaptor<functor>>(OP_PERFECT_FOWD(e)); };
@@ -185,6 +185,7 @@ void amrls() {
         p1.replaceMeshBy(m2);
         p2.replaceMeshBy(m2);
         p3.replaceMeshBy(m2);
+        p0.replaceMeshBy(m2);
         u.replaceMeshBy(m2);
         v.replaceMeshBy(m2);
         OP_INFO("Current step: {}", i);

@@ -73,7 +73,7 @@ namespace OpFlow::Math {
 
     template <>
     struct DiscreteDelta<Meta::int_<4>> {
-        static double eval(double d) {
+        constexpr static double eval(double d) {
             d = std::abs(d);
             return d >= 2. ? 0.
                            : (d <= 1. ? (3. - 2. * d + std::sqrt(1. + 4. * d - 4. * d * d)) / 8.
@@ -81,7 +81,7 @@ namespace OpFlow::Math {
         }
     };
 
-    inline auto smoothHeviside(Real eps, Real d) {
+    inline constexpr auto smoothHeviside(Real eps, Real d) {
         if (d < -eps) return 0.;
         else if (d > eps)
             return 1.;
@@ -89,18 +89,18 @@ namespace OpFlow::Math {
             return 0.5 * (1 + d / eps + 1 / PI * std::sin(d * PI / eps));
     }
 
-    inline auto smoothDelta(Real eps, Real d) {
+    inline constexpr auto smoothDelta(Real eps, Real d) {
         return std::abs(d) > eps ? 0. : 1. / 2. / eps * (1 + std::cos(d * PI / eps));
     }
 
-    inline auto int_pow(int a, int n) {
+    inline constexpr auto int_pow(int a, int n) {
         auto ret = 1;
         for (auto i = 0; i < n; ++i) ret *= a;
         return ret;
     }
 
-    inline auto pow2(double a) { return a * a; }
+    inline constexpr auto pow2(double a) { return a * a; }
 
-    inline auto pow3(double a) { return a * a * a; }
+    inline constexpr auto pow3(double a) { return a * a * a; }
 }// namespace OpFlow::Math
 #endif//OPFLOW_NUMERIC_HPP

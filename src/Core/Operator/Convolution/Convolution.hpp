@@ -35,6 +35,16 @@ namespace OpFlow {
             return ret;
         }
 
+        template <CartAMRFieldExprType E, typename I>
+        OPFLOW_STRONG_INLINE static auto couldSafeEval(const E& e, I&& i) {
+            auto ret = true;
+            for (auto j = 0; j < d; ++j) {
+                ret &= (i[j] - kernel.size_of(j) / 2 >= e.arg1.accessibleRanges[i.l][i.p].start[j])
+                       && (i[j] + kernel.size_of(j) / 2 < e.arg1.accessibleRanges[i.l][i.p].end[j]);
+            }
+            return ret;
+        }
+
         template <StructuredFieldExprType E, typename I>
         requires(internal::ExprTrait<E>::dim == d) OPFLOW_STRONG_INLINE static auto eval(const E& e, I&& i) {
             constexpr auto sizes = kernel.size();
@@ -48,6 +58,26 @@ namespace OpFlow {
                     range, [](auto&& a, auto&& b) { return a + b; },
                     [&](auto&& idx) {
                         auto _ker_idx = idx;
+                        for (auto j = 0; j < d; ++j) { _ker_idx[j] = _ker_idx[j] - i[j] + sizes[j] / 2; }
+                        return kernel[_ker_idx] * e.evalAt(idx);
+                    });
+        }
+
+        template <CartAMRFieldExprType E, typename I>
+        requires(internal::ExprTrait<E>::dim == d) OPFLOW_STRONG_INLINE static auto eval(const E& e, I&& i) {
+            constexpr auto sizes = kernel.size();
+            DS::LevelRange<d> range;
+            for (auto j = 0; j < d; ++j) {
+                range.start[j] = i[j] - sizes[j] / 2;
+                range.end[j] = i[j] + sizes[j] / 2;
+                range.stride[j] = 1;
+            }
+            range.level = i.l;
+            range.part = i.p;
+            return rangeReduce_s(
+                    range, [](auto&& a, auto&& b) { return a + b; },
+                    [&](auto&& idx) {
+                        auto _ker_idx = (DS::MDIndex<d>) idx;
                         for (auto j = 0; j < d; ++j) { _ker_idx[j] = _ker_idx[j] - i[j] + sizes[j] / 2; }
                         return kernel[_ker_idx] * e.evalAt(idx);
                     });
@@ -67,6 +97,27 @@ namespace OpFlow {
                     range, [](auto&& a, auto&& b) { return a + b; },
                     [&](auto&& idx) {
                         auto _ker_idx = idx;
+                        for (auto j = 0; j < d; ++j) { _ker_idx[j] = _ker_idx[j] - i[j] + sizes[j] / 2; }
+                        return kernel[_ker_idx] * e.evalSafeAt(idx);
+                    });
+        }
+
+        template <CartAMRFieldExprType E, typename I>
+        requires(internal::ExprTrait<E>::dim == d) OPFLOW_STRONG_INLINE
+                static auto eval_safe(const E& e, I&& i) {
+            constexpr auto sizes = kernel.size();
+            DS::LevelRange<d> range;
+            for (auto j = 0; j < d; ++j) {
+                range.start[j] = i[j] - sizes[j] / 2;
+                range.end[j] = i[j] + sizes[j] / 2;
+                range.stride[j] = 1;
+            }
+            range.level = i.l;
+            range.part = i.p;
+            return rangeReduce_s(
+                    range, [](auto&& a, auto&& b) { return a + b; },
+                    [&](auto&& idx) {
+                        auto _ker_idx = (DS::MDIndex<d>) idx;
                         for (auto j = 0; j < d; ++j) { _ker_idx[j] = _ker_idx[j] - i[j] + sizes[j] / 2; }
                         return kernel[_ker_idx] * e.evalSafeAt(idx);
                     });
@@ -94,6 +145,36 @@ namespace OpFlow {
             }
             expr.assignableRange.setEmpty();
         }
+
+        template <CartAMRFieldExprType E>
+        requires(internal::ExprTrait<E>::dim == d) static void prepare(Expression<Convolution, E>& expr) {
+            expr.initPropsFrom(expr.arg1);
+
+            // name
+            expr.name = fmt::format("Convolution<{}>({})", d, expr.arg1.name);
+
+            // bc
+            for (auto i = 0; i < d; ++i) {
+                expr.bc[i].start = nullptr;
+                expr.bc[i].end = nullptr;
+            }
+
+            // ranges
+            for (auto& l : expr.accessibleRanges)
+                for (auto& r : l)
+                    for (auto i = 0; i < d; ++i) {
+                        r.start[i] += kernel.size_of(i) / 2;
+                        r.end[i] -= kernel.size_of(i) / 2;
+                    }
+            for (auto& l : expr.localRanges)
+                for (auto& r : l)
+                    for (auto i = 0; i < d; ++i) {
+                        r.start[i] += kernel.size_of(i) / 2;
+                        r.end[i] -= kernel.size_of(i) / 2;
+                    }
+            for (auto& l : expr.assignableRanges)
+                for (auto& r : l) r.setEmpty();
+        }
     };
 
     template <auto kernel, CartesianFieldExprType T>
@@ -120,8 +201,8 @@ namespace OpFlow {
         };
     }// namespace internal
 
-    template <typename Kernel, StructuredFieldExprType E>
-    auto conv(const E& expr) {
+    template <typename Kernel, typename E>
+            requires StructuredFieldExprType<E> || CartAMRFieldExprType<E> auto conv(const E& expr) {
         return makeExpression<Kernel>(expr);
     }
 }// namespace OpFlow

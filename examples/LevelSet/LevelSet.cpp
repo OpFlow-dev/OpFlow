@@ -14,6 +14,7 @@
 #include "UniLS.hpp"
 
 int main(int argc, char* argv[]) {
-    ls();
+    //ls();
+    amrls();
     return 0;
 }
