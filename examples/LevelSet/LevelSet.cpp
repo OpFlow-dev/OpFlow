@@ -15,6 +15,6 @@
 
 int main(int argc, char* argv[]) {
     //ls();
-    amrls();
+    amrls_3d();
     return 0;
 }
