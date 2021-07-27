@@ -11,8 +11,8 @@
 //  ----------------------------------------------------------------------------
 
 #include <OpFlow>
-#include "fmt/chrono.h"
-#include "fmt/compile.h"
+#include <fmt/chrono.h>
+#include <fmt/compile.h>
 
 using namespace OpFlow;
 
@@ -302,7 +302,7 @@ void amrls_3d() {
     wf << Utils::TimeStamp(0) << w;
     pf << Utils::TimeStamp(0) << p;
 
-    auto dt = 1. / ((n - 1) * Math::int_pow(ratio, maxlevel - 1));
+    auto dt = 1. / 3. / ((n - 1) * Math::int_pow(ratio, maxlevel - 1));
     auto refine_cond = (p > buffWidth * -h / Math::int_pow(ratio, maxlevel - 1))
                        && (p < buffWidth * h / Math::int_pow(ratio, maxlevel - 1));
     auto _eps = 1e-6;
@@ -378,7 +378,7 @@ void amrls_3d() {
             auto lambda = -int_op(delta_op(p0) * (p3 - p0) / (_ + 1)) / int_op(pow(delta_op(p0), 2) + 1e-14);
             p = p3 + lambda * (_ + 1) * delta_op(p0);
         }
-        pf << Utils::TimeStamp(i) << p;
+        if (i % 3 == 0) pf << Utils::TimeStamp(i) << p;
         refine_cond.prepare();
         auto m2 = MeshBuilder<Mesh>()
                           .setRefMesh(p.mesh)
@@ -398,13 +398,13 @@ void amrls_3d() {
         v.replaceMeshBy(m2);
         w.replaceMeshBy(m2);
         u.initBy([](auto&& x) {
-          return 2 * Math::pow2(std::sin(PI * x[0])) * std::sin(2 * PI * x[1]) * std::sin(2 * PI * x[2]);
+            return 2 * Math::pow2(std::sin(PI * x[0])) * std::sin(2 * PI * x[1]) * std::sin(2 * PI * x[2]);
         });
         v.initBy([](auto&& x) {
-          return -std::sin(2 * PI * x[0]) * Math::pow2(std::sin(PI * x[1])) * std::sin(2 * PI * x[2]);
+            return -std::sin(2 * PI * x[0]) * Math::pow2(std::sin(PI * x[1])) * std::sin(2 * PI * x[2]);
         });
         w.initBy([](auto&& x) {
-          return -std::sin(2 * PI * x[0]) * std::sin(2 * PI * x[1]) * Math::pow2(std::sin(PI * x[2]));
+            return -std::sin(2 * PI * x[0]) * std::sin(2 * PI * x[1]) * Math::pow2(std::sin(PI * x[2]));
         });
 
         OP_INFO("Current step: {}", i);
