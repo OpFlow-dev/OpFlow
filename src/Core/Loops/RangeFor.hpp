@@ -31,8 +31,7 @@ namespace OpFlow {
     F rangeFor_s(const R& range, F&& func) {
         assert(range.check());
         typename R::index_type i(range);
-        static_assert(std::is_invocable_v<F, decltype(i)>, "Input function not compatible with MDIndex.");
-        auto total_count = i.count();
+        auto total_count = range.count();
         for (auto count = 0; count < total_count; ++count, ++i) {
             func(static_cast<typename R::base_index_type&>(i));
         }
@@ -44,7 +43,7 @@ namespace OpFlow {
         typename R::index_type idx(range);
         auto result = func(static_cast<typename R::base_index_type&>(idx));
         ++idx;
-        auto total_count = idx.count();
+        auto total_count = range.count();
         for (auto count = 1; count < total_count; ++count, ++idx) {
             result = op(result, func(static_cast<typename R::base_index_type&>(idx)));
         }
