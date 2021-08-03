@@ -196,7 +196,7 @@ void amrls_3d() {
     using Mesh = CartesianAMRMesh<Meta::int_<3>>;
     using Field = CartAMRField<Real, Mesh>;
 
-    constexpr int n = 65, maxlevel = 4, ratio = 2, buffWidth = 5;
+    constexpr int n = 17, maxlevel = 4, ratio = 2, buffWidth = 5;
     constexpr auto h = 1. / (n - 1);
     auto m = MeshBuilder<Mesh>()
                      .setBaseMesh(MeshBuilder<CartesianMesh<Meta::int_<3>>>()
