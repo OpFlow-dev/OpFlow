@@ -102,6 +102,9 @@ option(OPFLOW_WITH_MPI "Build OpFlow with MPI support" ON)
 # testing options
 option(OPFLOW_BUILD_TESTS "Build tests" OFF)
 
+# benchmark options
+option(OPFLOW_BUILD_BENCHMARKS "Build benchmarks" OFF)
+
 # sanitizer options
 option(OPFLOW_SANITIZE_ADDRESS "Enable address sanitizer in tests" OFF)
 
@@ -294,6 +297,16 @@ if (OPFLOW_BUILD_TESTS OR OPFLOW_BUILD_ALL)
     message(STATUS "Generating tests")
     enable_testing()
     add_subdirectory(test)
+endif ()
+
+# ----------------------------------------------------------------------------
+# Build benchmarks
+# ----------------------------------------------------------------------------
+if (OPFLOW_BUILD_BENCHMARKS OR OPFLOW_BUILD_ALL)
+    message(STATUS "Generating benchmarks")
+    # config google benchmark as part of the project
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/benchmark)
+    add_subdirectory(benchmark)
 endif ()
 
 # ----------------------------------------------------------------------------

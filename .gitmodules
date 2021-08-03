@@ -5,3 +5,6 @@
 	path = external/spdlog
 	url = https://github.com/gabime/spdlog.git
 	branch = v1.x
+[submodule "external/benchmark"]
+	path = external/benchmark
+	url = https://github.com/google/benchmark.git
