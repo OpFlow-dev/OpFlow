@@ -13,3 +13,7 @@
 project(OpFlow_Core_Benchmarks)
 
 add_bench(example example.cpp)
+
+add_bench(UniFieldAssign UniFieldAssign.cpp)
+
+add_bench(AMRFieldAssign AMRFieldAssign.cpp)
