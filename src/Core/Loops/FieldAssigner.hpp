@@ -55,17 +55,19 @@ namespace OpFlow::internal {
             src.prepare();
             constexpr auto width = CartAMRFieldExprTrait<From>::bc_width;
             auto levels = dst.getLevels();
+#pragma omp parallel
             for (auto i = 0; i < levels; ++i) {
                 auto parts = dst.accessibleRanges[i].size();
+#pragma omp for nowait schedule(dynamic)
                 for (auto j = 0; j < parts; ++j) {
                     auto bc_ranges = src.accessibleRanges[i][j].getBCRanges(width + 1);
                     for (const auto& r : bc_ranges) {
-                        rangeFor(DS::commonRange(dst.assignableRanges[i][j], r),
-                                 [&](auto&& k) { dst[k] = src.evalSafeAt(k); });
+                        rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], r),
+                                   [&](auto&& k) { dst[k] = src.evalSafeAt(k); });
                     }
                     auto inner_range = src.accessibleRanges[i][j].getInnerRange(width + 1);
-                    rangeFor(DS::commonRange(dst.assignableRanges[i][j], inner_range),
-                             [&](auto&& k) { dst[k] = src.evalAt(k); });
+                    rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], inner_range),
+                               [&](auto&& k) { dst[k] = src.evalAt(k); });
                 }
             }
             dst.updateBC();

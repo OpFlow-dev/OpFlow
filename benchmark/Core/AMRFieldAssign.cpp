@@ -102,7 +102,10 @@ BENCHMARK_REGISTER_F(AMRFixture2D, ExprUpdateBC)
         ->RangeMultiplier(2)
         ->Range(1, omp_get_max_threads())
         ->UseRealTime();
-BENCHMARK_REGISTER_F(AMRFixture2D, Assign)->RangeMultiplier(2)->Range(1, omp_get_max_threads())->UseRealTime();
+BENCHMARK_REGISTER_F(AMRFixture2D, Assign)
+        ->RangeMultiplier(2)
+        ->Range(1, omp_get_max_threads())
+        ->UseRealTime();
 
 BENCHMARK_DEFINE_F(AMRFixture2D, UpdatePadding)(benchmark::State& state) {
     omp_set_num_threads(state.range(0));

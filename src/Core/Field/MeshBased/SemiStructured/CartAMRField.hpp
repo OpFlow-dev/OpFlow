@@ -117,12 +117,12 @@ namespace OpFlow {
                     type = this->bc[i].end ? this->bc[i].end->getBCType() : BCType::Undefined;
                     switch (type) {
                         case BCType::Dirc:
-                            rangeFor_s(this->accessibleRanges[0][0].slice(
-                                               i, this->accessibleRanges[0][0].end[i] - 1),
-                                       [&](auto&& pos) {
-                                           data[pos.l][pos.p][pos - offset[pos.l][pos.p]]
-                                                   = this->bc[i].end->evalAt(pos);
-                                       });
+                            rangeFor(this->accessibleRanges[0][0].slice(i, this->accessibleRanges[0][0].end[i]
+                                                                                   - 1),
+                                     [&](auto&& pos) {
+                                         data[pos.l][pos.p][pos - offset[pos.l][pos.p]]
+                                                 = this->bc[i].end->evalAt(pos);
+                                     });
                             break;
                         case BCType::Neum:
                         case BCType::Undefined:
@@ -135,7 +135,9 @@ namespace OpFlow {
         }
         void updatePadding() {
             // step 1: fill all halo regions covered by parents
+#pragma omp parallel
             for (auto l = 1; l < this->accessibleRanges.size(); ++l) {
+#pragma omp for schedule(dynamic)
                 for (auto p = 0; p < this->accessibleRanges[l].size(); ++p) {
                     // here to avoid the accessibleRanges[l][p] is already been trimmed by the maxLogicalRange[l]
                     auto bc_ranges = this->localRanges[l][p]
@@ -150,7 +152,7 @@ namespace OpFlow {
                         }
                         // for each potential intersections
                         for (auto& bc_r : bc_ranges) {
-                            rangeFor(DS::commonRange(bc_r, p_range), [&](auto&& i) {
+                            rangeFor_s(DS::commonRange(bc_r, p_range), [&](auto&& i) {
                                 // use piecewise constant interpolation
                                 auto i_base = i.toLevel(l - 1, this->mesh.refinementRatio);
                                 i_base.p = r_p;
@@ -161,7 +163,9 @@ namespace OpFlow {
                 }
             }
             // step 2: fill all halo regions covered by neighbors
+#pragma omp parallel
             for (auto l = 1; l < this->accessibleRanges.size(); ++l) {
+#pragma omp for nowait schedule(dynamic)
                 for (auto p = 0; p < this->accessibleRanges[l].size(); ++p) {
                     auto bc_ranges = this->localRanges[l][p]
                                              .getInnerRange(-this->mesh.buffWidth)
@@ -170,7 +174,7 @@ namespace OpFlow {
                         // for each potential intersections
                         for (auto& bc_r : bc_ranges) {
                             auto _r = DS::commonRange(bc_r, this->localRanges[l][r_n]);
-                            rangeFor(DS::commonRange(bc_r, this->localRanges[l][r_n]), [&](auto&& i) {
+                            rangeFor_s(DS::commonRange(bc_r, this->localRanges[l][r_n]), [&](auto&& i) {
                                 // copy from other fine cells
                                 auto other_i = i;
                                 other_i.p = r_n;
@@ -183,7 +187,9 @@ namespace OpFlow {
         }
         void updateCovering() {
             auto ratio = this->mesh.refinementRatio;
+#pragma omp parallel
             for (auto l = this->localRanges.size() - 1; l > 0; --l) {
+#pragma omp for schedule(dynamic)
                 for (auto p = 0; p < this->localRanges[l].size(); ++p) {
                     for (auto& i_p : this->mesh.parents[l][p]) {
                         auto rp = this->localRanges[l - 1][i_p];
@@ -193,7 +199,7 @@ namespace OpFlow {
                             rc.end[i] /= ratio;
                         }
                         rc.level = l - 1;
-                        rangeFor(DS::commonRange(rp, rc), [&](auto&& i) {
+                        rangeFor_s(DS::commonRange(rp, rc), [&](auto&& i) {
                             auto rt = rc;
                             for (auto k = 0; k < dim; ++k) {
                                 rt.start[k] = i[k] * ratio;
