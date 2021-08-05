@@ -223,9 +223,11 @@ namespace OpFlow {
                 builder.setBC(i, DimPos::end, this->bc[i].end);
             }
             auto f = builder.build();
+#pragma omp parallel
             for (auto l = 0; l < this->accessibleRanges.size(); ++l) {
                 if (l > 0) {
                     // copy all coarser data from new to new
+#pragma omp for nowait schedule(dynamic)
                     for (auto p_new = 0; p_new < f.accessibleRanges[l].size(); ++p_new) {
                         for (auto p = 0; p < f.accessibleRanges[l - 1].size(); ++p) {
                             auto r_upcast = f.localRanges[l - 1][p];
@@ -234,7 +236,7 @@ namespace OpFlow {
                                 r_upcast.end[i] *= this->mesh.refinementRatio;
                             }
                             r_upcast.level = l;
-                            rangeFor(DS::commonRange(r_upcast, f.localRanges[l][p_new]), [&](auto&& i) {
+                            rangeFor_s(DS::commonRange(r_upcast, f.localRanges[l][p_new]), [&](auto&& i) {
                                 auto i_new = i;
                                 i_new.p = p_new;
                                 auto i_old = i.toLevel(l - 1, this->mesh.refinementRatio);
@@ -243,17 +245,18 @@ namespace OpFlow {
                         }
                     }
                 }
+#pragma omp for schedule(dynamic)
                 for (auto p_new = 0; p_new < f.accessibleRanges[l].size(); ++p_new) {
                     for (auto p = 0; p < this->accessibleRanges[l].size(); ++p) {
                         // copy each overlapping region of (p, p_new)
-                        rangeFor(DS::commonRange(this->localRanges[l][p], f.localRanges[l][p_new]),
-                                 [&](auto&& i) {
-                                     auto i_old = i;
-                                     i_old.p = p;
-                                     auto i_new = i;
-                                     i_new.p = p_new;
-                                     f[i_new] = this->operator[](i_old);
-                                 });
+                        rangeFor_s(DS::commonRange(this->localRanges[l][p], f.localRanges[l][p_new]),
+                                   [&](auto&& i) {
+                                       auto i_old = i;
+                                       i_old.p = p;
+                                       auto i_new = i;
+                                       i_new.p = p_new;
+                                       f[i_new] = this->operator[](i_old);
+                                   });
                     }
                 }
             }
