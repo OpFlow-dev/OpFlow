@@ -17,3 +17,5 @@ add_bench(example example.cpp)
 add_bench(UniFieldAssign UniFieldAssign.cpp)
 
 add_bench(AMRFieldAssign AMRFieldAssign.cpp)
+
+add_bench(AMRMeshBuild AMRMeshBuild.cpp)

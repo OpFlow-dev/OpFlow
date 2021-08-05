@@ -196,7 +196,7 @@ void amrls_3d() {
     using Mesh = CartesianAMRMesh<Meta::int_<3>>;
     using Field = CartAMRField<Real, Mesh>;
 
-    constexpr int n = 17, maxlevel = 4, ratio = 2, buffWidth = 5;
+    constexpr int n = 17, maxlevel = 4, ratio = 4, buffWidth = 5;
     constexpr auto h = 1. / (n - 1);
     auto m = MeshBuilder<Mesh>()
                      .setBaseMesh(MeshBuilder<CartesianMesh<Meta::int_<3>>>()
@@ -378,7 +378,7 @@ void amrls_3d() {
             auto lambda = -int_op(delta_op(p0) * (p3 - p0) / (_ + 1)) / int_op(pow(delta_op(p0), 2) + 1e-14);
             p = p3 + lambda * (_ + 1) * delta_op(p0);
         }
-        if (i % 3 == 0) pf << Utils::TimeStamp(i) << p;
+        if (i % 30 == 0) pf << Utils::TimeStamp(i) << p;
         refine_cond.prepare();
         auto m2 = MeshBuilder<Mesh>()
                           .setRefMesh(p.mesh)
