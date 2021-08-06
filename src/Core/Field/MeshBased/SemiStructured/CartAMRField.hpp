@@ -60,10 +60,12 @@ namespace OpFlow {
 
         auto& operator=(const D& c) {
             auto levels = data.size();
+#pragma omp parallel
             for (auto l = 0; l < levels; ++l) {
                 auto parts = data[l].size();
+#pragma omp for schedule(dynamic) nowait
                 for (auto p = 0; p < parts; ++p) {
-                    rangeFor(this->assignableRanges[l][p], [&](auto&& i) { this->operator[](i) = c; });
+                    rangeFor_s(this->assignableRanges[l][p], [&](auto&& i) { this->operator[](i) = c; });
                 }
             }
             updateCovering();
@@ -77,10 +79,12 @@ namespace OpFlow {
         }
         auto& initBy(F&& f) {
             auto levels = data.size();
+#pragma omp parallel
             for (auto l = 0; l < levels; ++l) {
                 auto parts = data[l].size();
+#pragma omp for schedule(dynamic) nowait
                 for (auto p = 0; p < parts; ++p) {
-                    rangeFor(this->assignableRanges[l][p], [&](auto&& i) {
+                    rangeFor_s(this->assignableRanges[l][p], [&](auto&& i) {
                         std::array<Real, internal::CartesianAMRMeshTrait<M>::dim> cords;
                         for (auto k = 0; k < internal::CartesianAMRMeshTrait<M>::dim; ++k)
                             cords[k]
