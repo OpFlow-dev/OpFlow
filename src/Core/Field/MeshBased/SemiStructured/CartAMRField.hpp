@@ -71,7 +71,11 @@ namespace OpFlow {
             return *this;
         }
 
-        auto& initBy(auto&& f) {
+        template <typename F> requires requires (F f) {
+            { f(std::declval<std::array<Real, internal::CartesianAMRMeshTrait<M>::dim>>()) }
+            -> std::convertible_to<D>;
+        }
+        auto& initBy(F&& f) {
             auto levels = data.size();
             for (auto l = 0; l < levels; ++l) {
                 auto parts = data[l].size();
@@ -91,6 +95,11 @@ namespace OpFlow {
             updatePadding();
             return *this;
         }
+
+        auto& initBy(Meta::Numerical auto v) {
+            return *this = v;
+        }
+
         void prepare() {}
         void updateBC() {
             if (this->localRanges[0][0] == this->assignableRanges[0][0]) return;
