@@ -73,9 +73,10 @@ namespace OpFlow {
             return *this;
         }
 
-        template <typename F> requires requires (F f) {
+        template <typename F>
+        requires requires(F f) {
             { f(std::declval<std::array<Real, internal::CartesianAMRMeshTrait<M>::dim>>()) }
-            -> std::convertible_to<D>;
+            ->std::convertible_to<D>;
         }
         auto& initBy(F&& f) {
             auto levels = data.size();
@@ -100,9 +101,7 @@ namespace OpFlow {
             return *this;
         }
 
-        auto& initBy(Meta::Numerical auto v) {
-            return *this = v;
-        }
+        auto& initBy(Meta::Numerical auto v) { return *this = v; }
 
         void prepare() {}
         void updateBC() {
@@ -240,7 +239,7 @@ namespace OpFlow {
             for (auto l = 0; l < this->accessibleRanges.size(); ++l) {
                 if (l > 0) {
                     // copy all coarser data from new to new
-#pragma omp for nowait schedule(dynamic)
+#pragma omp for schedule(dynamic)
                     for (auto p_new = 0; p_new < f.accessibleRanges[l].size(); ++p_new) {
                         for (auto p = 0; p < f.accessibleRanges[l - 1].size(); ++p) {
                             auto r_upcast = f.localRanges[l - 1][p];
