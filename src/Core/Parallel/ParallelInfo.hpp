@@ -42,7 +42,7 @@ namespace OpFlow {
 
         ParallelInfo() {
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
-            parallelType |= ParallelType::DistributeMem;
+            parallelType |= (unsigned int)ParallelType::DistributeMem;
             nodeInfo.type = DistributeMemType::MPI;
             MPI_Comm_size(MPI_COMM_WORLD, &nodeInfo.node_count);
 #else
@@ -51,11 +51,11 @@ namespace OpFlow {
 #endif
 
 #if defined(OPFLOW_WITH_OPENMP) && defined(OPFLOW_THREAD_MODEL_OPENMP)
-            parallelType |= ParallelType::SharedMem;
+            parallelType |= (unsigned int)ParallelType::SharedMem;
             threadInfo.type = SharedMemType::OpenMP;
             threadInfo.thread_count = omp_get_max_threads();
 #elifdef OPFLOW_THREAD_MODEL_TBB
-            parallelType |= ParallelType::SharedMem;
+            parallelType |= (unsigned int)ParallelType::SharedMem;
             threadInfo.type = SharedMemType::TBB;
             // tbb will handle the thread count to use so we don't calculate it here
 #else
@@ -64,10 +64,10 @@ namespace OpFlow {
 #endif
 
 #ifdef OPFLOW_WITH_CUDA
-            parallelType |= ParallelType::Heterogeneous;
+            parallelType |= (unsigned int)ParallelType::Heterogeneous;
             OP_NOT_IMPLEMENTED;
 #elifdef OPFLOW_WITH_ROCM
-            parallelType |= ParallelType::Heterogeneous;
+            parallelType |= (unsigned int)ParallelType::Heterogeneous;
             OP_NOT_IMPLEMENTED;
 #else
             deviceInfo.type = HeterogeneousType::None;

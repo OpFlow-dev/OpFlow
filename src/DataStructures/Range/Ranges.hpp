@@ -15,6 +15,7 @@
 
 #include "Core/Macros.hpp"
 #include "DataStructures/Index/MDIndex.hpp"
+#include "Utils/Serializer/STDContainers.hpp"
 #include <array>
 #include <concepts>
 #include <cstddef>
@@ -119,11 +120,13 @@ namespace OpFlow::DS {
 
         auto toString() const {
             std::string ret;
-            ret = fmt::format("{{{} - {} by {}}}", start.toString(), end.toString(), stride.toString());
+            ret = fmt::format("{{{} - {} by {}}}", Utils::Serializer::serialize(start),
+                              Utils::Serializer::serialize(end), Utils::Serializer::serialize(stride));
             return ret;
         }
 
         constexpr auto getExtends() const {
+            reValidPace();
             std::array<int, d> ret;
             for (auto i = 0; i < d; ++i) { ret[i] = pace[i]; }
             return ret;

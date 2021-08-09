@@ -53,17 +53,11 @@ namespace OpFlow {
         static auto split_impl(const DS::Range<d>& range, int padding, const ParallelPlan& plan) {
             if (plan.singleNodeMode()) return range;
             else {
-                // find all factors of the total proc
-                std::vector<int> factors;
-                for (auto i = 1; i <= plan.distributed_workers_count; ++i) {
-                    if (plan.distributed_workers_count % i == 0) factors.push_back(i);
-                }
                 // Minimize the total comm cost
                 // For dim i, n_i = pow(N_total / (N1 * N2 * ... Nd), 1/d) * Ni
                 // We try three strategy here:
                 // 1. from the min size dim to the max size dim, n_i always round up
                 // 2. from the min size dim to the max size dim, n_i always round down
-                // 3. from the min size dim to the max size dim, n_i always round center
                 // Then we take the smaller cost one. Cost function:
                 // Cost = sum ( n_i / Ni )
 
@@ -72,7 +66,7 @@ namespace OpFlow {
                 for (auto i = 0; i < d; ++i) _range.end[i]--;
                 auto extends = _range.getExtends();
                 std::vector<std::pair<int, int>> labeled_extends;
-                for (auto i = 0; i < d; ++i) { labeled_extends.template emplace_back({i, extends[i]}); }
+                for (auto i = 0; i < d; ++i) { labeled_extends.template emplace_back(i, extends[i]); }
                 std::sort(labeled_extends.begin(), labeled_extends.end(), [](auto&& a, auto&& b) {
                     // sort according to dim size
                     return a.second < b.second;
@@ -82,9 +76,16 @@ namespace OpFlow {
                 int remain_vol = _range.count();
                 int remain_proc = plan.distributed_workers_count;
                 for (auto i = 0; i < d; ++i) {
+                    // find all factors of the remained proc
+                    std::vector<int> factors;
+                    for (auto j = 1; j <= remain_proc; ++j) {
+                        if (remain_proc % j == 0) factors.push_back(j);
+                    }
                     const auto& c = labeled_extends[i];
-                    int n = std::ceil(std::pow(remain_proc * 1.0 / remain_vol, 1. / (d - i)) * c.second);
-                    n = std::min(n, plan.distributed_workers_count);
+                    auto p = std::lower_bound(factors.begin(), factors.end(),
+                                              std::pow(remain_proc * 1.0 / remain_vol, 1. / (d - i))
+                                                      * c.second);
+                    int n = (p != factors.end()) ? *p : plan.distributed_workers_count;
                     splits_1[c.first] = n;
                     remain_proc /= n;
                     remain_vol /= _range.end[c.first] - _range.start[c.first];
@@ -96,42 +97,33 @@ namespace OpFlow {
                 remain_vol = _range.count();
                 remain_proc = plan.distributed_workers_count;
                 for (auto i = 0; i < d; ++i) {
+                    // find all factors of the remained proc
+                    std::vector<int> factors;
+                    for (auto j = 1; j <= remain_proc; ++j) {
+                        if (remain_proc % j == 0) factors.push_back(j);
+                    }
                     const auto& c = labeled_extends[i];
-                    int n = std::floor(std::pow(remain_proc * 1.0 / remain_vol, 1. / (d - i)) * c.second);
-                    n = std::max(1, n);
+                    auto p = std::lower_bound(factors.begin(), factors.end(),
+                                              std::pow(remain_proc * 1.0 / remain_vol, 1. / (d - i))
+                                              * c.second);
+                    int n = (p != factors.begin()) ? *(p - 1) : 1;
                     splits_2[c.first] = n;
                     remain_proc /= n;
                     remain_vol /= _range.end[c.first] - _range.start[c.first];
                 }
                 auto cost_2 = 0.;
                 for (auto i = 0; i < d; ++i) cost_2 += splits_2[i] / (_range.end[i] - _range.start[i]);
-                // Strategy 3:
-                std::array<int, d> splits_3;
-                remain_vol = _range.count();
-                remain_proc = plan.distributed_workers_count;
-                for (auto i = 0; i < d; ++i) {
-                    const auto& c = labeled_extends[i];
-                    int n = std::round(std::pow(remain_proc * 1.0 / remain_vol, 1. / (d - i)) * c.second);
-                    n = std::min(std::max(1, n), plan.distributed_workers_count);
-                    splits_3[c.first] = n;
-                    remain_proc /= n;
-                    remain_vol /= _range.end[c.first] - _range.start[c.first];
-                }
-                auto cost_3 = 0.;
-                for (auto i = 0; i < d; ++i) cost_3 += splits_3[i] / (_range.end[i] - _range.start[i]);
 
                 // choose the smaller cost plan
                 std::array<int, d> final_split;
-                if (cost_1 <= cost_2 && cost_1 <= cost_3) final_split = splits_1;
-                else if (cost_2 <= cost_1 && cost_2 <= cost_3)
-                    final_split = splits_2;
+                if (cost_1 <= cost_2) final_split = splits_1;
                 else
-                    final_split = splits_3;
+                    final_split = splits_2;
 
 #ifdef OPFLOW_WITH_MPI
                 int proc_rank;
                 MPI_Comm_rank(MPI_COMM_WORLD, &proc_rank);
-                DS::MDIndex<d> proc_range(final_split);
+                DS::Range<d> proc_range(final_split);
                 DS::RangedIndex<d> idx(proc_range);
                 idx += proc_rank;
                 DS::Range<d> ret;

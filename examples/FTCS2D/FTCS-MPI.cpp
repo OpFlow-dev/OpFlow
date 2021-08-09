@@ -11,22 +11,25 @@ int main(int argc, char** argv) {
     int rank, nproc;
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    OP_INFO("Rank {} of {}", rank, nproc);
-/*
+
     constexpr auto n = 65;
-    auto mesh = MeshBuilder<Mesh>().newMesh(n, n)
-            .setMeshOfDim(0, 0., 1.)
-            .setMeshOfDim(1, 0., 1.)
-            .build();
+    auto mesh = MeshBuilder<Mesh>().newMesh(n, n).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
+    auto info = ParallelInfo();
+    //info.nodeInfo.node_count = 3;
+    auto plan = makeParallelPlan<(unsigned int)ParallelType::DistributeMem>(info);
+    std::shared_ptr<AbstractSplitStrategy<Field>> strategy = std::make_shared<EvenSplitStrategy<Field>>();
+    auto localRange = strategy->splitRange(mesh.getRange(), plan);
+    OP_INFO("Rank {} local range: {}", rank, localRange.toString());
     auto u = ExprBuilder<Field>()
-            .setName("u")
-            .setMesh(mesh)
-            .setBC(0, DimPos::start, BCType::Dirc, 1.)
-            .setBC(0, DimPos::end, BCType::Dirc, 1.)
-            .setBC(1, DimPos::start, BCType::Dirc, 1.)
-            .setBC(1, DimPos::end, BCType::Dirc, 1.)
-            .build();
+                     .setName("u")
+                     .setMesh(mesh)
+                     .setBC(0, DimPos::start, BCType::Dirc, 1.)
+                     .setBC(0, DimPos::end, BCType::Dirc, 1.)
+                     .setBC(1, DimPos::start, BCType::Dirc, 1.)
+                     .setBC(1, DimPos::end, BCType::Dirc, 1.)
+                     .build();
     u = 0;
+    /*
     const Real dt = 0.1 / Math::pow2(n - 1), alpha = 1.0;
     Utils::TecplotASCIIStream uf("u.tec");
     uf << Utils::TimeStamp(0.) << u;

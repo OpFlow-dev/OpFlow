@@ -284,7 +284,9 @@ namespace OpFlow {
                 }
             }
             // calculate localRange
-            f.localRange = strategy->splitRange(f.accessibleRange, padding, plan);
+            if (strategy) f.localRange = strategy->splitRange(f.accessibleRange, padding, plan);
+            else
+                f.localRange = f.accessibleRange;
         }
 
         CartesianField<D, M, C> f;
