@@ -107,8 +107,15 @@
 #include "Core/Solvers/SemiStruct/SemiStructSolver.hpp"
 #include "Core/Solvers/SemiStruct/SemiStructSolverNone.hpp"
 
+// Parallel
+#include "Core/Parallel/ParallelPlan.hpp"
+#include "Core/Parallel/ParallelType.hpp"
+#include "Core/Parallel/ParallelInfo.hpp"
+#include "Core/Parallel/AbstractSplitStrategy.hpp"
+#include "Core/Parallel/EvenSplitStrategy.hpp"
+
 // Others
 #include "Core/Loops/RangeFor.hpp"
 #include "Core/Loops/StructFor.hpp"
 #include "Core/Loops/StructReduce.hpp"
-#include "Core/Parallel/ParallelPlan.hpp"
+#include "Core/Environment.hpp"

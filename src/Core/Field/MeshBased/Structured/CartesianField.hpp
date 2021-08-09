@@ -24,6 +24,9 @@
 #include "Core/Loops/StructFor.hpp"
 #include "Core/Macros.hpp"
 #include "Core/Mesh/Structured/CartesianMesh.hpp"
+#include "Core/Parallel/AbstractSplitStrategy.hpp"
+#include "Core/Parallel/ParallelPlan.hpp"
+#include <memory>
 
 namespace OpFlow {
 
@@ -88,8 +91,10 @@ namespace OpFlow {
                     auto type = this->bc[i].start ? this->bc[i].start->getBCType() : BCType::Undefined;
                     switch (type) {
                         case BCType::Dirc:
-                            rangeFor(
-                                    this->accessibleRange.slice(i, this->accessibleRange.start[i]),
+                            rangeFor_s(
+                                    DS::commonRange(
+                                            this->accessibleRange.slice(i, this->accessibleRange.start[i]),
+                                            this->localRange),
                                     [&](auto&& pos) { data[pos - offset] = this->bc[i].start->evalAt(pos); });
                             break;
                         case BCType::Neum:
@@ -103,7 +108,9 @@ namespace OpFlow {
                     switch (type) {
                         case BCType::Dirc:
                             rangeFor_s(
-                                    this->accessibleRange.slice(i, this->accessibleRange.end[i] - 1),
+                                    DS::commonRange(
+                                            this->accessibleRange.slice(i, this->accessibleRange.end[i] - 1),
+                                            this->localRange),
                                     [&](auto&& pos) { data[pos - offset] = this->bc[i].end->evalAt(pos); });
                             break;
                         case BCType::Neum:
@@ -128,9 +135,7 @@ namespace OpFlow {
         const auto& evalSafeAt(const index_type& i) const { return data[i - offset]; }
 
         template <typename Other>
-        requires(!std::same_as<Other, CartesianField>) bool contains(const Other& o) const {
-            return false;
-        }
+        requires(!std::same_as<Other, CartesianField>) bool contains(const Other& o) const { return false; }
 
         bool contains(const CartesianField& other) const { return this == &other; }
     };
@@ -205,13 +210,28 @@ namespace OpFlow {
             return *this;
         }
 
+        auto& setParallelPlan(ParallelPlan parallelPlan) {
+            this->plan = parallelPlan;
+            return *this;
+        }
+
+        auto& setPadding(int p) {
+            padding = p;
+            return *this;
+        }
+
+        auto& setSplitStrategy(std::shared_ptr<AbstractSplitStrategy<CartesianField<D, M, C>>> s) {
+            strategy = s;
+            return *this;
+        }
+
         auto& build() {
             calculateRanges();
             validateRanges();
             OP_ASSERT(f.localRange.check() && f.accessibleRange.check() && f.assignableRange.check());
-            f.data.reShape(f.accessibleRange.getExtends());
-            f.offset = typename internal::CartesianFieldExprTrait<Field>::index_type(
-                    f.accessibleRange.getOffset());
+            f.data.reShape(f.localRange.getExtends());
+            f.offset =
+                    typename internal::CartesianFieldExprTrait<Field>::index_type(f.localRange.getOffset());
             f.updateBC();
             return f;
         }
@@ -250,7 +270,6 @@ namespace OpFlow {
                         } else if (loc == LocOnMesh::Center) {
                             f.accessibleRange.end[i]--;
                             f.assignableRange.end[i]--;
-                            f.localRange.end[i]--;
                         }
                         break;
                     case BCType::Neum:
@@ -258,16 +277,20 @@ namespace OpFlow {
                         if (loc == LocOnMesh::Center) {
                             f.accessibleRange.end[i]--;
                             f.assignableRange.end[i]--;
-                            f.localRange.end[i]--;
                         }
                         break;
                     default:
                         OP_NOT_IMPLEMENTED;
                 }
             }
+            // calculate localRange
+            f.localRange = strategy->splitRange(f.accessibleRange, padding, plan);
         }
 
         CartesianField<D, M, C> f;
+        ParallelPlan plan;
+        int padding = 0;
+        std::shared_ptr<AbstractSplitStrategy<CartesianField<D, M, C>>> strategy;
     };
 
 }// namespace OpFlow
