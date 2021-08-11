@@ -12,14 +12,13 @@ int main(int argc, char** argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    constexpr auto n = 65;
+    constexpr auto n = 5;
     auto mesh = MeshBuilder<Mesh>().newMesh(n, n).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
-    auto info = ParallelInfo();
-    //info.nodeInfo.node_count = 3;
-    auto plan = makeParallelPlan<(unsigned int)ParallelType::DistributeMem>(info);
+    auto info = makeParallelInfo();
+    //info.nodeInfo.node_count = 2;
+    setGlobalParallelInfo(info);
+    setGlobalParallelPlan(makeParallelPlan(getGlobalParallelInfo(), ParallelIdentifier::DistributeMem));
     std::shared_ptr<AbstractSplitStrategy<Field>> strategy = std::make_shared<EvenSplitStrategy<Field>>();
-    auto localRange = strategy->splitRange(mesh.getRange(), plan);
-    OP_INFO("Rank {} local range: {}", rank, localRange.toString());
     auto u = ExprBuilder<Field>()
                      .setName("u")
                      .setMesh(mesh)
@@ -27,8 +26,31 @@ int main(int argc, char** argv) {
                      .setBC(0, DimPos::end, BCType::Dirc, 1.)
                      .setBC(1, DimPos::start, BCType::Dirc, 1.)
                      .setBC(1, DimPos::end, BCType::Dirc, 1.)
+                     .setPadding(1)
+                     .setSplitStrategy(strategy)
                      .build();
-    u = 0;
+    auto p = ExprBuilder<Field>()
+                     .setName("p")
+                     .setLoc(std::array {LocOnMesh ::Center, LocOnMesh ::Center})
+                     .setMesh(mesh)
+                     .setPadding(1)
+                     .setSplitStrategy(strategy)
+                     .build();
+    //p = rank;
+    OP_MPI_SEQ_INFO("Rank {} p's offset {}", rank, p.offset.toString());
+    u = rank;
+    // report field on each proc
+    auto report_field = [rank](auto&& u) {
+        auto preinfo
+                = fmt::format("Rank {} {}'s local accessible range: {}", rank, u.getName(),
+                              DS::commonRange(u.localRange.getInnerRange(-1), u.accessibleRange).toString());
+        std::string report = fmt::format("{} on Rank {}:", u.getName(), rank);
+        rangeFor_s(DS::commonRange(u.localRange.getInnerRange(-1), u.accessibleRange),
+                   [&](auto&& i) { report += fmt::format(" {{{}, {}}}", i.toString(), u.evalAt(i)); });
+        OP_MPI_SEQ_INFO("{}\n{}", preinfo, report);
+    };
+    //report_field(p);
+    report_field(u);
     /*
     const Real dt = 0.1 / Math::pow2(n - 1), alpha = 1.0;
     Utils::TecplotASCIIStream uf("u.tec");

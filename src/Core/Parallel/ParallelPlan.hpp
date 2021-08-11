@@ -32,15 +32,13 @@ namespace OpFlow {
             return distributed_workers_count == 1 && shared_memory_workers_count > 1
                    && heterogeneous_workers_count == 0;
         }
-        [[nodiscard]] bool deviceMode() const {
-            return heterogeneous_workers_count > 0;
-        }
+        [[nodiscard]] bool deviceMode() const { return heterogeneous_workers_count > 0; }
     };
 
     constexpr static inline ParallelPlan makeParallelPlan(ParallelInfo info, ParallelType pbit) {
         bool dist_bit = pbit & ParallelIdentifier::DistributeMem,
-                       sm_bit = pbit & ParallelIdentifier::SharedMem,
-                       device_bit = pbit & ParallelIdentifier::Heterogeneous;
+             sm_bit = pbit & ParallelIdentifier::SharedMem,
+             device_bit = pbit & ParallelIdentifier::Heterogeneous;
 
         ParallelPlan ret;
         ret.info = info;

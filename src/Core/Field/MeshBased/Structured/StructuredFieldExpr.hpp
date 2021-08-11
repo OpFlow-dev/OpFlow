@@ -19,6 +19,8 @@
 #include "StructuredFieldExprTrait.hpp"
 #include <array>
 #include <memory>
+#include <utility>
+#include <vector>
 
 namespace OpFlow {
 
@@ -26,7 +28,17 @@ namespace OpFlow {
     struct StructuredFieldExpr : MeshBasedFieldExpr<Derived> {
         std::array<LocOnMesh, internal::StructuredFieldExprTrait<Derived>::dim> loc;
         using RangeType = typename internal::StructuredFieldExprTrait<Derived>::range_type;
-        RangeType localRange, assignableRange, accessibleRange;
+        using IndexType = typename internal::StructuredFieldExprTrait<Derived>::index_type;
+        RangeType localRange;     ///< local accessible range
+        RangeType assignableRange;///< global assignable range
+        RangeType accessibleRange;///< global accessible range
+        IndexType offset;         ///< index offset for distributed parallelization
+        int padding = 0;          ///< padding width for distributed parallelization
+    protected:
+        std::vector<RangeType> splitMap;///< Map of rank to range for distributed parallelization
+        std::vector<std::pair<int, RangeType>> neighbors;///< Neighbor patches rank & range info
+
+    public:
         std::array<
                 DS::Pair<std::unique_ptr<BCBase<typename internal::StructuredFieldExprTrait<Derived>::type>>>,
                 internal::FieldExprTrait<Derived>::dim>
@@ -35,7 +47,9 @@ namespace OpFlow {
         StructuredFieldExpr() = default;
         StructuredFieldExpr(const StructuredFieldExpr& other)
             : MeshBasedFieldExpr<Derived>(other), localRange(other.localRange),
-              assignableRange(other.assignableRange), accessibleRange(other.accessibleRange), loc(other.loc) {
+              assignableRange(other.assignableRange), accessibleRange(other.accessibleRange),
+              offset(other.offset), padding(other.padding), loc(other.loc), splitMap(other.splitMap),
+              neighbors(other.neighbors) {
             for (auto i = 0; i < bc.size(); ++i) {
                 bc[i].start = other.bc[i].start ? other.bc[i].start->getCopy() : nullptr;
                 bc[i].end = other.bc[i].end ? other.bc[i].end->getCopy() : nullptr;
@@ -44,12 +58,14 @@ namespace OpFlow {
         StructuredFieldExpr(StructuredFieldExpr&& other) noexcept
             : MeshBasedFieldExpr<Derived>(std::move(other)), localRange(std::move(other.localRange)),
               assignableRange(std::move(other.assignableRange)),
-              accessibleRange(std::move(other.accessibleRange)), bc(std::move(other.bc)),
-              loc(std::move(other.loc)) {}
+              accessibleRange(std::move(other.accessibleRange)), offset(std::move(other.offset)),
+              padding(other.padding), bc(std::move(other.bc)), loc(std::move(other.loc)),
+              splitMap(std::move(other.splitMap)), neighbors(std::move(other.neighbors)) {}
 
         auto getDims() const { return this->mesh.getDims(); }
-        auto getOffset() const { return this->mesh.getOffset(); }
+        auto getOffset() const { return this->offset; }
         void updateBC() { this->derived().updateBC(); }
+        void updatePadding() { this->derived().updatePadding(); }
         template <StructuredFieldExprType Other>
         void initPropsFrom(const Other& other) {
             static_cast<MeshBasedFieldExpr<Derived>*>(this)->template initPropsFrom(other);
@@ -57,6 +73,10 @@ namespace OpFlow {
             this->localRange = other.localRange;
             this->assignableRange = other.assignableRange;
             this->accessibleRange = other.accessibleRange;
+            this->offset = other.offset;
+            this->padding = other.padding;
+            this->splitMap = other.splitMap;
+            this->neighbors = other.neighbors;
             for (auto i = 0; i < internal::FieldExprTrait<Derived>::dim; ++i) {
                 constexpr static bool convertible
                         = std::is_same_v<typename internal::StructuredFieldExprTrait<Other>::elem_type,

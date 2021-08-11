@@ -36,15 +36,11 @@ namespace OpFlow {
     namespace internal {
         static inline ParallelInfo GLOBAL_PARALLELINFO;
         static inline ParallelPlan GLOBAL_PARALLELPLAN;
-    }
+    }// namespace internal
 
-    inline static auto& getGlobalParallelInfo() {
-        return internal::GLOBAL_PARALLELINFO;
-    }
+    inline static auto& getGlobalParallelInfo() { return internal::GLOBAL_PARALLELINFO; }
 
-    inline static auto& getGlobalParallelPlan() {
-        return internal::GLOBAL_PARALLELPLAN;
-    }
+    inline static auto& getGlobalParallelPlan() { return internal::GLOBAL_PARALLELPLAN; }
 
     inline static void setGlobalParallelInfo(const ParallelInfo& info) {
         internal::GLOBAL_PARALLELINFO = info;
@@ -53,5 +49,5 @@ namespace OpFlow {
     inline static void setGlobalParallelPlan(const ParallelPlan& plan) {
         internal::GLOBAL_PARALLELPLAN = plan;
     }
-}
+}// namespace OpFlow
 #endif//OPFLOW_ENVIRONMENT_HPP

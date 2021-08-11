@@ -153,8 +153,7 @@ namespace OpFlow {
 
         template <std::size_t d>
         static auto splitMap_impl(const DS::Range<d>& range, const ParallelPlan& plan) {
-            if (plan.serialMode())
-                return std::vector<DS::Range<d>>{range};
+            if (plan.serialMode()) return std::vector<DS::Range<d>> {range};
             else {
                 auto split_plan = gen_split_plan(range, plan);
                 // assume the input range is nodal range, convert to central range
@@ -169,9 +168,11 @@ namespace OpFlow {
                 for (auto rank = 0; rank < worker_count; ++rank, ++idx) {
                     DS::Range<d> current_range;
                     for (auto i = 0; i < d; ++i) {
-                        current_range.start[i] = _range.start[i] + (_range.end[i] - _range.start[i]) / split_plan[i] * idx[i];
+                        current_range.start[i] = _range.start[i]
+                                                 + (_range.end[i] - _range.start[i]) / split_plan[i] * idx[i];
                         if (idx[i] < proc_range.end[i] - 1)
-                            current_range.end[i] = current_range.start[i] + (_range.end[i] - _range.start[i]) / split_plan[i];
+                            current_range.end[i] = current_range.start[i]
+                                                   + (_range.end[i] - _range.start[i]) / split_plan[i];
                         else
                             current_range.end[i] = _range.end[i];
                     }

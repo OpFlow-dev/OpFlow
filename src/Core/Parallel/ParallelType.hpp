@@ -24,5 +24,5 @@ namespace OpFlow {
     enum class SharedMemType { None, OpenMP, TBB };
     enum class DistributeMemType { None, MPI };
     enum class HeterogeneousType { None, CUDA, ROCM };
-}
+}// namespace OpFlow
 #endif//OPFLOW_PARALLELTYPE_HPP
