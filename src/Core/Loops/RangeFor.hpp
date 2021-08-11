@@ -29,7 +29,6 @@ namespace OpFlow {
     /// \return The input functor
     template <typename R, typename F>
     F rangeFor_s(const R& range, F&& func) {
-        assert(range.check());
         typename R::index_type i(range);
         auto total_count = range.count();
         for (auto count = 0; count < total_count; ++count, ++i) {
