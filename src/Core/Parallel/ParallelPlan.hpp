@@ -37,11 +37,10 @@ namespace OpFlow {
         }
     };
 
-    template <unsigned int pbit>
-    static inline ParallelPlan makeParallelPlan(ParallelInfo info) {
-        constexpr bool dist_bit = pbit & (unsigned int) ParallelType::DistributeMem,
-                       sm_bit = pbit & (unsigned int) ParallelType::SharedMem,
-                       device_bit = pbit & (unsigned int) ParallelType::Heterogeneous;
+    constexpr static inline ParallelPlan makeParallelPlan(ParallelInfo info, ParallelType pbit) {
+        bool dist_bit = pbit & ParallelIdentifier::DistributeMem,
+                       sm_bit = pbit & ParallelIdentifier::SharedMem,
+                       device_bit = pbit & ParallelIdentifier::Heterogeneous;
 
         ParallelPlan ret;
         ret.info = info;

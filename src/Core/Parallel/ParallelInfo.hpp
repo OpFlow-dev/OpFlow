@@ -35,44 +35,47 @@ namespace OpFlow {
         int device_count;
     };
     struct ParallelInfo {
-        unsigned int parallelType = 0;
-        NodeInfo nodeInfo{};
-        ThreadInfo threadInfo{};
-        DeviceInfo deviceInfo{};
+        ParallelType parallelType = 0;
+        NodeInfo nodeInfo {};
+        ThreadInfo threadInfo {};
+        DeviceInfo deviceInfo {};
+    };
 
-        ParallelInfo() {
+    static inline auto makeParallelInfo() {
+        ParallelInfo ret;
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
-            parallelType |= (unsigned int)ParallelType::DistributeMem;
-            nodeInfo.type = DistributeMemType::MPI;
-            MPI_Comm_size(MPI_COMM_WORLD, &nodeInfo.node_count);
+        ret.parallelType |= ParallelIdentifier::DistributeMem;
+        ret.nodeInfo.type = DistributeMemType::MPI;
+        MPI_Comm_size(MPI_COMM_WORLD, &ret.nodeInfo.node_count);
 #else
-            nodeInfo.type = DistributeMemType::None;
-            nodeInfo.node_count = 1;
+        nodeInfo.type = DistributeMemType::None;
+        nodeInfo.node_count = 1;
 #endif
 
 #if defined(OPFLOW_WITH_OPENMP) && defined(OPFLOW_THREAD_MODEL_OPENMP)
-            parallelType |= (unsigned int)ParallelType::SharedMem;
-            threadInfo.type = SharedMemType::OpenMP;
-            threadInfo.thread_count = omp_get_max_threads();
+        ret.parallelType |= ParallelIdentifier::SharedMem;
+        ret.threadInfo.type = SharedMemType::OpenMP;
+        ret.threadInfo.thread_count = omp_get_max_threads();
 #elifdef OPFLOW_THREAD_MODEL_TBB
-            parallelType |= (unsigned int)ParallelType::SharedMem;
-            threadInfo.type = SharedMemType::TBB;
-            // tbb will handle the thread count to use so we don't calculate it here
+        ret.parallelType |= ParallelIdentifier::SharedMem;
+        ret.threadInfo.type = SharedMemType::TBB;
+        // tbb will handle the thread count to use so we don't calculate it here
 #else
-            threadInfo.type = SharedMemType::None;
-            threadInfo.thread_count = 1;
+        ret.threadInfo.type = SharedMemType::None;
+        ret.threadInfo.thread_count = 1;
 #endif
 
 #ifdef OPFLOW_WITH_CUDA
-            parallelType |= (unsigned int)ParallelType::Heterogeneous;
-            OP_NOT_IMPLEMENTED;
+        ret.parallelType |= ParallelIdentifier::Heterogeneous;
+        OP_NOT_IMPLEMENTED;
 #elifdef OPFLOW_WITH_ROCM
-            parallelType |= (unsigned int)ParallelType::Heterogeneous;
-            OP_NOT_IMPLEMENTED;
+        ret.parallelType |= ParallelIdentifier::Heterogeneous;
+        OP_NOT_IMPLEMENTED;
 #else
-            deviceInfo.type = HeterogeneousType::None;
+        ret.deviceInfo.type = HeterogeneousType::None;
 #endif
-        }
-    };
-}
+        return ret;
+    }
+
+}// namespace OpFlow
 #endif//OPFLOW_PARALLELINFO_HPP
