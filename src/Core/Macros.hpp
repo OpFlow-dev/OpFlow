@@ -106,6 +106,87 @@
 #define OP_EXPECT(X)
 #endif
 
+#if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
+#define OP_MPI_SEQ_INFO(...)                                                                                 \
+    do {                                                                                                     \
+        int _rank;                                                                                           \
+        MPI_Comm_rank(MPI_COMM_WORLD, &_rank);                                                               \
+        int _nproc;                                                                                          \
+        MPI_Comm_size(MPI_COMM_WORLD, &_nproc);                                                              \
+        for (auto _i = 0; _i < _nproc; ++_i) {                                                               \
+            if (_i == _rank) OP_INFO(__VA_ARGS__);                                                           \
+            MPI_Barrier(MPI_COMM_WORLD);                                                                     \
+        }                                                                                                    \
+    } while (0)
+#define OP_MPI_SEQ_WARN(...)                                                                                 \
+    do {                                                                                                     \
+        int _rank;                                                                                           \
+        MPI_Comm_rank(MPI_COMM_WORLD, &_rank);                                                               \
+        int _nproc;                                                                                          \
+        MPI_Comm_size(MPI_COMM_WORLD, &_nproc);                                                              \
+        for (auto _i = 0; _i < _nproc; ++_i) {                                                               \
+            if (_i == _rank) OP_WARN(__VA_ARGS__);                                                           \
+            MPI_Barrier(MPI_COMM_WORLD);                                                                     \
+        }                                                                                                    \
+    } while (0)
+#define OP_MPI_SEQ_DEBUG(...)                                                                                \
+    do {                                                                                                     \
+        int _rank;                                                                                           \
+        MPI_Comm_rank(MPI_COMM_WORLD, &_rank);                                                               \
+        int _nproc;                                                                                          \
+        MPI_Comm_size(MPI_COMM_WORLD, &_nproc);                                                              \
+        for (auto _i = 0; _i < _nproc; ++_i) {                                                               \
+            if (_i == _rank) OP_DEBUG(__VA_ARGS__);                                                          \
+            MPI_Barrier(MPI_COMM_WORLD);                                                                     \
+        }                                                                                                    \
+    } while (0)
+#define OP_MPI_SEQ_TRACE(...)                                                                                \
+    do {                                                                                                     \
+        int _rank;                                                                                           \
+        MPI_Comm_rank(MPI_COMM_WORLD, &_rank);                                                               \
+        int _nproc;                                                                                          \
+        MPI_Comm_size(MPI_COMM_WORLD, &_nproc);                                                              \
+        for (auto _i = 0; _i < _nproc; ++_i) {                                                               \
+            if (_i == _rank) OP_TRACE(__VA_ARGS__);                                                          \
+            MPI_Barrier(MPI_COMM_WORLD);                                                                     \
+        }                                                                                                    \
+    } while (0)
+#define OP_MPI_MASTER_INFO(...)                                                                              \
+    do {                                                                                                     \
+        int _rank;                                                                                           \
+        MPI_Comm_rank(MPI_COMM_WORLD, &_rank);                                                               \
+        if (_rank == 0) OP_INFO(__VA_ARGS__);                                                                \
+    } while (0)
+#define OP_MPI_MASTER_WARN(...)                                                                              \
+    do {                                                                                                     \
+        int _rank;                                                                                           \
+        MPI_Comm_rank(MPI_COMM_WORLD, &_rank);                                                               \
+        if (_rank == 0) OP_WARN(__VA_ARGS__);                                                                \
+    } while (0)
+#define OP_MPI_MASTER_DEBUG(...)                                                                             \
+    do {                                                                                                     \
+        int _rank;                                                                                           \
+        MPI_Comm_rank(MPI_COMM_WORLD, &_rank);                                                               \
+        if (_rank == 0) OP_DEBUG(__VA_ARGS__);                                                               \
+    } while (0)
+#define OP_MPI_MASTER_TRACE(...)                                                                             \
+    do {                                                                                                     \
+        int _rank;                                                                                           \
+        MPI_Comm_rank(MPI_COMM_WORLD, &_rank);                                                               \
+        if (_rank == 0) OP_TRACE(__VA_ARGS__);                                                               \
+    } while (0)
+
+#else
+#define OP_MPI_SEQ_INFO(...) OP_INFO(__VA_ARGS__)
+#define OP_MPI_SEQ_DEBUG(...) OP_DEBUG(__VA_ARGS__)
+#define OP_MPI_SEQ_TRACE(...) OP_TRACE(__VA_ARGS__)
+#define OP_MPI_SEQ_WARN(...) OP_WARN(__VA_ARGS__)
+#define OP_MPI_MASTER_INFO(...) OP_INFO(__VA_ARGS__)
+#define OP_MPI_MASTER_DEBUG(...) OP_DEBUG(__VA_ARGS__)
+#define OP_MPI_MASTER_TRACE(...) OP_TRACE(__VA_ARGS__)
+#define OP_MPI_MASTER_WARN(...) OP_WARN(__VA_ARGS__)
+#endif
+
 #define DEFINE_CRTP_HELPERS(X)                                                                               \
     const X& derived() const { return *static_cast<const X*>(this); }                                        \
     X& derived() { return *static_cast<X*>(this); }
