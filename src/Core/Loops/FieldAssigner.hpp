@@ -39,11 +39,11 @@ namespace OpFlow::internal {
             constexpr auto width = CartesianFieldExprTrait<From>::bc_width;
             auto bc_ranges = src.accessibleRange.getBCRanges(width + 1);
             for (const auto& r : bc_ranges) {
-                rangeFor(DS::commonRange(dst.assignableRange, r),
+                rangeFor(DS::commonRange(DS::commonRange(dst.assignableRange, dst.localRange), r),
                          [&](auto&& i) { dst[i] = src.evalSafeAt(i); });
             }
             auto inner_range = src.accessibleRange.getInnerRange(width + 1);
-            rangeFor(DS::commonRange(dst.assignableRange, inner_range),
+            rangeFor(DS::commonRange(DS::commonRange(dst.assignableRange, dst.localRange), inner_range),
                      [&](auto&& i) { dst[i] = src.evalAt(i); });
             dst.updateBC();
             return dst;
