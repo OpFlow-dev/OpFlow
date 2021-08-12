@@ -85,6 +85,9 @@ namespace OpFlow::DS {
         constexpr auto count() const {
             // make sure the pace is valid
             reValidPace();
+            for (auto i = 0; i < d; ++i) {
+                if (pace[i] <= 0) return 0;
+            }
             auto ret = 1;
             for (auto i = 0; i < d; ++i) { ret *= pace[i]; }
             return ret;
