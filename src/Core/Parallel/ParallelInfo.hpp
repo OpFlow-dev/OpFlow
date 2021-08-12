@@ -48,15 +48,15 @@ namespace OpFlow {
         ret.nodeInfo.type = DistributeMemType::MPI;
         MPI_Comm_size(MPI_COMM_WORLD, &ret.nodeInfo.node_count);
 #else
-        nodeInfo.type = DistributeMemType::None;
-        nodeInfo.node_count = 1;
+        ret.nodeInfo.type = DistributeMemType::None;
+        ret.nodeInfo.node_count = 1;
 #endif
 
 #if defined(OPFLOW_WITH_OPENMP) && defined(OPFLOW_THREAD_MODEL_OPENMP)
         ret.parallelType |= ParallelIdentifier::SharedMem;
         ret.threadInfo.type = SharedMemType::OpenMP;
         ret.threadInfo.thread_count = omp_get_max_threads();
-#elifdef OPFLOW_THREAD_MODEL_TBB
+#elif defined(OPFLOW_THREAD_MODEL_TBB)
         ret.parallelType |= ParallelIdentifier::SharedMem;
         ret.threadInfo.type = SharedMemType::TBB;
         // tbb will handle the thread count to use so we don't calculate it here
