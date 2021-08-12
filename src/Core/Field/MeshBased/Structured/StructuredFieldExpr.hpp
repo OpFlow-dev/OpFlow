@@ -34,11 +34,9 @@ namespace OpFlow {
         RangeType accessibleRange;///< global accessible range
         IndexType offset;         ///< index offset for distributed parallelization
         int padding = 0;          ///< padding width for distributed parallelization
-    protected:
         std::vector<RangeType> splitMap;///< Map of rank to range for distributed parallelization
         std::vector<std::pair<int, RangeType>> neighbors;///< Neighbor patches rank & range info
 
-    public:
         std::array<
                 DS::Pair<std::unique_ptr<BCBase<typename internal::StructuredFieldExprTrait<Derived>::type>>>,
                 internal::FieldExprTrait<Derived>::dim>
