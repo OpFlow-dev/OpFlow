@@ -164,6 +164,12 @@ namespace OpFlow::DS {
             }
             index[k] += index.range.stride[k];
             // we assert here dim k will at most add1 to dim k + 1
+#ifndef NDEBUG
+            if (index[k] - index.range.end[k] >= index.range.end[k] - index.range.start[k]) {
+                OP_ERROR("Index {} add more than 1 to dim {}", index.toString(), k);
+                OP_ERROR("Index range = {}", index.range.toString());
+            }
+#endif
             OP_ASSERT(index[k] - index.range.end[k] < index.range.end[k] - index.range.start[k]);
             if (index[k] >= index.range.end[k]) {
                 index[k] = index.range.start[k];
