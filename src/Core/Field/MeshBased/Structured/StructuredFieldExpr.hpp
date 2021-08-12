@@ -29,11 +29,11 @@ namespace OpFlow {
         std::array<LocOnMesh, internal::StructuredFieldExprTrait<Derived>::dim> loc;
         using RangeType = typename internal::StructuredFieldExprTrait<Derived>::range_type;
         using IndexType = typename internal::StructuredFieldExprTrait<Derived>::index_type;
-        RangeType localRange;     ///< local accessible range
-        RangeType assignableRange;///< global assignable range
-        RangeType accessibleRange;///< global accessible range
-        IndexType offset;         ///< index offset for distributed parallelization
-        int padding = 0;          ///< padding width for distributed parallelization
+        RangeType localRange;           ///< local accessible range
+        RangeType assignableRange;      ///< global assignable range
+        RangeType accessibleRange;      ///< global accessible range
+        IndexType offset;               ///< index offset for distributed parallelization
+        int padding = 0;                ///< padding width for distributed parallelization
         std::vector<RangeType> splitMap;///< Map of rank to range for distributed parallelization
         std::vector<std::pair<int, RangeType>> neighbors;///< Neighbor patches rank & range info
 
