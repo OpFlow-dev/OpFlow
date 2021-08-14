@@ -18,97 +18,27 @@
 #include "DataStructures/Index/MDIndex.hpp"
 #include "DataStructures/Index/RangedIndex.hpp"
 #include "TensorBase.hpp"
+#include "Utils/Allocator/AlignedAllocator.hpp"
+#include "Utils/Allocator/StaticAllocator.hpp"
 #include <array>
 #include <concepts>
-#include <cstdlib>
 #include <memory>
-#include <sys/mman.h>
 
 namespace OpFlow::DS {
-    namespace internal {
-        template <typename T>
-        struct AllocatorTrait;
-    }
-
-    template <typename T, std::size_t align = 64>
-    struct AlignedAllocator {
-        static auto allocate(std::size_t size) {
-            if constexpr (Meta::is_numerical_v<T>) {
-                T* raw = reinterpret_cast<T*>(
-                        aligned_alloc(align, std::max<std::size_t>(sizeof(T) * next_pow2(size), align)));
-                assert(raw);
-                return raw;
-            } else {
-                T* raw = new T[size];
-                assert(raw);
-                return raw;
-            }
-        }
-
-        static void deallocate(T* ptr, std::size_t size) {
-            OP_DEBUG("Delete called on {:#x}", (std::size_t) ptr);
-            if (!ptr) return;
-            if constexpr (Meta::is_numerical_v<T>) free(ptr);
-            else
-                delete[] ptr;
-        }
-
-    private:
-        OPFLOW_STRONG_INLINE constexpr static auto next_pow2(unsigned long long x) {
-            x--;
-            x |= x >> 1;
-            x |= x >> 2;
-            x |= x >> 4;
-            x |= x >> 8;
-            x |= x >> 16;
-            x |= x >> 32;
-            x++;
-            return x;
-        }
-    };
-
-    namespace internal {
-        template <typename T, std::size_t align>
-        struct AllocatorTrait<AlignedAllocator<T, align>> {
-            template <typename U>
-            using other_type = AlignedAllocator<U, align>;
-        };
-    }// namespace internal
-
-    template <typename T>
-    struct VirtualMemAllocator {
-        static auto allocate(std::size_t size) {
-            auto ptr = (T*) mmap(0, size * sizeof(T), PROT_READ | PROT_WRITE,
-                                 MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
-            if (ptr == MAP_FAILED) OP_CRITICAL("mmap for size {} of mem failed.", size);
-            return ptr;
-        }
-
-        static void deallocate(T* ptr, std::size_t size) {
-            auto ret = munmap((void*) ptr, size * sizeof(T));
-            if (ret == -1) OP_CRITICAL("munmap failed for ptr = {:#x} size = {}", (std::size_t) ptr, size);
-        }
-    };
-
-    namespace internal {
-        template <typename T>
-        struct AllocatorTrait<VirtualMemAllocator<T>> {
-            template <typename U>
-            using other_type = VirtualMemAllocator<U>;
-        };
-    }// namespace internal
-
     template <typename ScalarType, int d, typename Allocator>
+    requires Utils::StaticAllocatorType<ScalarType, Allocator>
     struct PlainTensor;
 
     namespace internal {
         template <typename ScalarType, int d, typename Allocator>
+        requires Utils::StaticAllocatorType<ScalarType, Allocator>
         struct TensorTrait<PlainTensor<ScalarType, d, Allocator>> {
             using scalar_type = ScalarType;
             static constexpr auto dim = d;
             using allocator_type = Allocator;
             template <typename T>
-            using other_type = PlainTensor<T, d, typename AllocatorTrait<Allocator>::template other_type<T>>;
+            using other_type = PlainTensor<
+                    T, d, typename Utils::internal::AllocatorTrait<Allocator>::template other_type<T>>;
             template <typename T>
             using other_alloc_type = PlainTensor<ScalarType, d, T>;
             template <int t>
@@ -116,7 +46,8 @@ namespace OpFlow::DS {
         };
     }// namespace internal
 
-    template <typename ScalarType, int d, typename Allocator = VirtualMemAllocator<ScalarType>>
+    template <typename ScalarType, int d, typename Allocator = Utils::AlignedAllocator<ScalarType>>
+    requires Utils::StaticAllocatorType<ScalarType, Allocator>
     struct PlainTensor : public Tensor<PlainTensor<ScalarType, d, Allocator>> {
     private:
         ScalarType* data = nullptr;

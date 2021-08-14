@@ -10,6 +10,11 @@
 //
 // ----------------------------------------------------------------------------
 
+// Allocator
+#include "Utils/Allocator/StaticAllocator.hpp"
+#include "Utils/Allocator/AlignedAllocator.hpp"
+#include "Utils/Allocator/VirtualMemAllocator.hpp"
+
 // Serializer
 #include "Utils/Serializer/STDContainers.hpp"
 
