@@ -60,6 +60,14 @@ elseif (CMAKE_CXX_STANDARD LESS 20)
     set(CMAKE_CXX_STANDARD 20)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif ()
+if (NOT CMAKE_C_STANDARD)
+    set(CMAKE_C_STANDARD 11)
+    set(CMAKE_C_STANDARD_REQUIRED ON)
+elseif (CMAKE_C_STANDARD LESS 11)
+    message(WARNING "OpFlow needs C11 to compile. Changing the standard to C11.")
+    set(CMAKE_C_STANDARD 11)
+    set(CMAKE_C_STANDARD_REQUIRED ON)
+endif ()
 
 # make sure __cplusplus is defined when using msvc
 if (MSVC)
@@ -264,6 +272,26 @@ list(APPEND PKG_CONFIG_REQUIRES VTK)
 target_include_directories(opflow INTERFACE ${VTK_INCLUDE_DIRS})
 target_link_directories(opflow INTERFACE ${VTK_LIBRARY_DIRS})
 target_link_libraries(opflow INTERFACE ${VTK_LIBRARIES})
+
+# ----------------------------------------------------------------------------
+# Platform detection
+# ----------------------------------------------------------------------------
+if (UNIX)
+    target_compile_definitions(opflow INTERFACE OPFLOW_PLATFORM_UNIX)
+elseif (APPLE)
+    target_compile_definitions(opflow INTERFACE OPFLOW_PLATFORM_APPLE)
+elseif (WIN32)
+    target_compile_definitions(opflow INTERFACE OPFLOW_PLATFORM_WIN)
+endif ()
+
+# ----------------------------------------------------------------------------
+# Language & library features detection
+# ----------------------------------------------------------------------------
+include(CheckIncludeFiles)
+check_include_files("sys/mman.h" HAS_SYS_MMAN_H)
+if (HAS_SYS_MMAN_H)
+    target_compile_definitions(opflow INTERFACE OPFLOW_HAS_MMAN_H)
+endif ()
 
 # ----------------------------------------------------------------------------
 # Misc definitions according to tweak options
