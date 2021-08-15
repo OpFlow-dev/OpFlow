@@ -43,6 +43,7 @@ namespace OpFlow {
     constexpr ConstantI StreamIn = 0x1;
     constexpr ConstantI StreamOut = 0x2;
     constexpr ConstantI StreamASCII = 0x4;
+    constexpr ConstantI StreamBinary = 0x8;
 
     enum class DimPos { start, end };
 

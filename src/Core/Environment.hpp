@@ -49,5 +49,19 @@ namespace OpFlow {
     inline static void setGlobalParallelPlan(const ParallelPlan& plan) {
         internal::GLOBAL_PARALLELPLAN = plan;
     }
+
+#if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
+    inline static auto getWorkerId(MPI_Comm comm = MPI_COMM_WORLD) {
+#else
+    inline static auto getWorkerId() {
+#endif
+#if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
+        int rank;
+        MPI_Comm_rank(comm, &rank);
+        return rank;
+#else
+        return 0;
+#endif
+    }
 }// namespace OpFlow
 #endif//OPFLOW_ENVIRONMENT_HPP

@@ -23,6 +23,7 @@
 #include "Utils/Writers/Streams.hpp"
 #include "Utils/Writers/FieldStream.hpp"
 #include "Utils/Writers/TecplotASCIIStream.hpp"
+#include "Utils/Writers/RawBinaryStream.hpp"
 
 // Hash
 #include "Utils/xxHash.hpp"

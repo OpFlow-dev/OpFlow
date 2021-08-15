@@ -15,7 +15,6 @@ int main(int argc, char** argv) {
     constexpr auto n = 1025;
     auto mesh = MeshBuilder<Mesh>().newMesh(n, n).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
     auto info = makeParallelInfo();
-    //info.nodeInfo.node_count = 2;
     setGlobalParallelInfo(info);
     setGlobalParallelPlan(makeParallelPlan(getGlobalParallelInfo(), ParallelIdentifier::DistributeMem));
     std::shared_ptr<AbstractSplitStrategy<Field>> strategy = std::make_shared<EvenSplitStrategy<Field>>();
@@ -31,13 +30,13 @@ int main(int argc, char** argv) {
                      .build();
 
     const Real dt = 0.1 / Math::pow2(n - 1), alpha = 1.0;
-    //Utils::TecplotASCIIStream uf("u.tec");
-    //uf << Utils::TimeStamp(0.) << u;
+    Utils::RawBinaryOStream uf("./");
+    uf << Utils::TimeStamp(0.) << u;
     auto t0 = std::chrono::system_clock::now();
     for (auto i = 1; i <= 5000; ++i) {
-        //OP_MPI_MASTER_INFO("Current step {}", i);
+        if (i % 100) OP_MPI_MASTER_INFO("Current step {}", i);
         u = u + dt * alpha * (d2x<D2SecondOrderCentered>(u) + d2y<D2SecondOrderCentered>(u));
-        //if (i % 100 == 0) uf << Utils::TimeStamp(i * dt) << u;
+        if (i % 1000 == 0) uf << Utils::TimeStamp(i * dt) << u;
     }
     auto t1 = std::chrono::system_clock::now();
     OP_MPI_MASTER_INFO("Elapsed time: {}ms",
