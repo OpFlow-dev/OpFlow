@@ -42,27 +42,10 @@ namespace OpFlow {
     struct EqnSolveHandler<F, T, Solver> {
         EqnSolveHandler() = default;
         EqnSolveHandler(const F& getter, T& target, const Solver& s)
-            : getters {getter}, targets {&target}, solver(s) {
-            equations.reserve(1);
-            stencilFields.reserve(1);
-            uniEqs.reserve(1);
+            : eqn_getter {getter}, target {&target}, solver(s) {
             init();
         }
-        EqnSolveHandler(const std::vector<F>& getter, const std::vector<std::add_pointer_t<T>>& target,
-                        const Solver& s)
-            : getters(getter), targets(target), solver(s) {
-            equations.reserve(getter.size());
-            stencilFields.reserve(getter.size());
-            uniEqs.reserve(getter.size());
-            init();
-        }
-        EqnSolveHandler(std::vector<F>&& getter, std::vector<std::add_pointer_t<T>>&& target, const Solver& s)
-            : getters(std::move(getter)), targets(std::move(target)), solver(s) {
-            equations.reserve(getters.size());
-            stencilFields.reserve(getters.size());
-            uniEqs.reserve(getters.size());
-            init();
-        }
+
         ~EqnSolveHandler() {
             HYPRE_StructMatrixDestroy(A);
             HYPRE_StructVectorDestroy(b);
@@ -72,12 +55,10 @@ namespace OpFlow {
         }
 
         void init() {
-            for (auto i = 0; i < targets.size(); ++i) {
-                auto stField = targets[i]->getStencilField();
-                if (i == 0) stField.pin(solver.params.pinValue);
-                stencilFields.push_back(std::move(stField));
-                equations.push_back(getters[i](stencilFields.back()));
-            }
+            auto stField = target->getStencilField();
+            stField.pin(solver.params.pinValue);
+            stencilField = std::make_unique<StencilField<T>>(std::move(stField));
+            equation = std::make_unique<Eqn>(eqn_getter(*stencilField));
             fieldsAllocated = true;
 
             initStencil();
@@ -87,24 +68,21 @@ namespace OpFlow {
 
         void initStencil() {
             HYPRE_StructGridCreate(solver.params.comm, dim, &grid);
-            for (auto& e : equations) {
-                auto t = e.lhs - e.rhs;
-                t.prepare();
-                uniEqs.push_back(t);
-            }
-            for (auto i = 0; i < uniEqs.size(); ++i) {
-                auto& t = *targets[i];
-                auto r = t.assignableRange.end;
-                for (auto j = 0; j < r.size(); ++j) r[j] -= 1;
-                HYPRE_StructGridSetExtents(grid, t.assignableRange.start.data(), r.data());
-            }
+            auto t = equation->lhs - equation->rhs;
+            t.prepare();
+            uniEqn = std::make_unique<EqExpr>(std::move(t));
+            auto local_assignable_range = DS::commonRange(target->localRange, target->assignableRange);
+            auto r = local_assignable_range.end;
+            for (auto j = 0; j < r.size(); ++j) r[j] -= 1;
+            HYPRE_StructGridSetExtents(grid, local_assignable_range.start.data(), r.data());
             HYPRE_StructGridAssemble(grid);
 
             // assume the middle stencil is complete
+            // fixme: this is dangerous especially for MPI cases. consider a better plan
             DS::MDIndex<dim> middle;
             for (auto i = 0; i < dim; ++i)
-                middle[i] = (targets[0]->assignableRange.start[i] + targets[0]->assignableRange.end[i]) / 2;
-            commStencil = getOffsetStencil(uniEqs[0].evalSafeAt(middle), middle);
+                middle[i] = (target->assignableRange.start[i] + target->assignableRange.end[i]) / 2;
+            commStencil = getOffsetStencil(uniEqn->evalSafeAt(middle), middle);
             HYPRE_StructStencilCreate(dim, commStencil.pad.size(), &stencil);
             auto iter = commStencil.pad.begin();
             for (auto i = 0; i < commStencil.pad.size(); ++i, ++iter) {
@@ -122,35 +100,30 @@ namespace OpFlow {
         }
 
         void initx() {
-            for (auto i = 0; i < targets.size(); ++i) {
-                structFor(*targets[i], targets[i]->assignableRange, [&](auto&& k) {
-                    HYPRE_StructVectorSetValues(x, const_cast<int*>(k.get().data()), targets[i]->evalAt(k));
-                });
-            }
+            rangeFor(DS::commonRange(target->assignableRange, target->localRange), [&](auto&& k) {
+                HYPRE_StructVectorSetValues(x, const_cast<int*>(k.get().data()), target->evalAt(k));
+            });
         }
 
         void generateAb() {
             std::vector<int> entries(commStencil.pad.size());
             for (auto i = 0; i < entries.size(); ++i) entries[i] = i;
 
-            for (auto i = 0; i < targets.size(); ++i) {
-                structFor(uniEqs[i], targets[i]->assignableRange, [&](auto&& k) {
-                    auto currentStencil = getOffsetStencil(uniEqs[i].evalSafeAt(k), k);
-                    auto extendedStencil = commonStencil(currentStencil, commStencil);
-                    std::vector<Real> vals;
-                    for (const auto& [key, val] : commStencil.pad) {
-                        vals.push_back(extendedStencil.pad[key]);
-                    }
-                    HYPRE_StructMatrixSetValues(A, const_cast<int*>(k.get().data()), commStencil.pad.size(),
-                                                entries.data(), vals.data());
-                    HYPRE_StructVectorSetValues(b, const_cast<int*>(k.get().data()), -extendedStencil.bias);
-                });
-            }
+            rangeFor(DS::commonRange(target->assignableRange, target->localRange), [&](auto&& k) {
+                auto currentStencil = getOffsetStencil(uniEqn->evalSafeAt(k), k);
+                auto extendedStencil = commonStencil(currentStencil, commStencil);
+                std::vector<Real> vals;
+                for (const auto& [key, val] : commStencil.pad) { vals.push_back(extendedStencil.pad[key]); }
+                HYPRE_StructMatrixSetValues(A, const_cast<int*>(k.get().data()), commStencil.pad.size(),
+                                            entries.data(), vals.data());
+                HYPRE_StructVectorSetValues(b, const_cast<int*>(k.get().data()), -extendedStencil.bias);
+            });
 
             if (solver.params.pinValue) {
                 // pin the first unknown to 0
                 auto identical = DS::StencilPad<DS::MDIndex<dim>>();
-                auto first = DS::MDIndex<dim>(targets[0]->assignableRange.start);
+                auto first = DS::MDIndex<dim>(
+                        DS::commonRange(target->assignableRange, target->localRange).start);
                 identical.pad[first] = 1.0;
                 identical.bias = 0.;
                 auto extendedStencil = commonStencil(identical, commStencil);
@@ -165,27 +138,24 @@ namespace OpFlow {
         }
 
         void generateb() {
-            for (auto i = 0; i < targets.size(); ++i) {
-                structFor(uniEqs[i], targets[i]->assignableRange, [&](auto&& k) {
-                    auto currentStencil = uniEqs[i].evalSafeAt(k);
-                    HYPRE_StructVectorSetValues(b, const_cast<int*>(k.get().data()), -currentStencil.bias);
-                });
-            }
+            rangeFor(DS::commonRange(target->assignableRange, target->localRange), [&](auto&& k) {
+                auto currentStencil = uniEqn->evalSafeAt(k);
+                HYPRE_StructVectorSetValues(b, const_cast<int*>(k.get().data()), -currentStencil.bias);
+            });
             if (solver.params.pinValue) {
-                auto first = DS::MDIndex<dim>(targets[0]->assignableRange.start);
+                auto first = DS::MDIndex<dim>(
+                        DS::commonRange(target->assignableRange, target->localRange).start);
                 HYPRE_StructVectorSetValues(b, const_cast<int*>(first.get().data()), 0.);
             }
             HYPRE_StructVectorAssemble(b);
         }
 
         void returnValues() {
-            for (auto i = 0; i < targets.size(); ++i) {
-                structFor(*targets[i], targets[i]->assignableRange, [&](auto&& k) {
-                    Real val;
-                    HYPRE_StructVectorGetValues(x, const_cast<int*>(k.get().data()), &val);
-                    targets[i]->operator[](k) = val;
-                });
-            }
+            rangeFor(DS::commonRange(target->assignableRange, target->localRange), [&](auto&& k) {
+                Real val;
+                HYPRE_StructVectorGetValues(x, const_cast<int*>(k.get().data()), &val);
+                target->operator[](k) = val;
+            });
         }
 
         void solve() {
@@ -206,15 +176,15 @@ namespace OpFlow {
             returnValues();
         }
 
-        std::vector<F> getters;
-        std::vector<std::add_pointer_t<T>> targets;
+        F eqn_getter;
+        std::add_pointer_t<T> target;
         using Stencil = DS::StencilPad<typename internal::CartesianFieldExprTrait<T>::index_type>;
         using Eqn = Meta::RealType<decltype(std::declval<F>()(std::declval<StencilField<T>&>()))>;
-        std::vector<Eqn> equations;
-        using EqExpr = Meta::RealType<decltype(equations[0].lhs - equations[0].rhs)>;
-        std::vector<EqExpr> uniEqs;
+        std::unique_ptr<Eqn> equation;
+        using EqExpr = Meta::RealType<decltype(equation->lhs - equation->rhs)>;
+        std::unique_ptr<EqExpr> uniEqn;
         Stencil commStencil;
-        std::vector<StencilField<T>> stencilFields;
+        std::unique_ptr<StencilField<T>> stencilField;
         bool fieldsAllocated = false;
         bool firstRun = true;
         Solver solver;
