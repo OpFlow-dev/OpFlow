@@ -12,3 +12,8 @@ target_compile_options(LidDriven2D PRIVATE ${OPFLOW_EXAMPLE_FLAGS})
 add_executable(LidDriven3D EXCLUDE_FROM_ALL LidDriven3D.cpp)
 target_link_libraries(LidDriven3D PRIVATE opflow::opflow)
 target_compile_options(LidDriven3D PRIVATE ${OPFLOW_EXAMPLE_FLAGS})
+
+add_executable(LidDriven2D-MPI EXCLUDE_FROM_ALL LidDriven2D-MPI.cpp)
+target_link_libraries(LidDriven2D-MPI opflow::opflow)
+target_compile_options(LidDriven2D-MPI PRIVATE ${OPFLOW_EXAMPLE_FLAGS})
+target_compile_definitions(LidDriven2D-MPI PRIVATE OPFLOW_DISTRIBUTE_MODEL_MPI)

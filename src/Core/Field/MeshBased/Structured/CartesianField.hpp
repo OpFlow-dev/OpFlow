@@ -368,21 +368,13 @@ namespace OpFlow {
                 for (auto i = 0; i < dim; ++i) {
                     auto loc = f.loc[i];
                     // we only need to consider the end side for whether taken the right boundary into account
-                    auto type = f.bc[i].end ? f.bc[i].end->getBCType() : BCType::Undefined;
-                    switch (type) {
-                        case BCType::Dirc:
-                        case BCType::Undefined:
-                            // only +1 if the block is at the right end
-                            if (loc == LocOnMesh::Corner
-                                && f.localRange.end[i] == f.mesh.getRange().end[i] - 1)
-                                f.localRange.end[i]++;
-                            for (auto& range : f.splitMap) {
-                                if (loc == LocOnMesh::Corner && range.end[i] == f.mesh.getRange().end[i] - 1)
-                                    range.end[i]++;
-                            }
-                            break;
-                        default:
-                            OP_NOT_IMPLEMENTED;
+                    // only +1 if the block is at the right end
+                    if (loc == LocOnMesh::Corner
+                    && f.localRange.end[i] == f.mesh.getRange().end[i] - 1)
+                        f.localRange.end[i]++;
+                    for (auto& range : f.splitMap) {
+                        if (loc == LocOnMesh::Corner && range.end[i] == f.mesh.getRange().end[i] - 1)
+                            range.end[i]++;
                     }
                 }
             } else {
