@@ -98,12 +98,24 @@
         OP_ERROR("Assertion {} failed.", #X);                                                                \
         OP_ABORT;                                                                                            \
     }
+#define OP_ASSERT_MSG(X, ...)                                                                                \
+    if (!(X)) {                                                                                              \
+        OP_ERROR("Assertion {} failed.", #X);                                                                \
+        OP_ERROR(__VA_ARGS__);                                                                               \
+        OP_ABORT;                                                                                            \
+    }
 #define OP_EXPECT(X)                                                                                         \
     if (!(X)) { OP_WARN("Expectation {} failed.", #X); }
-
+#define OP_EXPECT_MSG(X, ...)                                                                                \
+    if (!(X)) {                                                                                              \
+        OP_WARN("Expectation {} failed.", #X);                                                               \
+        OP_WARN(__VA_ARGS__);                                                                                \
+    }
 #else
 #define OP_ASSERT(X)
 #define OP_EXPECT(X)
+#define OP_ASSERT_MSG(X, ...)
+#define OP_EXPECT_MSG(X, ...)
 #endif
 
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)

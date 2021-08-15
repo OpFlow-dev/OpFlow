@@ -171,18 +171,14 @@ namespace OpFlow::Utils {
         fread(name_c_str, sizeof(char), name_len, data);
         name_c_str[name_len] = 0;
         name = std::string(name_c_str);
-        if (name != f.getName()) {
-            OP_WARN("Field's name {} in file is different from dst field {}", name, f.getName());
-        }
+        OP_EXPECT_MSG(name == f.getName(), "Field's name {} in file is different from dst field {}", name,
+                      f.getName());
         int f_dim;
         fread(&f_dim, sizeof(int), 1, data);
-        if (f_dim != dim) {
-            OP_CRITICAL("Field read error: Dim mismatch {} != {}", f_dim, dim);
-            OP_ABORT;
-        }
+        OP_ASSERT_MSG(f_dim == dim, "Field read error: Dim mismatch {} != {}", f_dim, dim);
         int f_nproc;
         fread(&f_nproc, sizeof(int), 1, data);
-        OP_ASSERT(f_nproc == nproc);
+        OP_ASSERT_MSG(f_nproc == nproc, "Field read error: data set nproc mismatch {} != {}", f_nproc, nproc);
 
         // zone info
         double t;
@@ -192,20 +188,15 @@ namespace OpFlow::Utils {
             fread(&m_range.start[i], sizeof(m_range.start[i]), 1, data);
             fread(&m_range.end[i], sizeof(m_range.end[i]), 1, data);
         }
-        if (m_range != f.mesh.getRange()) {
-            OP_CRITICAL("Field read error: Mesh range mismatch {} != {}", m_range.toString(),
-                        f.mesh.getRange().toString());
-            OP_ABORT;
-        }
+        OP_ASSERT_MSG(m_range == f.mesh.getRange(), "Field read error: Mesh range mismatch {} != {}",
+                      m_range.toString(), f.mesh.getRange().toString());
         Real dummy;
         for (auto i = 0; i < dim; ++i) {
             for (auto j = m_range.start[i]; j < m_range.end[i]; ++j) {
                 fread(&dummy, sizeof(dummy), 1, data);
-                if (dummy != f.mesh.x(i, j)) {
-                    OP_CRITICAL("Field read error: Mesh coordinate mismatch at x[{}][{}] {} != {}", i, j,
-                                dummy, f.mesh.x(i, j));
-                    OP_ABORT;
-                }
+                OP_ASSERT_MSG(dummy == f.mesh.x(i, j),
+                              "Field read error: Mesh coordinate mismatch at x[{}][{}] {} != {}", i, j, dummy,
+                              f.mesh.x(i, j));
             }
         }
         auto f_range = f.accessibleRange;
@@ -213,23 +204,16 @@ namespace OpFlow::Utils {
             fread(&f_range.start[i], sizeof(f_range.start[i]), 1, data);
             fread(&f_range.end[i], sizeof(f_range.end[i]), 1, data);
         }
-        if (f_range != f.accessibleRange) {
-            OP_CRITICAL("Field read error: Field accessible range mismatch {} != {}", f_range.toString(),
-                        f.accessibleRange.toString());
-            OP_ABORT;
-        }
+        OP_ASSERT_MSG(f_range == f.accessibleRange,
+                      "Field read error: Field accessible range mismatch {} != {}", f_range.toString(),
+                      f.accessibleRange.toString());
         for (auto i = 0; i < dim; ++i) {
             fread(&f_range.start[i], sizeof(f_range.start[i]), 1, data);
             fread(&f_range.end[i], sizeof(f_range.end[i]), 1, data);
         }
-        if (f_range != f.localRange) {
-            OP_CRITICAL("Field read error: Field local range mismatch {} != {}", f_range.toString(),
-                        f.localRange.toString());
-            OP_ABORT;
-        }
-        rangeFor_s(f.localRange, [&](auto&& i) {
-            fread(&f[i], sizeof(f[i]), 1, data);
-        });
+        OP_ASSERT_MSG(f_range == f.localRange, "Field read error: Field local range mismatch {} != {}",
+                      f_range.toString(), f.localRange.toString());
+        rangeFor_s(f.localRange, [&](auto&& i) { fread(&f[i], sizeof(f[i]), 1, data); });
         fclose(data);
         f.updatePadding();
         count++;
