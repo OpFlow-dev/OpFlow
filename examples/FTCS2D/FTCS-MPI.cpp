@@ -25,6 +25,7 @@ int main(int argc, char** argv) {
                      .setBC(0, DimPos::end, BCType::Dirc, 1.)
                      .setBC(1, DimPos::start, BCType::Dirc, 1.)
                      .setBC(1, DimPos::end, BCType::Dirc, 1.)
+                     .setLoc(std::array {LocOnMesh ::Center, LocOnMesh ::Center})
                      .setPadding(1)
                      .setSplitStrategy(strategy)
                      .build();
@@ -34,7 +35,7 @@ int main(int argc, char** argv) {
     uf << Utils::TimeStamp(0.) << u;
     auto t0 = std::chrono::system_clock::now();
     for (auto i = 1; i <= 5000; ++i) {
-        if (i % 100) OP_MPI_MASTER_INFO("Current step {}", i);
+        if (i % 100 == 0) OP_MPI_MASTER_INFO("Current step {}", i);
         u = u + dt * alpha * (d2x<D2SecondOrderCentered>(u) + d2y<D2SecondOrderCentered>(u));
         if (i % 1000 == 0) uf << Utils::TimeStamp(i * dt) << u;
     }
