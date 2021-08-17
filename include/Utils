@@ -24,6 +24,7 @@
 #include "Utils/Writers/FieldStream.hpp"
 #include "Utils/Writers/TecplotASCIIStream.hpp"
 #include "Utils/Writers/RawBinaryStream.hpp"
+#include "Utils/Writers/HDF5Stream.hpp"
 
 // Hash
 #include "Utils/xxHash.hpp"

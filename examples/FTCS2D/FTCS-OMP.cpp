@@ -17,13 +17,13 @@ int main() {
                      .build();
     u = 0;
     const Real dt = 0.1 / Math::pow2(n - 1), alpha = 1.0;
-    //Utils::TecplotASCIIStream uf("u.tec");
-    //uf << Utils::TimeStamp(0.) << u;
+    Utils::H5Stream uf("./sol.h5");
+    uf << Utils::TimeStamp(0.) << u;
     auto t0 = std::chrono::system_clock::now();
     for (auto i = 1; i <= 5000; ++i) {
-        //OP_INFO("Current step {}", i);
+        if (i % 100 == 0) OP_INFO("Current step {}", i);
         u = u + dt * alpha * (d2x<D2SecondOrderCentered>(u) + d2y<D2SecondOrderCentered>(u));
-        //if (i % 100 == 0) uf << Utils::TimeStamp(i * dt) << u;
+        if (i % 1000 == 0) uf << Utils::TimeStamp(i * dt) << u;
     }
     auto t1 = std::chrono::system_clock::now();
     OP_INFO("Elapsed time: {}ms", std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count());

@@ -107,6 +107,9 @@ option(OPFLOW_SINGLE_PRECISION "Use float as default real type" OFF)
 option(OPFLOW_WITH_OPENMP "Build OpFlow with OpenMP support" ON)
 option(OPFLOW_WITH_MPI "Build OpFlow with MPI support" ON)
 
+# utility options
+option(OPFLOW_WITH_HDF5 "Build OpFlow with HDF5 support" OFF)
+
 # testing options
 option(OPFLOW_BUILD_TESTS "Build tests" OFF)
 
@@ -272,6 +275,26 @@ list(APPEND PKG_CONFIG_REQUIRES VTK)
 target_include_directories(opflow INTERFACE ${VTK_INCLUDE_DIRS})
 target_link_directories(opflow INTERFACE ${VTK_LIBRARY_DIRS})
 target_link_libraries(opflow INTERFACE ${VTK_LIBRARIES})
+
+# ----------------------------------------------------------------------------
+# Use HDF5 package
+# ----------------------------------------------------------------------------
+if (OPFLOW_WITH_HDF5)
+    if (OPFLOW_WITH_MPI)
+        set(HDF5_PREFER_PARALLEL TRUE)
+    endif ()
+    set(HDF5_USE_STATIC_LIBRARIES ON)
+    find_package(HDF5 COMPONENTS C REQUIRED)
+    if (NOT HDF5_IS_PARALLEL)
+        message(FATAL_ERROR "Cannot find parallel HDF5 library")
+    endif ()
+    target_include_directories(opflow INTERFACE ${HDF5_INCLUDE_DIRS})
+    target_link_libraries(opflow INTERFACE ${HDF5_LIBRARIES})
+    target_compile_definitions(opflow INTERFACE OPFLOW_WITH_HDF5)
+    if (OPFLOW_WITH_MPI)
+        target_compile_definitions(opflow INTERFACE H5_HAVE_PARALLEL)
+    endif ()
+endif ()
 
 # ----------------------------------------------------------------------------
 # Platform detection
