@@ -25,7 +25,9 @@ context for backend optimization. The aims of developing OpFlow include:
 
 Currently, OpFlow is in its very early stage of development. It currently supports finite
 difference method (FDM) on Cartesian grid. It uses CPU as the backend target
-and uses OpenMP for parallelization. We plan to support the CPU clusters backend by MPI
-in the near future.
+and uses OpenMP & MPI for shared memory and distributed memory parallelization. We plan to
+introduce finer controlled thread models, as long as explicit vectorization for better
+performance. Flux and inner product semantics for finite volume method (FVM) and finite
+element method (FEM) are postponed to the later future.
 
 The source code is available under the MPL v2.0 license at https://github.com/OpFlow-dev/OpFlow.

@@ -80,10 +80,12 @@ CMAKE_INSTALL_PREFIX        The install prefix                              Syst
 OPFLOW_BUILD_ALL            Build all targets (tests, examples, docs)       OFF
 OPFLOW_BUILD_TESTS          Build OpFlow's test sets                        OFF
 OPFLOW_BUILD_EXAMPLES       Build OpFlow's examples                         OFF
+OPFLOW_BUILD_BENCHMARKS     Build OpFlow's benchmarks                       OFF
 OPFLOW_BUILD_DOCS           Build OpFlow's document                         OFF
 OPFLOW_SINGLE_PRECISION     Use ``float`` for default Real type             OFF                     Default Real type is ``double``
 OPFLOW_WITH_OPENMP          Enable OpenMP for shared memory parallelization ON                      Keep ON for now
 OPFLOW_WITH_MPI             Enable MPI for distributed parallelization      ON                      Keep ON for now
+OPFLOW_WITH_HDF5            Enable HDF5 for distributed parallel I/O        OFF                     MPI version of HDF5 is needed to enable
 OPFLOW_SANITIZE_ADDRESS     Enable address sanitizer in tests               OFF
 OPFLOW_BUILD_WARNINGS       Enable compiler warnings                        OFF
 OPFLOW_INSTALL              Generate the install target                     OPFLOW_MASTER_PROJECT
