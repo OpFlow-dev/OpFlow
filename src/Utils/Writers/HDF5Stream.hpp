@@ -91,7 +91,7 @@ namespace OpFlow::Utils {
     private:
         std::filesystem::path path;
         hid_t file, current_group;
-        TimeStamp time{0};
+        TimeStamp time {0};
         bool first_run = true, file_inited = false, group_inited = false;
         unsigned int mode;
 #ifdef OPFLOW_WITH_MPI
@@ -212,9 +212,7 @@ namespace OpFlow::Utils {
         H5Dread(dataset, datatype, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer.raw());
 #endif
         // copy data from buffer to field
-        rangeFor(f.localRange, [&](auto&& i) {
-            f[i] = buffer[i - _offset];
-        });
+        rangeFor(f.localRange, [&](auto&& i) { f[i] = buffer[i - _offset]; });
         // close everything
         H5Dclose(dataset);
         H5Sclose(dataspace);

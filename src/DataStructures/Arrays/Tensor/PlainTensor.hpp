@@ -26,13 +26,12 @@
 
 namespace OpFlow::DS {
     template <typename ScalarType, int d, typename Allocator>
-    requires Utils::StaticAllocatorType<ScalarType, Allocator>
-    struct PlainTensor;
+    requires Utils::StaticAllocatorType<ScalarType, Allocator> struct PlainTensor;
 
     namespace internal {
         template <typename ScalarType, int d, typename Allocator>
-        requires Utils::StaticAllocatorType<ScalarType, Allocator>
-        struct TensorTrait<PlainTensor<ScalarType, d, Allocator>> {
+        requires Utils::StaticAllocatorType<ScalarType, Allocator> struct TensorTrait<
+                PlainTensor<ScalarType, d, Allocator>> {
             using scalar_type = ScalarType;
             static constexpr auto dim = d;
             using allocator_type = Allocator;
@@ -47,8 +46,8 @@ namespace OpFlow::DS {
     }// namespace internal
 
     template <typename ScalarType, int d, typename Allocator = Utils::AlignedAllocator<ScalarType>>
-    requires Utils::StaticAllocatorType<ScalarType, Allocator>
-    struct PlainTensor : public Tensor<PlainTensor<ScalarType, d, Allocator>> {
+    requires Utils::StaticAllocatorType<ScalarType, Allocator> struct PlainTensor
+        : public Tensor<PlainTensor<ScalarType, d, Allocator>> {
     private:
         ScalarType* data = nullptr;
 
@@ -65,9 +64,7 @@ namespace OpFlow::DS {
             reShape(size, sizes...);
         }
 
-        explicit PlainTensor(const std::array<int, d>& size) {
-            reShape(size);
-        }
+        explicit PlainTensor(const std::array<int, d>& size) { reShape(size); }
 
         auto& reShape(std::integral auto size, std::integral auto... sizes) {
             return reShape(std::array {size, sizes...});

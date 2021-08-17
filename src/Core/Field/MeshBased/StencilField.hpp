@@ -47,7 +47,7 @@ namespace OpFlow {
         void pin(bool p) { pinned = p; }
 
         auto operator()(const index_type& index) const {
-            if (inRange(index)) [[likely]] {
+            if (DS::inRange(this->assignableRange, index)) [[likely]] {
                     auto ret = DS::StencilPad<index_type>(0);
                     if (pinned && index == index_type(this->assignableRange.start))
                         [[unlikely]] ret.pad[index] = 0.;
@@ -73,14 +73,6 @@ namespace OpFlow {
         const T* base;
         bool pinned = false;
         constexpr static auto dim = internal::MeshBasedFieldExprTrait<T>::dim;
-
-        bool inRange(auto&& idx) const {
-            bool ret = true;
-            for (auto i = 0; i < dim; ++i) {
-                ret &= (this->assignableRange.start[i] <= idx[i]) && (idx[i] < this->assignableRange.end[i]);
-            }
-            return ret;
-        }
     };
 }// namespace OpFlow
 #endif//OPFLOW_STENCILFIELD_HPP

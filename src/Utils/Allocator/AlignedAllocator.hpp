@@ -13,9 +13,9 @@
 #ifndef OPFLOW_ALIGNEDALLOCATOR_HPP
 #define OPFLOW_ALIGNEDALLOCATOR_HPP
 
-#include <cstdlib>
-#include "Utils/Allocator/AllocatorTrait.hpp"
 #include "Core/Meta.hpp"
+#include "Utils/Allocator/AllocatorTrait.hpp"
+#include <cstdlib>
 
 namespace OpFlow::Utils {
     template <typename T, std::size_t align = 64>
@@ -34,7 +34,6 @@ namespace OpFlow::Utils {
         }
 
         static void deallocate(T* ptr, std::size_t size) {
-            OP_DEBUG("Delete called on {:#x}", (std::size_t) ptr);
             if (!ptr) return;
             if constexpr (Meta::is_numerical_v<T>) free(ptr);
             else

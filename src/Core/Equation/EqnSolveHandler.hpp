@@ -122,16 +122,20 @@ namespace OpFlow {
             if (solver.params.pinValue) {
                 // pin the first unknown to 0
                 auto identical = DS::StencilPad<DS::MDIndex<dim>>();
-                auto first = DS::MDIndex<dim>(
-                        DS::commonRange(target->assignableRange, target->localRange).start);
-                identical.pad[first] = 1.0;
-                identical.bias = 0.;
-                auto extendedStencil = commonStencil(identical, commStencil);
-                std::vector<Real> vals;
-                for (const auto& [key, val] : commStencil.pad) { vals.push_back(extendedStencil.pad[key]); }
-                HYPRE_StructMatrixSetValues(A, const_cast<int*>(first.get().data()), commStencil.pad.size(),
-                                            entries.data(), vals.data());
-                HYPRE_StructVectorSetValues(b, const_cast<int*>(first.get().data()), -extendedStencil.bias);
+                auto first = DS::MDIndex<dim>(target->assignableRange.start);
+                if (DS::inRange(target->localRange, first)) {
+                    identical.pad[first] = 1.0;
+                    identical.bias = 0.;
+                    auto extendedStencil = commonStencil(identical, commStencil);
+                    std::vector<Real> vals;
+                    for (const auto& [key, val] : commStencil.pad) {
+                        vals.push_back(extendedStencil.pad[key]);
+                    }
+                    HYPRE_StructMatrixSetValues(A, const_cast<int*>(first.get().data()),
+                                                commStencil.pad.size(), entries.data(), vals.data());
+                    HYPRE_StructVectorSetValues(b, const_cast<int*>(first.get().data()),
+                                                -extendedStencil.bias);
+                }
             }
             HYPRE_StructMatrixAssemble(A);
             HYPRE_StructVectorAssemble(b);
@@ -156,6 +160,7 @@ namespace OpFlow {
                 HYPRE_StructVectorGetValues(x, const_cast<int*>(k.get().data()), &val);
                 target->operator[](k) = val;
             });
+            target->updatePadding();
         }
 
         void solve() {
@@ -173,6 +178,7 @@ namespace OpFlow {
                 initx();
                 solver.solve(A, b, x);
             }
+            OP_DEBUG("Res: {}", solver.getFinalRes());
             returnValues();
         }
 

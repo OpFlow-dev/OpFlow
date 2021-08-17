@@ -315,7 +315,6 @@ namespace OpFlow {
         void validateRanges() {
             f.accessibleRange = commonRange(f.accessibleRange, f.mesh.getRange());
             f.localRange = commonRange(f.localRange, f.accessibleRange);
-            f.assignableRange = commonRange(f.assignableRange, f.localRange);
         }
 
         void calculateRanges() {
@@ -369,8 +368,7 @@ namespace OpFlow {
                     auto loc = f.loc[i];
                     // we only need to consider the end side for whether taken the right boundary into account
                     // only +1 if the block is at the right end
-                    if (loc == LocOnMesh::Corner
-                    && f.localRange.end[i] == f.mesh.getRange().end[i] - 1)
+                    if (loc == LocOnMesh::Corner && f.localRange.end[i] == f.mesh.getRange().end[i] - 1)
                         f.localRange.end[i]++;
                     for (auto& range : f.splitMap) {
                         if (loc == LocOnMesh::Corner && range.end[i] == f.mesh.getRange().end[i] - 1)

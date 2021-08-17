@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
             dp, p_solver);
 
     // writers
-    Utils::RawBinaryOStream uf("./"), vf("./"), pf("./");
+    Utils::H5Stream stream("./solution.h5");
 
     // main algorithm
     auto t0 = std::chrono::system_clock::now();
@@ -131,13 +131,12 @@ int main(int argc, char* argv[]) {
         u = u - dt * dx<D1FirstOrderCenteredDownwind>(dp);
         v = v - dt * dy<D1FirstOrderCenteredDownwind>(dp);
         p = p + dp;
-        uf << Utils::TimeStamp(i) << u;
-        vf << Utils::TimeStamp(i) << v;
-        pf << Utils::TimeStamp(i) << p;
+        stream << Utils::TimeStamp(i) << u << v << p;
         OP_MPI_MASTER_INFO("Current step {}", i);
     }
     auto t1 = std::chrono::system_clock::now();
-    OP_MPI_MASTER_INFO("Elapsed time: {}ms", std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count());
+    OP_MPI_MASTER_INFO("Elapsed time: {}ms",
+                       std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count());
 
     FinalizeEnvironment();
     return 0;
