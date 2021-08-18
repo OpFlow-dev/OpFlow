@@ -80,6 +80,7 @@ namespace OpFlow {
                                        : this->mesh.x(k, i) + .5 * this->mesh.dx(k, i);
                 this->operator[](i) = f(cords);
             });
+            updatePadding();
             return *this;
         }
         void prepare() {}
