@@ -2,8 +2,8 @@ Hello world
 +++++++++++
 
 This section will show you how to build & run your first "Hello world" program with OpFlow. Here we
-suppose you have followed the previous section and successfully installed OpFlow at `<install_dir>`.
-Then pick a nice place and create our project folder, let's call it `<project_dir>`. We first compose
+suppose you have followed the previous section and successfully installed OpFlow at ``<install_dir>``.
+Then pick a nice place and create our project folder, let's call it ``<project_dir>``. We first compose
 the project's CMake configuration file, ``<project_dir>/CMakeLists.txt``:
 
 .. code-block:: cmake

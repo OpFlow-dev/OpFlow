@@ -1,5 +1,5 @@
-OpFlow documentation
-====================
+Welcome to OpFlow's documentation!
+++++++++++++++++++++++++++++++++++
 
 
 Contents:
