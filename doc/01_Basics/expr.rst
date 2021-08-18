@@ -105,3 +105,47 @@ For derived expressions, you can directly declare with assignments:
     auto t = u + v; // t here is an intermediate expression
     w = w + t;
 
+.. note::
+    Intermediate expressions usually have complex type names. Therefore, it's strongly recommended
+    that you use ``auto`` to declare an expression and let the compiler determine the real
+    type. To know the actual type name, use ``Meta::TypeName<T>``.
+
+Evaluate an Expr
+----------------
+
+Expression can be evaluated in two fashions: evaluate as a whole and evaluate by index. The first
+type is handled automatically during assignment to an expression. For example, the statement
+
+.. code-block:: cpp
+
+    w = u + v;
+
+will evaluate the value at each point of the expression ``u + v`` and store the result at the
+corresponding position of ``w``. The other type of evaluation passes an multidimensional index
+to the expression's ``evalAt()`` and ``evalSafeAt()`` method, which returns the value of the
+expression at that index:
+
+.. code-block:: cpp
+
+    // evaluate u's value at [0, 0] and assign it to val
+    auto val = u.evalAt(DS::MDIndex<2>(0, 0));
+
+The method ``evalAt()`` and ``evalSafeAt()`` are `const` methods of an expression. In OpFlow,
+only concrete expressions such as fields and scalars have write access, and they can be assigned
+pointwisely via:
+
+.. code-block:: cpp
+
+    // set u's value at [0, 0] to 0
+    u[DS::MDIndex<2>(0, 0)] = 0;
+    // Round parentheses can also be used
+    u(DS::MDIndex<2>(0, 0)) = 0;
+
+.. caution::
+    To evaluate an intermediate expression's value at a specified index, ``prepare()`` must be called first
+    to generate necessary metadatas, i.e., ``auto t = u + v; t.prepare();`` before ``auto val = t.evalAt(...)``.
+
+.. note::
+    Note that ``w = u + v`` is different from the statement ``auto t = u + v``. ``t`` here
+    isn't actually evaluated but just supplied as an intermediate result of the summation.
+    Please refer to the Advanced topics for better knowledge.
