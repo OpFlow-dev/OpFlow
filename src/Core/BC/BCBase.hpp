@@ -21,6 +21,11 @@
 namespace OpFlow {
     enum class BCType { Undefined, Dirc, Neum, Periodic, Internal, Symm, ASymm };
 
+    inline static auto isLogicalBC(BCType type) {
+        return type == BCType::Periodic || type == BCType::Internal || type == BCType::Symm
+        || type == BCType::ASymm;
+    }
+
     template <typename F>
     struct BCBase {
         virtual ~BCBase() = default;
@@ -49,9 +54,6 @@ namespace OpFlow {
         const auto& getOffset() const { return offset; }
 
         [[nodiscard]] virtual std::unique_ptr<BCBase> getCopy() const = 0;
-
-        [[nodiscard]] virtual std::unique_ptr<BCBase>
-        getFunctorBC(std::function<elem_type(const index_type&)> f) const = 0;
 
     protected:
         index_type offset;

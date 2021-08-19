@@ -1,0 +1,87 @@
+//  ----------------------------------------------------------------------------
+//
+//  Copyright (c) 2019 - 2021  by the OpFlow developers
+//
+//  This file is part of OpFlow.
+//
+//  OpFlow is free software and is distributed under the MPL v2.0 license.
+//  The full text of the license can be found in the file LICENSE at the top
+//  level directory of OpFlow.
+//
+//  ----------------------------------------------------------------------------
+
+#include <OpFlow>
+#include <gmock/gmock.h>
+
+using namespace OpFlow;
+
+using Mesh2 = CartesianMesh<Meta::int_<2>>;
+using Field2 = CartesianField<double, Mesh2>;
+
+TEST(CartesianFieldBuilderTest, ConstDircBC) {
+    auto mesh = MeshBuilder<Mesh2>().newMesh(10, 10).build();
+    auto field = ExprBuilder<Field2>().setMesh(mesh).setBC(0, DimPos::start, BCType::Dirc, 1.).build();
+
+    for (auto i = 0; i < 10; ++i) { ASSERT_EQ(field.bc[0].start->evalAt(DS::MDIndex<2>(0, i)), 1.); }
+}
+
+TEST(CartesianFieldBuilderTest, ConstNeumBC) {
+    auto mesh = MeshBuilder<Mesh2>().newMesh(10, 10).build();
+    auto field = ExprBuilder<Field2>().setMesh(mesh).setBC(0, DimPos::start, BCType::Neum, 1.).build();
+
+    for (auto i = 0; i < 10; ++i) { ASSERT_EQ(field.bc[0].start->evalAt(DS::MDIndex<2>(0, i)), 1.); }
+}
+
+TEST(CartesianFieldBuilderTest, FunctorDircBC) {
+    auto mesh = MeshBuilder<Mesh2>().newMesh(10, 10).build();
+    auto functor = [](auto&& i) { return i[0] * i[0] + i[1] * i[1]; };
+    auto field = ExprBuilder<Field2>().setMesh(mesh).setBC(0, DimPos::start, BCType::Dirc, functor).build();
+
+    for (auto i = 0; i < 10; ++i) {
+        ASSERT_EQ(field.bc[0].start->evalAt(DS::MDIndex<2>(0, i)), functor(DS::MDIndex<2>(0, i)));
+    }
+}
+
+TEST(CartesianFieldBuilderTest, FunctorNeumBC) {
+    auto mesh = MeshBuilder<Mesh2>().newMesh(10, 10).build();
+    auto functor = [](auto&& i) { return i[0] * i[0] + i[1] * i[1]; };
+    auto field = ExprBuilder<Field2>().setMesh(mesh).setBC(0, DimPos::start, BCType::Neum, functor).build();
+
+    for (auto i = 0; i < 10; ++i) {
+        ASSERT_EQ(field.bc[0].start->evalAt(DS::MDIndex<2>(0, i)), functor(DS::MDIndex<2>(0, i)));
+    }
+}
+
+TEST(CartesianFieldBuilderTest, SymmBC) {
+    auto mesh = MeshBuilder<Mesh2>().newMesh(10, 10).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
+    auto field = ExprBuilder<Field2>().setMesh(mesh).setBC(0, DimPos::start, BCType::Symm)
+                         .setBC(0, DimPos::end, BCType::Symm).build();
+    field.initBy([](auto&& x) { return x[0]; });
+    for (auto i = 0; i < 10; ++i) {
+        ASSERT_EQ(field.bc[0].start->evalAt(DS::MDIndex<2>(-i, i)), field.evalAt(DS::MDIndex<2>(i, i)));
+    }
+    for (auto i = 9; i >= 0; --i) {
+        ASSERT_EQ(field.bc[0].end->evalAt(DS::MDIndex<2>(18 - i, i)), field.evalAt(DS::MDIndex<2>(i, i)));
+    }
+}
+
+TEST(CartesianFieldBuilderTest, ASymmBC) {
+    auto mesh = MeshBuilder<Mesh2>().newMesh(10, 10).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
+    auto field = ExprBuilder<Field2>().setMesh(mesh).setBC(0, DimPos::start, BCType::ASymm)
+                         .setBC(0, DimPos::end, BCType::ASymm).build();
+    field.initBy([](auto&& x) { return x[0]; });
+    for (auto i = 0; i < 10; ++i) {
+        ASSERT_EQ(-field.bc[0].start->evalAt(DS::MDIndex<2>(-i, i)), field.evalAt(DS::MDIndex<2>(i, i)));
+    }
+    for (auto i = 8; i >= 0; --i) {
+        ASSERT_EQ(-field.bc[0].end->evalAt(DS::MDIndex<2>(18 - i, i)), field.evalAt(DS::MDIndex<2>(i, i)));
+    }
+}
+
+TEST(CartesianFieldBuilderDeathTest, ASymmBCDieOnNonZeroBC) {
+    auto mesh = MeshBuilder<Mesh2>().newMesh(10, 10).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
+    auto field = ExprBuilder<Field2>().setMesh(mesh).setBC(0, DimPos::start, BCType::ASymm)
+            .setBC(0, DimPos::end, BCType::ASymm).build();
+    field.initBy([](auto&& x) { return x[0]; });
+    ASSERT_DEATH(field.bc[0].end->evalAt(DS::MDIndex<2>(9, 9)), "");
+}

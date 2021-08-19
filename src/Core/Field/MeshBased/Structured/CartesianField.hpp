@@ -260,10 +260,10 @@ namespace OpFlow {
             auto& targetBC = pos == DimPos::start ? f.bc[d].start : f.bc[d].end;
             switch (type) {
                 case BCType::Symm:
-                    targetBC = std::make_unique<SymmBC<CartesianField<D, M, C>>>();
+                    targetBC = std::make_unique<SymmBC<CartesianField<D, M, C>>>(f, d, pos);
                     break;
                 case BCType::ASymm:
-                    targetBC = std::make_unique<ASymmBC<CartesianField<D, M, C>>>();
+                    targetBC = std::make_unique<ASymmBC<CartesianField<D, M, C>>>(f, d, pos);
                     break;
                 default:
                     OP_ERROR("BC Type not supported.");
@@ -288,6 +288,36 @@ namespace OpFlow {
                     OP_ERROR("BC Type not supported.");
                     OP_ABORT;
             }
+            return *this;
+        }
+
+        // set a functor bc
+        template <typename F> requires requires (F f) {
+            { f(std::declval<typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>()) }
+            -> std::convertible_to<typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
+        }
+        auto& setBC(int d, DimPos pos, BCType type, F&& functor) {
+            OP_ASSERT(d < dim);
+            auto& targetBC = pos == DimPos::start ? f.bc[d].start : f.bc[d].end;
+            switch (type) {
+                case BCType::Dirc:
+                    targetBC = std::make_unique<FunctorDircBC<CartesianField<D, M, C>>>(functor);
+                    break;
+                case BCType::Neum:
+                    targetBC = std::make_unique<FunctorNeumBC<CartesianField<D, M, C>>>(functor);
+                    break;
+                default:
+                    OP_ERROR("BC Type not supported.");
+                    OP_ABORT;
+            }
+            return *this;
+        }
+
+        // set an externally built bc
+        auto& setBC(int d, DimPos pos, std::unique_ptr<BCBase<CartesianField<D, M, C>>>&& bc) {
+            OP_ASSERT(d < dim);
+            auto& targetBC = pos == DimPos::start ? f.bc[d].start : f.bc[d].end;
+            targetBC = std::move(bc);
             return *this;
         }
 
@@ -332,6 +362,8 @@ namespace OpFlow {
                         break;
                     case BCType::Neum:
                     case BCType::Undefined:
+                    case BCType::Symm:
+                    case BCType::ASymm:
                         break;
                     default:
                         OP_NOT_IMPLEMENTED;
@@ -349,6 +381,8 @@ namespace OpFlow {
                         break;
                     case BCType::Neum:
                     case BCType::Undefined:
+                    case BCType::Symm:
+                    case BCType::ASymm:
                         if (loc == LocOnMesh::Center) {
                             f.accessibleRange.end[i]--;
                             f.assignableRange.end[i]--;

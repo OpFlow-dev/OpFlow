@@ -14,6 +14,7 @@
 #define OPFLOW_STRUCTUREDFIELDEXPR_HPP
 
 #include "Core/BC/BCBase.hpp"
+#include "Core/BC/LogicalBC.hpp"
 #include "Core/Field/MeshBased/MeshBasedFieldExpr.hpp"
 #include "DataStructures/Pair.hpp"
 #include "StructuredFieldExprTrait.hpp"
@@ -50,7 +51,13 @@ namespace OpFlow {
               neighbors(other.neighbors) {
             for (auto i = 0; i < bc.size(); ++i) {
                 bc[i].start = other.bc[i].start ? other.bc[i].start->getCopy() : nullptr;
+                if (bc[i].start && isLogicalBC(bc[i].start->getBCType())) {
+                    dynamic_cast<LogicalBCBase<Derived>*>(bc[i].start.get())->rebindField(this->derived());
+                }
                 bc[i].end = other.bc[i].end ? other.bc[i].end->getCopy() : nullptr;
+                if (bc[i].end && isLogicalBC(bc[i].end->getBCType())) {
+                    dynamic_cast<LogicalBCBase<Derived>*>(bc[i].end.get())->rebindField(this->derived());
+                }
             }
         }
         StructuredFieldExpr(StructuredFieldExpr&& other) noexcept
@@ -81,7 +88,13 @@ namespace OpFlow {
                                          typename internal::StructuredFieldExprTrait<Derived>::elem_type>;
                 if constexpr (convertible) {
                     bc[i].start = other.bc[i].start ? other.bc[i].start->getCopy() : nullptr;
+                    if (bc[i].start && isLogicalBC(bc[i].start->getBCType())) {
+                        dynamic_cast<LogicalBCBase<Derived>*>(bc[i].start.get())->rebindField(this->derived());
+                    }
                     bc[i].end = other.bc[i].end ? other.bc[i].end->getCopy() : nullptr;
+                    if (bc[i].end && isLogicalBC(bc[i].end->getBCType())) {
+                        dynamic_cast<LogicalBCBase<Derived>*>(bc[i].end.get())->rebindField(this->derived());
+                    }
                 }
             }
         }

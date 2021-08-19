@@ -18,6 +18,9 @@ add_gmock(MetaTest ${CMAKE_CURRENT_SOURCE_DIR}/MetaTest.cpp)
 # Meshes
 add_gmock(CartesianMeshTest ${CMAKE_CURRENT_SOURCE_DIR}/Mesh/CartesianMeshTest.cpp)
 
+# Fields
+add_gmock(CartesianFieldBuilderTest ${CMAKE_CURRENT_LIST_DIR}/CartesianFieldBuilderTest.cpp)
+
 # Interpolators
 add_gmock(InterpolatorTest ${CMAKE_CURRENT_SOURCE_DIR}/InterpolatorTest.cpp)
 
