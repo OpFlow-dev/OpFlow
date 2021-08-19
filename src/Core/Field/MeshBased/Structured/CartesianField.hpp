@@ -265,6 +265,9 @@ namespace OpFlow {
                 case BCType::ASymm:
                     targetBC = std::make_unique<ASymmBC<CartesianField<D, M, C>>>(f, d, pos);
                     break;
+                case BCType::Periodic:
+                    targetBC = std::make_unique<PeriodicBC<CartesianField<D, M, C>>>(f, d, pos);
+                    break;
                 default:
                     OP_ERROR("BC Type not supported.");
                     OP_ABORT;
@@ -364,6 +367,7 @@ namespace OpFlow {
                     case BCType::Undefined:
                     case BCType::Symm:
                     case BCType::ASymm:
+                    case BCType::Periodic:
                         break;
                     default:
                         OP_NOT_IMPLEMENTED;
@@ -388,6 +392,11 @@ namespace OpFlow {
                             f.assignableRange.end[i]--;
                         }
                         break;
+                    case BCType::Periodic:
+                        // same as center case
+                        f.accessibleRange.end[i]--;
+                        f.assignableRange.end[i]--;
+                        break;
                     default:
                         OP_NOT_IMPLEMENTED;
                 }
@@ -403,11 +412,12 @@ namespace OpFlow {
                     auto loc = f.loc[i];
                     // we only need to consider the end side for whether taken the right boundary into account
                     // only +1 if the block is at the right end
+                    // periodic bc can be trimmed by the min operation
                     if (loc == LocOnMesh::Corner && f.localRange.end[i] == f.mesh.getRange().end[i] - 1)
-                        f.localRange.end[i]++;
+                        f.localRange.end[i] = std::min(f.localRange.end[i] + 1, f.accessibleRange.end[i]);
                     for (auto& range : f.splitMap) {
                         if (loc == LocOnMesh::Corner && range.end[i] == f.mesh.getRange().end[i] - 1)
-                            range.end[i]++;
+                            range.end[i] = std::min(range.end[i] + 1, f.accessibleRange.end[i]);
                     }
                 }
             } else {

@@ -148,5 +148,54 @@ namespace OpFlow {
         DimPos pos = DimPos::start;
     };
 
+    template <StructuredFieldExprType F>
+    struct PeriodicBC : LogicalBCBase<F> {
+    protected:
+        BCType type = BCType::Periodic;
+
+    public:
+        PeriodicBC() = default;
+        explicit PeriodicBC(const F& f, int dim, DimPos pos) : dim(dim), pos(pos) { this->_f = &f; }
+        typename internal::StructuredFieldExprTrait<F>::elem_type
+        evalAt(const typename internal::StructuredFieldExprTrait<F>::index_type& index) const override {
+            auto modded = modIndex(index);
+            return this->_f->evalAt(modded);
+        }
+
+        [[nodiscard]] BCType getBCType() const override { return type; }
+        [[nodiscard]] std::string getTypeName() const override { return "PeriodicBC"; }
+        [[nodiscard]] std::string toString(int level) const override {
+            std::string ret, prefix;
+            for (auto i = 0; i < level; ++i) prefix += "\t";
+            ret += prefix + "Type: Periodic";
+            return ret;
+        }
+
+        std::unique_ptr<BCBase<F>> getCopy() const override { return std::make_unique<PeriodicBC>(*this); }
+
+    protected:
+        auto modIndex(const typename internal::StructuredFieldExprTrait<F>::index_type& index) const {
+            auto ret = index;
+            auto range = this->_f->getMesh().getRange();
+            // start side direct eval, end side mod to the start side
+            if (index[dim] == range.start[dim]) return index;
+            auto extend = range.end[dim] - range.start[dim] - 1;
+            ret[dim] = ((ret[dim] - range.start[dim]) % extend + extend) % extend + range.start[dim];
+            return ret;
+        }
+
+        void assignImpl(const BCBase<F>& other) override {
+            OP_ASSERT_MSG(other.getBCType() == BCType::Periodic, "Try to assign a {} typed BC to PeriodicBC.",
+                          other.getTypeName());
+            const auto& _other = reinterpret_cast<const PeriodicBC<F>&>(other);
+            this->_f = _other._f;
+            dim = _other.dim;
+            pos = _other.pos;
+        }
+
+        int dim = -1;
+        DimPos pos = DimPos::start;
+    };
+
 }// namespace OpFlow
 #endif//OPFLOW_LOGICALBC_HPP
