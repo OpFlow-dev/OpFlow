@@ -116,7 +116,7 @@ or by a scalar, existing field or a general expression:
 
 To evaluate at a specific index, you can use ``evalAt()`` and ``evalSafeAt()`` methods just as with an
 ``Expr``. To change the value at an index, you can use the ``operator[]`` and ``operator()`` to get
-the reference to the data object (see Expr section). Nevertheless, the most common approach to assign
+the reference to the data object (see :ref:`Expr` section). Nevertheless, the most common approach to assign
 to a field is by assign an ``Expr`` to it, e.g.:
 
 .. code-block:: cpp
@@ -160,4 +160,4 @@ RawBinaryIStream        Yes         No          Binary      Yes
 HDF5Stream              Yes         Yes         Binary      Yes
 ======================= =========== =========== =========== ============
 
-For detailed usage of each stream, please to the API section and examples of OpFlow.
+For detailed usage of each stream, please to the :ref:`API<APIs>` section and examples of OpFlow.

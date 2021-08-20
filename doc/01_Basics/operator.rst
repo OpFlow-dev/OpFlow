@@ -113,4 +113,4 @@ As always, the composed operator can automatically handle boundary conditions. F
 masterpiece and trust the orchestra. ^_^
 
 .. note::
-    You can now checkout the 1D convection example in the Example section. Try it out!
+    You can now checkout the :ref:`1D convection example<Example 01: Conv 1D>` in the Example section. Try it out!

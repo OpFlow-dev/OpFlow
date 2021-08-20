@@ -15,7 +15,7 @@ Meshes in OpFlow are classified into three categories, namely `Structured`, `Sem
 implemented the ``CartesianMesh`` under ``Structured`` and ``CartAMRMesh`` under ``SemiStructured``.
 Basically, each type of field has a corresponding mesh type, e.g., ``StructuredMesh`` for
 ``StructuredFieldExpr``, ``CartAMRMesh`` for ``CartAMRField``, etc. You can refer to the type tree
-in the `Expr` section for reference.
+in the :ref:`Expr` section for reference.
 
 We also provided concepts for determining the type of a mesh, e.g.:
 
@@ -46,7 +46,7 @@ to build a ``CartesianMesh``, you can write:
     CartesianMesh's extend is defined at the nodes, i.e., the result mesh have a node array of 10 x 10,
     while the cell array is 9 x 9.
 
-For the full list of APIs for each mesh's builder, please refer to the API section.
+For the full list of APIs for each mesh's builder, please refer to the :ref:`API<APIs>` section.
 
 Access data in a mesh
 ---------------------
@@ -69,4 +69,4 @@ For example, we can access a CartesianMesh as:
     auto dy_1 = m.dx(1, 1); // get the delta y at dim 1, node rank 1
     auto range = m.getRange(); // get the indexable range of m {(0, 0) -> (10, 10) by (1, 1)}
 
-For the full list of API's for each mesh, please refer to the API section.
+For the full list of API's for each mesh, please refer to the :ref:`API<APIs>` section.
