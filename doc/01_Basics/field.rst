@@ -128,7 +128,7 @@ to a field is by assign an ``Expr`` to it, e.g.:
     u = u + v;      // u itself can also appear on the right hand side
                     // A temporal copy will be created automatically
 
-By use unified assignment syntax, the users can focus on composing the algorithm, while OpFlow can
+By using unified assignment syntax, the users can focus on composing the algorithm, while OpFlow can
 automatically choose the best parallelism method and evaluation sequence of the rhs expression.
 Boundary conditions are also carefully handled by the backend assignment engine. Therefore, it's
 strongly recommended to write your code in this fashion instead of pointwise operations.
