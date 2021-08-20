@@ -41,20 +41,6 @@ namespace OpFlow {
         }
 
         std::unique_ptr<BCBase<To>> getCopy() const override { return std::make_unique<ProxyBC>(*this); }
-        std::unique_ptr<BCBase<To>>
-        getFunctorBC(std::function<typename internal::FieldExprTrait<To>::elem_type(
-                             const typename internal::FieldExprTrait<To>::index_type&)>
-                             f) const override {
-            switch (getBCType()) {
-                case BCType::Dirc:
-                    return std::make_unique<FunctorDircBC<To>>(f);
-                case BCType::Neum:
-                    return std::make_unique<FunctorNeumBC<To>>(f);
-                default:
-                    OP_NOT_IMPLEMENTED;
-                    return nullptr;
-            }
-        }
 
     protected:
         // Proxy object is read-only, assign takes no effect

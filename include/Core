@@ -61,7 +61,6 @@
 // Operator
 #include "Core/Operator/Arithmatic/AMDS.hpp"
 #include "Core/Operator/Arithmatic/MinMax.hpp"
-#include "Core/Operator/ComposedOp.hpp"
 #include "Core/Operator/Conditional.hpp"
 #include "Core/Operator/DecableOp.hpp"
 #include "Core/Operator/FDMOperators/DiffsInterface.hpp"

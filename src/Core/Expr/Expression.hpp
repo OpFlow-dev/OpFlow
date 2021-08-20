@@ -183,7 +183,7 @@ namespace OpFlow {
 
     // general exprs
     template <typename Op, typename... Args>
-            requires(sizeof...(Args) > 0) && (!composedOp<Op>) auto makeExpression(Args&&... args) {
+            requires(sizeof...(Args) > 0) auto makeExpression(Args&&... args) {
         return Expression<Op, Meta::RealType<Args>...>(std::forward<Args>(args)...);
     }
 
@@ -193,12 +193,6 @@ namespace OpFlow {
         return Expression<Op>();
     }
 
-    template <composedOp Op, typename... Args>
-    requires(sizeof...(Args) > 0) auto makeExpression(Args&&... args) {
-        using FirstOp = typename internal::ComposedOpFirstOp<Op>::type;
-        using Rest = typename internal::ComposedOpRest<Op>::type;
-        return makeExpression<FirstOp>(makeExpression<Rest>(std::forward<Args>(args)...));
-    }
 #undef DEFINE_EVAL_OPS
 };    // namespace OpFlow
 #endif//OPFLOW_EXPRESSION_HPP
