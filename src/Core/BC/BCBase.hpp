@@ -23,7 +23,7 @@ namespace OpFlow {
 
     inline static auto isLogicalBC(BCType type) {
         return type == BCType::Periodic || type == BCType::Internal || type == BCType::Symm
-        || type == BCType::ASymm;
+               || type == BCType::ASymm;
     }
 
     template <typename F>

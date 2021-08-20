@@ -30,8 +30,7 @@ namespace OpFlow {
 
         [[nodiscard]] virtual std::unique_ptr<BCBase<F>>
         getFunctorBC(std::function<typename BCBase<F>::elem_type(const typename BCBase<F>::index_type&)> f)
-        const = 0;
-
+                const = 0;
     };
 
     template <MeshBasedFieldExprType F>

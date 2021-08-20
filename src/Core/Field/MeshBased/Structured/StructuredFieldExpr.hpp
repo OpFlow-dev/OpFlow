@@ -89,7 +89,8 @@ namespace OpFlow {
                 if constexpr (convertible) {
                     bc[i].start = other.bc[i].start ? other.bc[i].start->getCopy() : nullptr;
                     if (bc[i].start && isLogicalBC(bc[i].start->getBCType())) {
-                        dynamic_cast<LogicalBCBase<Derived>*>(bc[i].start.get())->rebindField(this->derived());
+                        dynamic_cast<LogicalBCBase<Derived>*>(bc[i].start.get())
+                                ->rebindField(this->derived());
                     }
                     bc[i].end = other.bc[i].end ? other.bc[i].end->getCopy() : nullptr;
                     if (bc[i].end && isLogicalBC(bc[i].end->getBCType())) {

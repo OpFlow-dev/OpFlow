@@ -183,7 +183,7 @@ namespace OpFlow {
 
     // general exprs
     template <typename Op, typename... Args>
-            requires(sizeof...(Args) > 0) auto makeExpression(Args&&... args) {
+    requires(sizeof...(Args) > 0) auto makeExpression(Args&&... args) {
         return Expression<Op, Meta::RealType<Args>...>(std::forward<Args>(args)...);
     }
 

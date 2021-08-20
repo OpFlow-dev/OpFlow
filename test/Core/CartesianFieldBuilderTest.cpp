@@ -54,8 +54,11 @@ TEST(CartesianFieldBuilderTest, FunctorNeumBC) {
 
 TEST(CartesianFieldBuilderTest, SymmBC) {
     auto mesh = MeshBuilder<Mesh2>().newMesh(10, 10).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
-    auto field = ExprBuilder<Field2>().setMesh(mesh).setBC(0, DimPos::start, BCType::Symm)
-                         .setBC(0, DimPos::end, BCType::Symm).build();
+    auto field = ExprBuilder<Field2>()
+                         .setMesh(mesh)
+                         .setBC(0, DimPos::start, BCType::Symm)
+                         .setBC(0, DimPos::end, BCType::Symm)
+                         .build();
     field.initBy([](auto&& x) { return x[0]; });
     for (auto i = 0; i < 10; ++i) {
         ASSERT_EQ(field.bc[0].start->evalAt(DS::MDIndex<2>(-i, i)), field.evalAt(DS::MDIndex<2>(i, i)));
@@ -67,8 +70,11 @@ TEST(CartesianFieldBuilderTest, SymmBC) {
 
 TEST(CartesianFieldBuilderTest, ASymmBC) {
     auto mesh = MeshBuilder<Mesh2>().newMesh(10, 10).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
-    auto field = ExprBuilder<Field2>().setMesh(mesh).setBC(0, DimPos::start, BCType::ASymm)
-                         .setBC(0, DimPos::end, BCType::ASymm).build();
+    auto field = ExprBuilder<Field2>()
+                         .setMesh(mesh)
+                         .setBC(0, DimPos::start, BCType::ASymm)
+                         .setBC(0, DimPos::end, BCType::ASymm)
+                         .build();
     field.initBy([](auto&& x) { return x[0]; });
     for (auto i = 0; i < 10; ++i) {
         ASSERT_EQ(-field.bc[0].start->evalAt(DS::MDIndex<2>(-i, i)), field.evalAt(DS::MDIndex<2>(i, i)));
@@ -80,36 +86,49 @@ TEST(CartesianFieldBuilderTest, ASymmBC) {
 
 TEST(CartesianFieldBuilderDeathTest, ASymmBCDieOnNonZeroBC) {
     auto mesh = MeshBuilder<Mesh2>().newMesh(10, 10).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
-    auto field = ExprBuilder<Field2>().setMesh(mesh).setBC(0, DimPos::start, BCType::ASymm)
-            .setBC(0, DimPos::end, BCType::ASymm).build();
+    auto field = ExprBuilder<Field2>()
+                         .setMesh(mesh)
+                         .setBC(0, DimPos::start, BCType::ASymm)
+                         .setBC(0, DimPos::end, BCType::ASymm)
+                         .build();
     field.initBy([](auto&& x) { return x[0]; });
     ASSERT_DEATH(field.bc[0].end->evalAt(DS::MDIndex<2>(9, 9)), "");
 }
 
 TEST(CartesianFieldBuilderTest, PeriodicBC) {
     auto mesh = MeshBuilder<Mesh2>().newMesh(10, 10).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
-    auto field = ExprBuilder<Field2>().setMesh(mesh).setBC(0, DimPos::start, BCType::Periodic)
-            .setBC(0, DimPos::end, BCType::Periodic).build();
+    auto field = ExprBuilder<Field2>()
+                         .setMesh(mesh)
+                         .setBC(0, DimPos::start, BCType::Periodic)
+                         .setBC(0, DimPos::end, BCType::Periodic)
+                         .build();
     field.initBy([](auto&& x) { return x[0]; });
     for (auto i = 0; i < 9; ++i) {
         ASSERT_EQ(field.bc[0].start->evalAt(DS::MDIndex<2>(-i, i)), field.evalAt(DS::MDIndex<2>(9 - i, i)));
     }
     for (auto i = 9; i < 18; ++i) {
-        ASSERT_EQ(field.bc[0].end->evalAt(DS::MDIndex<2>(i, i - 9)), field.evalAt(DS::MDIndex<2>(i - 9, i - 9)));
+        ASSERT_EQ(field.bc[0].end->evalAt(DS::MDIndex<2>(i, i - 9)),
+                  field.evalAt(DS::MDIndex<2>(i - 9, i - 9)));
     }
 }
 TEST(CartesianFieldBuilderTest, PeriodicBC_TakeLeftSide) {
     auto mesh = MeshBuilder<Mesh2>().newMesh(10, 10).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
-    auto field = ExprBuilder<Field2>().setMesh(mesh).setBC(0, DimPos::start, BCType::Periodic)
-            .setBC(0, DimPos::end, BCType::Periodic).build();
+    auto field = ExprBuilder<Field2>()
+                         .setMesh(mesh)
+                         .setBC(0, DimPos::start, BCType::Periodic)
+                         .setBC(0, DimPos::end, BCType::Periodic)
+                         .build();
     field.initBy([](auto&& x) { return x[0]; });
     ASSERT_TRUE(DS::inRange(field.assignableRange, DS::MDIndex<2>(0, 0)));
 }
 
 TEST(CartesianFieldBuilderTest, PeriodicBC_AbandonRightSide) {
     auto mesh = MeshBuilder<Mesh2>().newMesh(10, 10).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
-    auto field = ExprBuilder<Field2>().setMesh(mesh).setBC(0, DimPos::start, BCType::Periodic)
-            .setBC(0, DimPos::end, BCType::Periodic).build();
+    auto field = ExprBuilder<Field2>()
+                         .setMesh(mesh)
+                         .setBC(0, DimPos::start, BCType::Periodic)
+                         .setBC(0, DimPos::end, BCType::Periodic)
+                         .build();
     field.initBy([](auto&& x) { return x[0]; });
     ASSERT_FALSE(DS::inRange(field.accessibleRange, DS::MDIndex<2>(9, 0)));
 }

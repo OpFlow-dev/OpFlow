@@ -28,6 +28,7 @@ Contents:
     :maxdepth: 2
 
     02_Advanced/index
+    02_Advanced/parallelization
 
 .. toctree::
     :caption: Examples
@@ -42,6 +43,12 @@ Contents:
     :maxdepth: 2
 
     04_DesignNotes/meta_programming
+    04_DesignNotes/dop
+    04_DesignNotes/shape_deducing
+    04_DesignNotes/bc
+    04_DesignNotes/stencil
+    04_DesignNotes/parallel
+    04_DesignNotes/macros
 
 .. toctree::
     :caption: Development Guide
