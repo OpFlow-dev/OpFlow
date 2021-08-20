@@ -24,20 +24,18 @@ Contents:
     01_Basics/equation
 
 .. toctree::
+    :caption: Advanced Topics
+    :maxdepth: 2
+
+    02_Advanced/index
+
+.. toctree::
     :caption: Examples
     :maxdepth: 2
 
-    02_Examples/conv1d
-    02_Examples/poisson_equation
-    02_Examples/levelset
-
-.. toctree::
-    :caption: Development Guide
-    :maxdepth: 2
-
-    03_DevGuide/new_mesh
-    03_DevGuide/new_field
-    03_DevGuide/new_operator
+    03_Examples/conv1d
+    03_Examples/poisson_equation
+    03_Examples/levelset
 
 .. toctree::
     :caption: Design Notes
@@ -46,7 +44,15 @@ Contents:
     04_DesignNotes/meta_programming
 
 .. toctree::
+    :caption: Development Guide
+    :maxdepth: 2
+
+    05_DevGuide/new_mesh
+    05_DevGuide/new_field
+    05_DevGuide/new_operator
+
+.. toctree::
     :caption: API References
     :maxdepth: 2
 
-    05_API/apis
+    06_API/apis
