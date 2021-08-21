@@ -206,26 +206,6 @@ namespace OpFlow::DS {
     }
 
     template <std::size_t dim1, std::size_t dim2>
-    constexpr auto mergeRange(const Range<dim1>& a, const Range<dim2>& b) {
-        if constexpr (dim1 != dim2) {
-            static_assert(dim1 == 0 || dim2 == 0, OP_ERRMSG_DIM_MISMATCH);
-            if constexpr (dim1 == 0) return b;
-            else
-                return a;
-        } else {
-            static_assert(dim1 == dim2, OP_ERRMSG_DIM_MISMATCH);
-            constexpr auto dim = dim1;
-            Range<dim> ret;
-            for (auto i = 0; i < dim; ++i) {
-                ret.start[i] = std::max(a.start[i], b.start[i]);
-                ret.end[i] = std::min(a.end[i], b.end[i]);
-                OP_ASSERT(a.stride[i] == b.stride[i]);
-            }
-            return Range<dim> {ret.start, ret.end};
-        }
-    }
-
-    template <std::size_t dim1, std::size_t dim2>
     constexpr auto minCoverRange(const Range<dim1>& a, const Range<dim2>& b) {
         if constexpr (dim1 != dim2) {
             static_assert(dim1 == 0 || dim2 == 0, OP_ERRMSG_DIM_MISMATCH);
@@ -253,26 +233,6 @@ namespace OpFlow::DS {
             for (auto i = 1; i < r.size(); ++i) { ret = minCoverRange(ret, r[i]); }
             return ret;
         }
-    }
-
-    template <std::size_t dim1, std::size_t dim2, isRange... T>
-    constexpr auto mergeRangeLists(const std::vector<Range<dim1>>& r1, const std::vector<Range<dim2>>& r2,
-                                   T&&... rs) {
-        if constexpr (dim1 == 0) {
-            return mergeRangeLists(r2, std::forward<T>(rs)...);
-        } else if constexpr (dim2 == 0) {
-            return mergeRangeLists(r1, std::forward<T>(rs)...);
-        } else {
-            static_assert(dim1 == dim2, OP_ERRMSG_DIM_MISMATCH);
-            std::vector<Range<dim1>> ret;
-            for (auto i = 0; i < r1.size(); ++i) { ret.push_back(mergeRange(r1[i], r2[i])); }
-            return mergeRangeLists(ret, std::forward<T>(rs)...);
-        }
-    }
-
-    template <std::size_t dim>
-    constexpr auto mergeRangeLists(const std::vector<Range<dim>>& r) {
-        return r;
     }
 
     template <std::size_t dim, Meta::BracketIndexable T>
