@@ -82,4 +82,5 @@ is written into the target field.
     `HYPRE's documentation <https://hypre.readthedocs.io/en/latest/ch-intro.html>`_.
 
 .. note::
-    You can now checkout the :ref:`Poisson equation example<Poisson Equation>` in the Example section. Try it out!
+    You can now checkout the :ref:`Poisson equation example<Example 02: Poisson Equation>` in the
+    Example section. Try it out!

@@ -1,2 +1,2 @@
-Poisson Equation
-================
+Example 02: Poisson equation
+++++++++++++++++++++++++++++

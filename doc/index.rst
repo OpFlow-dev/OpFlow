@@ -36,7 +36,8 @@ Contents:
 
     03_Examples/conv1d
     03_Examples/poisson_equation
-    03_Examples/levelset
+    03_Examples/heattransfer
+    03_Examples/liddriven
 
 .. toctree::
     :caption: Design Notes
