@@ -16,6 +16,7 @@
 #ifdef OPFLOW_WITH_MPI
 #include <mpi.h>
 #endif
+#include <omp.h>
 
 #include "Core/Parallel/ParallelInfo.hpp"
 #include "Core/Parallel/ParallelPlan.hpp"
@@ -48,6 +49,13 @@ namespace OpFlow {
 
     inline static void setGlobalParallelPlan(const ParallelPlan& plan) {
         internal::GLOBAL_PARALLELPLAN = plan;
+#ifdef OPFLOW_WITH_OPENMP
+#ifdef OPFLOW_THREAD_MODEL_OPENMP
+        omp_set_num_threads(plan.shared_memory_workers_count);
+#else
+        omp_set_num_threads(1);
+#endif
+#endif
     }
 
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
