@@ -5,7 +5,7 @@ int main(int argc, char* argv[]) {
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<Real, Mesh>;
 
-    MPI_Init(&argc, &argv);// clang-format off
+    InitEnvironment(argc, argv);// clang-format off
 
     // meshes & fields
     auto n = 65;
@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
 
     // main algorithm
     auto t0 = std::chrono::system_clock::now();
-    for (auto i = 0; i < 100; ++i) {
+    for (auto i = 0; i < 1000; ++i) {
         u_handler.solve();
         v_handler.solve();
         du = du - dt * conv_xy(u, dv);
@@ -94,6 +94,6 @@ int main(int argc, char* argv[]) {
     auto t1 = std::chrono::system_clock::now();
     OP_INFO("Elapsed time: {}ms", std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count());
 
-    MPI_Finalize();
+    FinalizeEnvironment();
     return 0;
 }
