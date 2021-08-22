@@ -39,4 +39,5 @@ int main(int argc, char* argv[]) {
     OP_INFO("Solver finished.");
 
     MPI_Finalize();
+    return 0;
 }

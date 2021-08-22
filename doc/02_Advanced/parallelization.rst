@@ -113,5 +113,5 @@ updated after assignment. If you need to make some local changes, do remember to
     f.updatePadding();
 
 .. note::
-    You can now checkout the :ref:`Heat transfer example<Example 03: Heat transfer>`_ and compare the
+    You can now checkout the :ref:`Heat transfer example<Example 03: Heat transfer>` and compare the
     performance with different parallelization configurations. Check it out!
