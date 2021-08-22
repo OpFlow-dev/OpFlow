@@ -31,10 +31,10 @@ int main(int argc, char** argv) {
                      .build();
 
     const Real dt = 0.1 / Math::pow2(n - 1), alpha = 1.0;
-    Utils::H5Stream uf("./sol.h5");
+    Utils::H5Stream uf("./sol.h5"); uf.fixedMesh();
     uf << Utils::TimeStamp(0.) << u;
     auto t0 = std::chrono::system_clock::now();
-    for (auto i = 1; i <= 5000; ++i) {
+    for (auto i = 1; i <= 50000; ++i) {
         if (i % 100 == 0) OP_MPI_MASTER_INFO("Current step {}", i);
         u = u + dt * alpha * (d2x<D2SecondOrderCentered>(u) + d2y<D2SecondOrderCentered>(u));
         if (i % 1000 == 0) uf << Utils::TimeStamp(i * dt) << u;
@@ -45,6 +45,7 @@ int main(int argc, char** argv) {
     if (u.localRange.start[0] <= n / 2 && n / 2 < u.localRange.end[0] && u.localRange.start[1] <= n / 2
         && n / 2 < u.localRange.end[1])
         OP_INFO("Center val: {}", u.evalAt(DS::MDIndex<2> {n / 2, n / 2}));
+    uf.close();
 
     FinalizeEnvironment();
     return 0;

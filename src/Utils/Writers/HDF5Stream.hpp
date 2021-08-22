@@ -37,9 +37,9 @@ namespace OpFlow::Utils {
 
     struct H5Stream : FieldStream<H5Stream> {
         H5Stream() = default;
-        explicit H5Stream(std::filesystem::path path, unsigned int mode = StreamOut)
-            : path(std::move(path)), mode(mode) {
-            OP_ASSERT_MSG(!this->path.filename().empty(), "H5Stream error: File name is empty");
+        explicit H5Stream(const std::filesystem::path& path, unsigned int mode = StreamOut)
+            : path(path), mode(mode) {
+            OP_ASSERT_MSG(!path.filename().empty(), "H5Stream error: File name is empty");
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
             MPI_Info info = MPI_INFO_NULL;
             auto fapl_id = H5Pcreate(H5P_FILE_ACCESS);
@@ -55,13 +55,24 @@ namespace OpFlow::Utils {
             H5Pclose(fapl_id);
             file_inited = true;
         }
-        ~H5Stream() = default;
+        void close() {
+            MPI_Barrier(mpi_comm);
+            if (file_inited) {
+                if (group_inited) {
+                    auto stat = H5Gclose(current_group);
+                    group_inited = false;
+                }
+                H5Fclose(file);
+                file_inited = false;
+            }
+            MPI_Barrier(mpi_comm);
+        }
         // time info
         auto& operator<<(const TimeStamp& t) {
             time = t;
             // create a new group
             if (!first_run) {
-                H5Gclose(current_group);
+                auto stat = H5Gclose(current_group);
             } else {
                 first_run = false;
             }
@@ -75,6 +86,7 @@ namespace OpFlow::Utils {
             time = t;
             return *this;
         }
+        void fixedMesh() { fixed_mesh = true; }
 
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
         void setMPIComm(MPI_Comm comm) { mpi_comm = comm; }
@@ -89,10 +101,10 @@ namespace OpFlow::Utils {
         H5Stream& operator>>(T& f);
 
     private:
-        std::filesystem::path path;
+        std::string path;
         hid_t file, current_group;
         TimeStamp time {0};
-        bool first_run = true, file_inited = false, group_inited = false;
+        bool first_run = true, file_inited = false, group_inited = false, fixed_mesh = false, write_mesh = true;
         unsigned int mode;
 #ifdef OPFLOW_WITH_MPI
         MPI_Comm mpi_comm = MPI_COMM_WORLD;
@@ -105,58 +117,89 @@ namespace OpFlow::Utils {
         using elem_type = typename OpFlow::internal::ExprTrait<T>::elem_type;
 
         if (!group_inited) *this << TimeStamp(0);
-        // calculate the dim info of the data set
-        auto extends = f.localRange.getExtends();
-        auto global_extends = f.accessibleRange.getExtends();
-        hsize_t h_extends[dim], h_global_extends[dim];
-        for (auto i = 0; i < dim; ++i) {
-            // column-major to row-major transpose
-            h_extends[i] = extends[dim - i - 1];
-            h_global_extends[i] = global_extends[dim - i - 1];
+
+        // write mesh (only the master worker does this)
+        if (write_mesh) {
+            std::string mesh_name[dim];
+            for (auto i = 0; i < dim; ++i)
+                mesh_name[i] = fmt::format("/T={}/{}_x{}", time.time, f.getName(), i);
+            std::vector<double> x_buffer;
+            for (auto i = 0; i < dim; ++i) {
+                // write each dim's mesh vector
+                x_buffer.resize(f.accessibleRange.end[i] - f.accessibleRange.start[i]);
+                auto iter = x_buffer.begin();
+                for (auto j = f.accessibleRange.start[i]; j < f.accessibleRange.end[i]; ++j, ++iter) {
+                    if (f.loc[i] == LocOnMesh::Corner) {
+                        *iter = f.getMesh().x(i, j);
+                    } else {
+                        *iter = (f.getMesh().x(i, j) + f.getMesh().x(i, j + 1)) / 2.;
+                    }
+                }
+                hsize_t size = x_buffer.size();
+                auto dataspace = H5Screate_simple(1, &size, NULL);
+                auto dataset = H5Dcreate(file, mesh_name[i].c_str(), H5T_NATIVE_DOUBLE, dataspace,
+                                         H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+                H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, x_buffer.data());
+                H5Dclose(dataset);
+                H5Sclose(dataspace);
+                if (fixed_mesh) write_mesh = false;
+            }
         }
-        DS::PlainTensor<elem_type, dim> buffer(extends);
-        DS::MDIndex<dim> _offset;
-        for (auto i = 0; i < dim; ++i) _offset[i] = f.localRange.start[i];
-        rangeFor(f.localRange, [&](auto&& i) { buffer[i - _offset] = f.evalAt(i); });
-        auto dataspace = H5Screate_simple(OpFlow::internal::ExprTrait<T>::dim, h_global_extends, NULL);
-        static_assert(Meta::Numerical<typename OpFlow::internal::ExprTrait<T>::elem_type>);
-        hid_t datatype;
+        // write field
+        {
+            // calculate the dim info of the data set
+            auto extends = f.localRange.getExtends();
+            auto global_extends = f.accessibleRange.getExtends();
+            hsize_t h_extends[dim], h_global_extends[dim];
+            for (auto i = 0; i < dim; ++i) {
+                // column-major to row-major transpose
+                h_extends[i] = extends[dim - i - 1];
+                h_global_extends[i] = global_extends[dim - i - 1];
+            }
+            DS::PlainTensor<elem_type, dim> buffer(extends);
+            DS::MDIndex<dim> _offset;
+            for (auto i = 0; i < dim; ++i) _offset[i] = f.localRange.start[i];
+            rangeFor(f.localRange, [&](auto&& i) { buffer[i - _offset] = f.evalAt(i); });
+            auto dataspace = H5Screate_simple(OpFlow::internal::ExprTrait<T>::dim, h_global_extends, NULL);
+            static_assert(Meta::Numerical<typename OpFlow::internal::ExprTrait<T>::elem_type>);
+            hid_t datatype;
 
-        if constexpr (std::is_same_v<elem_type, int>) datatype = H5Tcopy(H5T_NATIVE_INT);
-        else if constexpr (std::is_same_v<elem_type, float>)
-            datatype = H5Tcopy(H5T_NATIVE_FLOAT);
-        else if constexpr (std::is_same_v<elem_type, double>)
-            datatype = H5Tcopy(H5T_NATIVE_DOUBLE);
-        else
-            OP_CRITICAL("H5Stream fatal error: Field's element type not supported.");
-        H5Tset_order(datatype, H5T_ORDER_LE);
+            if constexpr (std::is_same_v<elem_type, int>) datatype = H5Tcopy(H5T_NATIVE_INT);
+            else if constexpr (std::is_same_v<elem_type, float>)
+                datatype = H5Tcopy(H5T_NATIVE_FLOAT);
+            else if constexpr (std::is_same_v<elem_type, double>)
+                datatype = H5Tcopy(H5T_NATIVE_DOUBLE);
+            else
+                OP_CRITICAL("H5Stream fatal error: Field's element type not supported.");
+            H5Tset_order(datatype, H5T_ORDER_LE);
 
-        // create a new data set
-        std::string dataset_name = fmt::format("/T={}/{}", time.time, f.getName());
-        auto dataset = H5Dcreate(file, dataset_name.c_str(), datatype, dataspace, H5P_DEFAULT, H5P_DEFAULT,
-                                 H5P_DEFAULT);
+            // create a new data set
+            std::string dataset_name = fmt::format("/T={}/{}", time.time, f.getName());
+            auto dataset = H5Dcreate(file, dataset_name.c_str(), datatype, dataspace, H5P_DEFAULT,
+                                     H5P_DEFAULT, H5P_DEFAULT);
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
-        // write data by hyperslab
-        auto mem_space = H5Screate_simple(OpFlow::internal::ExprTrait<T>::dim, h_extends, NULL);
-        auto file_space = H5Dget_space(dataset);
-        hsize_t offset[dim];
-        // opflow uses column major layout, hdf5 uses row major layout
-        for (auto i = 0; i < dim; ++i) offset[i] = f.localRange.start[dim - i - 1];
-        H5Sselect_hyperslab(file_space, H5S_SELECT_SET, offset, NULL, h_extends, NULL);
-        auto plist_id = H5Pcreate(H5P_DATASET_XFER);
-        H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_INDEPENDENT);
-        H5Dwrite(dataset, datatype, mem_space, file_space, plist_id, buffer.raw());
-        H5Sclose(mem_space);
-        H5Sclose(file_space);
-        H5Pclose(plist_id);
+            // write data by hyperslab
+            auto mem_space = H5Screate_simple(OpFlow::internal::ExprTrait<T>::dim, h_extends, NULL);
+            auto file_space = H5Dget_space(dataset);
+            hsize_t offset[dim];
+            // opflow uses column major layout, hdf5 uses row major layout
+            for (auto i = 0; i < dim; ++i) offset[i] = f.localRange.start[dim - i - 1];
+            H5Sselect_hyperslab(file_space, H5S_SELECT_SET, offset, NULL, h_extends, NULL);
+            auto plist_id = H5Pcreate(H5P_DATASET_XFER);
+            H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_INDEPENDENT);
+            H5Dwrite(dataset, datatype, mem_space, file_space, plist_id, buffer.raw());
+            H5Sclose(mem_space);
+            H5Sclose(file_space);
+            H5Pclose(plist_id);
+            H5Tclose(datatype);
 #else
-        // write data
-        H5Dwrite(dataset, datatype, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer.raw());
+            // write data
+            H5Dwrite(dataset, datatype, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer.raw());
 #endif
-        // close everything
-        H5Dclose(dataset);
-        H5Sclose(dataspace);
-
+            // close everything
+            H5Dclose(dataset);
+            H5Sclose(dataspace);
+        }
         return *this;
     }
 
