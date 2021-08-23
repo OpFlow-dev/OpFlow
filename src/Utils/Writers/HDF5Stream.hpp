@@ -104,7 +104,8 @@ namespace OpFlow::Utils {
         std::string path;
         hid_t file, current_group;
         TimeStamp time {0};
-        bool first_run = true, file_inited = false, group_inited = false, fixed_mesh = false, write_mesh = true;
+        bool first_run = true, file_inited = false, group_inited = false, fixed_mesh = false,
+             write_mesh = true;
         unsigned int mode;
 #ifdef OPFLOW_WITH_MPI
         MPI_Comm mpi_comm = MPI_COMM_WORLD;

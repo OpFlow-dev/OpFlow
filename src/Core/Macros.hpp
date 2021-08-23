@@ -84,11 +84,35 @@
 #define OP_TRACE(...)
 #endif
 
+#if !defined(NDEBUG) && defined(OPFLOW_ENABLE_STACK_TRACE)
+#include "Utils/StackTracer.hpp"
+// global stack tracer
+namespace OpFlow {
+    inline static Utils::StackTracer stackTracer;
+}
+
+#define OP_STACK_PUSH(...)                                                                                   \
+    do {                                                                                                     \
+        OpFlow::stackTracer.push(fmt::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__)            \
+                                 + fmt::format(__VA_ARGS__));                                                \
+    } while (0)
+#define OP_STACK_POP                                                                                         \
+    do { OpFlow::stackTracer.pop(); } while (0)
+#define OP_DUMPSTACK                                                                                         \
+    do { OP_ERROR("{}", OpFlow::stackTracer.dump()); } while (0)
+#else
+
+#define OP_STACK_PUSH(...)
+#define OP_STACK_POP
+#define OP_DUMPSTACK
+#endif
+
 #define OP_NOT_IMPLEMENTED OP_ERROR("Function {} not implemented.", __FUNCTION__)
 #define OP_EMPTY_BODY OP_WARN("Empty body.")
 #define OP_TODO(X) OP_WARN("TODO: {}", X)
 
 #define OP_ABORT                                                                                             \
+    OP_DUMPSTACK;                                                                                            \
     OP_CRITICAL("Aborting.");                                                                                \
     std::abort()
 
