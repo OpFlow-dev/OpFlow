@@ -130,6 +130,7 @@ option(OPFLOW_SPDLOG_EXTERNAL "Use external spdlog library instead of bundled" O
 option(OPFLOW_SPDLOG_EXTERNAL_HO "Use external spdlog header-only library instead of bundled" OFF)
 # the default behavior is to download & config HYPRE & VTK on-the-fly.
 # set these options to avoid internet requirement
+option(OPFLOW_WITH_VTK "Build OpFlow with VTK" ON)
 option(OPFLOW_HYPRE_EXTERNAL "Use external HYPRE library instead of bundled" OFF)
 option(OPFLOW_HYPRE_PRE_DOWNLOAD "Use pre-downloaded HYPRE library" OFF)
 option(OPFLOW_VTK_EXTERNAL "Use external VTK library instead of bundled" OFF)
@@ -262,19 +263,22 @@ target_link_libraries(opflow INTERFACE HYPRE::HYPRE)
 # ----------------------------------------------------------------------------
 # Use VTK package
 # ----------------------------------------------------------------------------
-if (OPFLOW_VTK_EXTERNAL)
-    if (NOT TARGET VTK)
-        find_package(VTK REQUIRED)
-        target_compile_definitions(opflow INTERFACE OPFLOW_VTK_EXTERNAL)
+if (OPFLOW_WITH_VTK)
+    target_compile_definitions(opflow INTERFACE OPFLOW_WITH_VTK)
+    if (OPFLOW_VTK_EXTERNAL)
+        if (NOT TARGET VTK)
+            find_package(VTK REQUIRED)
+            target_compile_definitions(opflow INTERFACE OPFLOW_VTK_EXTERNAL)
+        endif ()
+    else ()
+        include(cmake/VTKConfig.cmake)
+        CONFIG_VTK()
     endif ()
-else ()
-    include(cmake/VTKConfig.cmake)
-    CONFIG_VTK()
+    list(APPEND PKG_CONFIG_REQUIRES VTK)
+    target_include_directories(opflow INTERFACE ${VTK_INCLUDE_DIRS})
+    target_link_directories(opflow INTERFACE ${VTK_LIBRARY_DIRS})
+    target_link_libraries(opflow INTERFACE ${VTK_LIBRARIES})
 endif ()
-list(APPEND PKG_CONFIG_REQUIRES VTK)
-target_include_directories(opflow INTERFACE ${VTK_INCLUDE_DIRS})
-target_link_directories(opflow INTERFACE ${VTK_LIBRARY_DIRS})
-target_link_libraries(opflow INTERFACE ${VTK_LIBRARIES})
 
 # ----------------------------------------------------------------------------
 # Use HDF5 package
@@ -421,7 +425,7 @@ if (OPFLOW_INSTALL)
         install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/hypre/
                 DESTINATION "${CMAKE_INSTALL_PREFIX}")
     endif ()
-    if (NOT OPFLOW_VTK_EXTERNAL)
+    if (OPFLOW_WITH_VTK AND NOT OPFLOW_VTK_EXTERNAL)
         install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/vtk/
                 DESTINATION "${CMAKE_INSTALL_PREFIX}")
     endif ()
