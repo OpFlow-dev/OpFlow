@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.10)
 project(OpFlow_Examples)
 
 # set cpp flags for opflow's examples
-set(OPFLOW_EXAMPLE_CXX_FLAGS                )
-set(OPFLOW_EXAMPLE_CXX_FLAGS_DEBUG          )
-set(OPFLOW_EXAMPLE_CXX_FLAGS_RELEASE        )
-set(OPFLOW_EXAMPLE_CXX_FLAGS_RELWITHDEBINFO )
+set(OPFLOW_EXAMPLE_CXX_FLAGS)
+set(OPFLOW_EXAMPLE_CXX_FLAGS_DEBUG)
+set(OPFLOW_EXAMPLE_CXX_FLAGS_RELEASE)
+set(OPFLOW_EXAMPLE_CXX_FLAGS_RELWITHDEBINFO)
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     string(APPEND OPFLOW_EXAMPLE_CXX_FLAGS "-mprefer-vector-width=512 -mfma \
              -Wno-narrowing -ftemplate-backtrace-limit=0")
@@ -29,6 +29,15 @@ set(OPFLOW_EXAMPLE_FLAGS "$<$<CONFIG:Debug>:${OPFLOW_EXAMPLE_CXX_FLAGS_DEBUG}> \
     $<$<CONFIG:RelWithDebInfo>:${OPFLOW_EXAMPLE_CXX_FLAGS_RELWITHDEBINFO}>")
 
 string(REPLACE " " ";" OPFLOW_EXAMPLE_FLAGS ${OPFLOW_EXAMPLE_FLAGS})
+
+add_custom_target(AllExamples)
+
+function(add_example example_name)
+    add_executable(${example_name} EXCLUDE_FROM_ALL ${ARGN})
+    target_link_libraries(${example_name} opflow::opflow)
+    target_compile_options(${example_name} PRIVATE ${OPFLOW_EXAMPLE_FLAGS})
+    add_dependencies(AllExamples ${example_name})
+endfunction()
 
 add_subdirectory(LidDriven)
 add_subdirectory(FTCS)

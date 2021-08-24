@@ -5,7 +5,5 @@ if (NOT TARGET opflow)
     find_package(opflow REQUIRED)
 endif ()
 
-add_executable(FTCS EXCLUDE_FROM_ALL FTCS.cpp)
-target_link_libraries(FTCS opflow::opflow)
-target_compile_options(FTCS PRIVATE ${OPFLOW_EXAMPLE_FLAGS})
+add_example(FTCS FTCS.cpp)
 target_compile_options(FTCS PRIVATE "-save-temps")

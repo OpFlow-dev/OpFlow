@@ -17,9 +17,12 @@ if (NOT TARGET opflow)
     find_package(opflow REQUIRED)
 endif ()
 
+add_custom_target(AllBenchmarks)
+
 function(add_bench name)
     add_executable(BENCH_${name} EXCLUDE_FROM_ALL ${ARGN})
     target_link_libraries(BENCH_${name} opflow::opflow benchmark::benchmark)
+    add_dependencies(AllBenchmarks BENCH_${name})
 endfunction()
 
 add_subdirectory(Core)
