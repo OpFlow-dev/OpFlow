@@ -86,8 +86,8 @@ A field expression in OpFlow has 4 ranges with it: the ``accessibleRange``, ``as
 ``localRange`` and mesh range. These 4 ranges are determined by the underlying mesh's shape,
 boundary conditions, accessibility and parallelization. Together they describe the detailed
 shape of the field expression. Each field expression must pre-calculate these 4 properties,
-which is called :ref:`shape deducing<Shape deducing>`. We briefly take the CartesianField
-as an example to show how this model works:
+which is called :ref:`shape deducing<Shape deducing & Boundary handling>`. We briefly take
+the CartesianField as an example to show how this model works:
 
 .. image:: assets/range_model.png
     :width: 800
