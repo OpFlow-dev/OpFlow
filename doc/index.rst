@@ -1,6 +1,8 @@
 Welcome to OpFlow's documentation!
 ++++++++++++++++++++++++++++++++++
 
+.. image:: assets/opflow_banner_slice.png
+    :align: center
 
 Contents:
 ---------
@@ -48,7 +50,7 @@ Contents:
     04_DesignNotes/shape_deducing
     04_DesignNotes/stencil
     04_DesignNotes/parallel
-    04_DesignNotes/macros
+    04_DesignNotes/utils
 
 .. toctree::
     :caption: Development Guide
