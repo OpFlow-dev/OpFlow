@@ -7,7 +7,7 @@
 [![Downloads](https://img.shields.io/github/downloads/OpFlow-dev/OpFlow/total?color=blue&label=Downloads)](https://github.com/OpFlow-dev/OpFlow/releases/latest)
 
 [![Format](https://img.shields.io/github/workflow/status/OpFlow-dev/OpFlow/AutoFormat?color=green&label=Format)](https://github.com/OpFlow-dev/OpFlow/actions/workflows/AutoFormat.yml)
-[![Build](https://img.shields.io/github/workflow/status/OpFlow-dev/OpFlow/LinuxBuild?color=green&label=Linux%20build)](https://github.com/OpFlow-dev/OpFlow/actions/workflows/LinuxBuild.yml)
+[![Build](https://img.shields.io/github/workflow/status/OpFlow-dev/OpFlow/Build?color=green&label=Build)](https://github.com/OpFlow-dev/OpFlow/actions/workflows/Build.yml)
 
 ## Overview
 

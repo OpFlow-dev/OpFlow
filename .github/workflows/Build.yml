@@ -1,0 +1,93 @@
+name: OpFlow Build
+
+on:
+  push:
+    paths:
+      - '**.c'
+      - '**.cpp'
+      - '**.h'
+      - '**.hpp'
+      - '**.cmake'
+      - '**/CMakeLists.txt'
+      - '.github/workflows/Build.yml'
+  pull_request:
+    paths:
+      - '**.c'
+      - '**.cpp'
+      - '**.h'
+      - '**.hpp'
+      - '**.cmake'
+      - '**/CMakeLists.txt'
+      - '.github/workflows/Build.yml'
+jobs:
+  generate:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          # see: https://github.com/actions/virtual-environments
+          - {
+            name: "Ubuntu/20.04/Static/X64/Release",
+            os: ubuntu-20.04,
+            config: Release,
+            sudocmd: "sudo",
+            artifact_name: "Linux",
+            cores: 2,
+          }
+          - {
+            name: "Ubuntu/20.04/Static/X64/Debug",
+            os: ubuntu-20.04,
+            config: Debug,
+            sudocmd: "sudo",
+            artifact_name: "Linux",
+            cores: 2,
+          }
+          - {
+            name: "MacOSX/10.15/Static/X64/Release",
+            os: macos-10.15,
+            config: Release,
+            sudocmd: "sudo",
+            artifact_name: "MacOSX",
+            cores: 3,
+          }
+          - {
+            name: "MacOSX/10.15/Static/X64/Debug",
+            os: macos-10.15,
+            config: Debug,
+            sudocmd: "sudo",
+            artifact_name: "MacOSX",
+            cores: 3,
+          }
+    if: "!contains(github.event.head_commit.message, 'skip build')"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+        with:
+          submodules: recursive
+      - name: Install dependence
+        run: |
+          brew install gcc@11
+          if [ "$RUNNER_OS" == "Linux" ]; then
+               sudo apt install -y libopenmpi-dev libhdf5-mpi-dev libhdf5-dev python3-pip python3-sphinx lcov
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+               brew install open-mpi hdf5-mpi sphinx lcov
+          else
+               echo "$RUNNER_OS not supported"
+               exit 1
+          fi
+          python3 -m pip install sphinx-rtd-dark-mode
+      - name: Make directory
+        run: mkdir -p build
+      - name: Generate
+        working-directory: ./build
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.config.config }} -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 \
+                -DOPFLOW_WITH_HDF5=ON -DBENCHMARK_ENABLE_TESTING=OFF -DOPFLOW_BUILD_ALL=ON \
+                -DOPFLOW_WITH_VTK=OFF ..
+          cmake --build . -t AllExamples AllTests AllBenchmarks --parallel ${{ matrix.config.cores }} --config ${{ matrix.config.config }}
+      - name: Test
+        working-directory: ./build
+        run: |
+          ctest --parallel ${{ matrix.config.cores }} -C ${{ matrix.config.config }}

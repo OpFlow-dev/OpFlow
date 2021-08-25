@@ -84,6 +84,7 @@ TEST(CartesianFieldBuilderTest, ASymmBC) {
     }
 }
 
+#ifndef NDEBUG
 TEST(CartesianFieldBuilderDeathTest, ASymmBCDieOnNonZeroBC) {
     auto mesh = MeshBuilder<Mesh2>().newMesh(10, 10).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
     auto field = ExprBuilder<Field2>()
@@ -94,6 +95,7 @@ TEST(CartesianFieldBuilderDeathTest, ASymmBCDieOnNonZeroBC) {
     field.initBy([](auto&& x) { return x[0]; });
     ASSERT_DEATH(field.bc[0].end->evalAt(DS::MDIndex<2>(9, 9)), "");
 }
+#endif
 
 TEST(CartesianFieldBuilderTest, PeriodicBC) {
     auto mesh = MeshBuilder<Mesh2>().newMesh(10, 10).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();

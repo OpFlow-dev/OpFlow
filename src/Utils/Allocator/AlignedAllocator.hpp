@@ -15,8 +15,7 @@
 
 #include "Core/Meta.hpp"
 #include "Utils/Allocator/AllocatorTrait.hpp"
-#include <malloc.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 namespace OpFlow::Utils {
     template <typename T, std::size_t align = 64>
