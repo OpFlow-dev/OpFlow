@@ -18,7 +18,7 @@
 
 namespace OpFlow {
     template <typename Derived>
-    class MeshBase;
+    struct MeshBase;
 
     namespace internal {
         /// Trait struct of meshes

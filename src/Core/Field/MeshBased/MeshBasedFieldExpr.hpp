@@ -37,7 +37,7 @@ namespace OpFlow {
 
         template <MeshBasedFieldExprType Other>
         void initPropsFrom(const Other& other) {
-            static_cast<FieldExpr<Derived>*>(this)->template initPropsFrom(other);
+            static_cast<FieldExpr<Derived>*>(this)->initPropsFrom(other);
             this->mesh = other.mesh;
         }
 

@@ -102,7 +102,7 @@ namespace OpFlow {
                     auto p_other_intersect_my = DS::commonRange(padded_other_range, this->localRange);
                     OP_ASSERT(p_my_intersect_other.count() == p_other_intersect_my.count());
                     if (p_my_intersect_other.count() > 0) {
-                        this->neighbors.template emplace_back(i, this->splitMap[i]);
+                        this->neighbors.emplace_back(i, this->splitMap[i]);
                     }
                 }
 #else
@@ -165,16 +165,16 @@ namespace OpFlow {
                     // calculate the intersect range to be send
                     auto send_range = DS::commonRange(range.getInnerRange(-this->padding), this->localRange);
                     // pack data into send buffer
-                    send_buff.template emplace_back();
-                    requests.template emplace_back();
+                    send_buff.emplace_back();
+                    requests.emplace_back();
                     rangeFor_s(send_range, [&](auto&& i) { send_buff.back().push_back(evalAt(i)); });
                     MPI_Isend(send_buff.back().data(), send_buff.back().size() * sizeof(D) / sizeof(char),
                               MPI_CHAR, other_rank, rank, MPI_COMM_WORLD, &requests.back());
 
                     // calculate the intersect range to be received
                     auto recv_range = DS::commonRange(range, this->localRange.getInnerRange(-this->padding));
-                    recv_buff.template emplace_back();
-                    requests.template emplace_back();
+                    recv_buff.emplace_back();
+                    requests.emplace_back();
                     recv_buff.back().resize(recv_range.count());
                     // issue receive request
                     MPI_Irecv(recv_buff.back().data(), recv_buff.back().size() * sizeof(D) / sizeof(char),

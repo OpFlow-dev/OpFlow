@@ -6,4 +6,3 @@ if (NOT TARGET opflow)
 endif ()
 
 add_example(FTCS FTCS.cpp)
-target_compile_options(FTCS PRIVATE "-save-temps")

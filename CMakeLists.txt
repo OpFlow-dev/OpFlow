@@ -71,7 +71,7 @@ endif ()
 
 # make sure __cplusplus is defined when using msvc
 if (MSVC)
-    string(APPEND CMAKE_CXX_FLAGS " /Zc:__cplusplus")
+    string(APPEND CMAKE_CXX_FLAGS " /Zc:__cplusplus /wd4267 /wd4390 /wd4244")
 endif ()
 
 set(CMAKE_CXX_EXTENSIONS OFF)

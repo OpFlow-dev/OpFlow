@@ -27,7 +27,7 @@ namespace OpFlow {
 
         template <CartesianFieldExprType Other>
         void initPropsFrom(const Other& expr) {
-            static_cast<StructuredFieldExpr<Derived>*>(this)->template initPropsFrom(expr);
+            static_cast<StructuredFieldExpr<Derived>*>(this)->initPropsFrom(expr);
         }
     };
 }// namespace OpFlow

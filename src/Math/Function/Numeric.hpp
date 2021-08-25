@@ -55,7 +55,7 @@ namespace OpFlow::Math {
 
     template <>
     struct DiscreteDelta<Meta::int_<2>> {
-        constexpr static double eval(double d) {
+        static double eval(double d) {
             d = std::abs(d);
             return d >= 1. ? 0. : 1. - d;
         }
@@ -63,8 +63,8 @@ namespace OpFlow::Math {
 
     template <>
     struct DiscreteDelta<Meta::int_<3>> {
-        constexpr static double eval(double d) {
-            d = std::abs(d);
+        static double eval(double d) {
+            d = std::max(d, -d);
             return d >= 1.5 ? 0.
                             : (d < 0.5 ? (1 + std::sqrt(1. - 3. * d * d)) / 3.
                                        : (5. - 3. * d - std::sqrt(1. - 3. * (1. - d) * (1. - d))) / 6.);

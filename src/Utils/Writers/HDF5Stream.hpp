@@ -13,7 +13,6 @@
 #ifndef OPFLOW_HDF5STREAM_HPP
 #define OPFLOW_HDF5STREAM_HPP
 
-#ifdef OPFLOW_WITH_HDF5
 #include "Core/Environment.hpp"
 #include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
 #include "Utils/Writers/FieldStream.hpp"
@@ -21,7 +20,9 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#ifdef OPFLOW_WITH_HDF5
 #include <hdf5.h>
+#endif
 #include <string>
 #include <utility>
 
@@ -38,7 +39,8 @@ namespace OpFlow::Utils {
     struct H5Stream : FieldStream<H5Stream> {
         H5Stream() = default;
         explicit H5Stream(const std::filesystem::path& path, unsigned int mode = StreamOut)
-            : path(path), mode(mode) {
+            : path(path.string()), mode(mode) {
+#ifdef OPFLOW_WITH_HDF5
             OP_ASSERT_MSG(!path.filename().empty(), "H5Stream error: File name is empty");
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
             MPI_Info info = MPI_INFO_NULL;
@@ -54,8 +56,12 @@ namespace OpFlow::Utils {
                 file = H5Fopen(this->path.c_str(), H5F_ACC_RDONLY, fapl_id);
             H5Pclose(fapl_id);
             file_inited = true;
+#else
+            OP_MPI_MASTER_WARN("H5Stream not enabled.");
+#endif
         }
         void close() {
+#ifdef OPFLOW_WITH_HDF5
             MPI_Barrier(mpi_comm);
             if (file_inited) {
                 if (group_inited) {
@@ -66,10 +72,14 @@ namespace OpFlow::Utils {
                 file_inited = false;
             }
             MPI_Barrier(mpi_comm);
+#else
+            OP_MPI_MASTER_WARN("H5Stream not enabled.");
+#endif
         }
         // time info
         auto& operator<<(const TimeStamp& t) {
             time = t;
+#ifdef OPFLOW_WITH_HDF5
             // create a new group
             if (!first_run) {
                 auto stat = H5Gclose(current_group);
@@ -79,6 +89,9 @@ namespace OpFlow::Utils {
             std::string group_name = fmt::format("/T={}", time.time);
             current_group = H5Gcreate(file, group_name.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
             group_inited = true;
+#else
+            OP_MPI_MASTER_WARN("H5Stream not enabled.");
+#endif
             return *this;
         }
         auto& moveToTime(const TimeStamp& t) {
@@ -102,7 +115,9 @@ namespace OpFlow::Utils {
 
     private:
         std::string path;
+#ifdef OPFLOW_WITH_HDF5
         hid_t file, current_group;
+#endif
         TimeStamp time {0};
         bool first_run = true, file_inited = false, group_inited = false, fixed_mesh = false,
              write_mesh = true;
@@ -114,6 +129,7 @@ namespace OpFlow::Utils {
 
     template <CartesianFieldExprType T>
     H5Stream& H5Stream::operator<<(const T& f) {
+#ifdef OPFLOW_WITH_HDF5
         constexpr auto dim = OpFlow::internal::ExprTrait<T>::dim;
         using elem_type = typename OpFlow::internal::ExprTrait<T>::elem_type;
 
@@ -201,11 +217,15 @@ namespace OpFlow::Utils {
             H5Dclose(dataset);
             H5Sclose(dataspace);
         }
+#else
+        OP_MPI_MASTER_WARN("H5Stream not enabled.");
+#endif
         return *this;
     }
 
     template <CartesianFieldExprType T>
     H5Stream& H5Stream::operator>>(T& f) {
+#ifdef OPFLOW_WITH_HDF5
         constexpr auto dim = OpFlow::internal::ExprTrait<T>::dim;
         using elem_type = typename OpFlow::internal::ExprTrait<T>::elem_type;
 
@@ -260,10 +280,12 @@ namespace OpFlow::Utils {
         // close everything
         H5Dclose(dataset);
         H5Sclose(dataspace);
+#else
+        OP_MPI_MASTER_WARN("H5Stream not enabled.");
+#endif
 
         return *this;
     }
 }// namespace OpFlow::Utils
-#endif
 
 #endif//OPFLOW_HDF5STREAM_HPP

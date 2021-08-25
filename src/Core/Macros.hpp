@@ -18,6 +18,8 @@
 
 #if defined(__INTEL_COMPILER) || defined(__clang__)// Intel / Clang compiler
 #define OPFLOW_STRONG_INLINE OPFLOW_INLINE
+#elif defined(_MSC_VER)// MSVC compiler
+#define OPFLOW_STRONG_INLINE __forceinline
 #else// GNU compiler
 #define OPFLOW_STRONG_INLINE __attribute__((always_inline)) inline
 #endif

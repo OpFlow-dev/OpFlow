@@ -64,7 +64,7 @@ namespace OpFlow {
             for (auto i = 0; i < d; ++i) _range.end[i]--;
             auto extends = _range.getExtends();
             std::vector<std::pair<int, int>> labeled_extends;
-            for (auto i = 0; i < d; ++i) { labeled_extends.template emplace_back(i, extends[i]); }
+            for (auto i = 0; i < d; ++i) { labeled_extends.emplace_back(i, extends[i]); }
             std::sort(labeled_extends.begin(), labeled_extends.end(), [](auto&& a, auto&& b) {
                 // sort according to dim size
                 return a.second < b.second;

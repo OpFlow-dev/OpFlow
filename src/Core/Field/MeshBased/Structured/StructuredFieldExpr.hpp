@@ -73,7 +73,7 @@ namespace OpFlow {
         void updatePadding() { this->derived().updatePadding(); }
         template <StructuredFieldExprType Other>
         void initPropsFrom(const Other& other) {
-            static_cast<MeshBasedFieldExpr<Derived>*>(this)->template initPropsFrom(other);
+            static_cast<MeshBasedFieldExpr<Derived>*>(this)->initPropsFrom(other);
             this->loc = other.loc;
             this->localRange = other.localRange;
             this->assignableRange = other.assignableRange;

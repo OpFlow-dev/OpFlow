@@ -15,7 +15,8 @@
 
 #include "Core/Meta.hpp"
 #include "Utils/Allocator/AllocatorTrait.hpp"
-#include <cstdlib>
+#include <malloc.h>
+#include <stdlib.h>
 
 namespace OpFlow::Utils {
     template <typename T, std::size_t align = 64>
@@ -23,7 +24,12 @@ namespace OpFlow::Utils {
         static auto allocate(std::size_t size) {
             if constexpr (Meta::is_numerical_v<T>) {
                 T* raw = reinterpret_cast<T*>(
-                        aligned_alloc(align, std::max<std::size_t>(sizeof(T) * next_pow2(size), align)));
+#ifdef _MSC_VER
+                        _aligned_malloc(align, std::max<std::size_t>(sizeof(T) * next_pow2(size), align))
+#else
+                        aligned_alloc(align, std::max<std::size_t>(sizeof(T) * next_pow2(size), align))
+#endif
+                );
                 assert(raw);
                 return raw;
             } else {
@@ -35,7 +41,12 @@ namespace OpFlow::Utils {
 
         static void deallocate(T* ptr, std::size_t size) {
             if (!ptr) return;
-            if constexpr (Meta::is_numerical_v<T>) free(ptr);
+            if constexpr (Meta::is_numerical_v<T>)
+#ifdef _MSC_VER
+                _aligned_free(ptr);
+#else
+                free(ptr);
+#endif
             else
                 delete[] ptr;
         }
