@@ -23,3 +23,6 @@ jobs:
                 -DOPFLOW_WITH_HDF5=ON -DBENCHMARK_ENABLE_TESTING=OFF -DOPFLOW_BUILD_ALL=ON \
                 -DOPFLOW_WITH_VTK=OFF ..
           make -j AllTests AllExamples AllBenchmarks
+      - name: Test
+        run: |
+          ctest -C Release
