@@ -67,6 +67,23 @@ namespace OpFlow {
             return commonRangeEqualTo(other);
         }
 
+        template <typename Other>
+        requires(internal::MeshTrait<Other>::dim == dim) auto&
+        operator=(const CartesianMeshView<Other>& view) {
+            _dims = view.getDims();
+            _range = view.getRange();
+            for (auto i = 0; i < dim; ++i) {
+                for (auto j = _range.start[i]; j < _range.end[i]; ++j) {
+                    _x[i][j - _range.start[i]] = view.x(i, j);
+                }
+                for (auto j = _range.start[i]; j < _range.end[i] - 1; ++j) {
+                    _dx[i][j - _range.start[i]] = view.dx(i, j);
+                    _idx[i][j - _range.start[i]] = view.idx(i, j);
+                }
+            }
+            return *this;
+        }
+
     private:
         bool commonRangeEqualTo(const CartesianMesh& other) const {
             bool ret = true;

@@ -64,7 +64,16 @@ namespace OpFlow {
         auto& operator=(T&& other) {// T is not const here for that we need to call other.prepare() later
             if (!initialized) {
                 this->initPropsFrom(other);
-                data = other.data;
+                if constexpr (CartesianFieldType<T>) data = other.data;
+                else {
+                    this->data.reShape(this->localRange.getInnerRange(-this->padding).getExtends());
+                    this->offset = typename internal::CartesianFieldExprTrait<CartesianField>::index_type(
+                            this->localRange.getInnerRange(-this->padding).getOffset());
+                    this->updateBC();
+                    // invoke the assigner
+                    internal::FieldAssigner::assign(other, *this);
+                    updatePadding();
+                }
                 initialized = true;
             } else if ((void*) this != (void*) &other) {
                 // assign all values from T to assignable range
