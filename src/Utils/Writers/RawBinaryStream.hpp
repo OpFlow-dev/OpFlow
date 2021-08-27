@@ -66,7 +66,7 @@ namespace OpFlow::Utils {
         void setCounterTo(int c) { count = c; }
 
         // field readers
-        template <CartesianFieldExprType T>
+        template <CartesianFieldType T>
         RawBinaryIStream& operator>>(T& f);
 
     private:
@@ -139,7 +139,7 @@ namespace OpFlow::Utils {
             fwrite(&f.localRange.end[i], sizeof(f.localRange.end[i]), 1, data);
         }
         rangeFor_s(f.localRange, [&](auto&& i) {
-            auto x = f.evalAt(i);
+            auto x = f.evalSafeAt(i);
             fwrite(&x, sizeof(x), 1, data);
         });
         fclose(data);
@@ -147,7 +147,7 @@ namespace OpFlow::Utils {
         return *this;
     }
 
-    template <CartesianFieldExprType T>
+    template <CartesianFieldType T>
     RawBinaryIStream& RawBinaryIStream::operator>>(T& f) {
         static int nproc = 1, rank = 0;
         constexpr auto dim = OpFlow::internal::CartesianFieldExprTrait<T>::dim;

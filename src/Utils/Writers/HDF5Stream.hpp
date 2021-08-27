@@ -110,7 +110,7 @@ namespace OpFlow::Utils {
         H5Stream& operator<<(const T& f);
 
         // field readers
-        template <CartesianFieldExprType T>
+        template <CartesianFieldType T>
         H5Stream& operator>>(T& f);
 
     private:
@@ -176,7 +176,7 @@ namespace OpFlow::Utils {
             DS::PlainTensor<elem_type, dim> buffer(extends);
             DS::MDIndex<dim> _offset;
             for (auto i = 0; i < dim; ++i) _offset[i] = f.localRange.start[i];
-            rangeFor(f.localRange, [&](auto&& i) { buffer[i - _offset] = f.evalAt(i); });
+            rangeFor(f.localRange, [&](auto&& i) { buffer[i - _offset] = f.evalSafeAt(i); });
             auto dataspace = H5Screate_simple(OpFlow::internal::ExprTrait<T>::dim, h_global_extends, NULL);
             static_assert(Meta::Numerical<typename OpFlow::internal::ExprTrait<T>::elem_type>);
             hid_t datatype;
@@ -223,7 +223,7 @@ namespace OpFlow::Utils {
         return *this;
     }
 
-    template <CartesianFieldExprType T>
+    template <CartesianFieldType T>
     H5Stream& H5Stream::operator>>(T& f) {
 #ifdef OPFLOW_WITH_HDF5
         constexpr auto dim = OpFlow::internal::ExprTrait<T>::dim;
