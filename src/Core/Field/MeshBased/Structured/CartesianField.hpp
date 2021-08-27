@@ -228,7 +228,9 @@ namespace OpFlow {
         const auto& evalSafeAt(const index_type& i) const { return data[i - this->offset]; }
 
         template <typename Other>
-        requires(!std::same_as<Other, CartesianField>) bool contains(const Other& o) const { return false; }
+        requires(!std::same_as<Other, CartesianField>) bool contains(const Other& o) const {
+            return false;
+        }
 
         bool contains(const CartesianField& other) const { return this == &other; }
     };
@@ -309,9 +311,8 @@ namespace OpFlow {
         // set a functor bc
         template <typename F>
         requires requires(F f) {
-            {
-                f(std::declval<typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>())
-                } -> std::convertible_to<typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
+            { f(std::declval<typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>()) }
+            ->std::convertible_to<typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
         }
         auto& setBC(int d, DimPos pos, BCType type, F&& functor) {
             OP_ASSERT(d < dim);

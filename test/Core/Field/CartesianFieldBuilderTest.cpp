@@ -143,14 +143,8 @@ TEST(CartesianFieldBuilderTest, BuildAfterDeclear) {
     v = ExprBuilder<Field2>().setMesh(m).build();
     u.initBy([](auto&& x) { return x[0]; });
     v.initBy([](auto&& x) { return x[1]; });
-    rangeFor_s(u.accessibleRange, [&](auto&& i) {
-        ASSERT_DOUBLE_EQ(u[i], m.x(0, i));
-    });
-    rangeFor_s(v.accessibleRange, [&](auto&& i) {
-        ASSERT_DOUBLE_EQ(v[i], m.x(1, i));
-    });
+    rangeFor_s(u.accessibleRange, [&](auto&& i) { ASSERT_DOUBLE_EQ(u[i], m.x(0, i)); });
+    rangeFor_s(v.accessibleRange, [&](auto&& i) { ASSERT_DOUBLE_EQ(v[i], m.x(1, i)); });
     v = u;
-    rangeFor_s(v.assignableRange, [&](auto&& i) {
-        ASSERT_DOUBLE_EQ(v[i], u[i]);
-    });
+    rangeFor_s(v.assignableRange, [&](auto&& i) { ASSERT_DOUBLE_EQ(v[i], u[i]); });
 }
