@@ -83,11 +83,13 @@ namespace OpFlow {
             expr.mesh = expr.arg1.mesh.getView();
             expr.accessibleRange = expr.arg1.accessibleRange;
             expr.localRange = expr.arg1.localRange;
-            if (!(expr.arg1.bc[d].start && expr.arg1.bc[d].start->getBCType() == BCType::Dirc)) {
+            if (!(expr.arg1.bc[d].start && (expr.arg1.bc[d].start->getBCType() == BCType::Dirc
+                                            || expr.arg1.bc[d].start->getBCType() == BCType::Neum))) {
                 expr.accessibleRange.start[d]++;
                 expr.localRange.start[d]++;
             }
-            if (expr.arg1.bc[d].end && expr.arg1.bc[d].end->getBCType() == BCType::Dirc) {
+            if (expr.arg1.bc[d].end && (expr.arg1.bc[d].end->getBCType() == BCType::Dirc
+                                        || expr.arg1.bc[d].end->getBCType() == BCType::Neum)) {
                 expr.accessibleRange.end[d]++;
                 expr.localRange.end[d]++;
             }
