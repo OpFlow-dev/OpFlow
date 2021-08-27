@@ -134,3 +134,23 @@ TEST(CartesianFieldBuilderTest, PeriodicBC_AbandonRightSide) {
     field.initBy([](auto&& x) { return x[0]; });
     ASSERT_FALSE(DS::inRange(field.accessibleRange, DS::MDIndex<2>(9, 0)));
 }
+
+TEST(CartesianFieldBuilderTest, BuildAfterDeclear) {
+    Mesh2 m;
+    Field2 u, v;
+    m = MeshBuilder<Mesh2>().newMesh(10, 10).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
+    u = ExprBuilder<Field2>().setMesh(m).build();
+    v = ExprBuilder<Field2>().setMesh(m).build();
+    u.initBy([](auto&& x) { return x[0]; });
+    v.initBy([](auto&& x) { return x[1]; });
+    rangeFor_s(u.accessibleRange, [&](auto&& i) {
+        ASSERT_DOUBLE_EQ(u[i], m.x(0, i));
+    });
+    rangeFor_s(v.accessibleRange, [&](auto&& i) {
+        ASSERT_DOUBLE_EQ(v[i], m.x(1, i));
+    });
+    v = u;
+    rangeFor_s(v.assignableRange, [&](auto&& i) {
+        ASSERT_DOUBLE_EQ(v[i], u[i]);
+    });
+}

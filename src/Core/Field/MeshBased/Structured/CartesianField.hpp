@@ -37,17 +37,23 @@ namespace OpFlow {
 
     private:
         C data;
+        bool initialized = false;
 
     public:
         friend ExprBuilder<CartesianField>;
         CartesianField() = default;
         CartesianField(const CartesianField& other)
-            : CartesianFieldExpr<CartesianField<D, M, C>>(other), data(other.data) {}
+            : CartesianFieldExpr<CartesianField<D, M, C>>(other), data(other.data), initialized(true) {}
         CartesianField(CartesianField&& other) noexcept
-            : CartesianFieldExpr<CartesianField<D, M, C>>(std::move(other)), data(std::move(other.data)) {}
+            : CartesianFieldExpr<CartesianField<D, M, C>>(std::move(other)), data(std::move(other.data)),
+              initialized(true) {}
 
         auto& operator=(const CartesianField& other) {
-            if (this != &other) {
+            if (!initialized) {
+                this->initPropsFrom(other);
+                data = other.data;
+                initialized = true;
+            } else if (this != &other) {
                 internal::FieldAssigner::assign(other, *this);
                 updatePadding();
             }
@@ -56,7 +62,11 @@ namespace OpFlow {
 
         template <CartesianFieldExprType T>
         auto& operator=(T&& other) {// T is not const here for that we need to call other.prepare() later
-            if ((void*) this != (void*) &other) {
+            if (!initialized) {
+                this->initPropsFrom(other);
+                data = other.data;
+                initialized = true;
+            } else if ((void*) this != (void*) &other) {
                 // assign all values from T to assignable range
                 internal::FieldAssigner::assign(other, *this);
                 updatePadding();
@@ -64,6 +74,10 @@ namespace OpFlow {
             return *this;
         }
         auto& operator=(const D& c) {
+            if (!initialized) {
+                OP_CRITICAL("CartesianField not initialized. Cannot assign constant to it.");
+                OP_ABORT;
+            }
             rangeFor(DS::commonRange(this->assignableRange, this->localRange),
                      [&](auto&& i) { this->operator[](i) = c; });
             updatePadding();
@@ -214,9 +228,7 @@ namespace OpFlow {
         const auto& evalSafeAt(const index_type& i) const { return data[i - this->offset]; }
 
         template <typename Other>
-        requires(!std::same_as<Other, CartesianField>) bool contains(const Other& o) const {
-            return false;
-        }
+        requires(!std::same_as<Other, CartesianField>) bool contains(const Other& o) const { return false; }
 
         bool contains(const CartesianField& other) const { return this == &other; }
     };
@@ -297,8 +309,9 @@ namespace OpFlow {
         // set a functor bc
         template <typename F>
         requires requires(F f) {
-            { f(std::declval<typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>()) }
-            ->std::convertible_to<typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
+            {
+                f(std::declval<typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>())
+                } -> std::convertible_to<typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
         }
         auto& setBC(int d, DimPos pos, BCType type, F&& functor) {
             OP_ASSERT(d < dim);
