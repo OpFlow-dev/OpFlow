@@ -13,9 +13,11 @@
 #include <deque>
 #include <map>
 #include <vector>
+#ifdef OPFLOW_WITH_VTK
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkXMLPolyDataWriter.h>
+#endif
 
 namespace OpFlow {
     template <typename Dim>
@@ -385,6 +387,7 @@ namespace OpFlow {
         }
 
         static void dump_points(auto &points, double h, const std::string &fname) {
+#ifdef OPFLOW_WITH_VTK
             vtkNew<vtkPoints> vtkp;
             for (auto &p : points) { vtkp->InsertNextPoint((p[0] + 0.5) * h, (p[1] + 0.5) * h, 0); }
             vtkNew<vtkPolyData> polydata;
@@ -394,6 +397,9 @@ namespace OpFlow {
             writer->SetFileName(fname.c_str());
             writer->SetInputData(polydata);
             writer->Write();
+#else
+            OP_ERROR("MeshBuilder::dump_points not working because VTK is not enabled");
+#endif
         }
 
         static auto domainPartition(const MarkerTree &marker, double fr_threshold, int slim_threshold) {

@@ -8,6 +8,7 @@
 #include <string>
 #include <utility>
 
+#ifdef OPFLOW_WITH_VTK
 #include <vtkAMRBox.h>
 #include <vtkAMRUtilities.h>
 #include <vtkCell.h>
@@ -29,6 +30,7 @@
 #include <vtkXMLHierarchicalBoxDataWriter.h>
 #include <vtkXMLImageDataWriter.h>
 #include <vtkXMLMultiBlockDataWriter.h>
+#endif
 
 namespace OpFlow::Utils {
     struct VTKAMRStream;
@@ -50,6 +52,7 @@ namespace OpFlow::Utils {
 
         template <CartAMRFieldExprType T>
         auto& operator<<(const T& f) {
+#ifdef OPFLOW_WITH_VTK
             constexpr auto dim = OpFlow::internal::CartAMRFieldExprTrait<T>::dim;
             vtkNew<vtkOverlappingAMR> data;
             int numLevels = f.getLevels();
@@ -94,7 +97,7 @@ namespace OpFlow::Utils {
 
                     auto idx = DS::LevelRangedIndex<dim>(f.localRanges[levelId][blockId]);
                     for (auto cellIdx = 0; cellIdx < grid->GetNumberOfCells(); ++cellIdx, ++idx) {
-                        xyz->SetTuple1(cellIdx, f.evalAt(idx));
+                        xyz->SetTuple1(cellIdx, f.evalSafeAt(idx));
                     }
                     grid->GetCellData()->AddArray(xyz);
 
@@ -111,6 +114,9 @@ namespace OpFlow::Utils {
             writer->SetFileName(name.c_str());
             writer->SetInputData(data);
             writer->Write();
+#else
+            OP_ERROR("VTKStream not working because OPFLOW_WITH_VTK is not defined");
+#endif
             return *this;
         }
 
