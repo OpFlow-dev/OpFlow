@@ -37,6 +37,29 @@ OpFlow makes the algorithm, data structure and execution scheduler fully decoupl
 <a href="https://github.com/OpFlow-dev/OpFlow/blob/master/examples/LidDriven/LidDriven2D.cpp"><img src="https://github.com/OpFlow-dev/OpFlow/blob/master/doc/03_Examples/assets/liddriven.gif" height="192px"></a>
 <a href="https://github.com/OpFlow-dev/OpFlow/blob/amr/examples/LevelSet/AMRLS.cpp"><img src="https://github.com/OpFlow-dev/OpFlow/blob/master/doc/03_Examples/assets/amrls.gif" height="192px"></a>
 
+## Quick start
+
+0. Install all dependencies:
+
+- Linux: (Ubuntu for example)
+```bash
+sudo apt install -y gcc-10 g++-10 libopenmpi-dev libhdf5-mpi-dev libhdf5-dev python3-pip python3-sphinx lcov
+python3 -m pip install sphinx-rtd-dark-theme
+```
+- macOS: (using Homebrew)
+```bash
+brew install gcc@10 open-mpi hdf5-mpi sphinx lcov
+python3 -m pip install sphinx-rtd-dark-theme
+```
+1. Configure
+```bash
+mkdir build && cd build
+cmake -DCMAKE_C_COMPILER=gcc-10 -DCMAKE_CXX_COMPILER=g++-10 -DOPFLOW_BUILD_ALL=ON -DOPFLOW_WITH_VTK=OFF ..
+```
+2. Build & Run
+```bash
+cmake --build . -t CONV1D && ./examples/CONV1D/CONV1D
+```
 ## Installation
 
 Please refer to the documentation for installation instructions.
