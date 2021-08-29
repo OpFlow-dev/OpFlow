@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/license-MPL--2.0-blue)](https://github.com/OpFlow-dev/OpFlow/blob/master/LICENSE)
 [![Downloads](https://img.shields.io/github/downloads/OpFlow-dev/OpFlow/total?color=blue&label=Downloads)](https://github.com/OpFlow-dev/OpFlow/releases/latest)
 [![Format](https://img.shields.io/github/workflow/status/OpFlow-dev/OpFlow/AutoFormat?color=green&label=Format)](https://github.com/OpFlow-dev/OpFlow/actions/workflows/AutoFormat.yml)
-[![Build](https://img.shields.io/github/workflow/status/OpFlow-dev/OpFlow/OpFlow%20Build?color=green&label=Build)](https://github.com/OpFlow-dev/OpFlow/actions/workflows/Build.yml)
+[![Build](https://img.shields.io/github/workflow/status/OpFlow-dev/OpFlow/BuildAndTest?color=green&label=Build)](https://github.com/OpFlow-dev/OpFlow/actions/workflows/Build.yml)
 
 ## Overview
 
