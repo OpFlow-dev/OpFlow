@@ -1,6 +1,6 @@
 <div align="center">
   <img width="800px" src="https://github.com/OpFlow-dev/OpFlow/blob/master/doc/assets/opflow_banner_slice.png" alt="OpFlow banner">
-  <h3> <a href="http://82.156.24.95/"> HomePage </a> | <a href="http://82.156.24.95/doc"> Document </a> </h3>
+  <h3> <a href="https://opflow.cc/"> HomePage </a> | <a href="https://opflow.cc/doc"> Document </a> </h3>
 
 </div>
 
