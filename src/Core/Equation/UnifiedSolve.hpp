@@ -36,7 +36,7 @@ namespace OpFlow {
     void Solve(const F& func, T&& target, StructSolverParams<type> params = StructSolverParams<type> {},
                StructSolverParams<pType> precParams = StructSolverParams<pType> {}) {
         auto solver = PrecondStructSolver<type, pType>(params, precParams);
-        auto handler = EqnSolveHandler(func, target, solver);
+        auto handler = makeEqnSolveHandler(func, target, solver);
         handler.solve();
     }
 
@@ -48,7 +48,7 @@ namespace OpFlow {
                SemiStructSolverParams<pType> precParams = SemiStructSolverParams<pType> {}) {
         if constexpr (pType != SemiStructSolverType::None) {
             auto solver = PrecondSemiStructSolver<type, pType>(params, precParams);
-            auto handler = EqnSolveHandler(func, target, solver);
+            auto handler = makeEqnSolveHandler(func, target, solver);
             handler.solve();
         } else {
             auto solver = SemiStructSolver<type>(params);
