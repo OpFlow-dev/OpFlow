@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<Real, Mesh>;
 
-    InitEnvironment(argc, argv);
+    InitEnvironment(&argc, &argv);
     auto info = makeParallelInfo();
     setGlobalParallelInfo(info);
     setGlobalParallelPlan(makeParallelPlan(getGlobalParallelInfo(), ParallelIdentifier::DistributeMem));

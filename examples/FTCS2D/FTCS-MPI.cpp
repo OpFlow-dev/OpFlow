@@ -7,7 +7,7 @@ int main(int argc, char** argv) {
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<Real, Mesh>;
 
-    InitEnvironment(argc, argv);
+    InitEnvironment(&argc, &argv);
     int rank, nproc;
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
