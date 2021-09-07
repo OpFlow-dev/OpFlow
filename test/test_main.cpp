@@ -1,5 +1,5 @@
-#include <gmock/gmock.h>
 #include <OpFlow>
+#include <gmock/gmock.h>
 
 int main(int argc, char* argv[]) {
     OpFlow::InitEnvironment(&argc, &argv);

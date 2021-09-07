@@ -32,14 +32,14 @@ protected:
         p_true = p;
         p_true.name = "ptrue";
         r = ExprBuilder<Field>()
-                .setMesh(m)
-                .setName("r")
-                .setBC(0, DimPos::start, BCType::Dirc, 1.)
-                .setBC(0, DimPos::end, BCType::Dirc, 1.)
-                .setBC(1, DimPos::start, BCType::Dirc, 1.)
-                .setBC(1, DimPos::end, BCType::Dirc, 1.)
-                .setLoc({LocOnMesh::Center, LocOnMesh::Center})
-                .build();
+                    .setMesh(m)
+                    .setName("r")
+                    .setBC(0, DimPos::start, BCType::Dirc, 1.)
+                    .setBC(0, DimPos::end, BCType::Dirc, 1.)
+                    .setBC(1, DimPos::start, BCType::Dirc, 1.)
+                    .setBC(1, DimPos::end, BCType::Dirc, 1.)
+                    .setLoc({LocOnMesh::Center, LocOnMesh::Center})
+                    .build();
         b = p;
         b.name = "b";
         p_true.initBy([&](auto&& x) { return x[0] * (1. - x[0]) * x[1] * (1. - x[1]); });
@@ -102,11 +102,11 @@ TEST_F(EqnSolveHandlerTest, ManualUnifiedSolve) {
     Solve(
             [&](auto&& e) {
                 return dx<D1FirstOrderCenteredUpwind>(dx<D1FirstOrderCenteredDownwind>(e)
-                / d1IntpCenterToCorner<0>((r)))
-                + dy<D1FirstOrderCenteredUpwind>(dy<D1FirstOrderCenteredDownwind>(e)
-                / d1IntpCenterToCorner<1>(r))
-                == b;
-                },
-                p, params, p_params);
+                                                      / d1IntpCenterToCorner<0>((r)))
+                               + dy<D1FirstOrderCenteredUpwind>(dy<D1FirstOrderCenteredDownwind>(e)
+                                                                / d1IntpCenterToCorner<1>(r))
+                       == b;
+            },
+            p, params, p_params);
     ASSERT_TRUE(check_solution(1e-10));
 }
