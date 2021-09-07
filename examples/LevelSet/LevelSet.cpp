@@ -10,19 +10,12 @@
 //
 //  ----------------------------------------------------------------------------
 
-#include <benchmark/benchmark.h>
+#include "AMRLS.hpp"
+#include "UniLS.hpp"
 
-static void BM_StringCreation(benchmark::State& state) {
-    for (auto _ : state) std::string empty_string;
+int main(int argc, char* argv[]) {
+    //ls();
+    amrls_3d();
+    //ls_3d();
+    return 0;
 }
-// Register the function as a benchmark
-BENCHMARK(BM_StringCreation);
-
-// Define another benchmark
-static void BM_StringCopy(benchmark::State& state) {
-    std::string x = "hello";
-    for (auto _ : state) std::string copy(x);
-}
-BENCHMARK(BM_StringCopy);
-
-BENCHMARK_MAIN();

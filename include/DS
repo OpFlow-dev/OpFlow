@@ -17,16 +17,20 @@
 #include "DataStructures/Arrays/Tensor/PlainTensor.hpp"
 #include "DataStructures/Arrays/Tensor/TensorBase.hpp"
 #include "DataStructures/Arrays/Tensor/TensorTrait.hpp"
+#include "DataStructures/Arrays/Tensor/FixedSizeTensor.hpp"
 
 // Geometry
 #include "DataStructures/Geometry/BasicElements.hpp"
 #include "DataStructures/Geometry/KdTree.hpp"
 
 // Index
+#include "DataStructures/Index/LevelMDIndex.hpp"
+#include "DataStructures/Index/LevelRangedIndex.hpp"
 #include "DataStructures/Index/MDIndex.hpp"
 #include "DataStructures/Index/RangedIndex.hpp"
 
 // Range
+#include "DataStructures/Range/LevelRanges.hpp"
 #include "DataStructures/Range/Ranges.hpp"
 
 // DataTypes

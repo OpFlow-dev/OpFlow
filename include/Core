@@ -23,6 +23,11 @@
 // Mesh
 #include "Core/Mesh/MeshBase.hpp"
 #include "Core/Mesh/MeshTrait.hpp"
+#include "Core/Mesh/SemiStructured/CartesianAMRMesh.hpp"
+#include "Core/Mesh/SemiStructured/CartesianAMRMeshBase.hpp"
+#include "Core/Mesh/SemiStructured/CartesianAMRMeshTrait.hpp"
+#include "Core/Mesh/SemiStructured/CartesianAMRMeshView.hpp"
+#include "Core/Mesh/SemiStructured/CartesianAMRMeshViewTrait.hpp"
 #include "Core/Mesh/SemiStructured/SemiStructuredMesh.hpp"
 #include "Core/Mesh/SemiStructured/SemiStructuredMeshTrait.hpp"
 #include "Core/Mesh/Structured/CartesianMesh.hpp"
@@ -38,6 +43,7 @@
 #include "Core/Expr/ExprTrait.hpp"
 #include "Core/Expr/Expression.hpp"
 #include "Core/Expr/ScalarExpr.hpp"
+#include "Core/Expr/ScalarExprTrait.hpp"
 
 // Field
 #include "Core/Field/Analytical/AnalyticalFieldExpr.hpp"
@@ -46,6 +52,10 @@
 #include "Core/Field/FieldMacros.hpp"
 #include "Core/Field/MeshBased/MeshBasedFieldExpr.hpp"
 #include "Core/Field/MeshBased/MeshBasedFieldExprTrait.hpp"
+#include "Core/Field/MeshBased/SemiStructured/CartAMRField.hpp"
+#include "Core/Field/MeshBased/SemiStructured/CartAMRFieldExpr.hpp"
+#include "Core/Field/MeshBased/SemiStructured/CartAMRFieldExprTrait.hpp"
+#include "Core/Field/MeshBased/SemiStructured/CartAMRFieldTrait.hpp"
 #include "Core/Field/MeshBased/SemiStructured/SemiStructuredFieldExpr.hpp"
 #include "Core/Field/MeshBased/SemiStructured/SemiStructuredFieldExprTrait.hpp"
 #include "Core/Field/MeshBased/StencilField.hpp"
@@ -63,6 +73,7 @@
 #include "Core/Operator/Arithmetic/MinMax.hpp"
 #include "Core/Operator/Conditional.hpp"
 #include "Core/Operator/DecableOp.hpp"
+#include "Core/Operator/PerElemOpAdaptor.hpp"
 #include "Core/Operator/FDMOperators/DiffsInterface.hpp"
 #include "Core/Operator/FDMOperators/FirstOrderBiasedDownwind.hpp"
 #include "Core/Operator/FDMOperators/FirstOrderBiasedUpwind.hpp"
@@ -76,6 +87,8 @@
 #include "Core/Operator/Logical/Boolean.hpp"
 #include "Core/Operator/Logical/Compare.hpp"
 #include "Core/Operator/Operator.hpp"
+#include "Core/Operator/IdentityOp.hpp"
+#include "Core/Operator/Convolution/Convolution.hpp"
 
 // BC
 #include "Core/BC/BCBase.hpp"
@@ -104,6 +117,7 @@
 #include "Core/Solvers/Struct/StructSolverPrecond.hpp"
 #include "Core/Solvers/Struct/StructSolverSMG.hpp"
 #include "Core/Solvers/SemiStruct/SemiStructSolver.hpp"
+#include "Core/Solvers/SemiStruct/SemiStructSolverFAC.hpp"
 #include "Core/Solvers/SemiStruct/SemiStructSolverNone.hpp"
 
 // Parallel

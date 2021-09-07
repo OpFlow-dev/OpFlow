@@ -13,6 +13,7 @@
 #ifndef OPFLOW_FIRSTORDERBIASEDUPWIND_HPP
 #define OPFLOW_FIRSTORDERBIASEDUPWIND_HPP
 
+#include "Core/Field/MeshBased/SemiStructured/CartAMRFieldExprTrait.hpp"
 #include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
 #include "Core/Macros.hpp"
 #include "Core/Operator/DecableOp.hpp"
@@ -31,6 +32,20 @@ namespace OpFlow {
                          && (e.bc[d].start->getBCType() == BCType::Neum
                              || e.bc[d].start->getBCType() == BCType::Dirc);
             auto cond2 = e.bc[d].end && e.loc[d] == LocOnMesh::Center && i[d] + 1 == e.accessibleRange.end[d]
+                         && (e.bc[d].end->getBCType() == BCType::Neum
+                             || e.bc[d].end->getBCType() == BCType::Dirc);
+            return cond0 || cond1 || cond2;
+        }
+        template <CartAMRFieldExprType E>
+        OPFLOW_STRONG_INLINE static auto couldSafeEval(const E& e, auto&& i) {
+            auto cond0 = e.accessibleRanges[i.l][i.p].start[d] <= i[d]
+                         && i[d] + 1 < e.accessibleRanges[i.l][i.p].end[d];
+            auto cond1 = e.bc[d].start && e.loc[d] == LocOnMesh::Center
+                         && i[d] + 1 == e.maxLogicalRanges[i.l].start[d]
+                         && (e.bc[d].start->getBCType() == BCType::Neum
+                             || e.bc[d].start->getBCType() == BCType::Dirc);
+            auto cond2 = e.bc[d].end && e.loc[d] == LocOnMesh::Center
+                         && i[d] + 1 == e.maxLogicalRanges[i.l].end[d]
                          && (e.bc[d].end->getBCType() == BCType::Neum
                              || e.bc[d].end->getBCType() == BCType::Dirc);
             return cond0 || cond1 || cond2;
@@ -64,12 +79,54 @@ namespace OpFlow {
             //OP_ERROR("Expr and index are: \n{}\nIndex = {}", e.toString(), i.toString());
             OP_ABORT;
         }
+        template <CartAMRFieldExprType E>
+        OPFLOW_STRONG_INLINE static auto eval_safe(const E& e, auto&& i) {
+            if (e.accessibleRanges[i.l][i.p].start[d] <= i[d]
+                && i[d] + 1 < e.accessibleRanges[i.l][i.p].end[d])
+                return (e.evalSafeAt(i.template next<d>()) - e.evalSafeAt(i))
+                       / (e.loc[d] == LocOnMesh::Corner
+                                  ? e.mesh.dx(d, i.l, i[d])
+                                  : (e.mesh.dx(d, i.l, i[d]) + e.mesh.dx(d, i.l, i[d] + 1)) * 0.5);
+            // left bc case
+            if (e.bc[d].start && e.loc[d] == LocOnMesh::Center
+                && i[d] + 1 == e.maxLogicalRanges[i.l].start[d]) {
+                if (e.bc[d].start->getBCType() == BCType::Neum)
+                    return e.bc[d].start->evalAt(i.toLevel(0, e.mesh.refinementRatio));
+                else if (e.bc[d].start->getBCType() == BCType::Dirc) {
+                    // assume asymmetric extension
+                    return (e.evalSafeAt(i.template next<d>())
+                            - e.bc[d].start->evalAt(i.toLevel(0, e.mesh.refinementRatio)))
+                           * (e.mesh.idx(d, i.l, i[d] + 1)) * 2.0;
+                }
+            }
+            // right bc case
+            if (e.bc[d].end && e.loc[d] == LocOnMesh::Center && i[d] + 1 == e.maxLogicalRanges[i.l].end[d]) {
+                if (e.bc[d].end->getBCType() == BCType::Neum)
+                    return e.bc[d].end->evalAt(i.toLevel(0, e.mesh.refinementRatio));
+                else if (e.bc[d].end->getBCType() == BCType::Dirc) {
+                    // assume asymmetric extension
+                    return (e.bc[d].end->evalAt(i.toLevel(0, e.mesh.refinementRatio)) - e.evalSafeAt(i))
+                           * e.mesh.idx(d, i.l, i[d]) * 2.0;
+                }
+            }
+            // not handled case
+            OP_ERROR("Cannot handle current case.");
+            OP_ABORT;
+        }
 
         template <CartesianFieldExprType E, typename I>
         OPFLOW_STRONG_INLINE static auto eval(const E& e, I i) {
             return (e.evalAt(i.template next<d>()) - e.evalAt(i))
                    / (e.loc[d] == LocOnMesh::Corner ? e.mesh.dx(d, i[d])
                                                     : (e.mesh.dx(d, i[d]) + e.mesh.dx(d, i[d] + 1)) * 0.5);
+        }
+
+        template <CartAMRFieldExprType E>
+        OPFLOW_STRONG_INLINE static auto eval(const E& e, auto&& i) {
+            return (e.evalAt(i.template next<d>()) - e.evalAt(i))
+                   / (e.loc[d] == LocOnMesh::Corner
+                              ? e.mesh.dx(d, i.l, i[d])
+                              : (e.mesh.dx(d, i.l, i[d]) + e.mesh.dx(d, i.l, i[d] + 1)) * 0.5);
         }
 
         template <typename Op, CartesianFieldExprType E>
@@ -110,11 +167,55 @@ namespace OpFlow {
             // make the result expr read-only
             expr.assignableRange.setEmpty();
         }
+        template <typename Op, CartAMRFieldExprType E>
+                requires std::same_as<
+                        Op,
+                        D1FirstOrderBiasedUpwind> || (DecableOpType<Op> && std::same_as<typename LastOpOfDecableOp<Op>::type, D1FirstOrderBiasedUpwind>) static void prepare(Expression<Op, E>& expr) {
+            constexpr auto dim = internal::CartAMRFieldExprTrait<E>::dim;
+            expr.initPropsFrom(expr.arg1);
+
+            // name
+            expr.name = fmt::format("d1<D1FirstOrderBiasedUpwind<{}>>({})", d, expr.arg1.name);
+
+            // ranges
+            if (expr.arg1.loc[d] == LocOnMesh::Corner) {
+                // nodal case
+                for (auto& l : expr.accessibleRanges)
+                    for (auto& r : l) r.end[d]--;
+            } else {
+                // center case
+                if (expr.arg1.bc[d].start) {
+                    for (auto& l : expr.accessibleRanges) {
+                        for (auto& r : l) {
+                            if (r.start[d] / Math::int_pow(expr.mesh.refinementRatio, r.level)
+                                == expr.maxLogicalRanges[0].start[d])
+                                r.start[d]--;
+                        }
+                    }
+                }
+                if (!expr.arg1.bc[d].end) {
+                    for (auto& l : expr.accessibleRanges) {
+                        for (auto& r : l) {
+                            if (r.end[d] / Math::int_pow(expr.mesh.refinementRatio, r.level)
+                                == expr.maxLogicalRanges[0].end[d])
+                                r.end[d]--;
+                        }
+                    }
+                }
+            }
+            for (auto& l : expr.assignableRanges)
+                for (auto& r : l) r.setEmpty();
+        }
     };
 
     template <std::size_t d, CartesianFieldExprType T>
     struct ResultType<D1FirstOrderBiasedUpwind<d>, T> {
         using type = CartesianFieldExpr<Expression<D1FirstOrderBiasedUpwind<d>, T>>;
+        using core_type = Expression<D1FirstOrderBiasedUpwind<d>, T>;
+    };
+    template <std::size_t d, CartAMRFieldExprType T>
+    struct ResultType<D1FirstOrderBiasedUpwind<d>, T> {
+        using type = CartAMRFieldExpr<Expression<D1FirstOrderBiasedUpwind<d>, T>>;
         using core_type = Expression<D1FirstOrderBiasedUpwind<d>, T>;
     };
     namespace internal {
@@ -135,6 +236,15 @@ namespace OpFlow {
             using range_type = typename CartesianFieldExprTrait<T>::range_type;
             using index_type = typename CartesianFieldExprTrait<T>::index_type;
         };
+        template <std::size_t d, CartAMRFieldExprType T>
+        struct ExprTrait<Expression<D1FirstOrderBiasedUpwind<d>, T>> : ExprTrait<T> {
+            static constexpr int bc_width
+                    = D1FirstOrderBiasedUpwind<d>::bc_width + CartAMRFieldExprTrait<T>::bc_width;
+            static constexpr int access_flag = 0;
+            using mesh_type
+                    = decltype(std::declval<typename CartAMRFieldExprTrait<T>::mesh_type&>().getView());
+        };
+
     }// namespace internal
 }// namespace OpFlow
 #endif//OPFLOW_FIRSTORDERBIASEDUPWIND_HPP

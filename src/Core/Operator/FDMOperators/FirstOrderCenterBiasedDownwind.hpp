@@ -13,6 +13,7 @@
 #ifndef OPFLOW_FIRSTORDERCENTERBIASEDDOWNWIND_HPP
 #define OPFLOW_FIRSTORDERCENTERBIASEDDOWNWIND_HPP
 
+#include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
 #include "Core/Operator/Interpolator/IndexShift.hpp"
 #include "DataStructures/Range/Ranges.hpp"
 
