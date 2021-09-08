@@ -65,6 +65,13 @@ namespace OpFlow {
             return HYPRE_StructLGMRESSetup(solver, A, b, x);
         }
 
+        void dump(HYPRE_StructMatrix& A, HYPRE_StructVector& b) {
+            if (params.dumpPath) {
+                HYPRE_StructMatrixPrint((params.dumpPath.value() + "_A.mat").c_str(), A, 0);
+                HYPRE_StructVectorPrint((params.dumpPath.value() + "_b.vec").c_str(), b, 0);
+            }
+        }
+
         auto getIterNum() {
             int ret;
             HYPRE_StructLGMRESGetNumIterations(solver, &ret);

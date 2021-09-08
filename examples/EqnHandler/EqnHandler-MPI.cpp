@@ -14,7 +14,7 @@
 using namespace OpFlow;
 
 int main(int argc, char* argv[]) {
-    InitEnvironment(argc, argv);
+    InitEnvironment(&argc, &argv);
 
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<Real, Mesh>;

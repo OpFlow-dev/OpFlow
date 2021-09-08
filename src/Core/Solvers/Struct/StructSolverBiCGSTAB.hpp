@@ -46,6 +46,12 @@ namespace OpFlow {
             if (params.printLevel) HYPRE_StructBiCGSTABSetPrintLevel(solver, params.printLevel.value());
         }
 
+        void reinit() {
+            HYPRE_StructBiCGSTABDestroy(solver);
+            HYPRE_StructBiCGSTABCreate(params.comm, &solver);
+            init();
+        }
+
         void setPrecond(HYPRE_PtrToStructSolverFcn precond, HYPRE_PtrToStructSolverFcn precond_setup,
                         HYPRE_StructSolver& precond_solver) {
             HYPRE_StructBiCGSTABSetPrecond(solver, precond, precond_setup, precond_solver);
@@ -62,6 +68,13 @@ namespace OpFlow {
 
         auto setup(HYPRE_StructMatrix& A, HYPRE_StructVector& b, HYPRE_StructVector& x) {
             return HYPRE_StructBiCGSTABSetup(solver, A, b, x);
+        }
+
+        void dump(HYPRE_StructMatrix& A, HYPRE_StructVector& b) {
+            if (params.dumpPath) {
+                HYPRE_StructMatrixPrint((params.dumpPath.value() + "_A.mat").c_str(), A, 0);
+                HYPRE_StructVectorPrint((params.dumpPath.value() + "_b.vec").c_str(), b, 0);
+            }
         }
 
         auto getIterNum() {

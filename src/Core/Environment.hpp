@@ -22,9 +22,9 @@
 #include "Core/Parallel/ParallelPlan.hpp"
 
 namespace OpFlow {
-    void static inline InitEnvironment(int argc, char** argv) {
+    void static inline InitEnvironment(int* argc, char*** argv) {
 #ifdef OPFLOW_WITH_MPI
-        MPI_Init(&argc, &argv);
+        MPI_Init(argc, argv);
 #endif
     }
 

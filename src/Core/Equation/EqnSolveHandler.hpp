@@ -173,7 +173,7 @@ namespace OpFlow {
             if (firstRun) {
                 generateAb();
                 initx();
-                solver.getSolver().dump(A, b);
+                solver.dump(A, b);
                 solver.setup(A, b, x);
                 solver.solve(A, b, x);
                 firstRun = false;
@@ -182,6 +182,8 @@ namespace OpFlow {
                 else
                     generateAb();
                 initx();
+                solver.reinit();
+                solver.setup(A, b, x);
                 solver.solve(A, b, x);
             }
             OP_DEBUG("Res: {}", solver.getFinalRes());

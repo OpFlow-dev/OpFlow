@@ -48,6 +48,12 @@ namespace OpFlow {
             if (params.printLevel) HYPRE_StructPCGSetPrintLevel(solver, params.printLevel.value());
         }
 
+        void reinit() {
+            HYPRE_StructPCGDestroy(solver);
+            HYPRE_StructPCGCreate(params.comm, &solver);
+            init();
+        }
+
         void setPrecond(HYPRE_PtrToStructSolverFcn precond, HYPRE_PtrToStructSolverFcn precond_setup,
                         HYPRE_StructSolver& precond_solver) {
             HYPRE_StructPCGSetPrecond(solver, precond, precond_setup, precond_solver);

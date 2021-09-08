@@ -5,7 +5,7 @@ int main(int argc, char* argv[]) {
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<Real, Mesh>;
 
-    InitEnvironment(argc, argv);// clang-format off
+    InitEnvironment(&argc, &argv);// clang-format off
 
     // meshes & fields
     auto n = 65;

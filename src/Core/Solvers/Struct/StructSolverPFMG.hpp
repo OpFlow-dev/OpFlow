@@ -65,6 +65,12 @@ namespace OpFlow {
             if (params.printLevel) HYPRE_StructPFMGSetPrintLevel(solver, params.printLevel.value());
         }
 
+        void reinit() {
+            HYPRE_StructPFMGDestroy(solver);
+            HYPRE_StructPFMGCreate(params.comm, &solver);
+            init();
+        }
+
         auto solve(HYPRE_StructMatrix& A, HYPRE_StructVector& b, HYPRE_StructVector& x) {
             return HYPRE_StructPFMGSolve(solver, A, b, x);
         }

@@ -13,17 +13,19 @@
 project(OpFlow_Core_Tests)
 
 # Metas
-add_gmock(MetaTest ${CMAKE_CURRENT_SOURCE_DIR}/MetaTest.cpp)
+add_gmock(MetaTest ${CMAKE_CURRENT_LIST_DIR}/MetaTest.cpp)
 
 # Meshes
-add_gmock(CartesianMeshTest ${CMAKE_CURRENT_SOURCE_DIR}/Mesh/CartesianMeshTest.cpp)
+add_gmock(CartesianMeshTest ${CMAKE_CURRENT_LIST_DIR}/Mesh/CartesianMeshTest.cpp)
 
 # Fields
 add_gmock(CartesianFieldBuilderTest ${CMAKE_CURRENT_LIST_DIR}/Field/CartesianFieldBuilderTest.cpp)
 
 # Interpolators
-add_gmock(InterpolatorTest ${CMAKE_CURRENT_SOURCE_DIR}/Operator/InterpolatorTest.cpp)
+add_gmock(InterpolatorTest ${CMAKE_CURRENT_LIST_DIR}/Operator/InterpolatorTest.cpp)
 
 # RangeFor
-add_gmock(RangeForTest ${CMAKE_CURRENT_SOURCE_DIR}/Loops/RangeForTest.cpp)
+add_gmock(RangeForTest ${CMAKE_CURRENT_LIST_DIR}/Loops/RangeForTest.cpp)
 
+# Equation
+add_gmock(EqnSolveHandlerTest ${CMAKE_CURRENT_LIST_DIR}/Equation/EqnSolveHandlerTest.cpp)

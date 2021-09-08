@@ -35,8 +35,14 @@ namespace OpFlow {
             solver.setPrecond(precond.getSolveFunc(), precond.getSetUpFunc(), precond.getSolver());
         }
 
-        auto& getSolver() { return solver; }
-        const auto& getSolver() const { return solver; }
+        void reinit() {
+            solver.reinit();
+            precond.reinit();
+            solver.setPrecond(precond.getSolveFunc(), precond.getSetUpFunc(), precond.getSolver());
+        }
+
+        auto& getSolver() { return solver.getSolver(); }
+        const auto& getSolver() const { return solver.getSolver(); }
         auto getSolveFunc() const { return solver.getSolveFunc(); }
         auto getSetUpFunc() const { return solver.getSetUpFunc(); }
 
@@ -46,6 +52,13 @@ namespace OpFlow {
 
         auto setup(HYPRE_StructMatrix& A, HYPRE_StructVector& b, HYPRE_StructVector& x) {
             return solver.setup(A, b, x);
+        }
+
+        void dump(HYPRE_StructMatrix& A, HYPRE_StructVector& b) {
+            if (params.dumpPath) {
+                HYPRE_StructMatrixPrint((params.dumpPath.value() + "_A.mat").c_str(), A, 0);
+                HYPRE_StructVectorPrint((params.dumpPath.value() + "_b.vec").c_str(), b, 0);
+            }
         }
 
         auto getIterNum() { return solver.getIterNum(); }

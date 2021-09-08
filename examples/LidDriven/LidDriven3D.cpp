@@ -4,7 +4,7 @@ int main(int argc, char* argv[]) {
     using Mesh = CartesianMesh<Meta::int_<3>>;
     using Field = CartesianField<Real, Mesh>;
 
-    MPI_Init(&argc, &argv);
+    InitEnvironment(&argc, &argv);
 
     // meshes & fields
     auto n = 65;
@@ -166,6 +166,6 @@ int main(int argc, char* argv[]) {
     auto t1 = std::chrono::system_clock::now();
     OP_INFO("Elapsed time: {}ms", std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count());
 
-    MPI_Finalize();
+    FinalizeEnvironment();
     return 0;
 }
