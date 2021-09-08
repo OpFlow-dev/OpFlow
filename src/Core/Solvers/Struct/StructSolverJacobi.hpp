@@ -46,12 +46,25 @@ namespace OpFlow {
                 HYPRE_StructJacobiSetNonZeroGuess(solver);
         }
 
+        void reinit() {
+            HYPRE_StructJacobiDestroy(solver);
+            HYPRE_StructJacobiCreate(params.comm, &solver);
+            init();
+        }
+
         auto solve(HYPRE_StructMatrix& A, HYPRE_StructVector& b, HYPRE_StructVector& x) {
             return HYPRE_StructJacobiSolve(solver, A, b, x);
         }
 
         auto setup(HYPRE_StructMatrix& A, HYPRE_StructVector& b, HYPRE_StructVector& x) {
             return HYPRE_StructJacobiSetup(solver, A, b, x);
+        }
+
+        void dump(HYPRE_StructMatrix& A, HYPRE_StructVector& b) {
+            if (params.dumpPath) {
+                HYPRE_StructMatrixPrint((params.dumpPath.value() + "_A.mat").c_str(), A, 0);
+                HYPRE_StructVectorPrint((params.dumpPath.value() + "_b.vec").c_str(), b, 0);
+            }
         }
 
         auto& getSolver() { return solver; }

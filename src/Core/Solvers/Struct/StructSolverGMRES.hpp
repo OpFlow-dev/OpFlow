@@ -46,6 +46,12 @@ namespace OpFlow {
             if (params.printLevel) HYPRE_StructGMRESSetPrintLevel(solver, params.printLevel.value());
         }
 
+        void reinit() {
+            HYPRE_StructGMRESDestroy(solver);
+            HYPRE_StructGMRESCreate(params.comm, &solver);
+            init();
+        }
+
         void setPrecond(HYPRE_PtrToStructSolverFcn precond, HYPRE_PtrToStructSolverFcn precond_setup,
                         HYPRE_StructSolver& precond_solver) {
             HYPRE_StructGMRESSetPrecond(solver, precond, precond_setup, precond_solver);

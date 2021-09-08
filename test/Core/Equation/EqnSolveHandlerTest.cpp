@@ -55,6 +55,7 @@ protected:
                                            / d1IntpCenterToCorner<0>((r)))
             + dy<D1FirstOrderCenteredUpwind>(dy<D1FirstOrderCenteredDownwind>(p_true)
                                              / d1IntpCenterToCorner<1>(r));
+        p = 0.;
     }
 
     bool check_solution(double rel = 1e-10) {
@@ -65,12 +66,26 @@ protected:
             auto c_res = res.evalAt(i);
             auto p_ref = p_true.evalAt(i);
             auto rel_res = std::abs(c_res) / std::abs(p_ref);
+            if (std::isnan(c_res)) {
+                OP_ERROR("Check fail: res = nan @ {}", i.toString());
+                ret = false;
+            }
             if (rel_res > rel) {
                 OP_ERROR("Check fail: res = {} / {} @ {}", c_res, rel_res, i.toString());
                 ret = false;
             }
         });
         return ret;
+    }
+
+    auto poisson_eqn() {
+        return [&](auto&& e) {
+            return b
+                   == dx<D1FirstOrderCenteredUpwind>(dx<D1FirstOrderCenteredDownwind>(e)
+                                                     / d1IntpCenterToCorner<0>((r)))
+                              + dy<D1FirstOrderCenteredUpwind>(dy<D1FirstOrderCenteredDownwind>(e)
+                                                               / d1IntpCenterToCorner<1>(r));
+        };
     }
 
     using Mesh = CartesianMesh<Meta::int_<2>>;
@@ -81,15 +96,7 @@ protected:
 
 TEST_F(EqnSolveHandlerTest, DefaultUnifiedSolve) {
     this->reset_case(0.5, 0.5);
-    Solve(
-            [&](auto&& e) {
-                return dx<D1FirstOrderCenteredUpwind>(dx<D1FirstOrderCenteredDownwind>(e)
-                                                      / d1IntpCenterToCorner<0>((r)))
-                               + dy<D1FirstOrderCenteredUpwind>(dy<D1FirstOrderCenteredDownwind>(e)
-                                                                / d1IntpCenterToCorner<1>(r))
-                       == b;
-            },
-            p);
+    Solve(poisson_eqn(), p);
     ASSERT_TRUE(check_solution(1e-5));
 }
 
@@ -99,14 +106,145 @@ TEST_F(EqnSolveHandlerTest, ManualUnifiedSolve) {
     params.tol = 1e-10;
     StructSolverParams<OpFlow::StructSolverType ::PFMG> p_params;
     p = 0.;
-    Solve(
-            [&](auto&& e) {
-                return dx<D1FirstOrderCenteredUpwind>(dx<D1FirstOrderCenteredDownwind>(e)
-                                                      / d1IntpCenterToCorner<0>((r)))
-                               + dy<D1FirstOrderCenteredUpwind>(dy<D1FirstOrderCenteredDownwind>(e)
-                                                                / d1IntpCenterToCorner<1>(r))
-                       == b;
-            },
-            p, params, p_params);
+    Solve(poisson_eqn(), p, params, p_params);
+    ASSERT_TRUE(check_solution(1e-10));
+}
+
+TEST_F(EqnSolveHandlerTest, DefaultHandlerSolve) {
+    this->reset_case(0.5, 0.5);
+    auto solver = PrecondStructSolver<StructSolverType::GMRES, StructSolverType::PFMG> {};
+    auto handler = makeEqnSolveHandler(poisson_eqn(), p, solver);
+    handler.solve();
+    ASSERT_TRUE(check_solution(1e-5));
+}
+
+TEST_F(EqnSolveHandlerTest, ManualHandlerSolve) {
+    this->reset_case(0.5, 0.5);
+    StructSolverParams<OpFlow::StructSolverType::GMRES> params;
+    params.tol = 1e-10;
+    StructSolverParams<OpFlow::StructSolverType ::PFMG> p_params;
+    auto solver = PrecondStructSolver<StructSolverType::GMRES, StructSolverType::PFMG> {params, p_params};
+    auto handler = makeEqnSolveHandler(poisson_eqn(), p, solver);
+    handler.solve();
+    ASSERT_TRUE(check_solution(1e-10));
+}
+
+TEST_F(EqnSolveHandlerTest, DefaultUnifiedSolveTwice) {
+    this->reset_case(0.5, 0.5);
+    Solve(poisson_eqn(), p);
+    ASSERT_TRUE(check_solution(1e-5));
+    this->reset_case(0.3, 0.6);
+    Solve(poisson_eqn(), p);
+    ASSERT_TRUE(check_solution(1e-5));
+}
+
+TEST_F(EqnSolveHandlerTest, HandlerSolveTwice) {
+    this->reset_case(0.5, 0.5);
+    StructSolverParams<OpFlow::StructSolverType::GMRES> params;
+    params.tol = 1e-10;
+    params.printLevel = 2;
+    params.maxIter = 10;
+    StructSolverParams<OpFlow::StructSolverType ::PFMG> p_params;
+    auto solver = PrecondStructSolver<StructSolverType::GMRES, StructSolverType::PFMG> {params, p_params};
+    auto handler = makeEqnSolveHandler(poisson_eqn(), p, solver);
+    handler.solve();
+    ASSERT_TRUE(check_solution(1e-10));
+    this->reset_case(0.3, 0.6);
+    handler.solve();
+    ASSERT_TRUE(check_solution(1e-10));
+}
+
+// used for memory leak detection
+TEST_F(EqnSolveHandlerTest, HandlerSolveRepeat) {
+    StructSolverParams<OpFlow::StructSolverType::GMRES> params;
+    params.tol = 1e-10;
+    params.printLevel = 2;
+    params.maxIter = 10;
+    StructSolverParams<OpFlow::StructSolverType ::PFMG> p_params;
+    auto solver = PrecondStructSolver<StructSolverType::GMRES, StructSolverType::PFMG> {params, p_params};
+    auto handler = makeEqnSolveHandler(poisson_eqn(), p, solver);
+    for (auto i = 0; i < 10; ++i) {
+        this->reset_case(0.3, 0.6);
+        handler.solve();
+        ASSERT_TRUE(check_solution(1e-10));
+    }
+}
+
+// other types of solvers test
+TEST_F(EqnSolveHandlerTest, BiCGSTABPFMG) {
+    this->reset_case(0.5, 0.5);
+    StructSolverParams<OpFlow::StructSolverType::BICGSTAB> params;
+    params.tol = 1e-10;
+    params.maxIter = 10;
+    StructSolverParams<OpFlow::StructSolverType ::PFMG> p_params;
+    p = 0.;
+    Solve(poisson_eqn(), p, params, p_params);
+    ASSERT_TRUE(check_solution(1e-10));
+}
+
+TEST_F(EqnSolveHandlerTest, PCGPFMG) {
+    this->reset_case(0.5, 0.5);
+    StructSolverParams<OpFlow::StructSolverType::PCG> params;
+    params.tol = 1e-10;
+    params.maxIter = 10;
+    StructSolverParams<OpFlow::StructSolverType ::PFMG> p_params;
+    p = 0.;
+    Solve(poisson_eqn(), p, params, p_params);
+    ASSERT_TRUE(check_solution(1e-10));
+}
+
+TEST_F(EqnSolveHandlerTest, PCG) {
+    this->reset_case(0.5, 0.5);
+    StructSolverParams<OpFlow::StructSolverType::PCG> params;
+    params.tol = 1e-10;
+    params.maxIter = 100;
+    StructSolverParams<OpFlow::StructSolverType ::None> p_params;
+    p = 0.;
+    Solve(poisson_eqn(), p, params, p_params);
+    ASSERT_TRUE(check_solution(1e-5));
+}
+
+TEST_F(EqnSolveHandlerTest, BiCGSTAB) {
+    this->reset_case(0.5, 0.5);
+    StructSolverParams<OpFlow::StructSolverType::BICGSTAB> params;
+    params.tol = 1e-10;
+    params.maxIter = 100;
+    StructSolverParams<OpFlow::StructSolverType ::None> p_params;
+    p = 0.;
+    Solve(poisson_eqn(), p, params, p_params);
+    ASSERT_TRUE(check_solution(1e-5));
+}
+
+TEST_F(EqnSolveHandlerTest, GMRES) {
+    this->reset_case(0.5, 0.5);
+    StructSolverParams<OpFlow::StructSolverType::GMRES> params;
+    params.tol = 1e-10;
+    params.maxIter = 100;
+    params.kDim = 20;
+    StructSolverParams<OpFlow::StructSolverType ::None> p_params;
+    p = 0.;
+    Solve(poisson_eqn(), p, params, p_params);
+    ASSERT_TRUE(check_solution(1e-2));
+}
+
+TEST_F(EqnSolveHandlerTest, GMRESJACOBI) {
+    this->reset_case(0.5, 0.5);
+    StructSolverParams<OpFlow::StructSolverType::GMRES> params;
+    params.tol = 1e-10;
+    params.maxIter = 10;
+    StructSolverParams<OpFlow::StructSolverType ::Jacobi> p_params;
+    p = 0.;
+    Solve(poisson_eqn(), p, params, p_params);
+    ASSERT_TRUE(check_solution(1e-10));
+}
+
+TEST_F(EqnSolveHandlerTest, GMRESSMG) {
+    this->reset_case(0.5, 0.5);
+    StructSolverParams<OpFlow::StructSolverType::GMRES> params;
+    params.tol = 1e-10;
+    params.maxIter = 10;
+    StructSolverParams<OpFlow::StructSolverType ::SMG> p_params;
+    p = 0.;
+    Solve(poisson_eqn(), p, params, p_params);
     ASSERT_TRUE(check_solution(1e-10));
 }

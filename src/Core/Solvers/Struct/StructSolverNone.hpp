@@ -20,7 +20,9 @@ namespace OpFlow {
     // note: the None solver type is only created for unification of the upper level solver API
     // where None indicates un-preconditioned solver. Any use of these types otherwise is illegal.
     template <>
-    struct StructSolverParams<StructSolverType::None> {};
+    struct StructSolverParams<StructSolverType::None> {
+        std::optional<std::string> dumpPath;
+    };
 
     template <>
     struct StructSolver<StructSolverType::None> {
@@ -32,8 +34,16 @@ namespace OpFlow {
         StructSolver(const Param& p) : params(p) {}
 
         void init() {}
+        void reinit() {}
         auto solve(auto&&...) {}
         auto setup(auto&&...) {}
+
+        void dump(HYPRE_StructMatrix& A, HYPRE_StructVector& b) {
+            if (params.dumpPath) {
+                HYPRE_StructMatrixPrint((params.dumpPath.value() + "_A.mat").c_str(), A, 0);
+                HYPRE_StructVectorPrint((params.dumpPath.value() + "_b.vec").c_str(), b, 0);
+            }
+        }
 
         auto& getSolver() { return solver; }
         const auto& getSolver() const { return solver; }
