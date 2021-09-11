@@ -39,6 +39,11 @@ namespace OpFlow::internal {
         static auto& assign_impl(From& src, To& dst) {
             src.prepare();
             constexpr auto width = CartesianFieldExprTrait<From>::bc_width;
+            OP_EXPECT_MSG(dst.assignableRange == DS::commonRange(dst.assignableRange, src.accessibleRange),
+                          "Assign warning: dst's assignableRange not covered by src's accessibleRange.\ndst "
+                          "= {}, range = {}\nsrc = {}, range = {}",
+                          dst.getName(), dst.assignableRange.toString(), src.getName(),
+                          src.accessibleRange.toString());
             auto bc_ranges = src.accessibleRange.getBCRanges(width + 1);
             for (const auto& r : bc_ranges) {
                 rangeFor(DS::commonRange(DS::commonRange(dst.assignableRange, dst.localRange), r),
@@ -60,6 +65,12 @@ namespace OpFlow::internal {
                 auto parts = dst.accessibleRanges[i].size();
 #pragma omp for nowait schedule(dynamic)
                 for (auto j = 0; j < parts; ++j) {
+                    OP_EXPECT_MSG(DS::inRange(dst.assignableRanges[i][j], src.accessibleRanges[i][j]),
+                                  "Assign warning: dst's assignableRange not covered by src's "
+                                  "accessibleRange at level {} part {}.\ndst "
+                                  "= {}, range = {}\nsrc = {}, range = {}",
+                                  i, j, dst.getName(), dst.assignableRanges[i][j].toString(), src.getName(),
+                                  src.accessibleRanges[i][j].toString());
                     auto bc_ranges = src.accessibleRanges[i][j].getBCRanges(width + 1);
                     for (const auto& r : bc_ranges) {
                         rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], r),
