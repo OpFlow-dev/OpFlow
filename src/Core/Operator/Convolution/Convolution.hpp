@@ -20,56 +20,59 @@
 #include "DataStructures/Arrays/Tensor/FixedSizeTensor.hpp"
 
 namespace OpFlow {
-    template <auto kernel>
-    requires DS::FixedSizeTensorType<decltype(kernel)> struct Convolution {
-        constexpr static int d = DS::internal::TensorTrait<decltype(kernel)>::dim;
-        constexpr static auto bc_width = kernel.max_half_width();
+    template <std::integral auto... ns>
+    struct Convolution {
+        constexpr static int d = sizeof...(ns);
+        constexpr static auto bc_width = std::max({ns...}) / 2;
+        constexpr static std::array dims {ns...};
 
-        template <StructuredFieldExprType E, typename I>
-        OPFLOW_STRONG_INLINE static auto couldSafeEval(const E& e, I&& i) {
+        template <StructuredFieldExprType E, typename T, typename I>
+        OPFLOW_STRONG_INLINE static auto
+        couldSafeEval(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>& kernel, I&& i) {
             auto ret = true;
             for (auto j = 0; j < d; ++j) {
-                ret &= (i[j] - kernel.size_of(j) / 2 >= e.arg1.accessibleRange.start[j])
-                       && (i[j] + kernel.size_of(j) / 2 < e.arg1.accessibleRange.end[j]);
+                ret &= (i[j] - dims[j] / 2 >= e.arg1.accessibleRange.start[j])
+                       && (i[j] + dims[j] / 2 < e.arg1.accessibleRange.end[j]);
             }
             return ret;
         }
 
-        template <CartAMRFieldExprType E, typename I>
-        OPFLOW_STRONG_INLINE static auto couldSafeEval(const E& e, I&& i) {
+        template <CartAMRFieldExprType E, typename T, typename I>
+        OPFLOW_STRONG_INLINE static auto
+        couldSafeEval(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>& kernel, I&& i) {
             auto ret = true;
             for (auto j = 0; j < d; ++j) {
-                ret &= (i[j] - kernel.size_of(j) / 2 >= e.arg1.accessibleRanges[i.l][i.p].start[j])
-                       && (i[j] + kernel.size_of(j) / 2 < e.arg1.accessibleRanges[i.l][i.p].end[j]);
+                ret &= (i[j] - dims[j] / 2 >= e.arg1.accessibleRanges[i.l][i.p].start[j])
+                       && (i[j] + dims[j] / 2 < e.arg1.accessibleRanges[i.l][i.p].end[j]);
             }
             return ret;
         }
 
-        template <StructuredFieldExprType E, typename I>
-        requires(internal::ExprTrait<E>::dim == d) OPFLOW_STRONG_INLINE static auto eval(const E& e, I&& i) {
-            constexpr auto sizes = kernel.size();
+        template <StructuredFieldExprType E, typename T, typename I>
+        requires(internal::ExprTrait<E>::dim == d) OPFLOW_STRONG_INLINE
+                static auto eval(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>& kernel, I&& i) {
             DS::Range<d> range;
             for (auto j = 0; j < d; ++j) {
-                range.start[j] = i[j] - sizes[j] / 2;
-                range.end[j] = i[j] + sizes[j] / 2;
+                range.start[j] = i[j] - dims[j] / 2;
+                range.end[j] = i[j] + dims[j] / 2;
                 range.stride[j] = 1;
             }
             return rangeReduce_s(
                     range, [](auto&& a, auto&& b) { return a + b; },
                     [&](auto&& idx) {
                         auto _ker_idx = idx;
-                        for (auto j = 0; j < d; ++j) { _ker_idx[j] = _ker_idx[j] - i[j] + sizes[j] / 2; }
-                        return kernel[_ker_idx] * e.evalAt(idx);
+                        for (auto j = 0; j < d; ++j) { _ker_idx[j] = _ker_idx[j] - i[j] + dims[j] / 2; }
+                        return kernel.val[_ker_idx] * e.evalAt(idx);
                     });
         }
 
-        template <CartAMRFieldExprType E, typename I>
-        requires(internal::ExprTrait<E>::dim == d) OPFLOW_STRONG_INLINE static auto eval(const E& e, I&& i) {
-            constexpr auto sizes = kernel.size();
+        template <CartAMRFieldExprType E, typename T, typename I>
+        requires(internal::ExprTrait<E>::dim == d) OPFLOW_STRONG_INLINE
+                static auto eval(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>& kernel, I&& i) {
             DS::LevelRange<d> range;
             for (auto j = 0; j < d; ++j) {
-                range.start[j] = i[j] - sizes[j] / 2;
-                range.end[j] = i[j] + sizes[j] / 2;
+                range.start[j] = i[j] - dims[j] / 2;
+                range.end[j] = i[j] + dims[j] / 2;
                 range.stride[j] = 1;
             }
             range.level = i.l;
@@ -78,38 +81,38 @@ namespace OpFlow {
                     range, [](auto&& a, auto&& b) { return a + b; },
                     [&](auto&& idx) {
                         auto _ker_idx = (DS::MDIndex<d>) idx;
-                        for (auto j = 0; j < d; ++j) { _ker_idx[j] = _ker_idx[j] - i[j] + sizes[j] / 2; }
-                        return kernel[_ker_idx] * e.evalAt(idx);
+                        for (auto j = 0; j < d; ++j) { _ker_idx[j] = _ker_idx[j] - i[j] + dims[j] / 2; }
+                        return kernel.val[_ker_idx] * e.evalAt(idx);
                     });
         }
 
-        template <StructuredFieldExprType E, typename I>
+        template <StructuredFieldExprType E, typename T, typename I>
         requires(internal::ExprTrait<E>::dim == d) OPFLOW_STRONG_INLINE
-                static auto eval_safe(const E& e, I&& i) {
-            constexpr auto sizes = kernel.size();
+                static auto eval_safe(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>& kernel,
+                                      I&& i) {
             DS::Range<d> range;
             for (auto j = 0; j < d; ++j) {
-                range.start[j] = i[j] - sizes[j] / 2;
-                range.end[j] = i[j] + sizes[j] / 2;
+                range.start[j] = i[j] - dims[j] / 2;
+                range.end[j] = i[j] + dims[j] / 2;
                 range.stride[j] = 1;
             }
             return rangeReduce_s(
                     range, [](auto&& a, auto&& b) { return a + b; },
                     [&](auto&& idx) {
                         auto _ker_idx = idx;
-                        for (auto j = 0; j < d; ++j) { _ker_idx[j] = _ker_idx[j] - i[j] + sizes[j] / 2; }
-                        return kernel[_ker_idx] * e.evalSafeAt(idx);
+                        for (auto j = 0; j < d; ++j) { _ker_idx[j] = _ker_idx[j] - i[j] + dims[j] / 2; }
+                        return kernel.val[_ker_idx] * e.evalSafeAt(idx);
                     });
         }
 
-        template <CartAMRFieldExprType E, typename I>
+        template <CartAMRFieldExprType E, typename T, typename I>
         requires(internal::ExprTrait<E>::dim == d) OPFLOW_STRONG_INLINE
-                static auto eval_safe(const E& e, I&& i) {
-            constexpr auto sizes = kernel.size();
+                static auto eval_safe(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>& kernel,
+                                      I&& i) {
             DS::LevelRange<d> range;
             for (auto j = 0; j < d; ++j) {
-                range.start[j] = i[j] - sizes[j] / 2;
-                range.end[j] = i[j] + sizes[j] / 2;
+                range.start[j] = i[j] - dims[j] / 2;
+                range.end[j] = i[j] + dims[j] / 2;
                 range.stride[j] = 1;
             }
             range.level = i.l;
@@ -118,13 +121,14 @@ namespace OpFlow {
                     range, [](auto&& a, auto&& b) { return a + b; },
                     [&](auto&& idx) {
                         auto _ker_idx = (DS::MDIndex<d>) idx;
-                        for (auto j = 0; j < d; ++j) { _ker_idx[j] = _ker_idx[j] - i[j] + sizes[j] / 2; }
-                        return kernel[_ker_idx] * e.evalSafeAt(idx);
+                        for (auto j = 0; j < d; ++j) { _ker_idx[j] = _ker_idx[j] - i[j] + dims[j] / 2; }
+                        return kernel.val[_ker_idx] * e.evalSafeAt(idx);
                     });
         }
 
-        template <StructuredFieldExprType E>
-        requires(internal::ExprTrait<E>::dim == d) static void prepare(Expression<Convolution, E>& expr) {
+        template <StructuredFieldExprType E, typename T>
+        requires(internal::ExprTrait<E>::dim == d) static void prepare(
+                Expression<Convolution, E, ScalarExpr<DS::FixedSizeTensor<T, ns...>>>& expr) {
             expr.initPropsFrom(expr.arg1);
 
             // name
@@ -138,16 +142,17 @@ namespace OpFlow {
 
             // ranges
             for (auto i = 0; i < d; ++i) {
-                expr.accessibleRange.start[i] += kernel.size_of(i) / 2;
-                expr.accessibleRange.end[i] -= kernel.size_of(i) / 2;
-                expr.localRange.start[i] += kernel.size_of(i) / 2;
-                expr.localRange.end[i] -= kernel.size_of(i) / 2;
+                expr.accessibleRange.start[i] += dims[i] / 2;
+                expr.accessibleRange.end[i] -= dims[i] / 2;
+                expr.localRange.start[i] += dims[i] / 2;
+                expr.localRange.end[i] -= dims[i] / 2;
             }
             expr.assignableRange.setEmpty();
         }
 
-        template <CartAMRFieldExprType E>
-        requires(internal::ExprTrait<E>::dim == d) static void prepare(Expression<Convolution, E>& expr) {
+        template <CartAMRFieldExprType E, typename T>
+        requires(internal::ExprTrait<E>::dim == d) static void prepare(
+                Expression<Convolution, E, ScalarExpr<DS::FixedSizeTensor<T, ns...>>>& expr) {
             expr.initPropsFrom(expr.arg1);
 
             // name
@@ -163,47 +168,52 @@ namespace OpFlow {
             for (auto& l : expr.accessibleRanges)
                 for (auto& r : l)
                     for (auto i = 0; i < d; ++i) {
-                        r.start[i] += kernel.size_of(i) / 2;
-                        r.end[i] -= kernel.size_of(i) / 2;
+                        r.start[i] += dims[i] / 2;
+                        r.end[i] -= dims[i] / 2;
                     }
             for (auto& l : expr.localRanges)
                 for (auto& r : l)
                     for (auto i = 0; i < d; ++i) {
-                        r.start[i] += kernel.size_of(i) / 2;
-                        r.end[i] -= kernel.size_of(i) / 2;
+                        r.start[i] += dims[i] / 2;
+                        r.end[i] -= dims[i] / 2;
                     }
             for (auto& l : expr.assignableRanges)
                 for (auto& r : l) r.setEmpty();
         }
     };
 
-    template <auto kernel, CartesianFieldExprType T>
-    requires DS::FixedSizeTensorType<decltype(kernel)> struct ResultType<Convolution<kernel>, T> {
-        using type = CartesianFieldExpr<Expression<Convolution<kernel>, T>>;
-        using core_type = Expression<Convolution<kernel>, T>;
+    template <std::integral auto... ns, CartesianFieldExprType T, typename D>
+    struct ResultType<Convolution<ns...>, T, ScalarExpr<DS::FixedSizeTensor<D, ns...>>> {
+        using type = CartesianFieldExpr<
+                Expression<Convolution<ns...>, T, ScalarExpr<DS::FixedSizeTensor<D, ns...>>>>;
+        using core_type = Expression<Convolution<ns...>, T, ScalarExpr<DS::FixedSizeTensor<D, ns...>>>;
     };
 
-    template <auto kernel, CartAMRFieldExprType T>
-    requires DS::FixedSizeTensorType<decltype(kernel)> struct ResultType<Convolution<kernel>, T> {
-        using type = CartAMRFieldExpr<Expression<Convolution<kernel>, T>>;
-        using core_type = Expression<Convolution<kernel>, T>;
+    template <std::integral auto... ns, CartAMRFieldExprType T, typename D>
+    struct ResultType<Convolution<ns...>, T, ScalarExpr<DS::FixedSizeTensor<D, ns...>>> {
+        using type = CartAMRFieldExpr<
+                Expression<Convolution<ns...>, T, ScalarExpr<DS::FixedSizeTensor<D, ns...>>>>;
+        using core_type = Expression<Convolution<ns...>, T, ScalarExpr<DS::FixedSizeTensor<D, ns...>>>;
     };
 
     namespace internal {
-        template <auto kernel, CartesianFieldExprType T>
-        struct ExprTrait<Expression<Convolution<kernel>, T>> : ExprTrait<T> {
+        template <std::integral auto... ns, CartesianFieldExprType T, typename D>
+        struct ExprTrait<Expression<Convolution<ns...>, T, ScalarExpr<DS::FixedSizeTensor<D, ns...>>>>
+            : ExprTrait<T> {
             static constexpr int access_flag = 0;
         };
 
-        template <auto kernel, CartAMRFieldExprType T>
-        struct ExprTrait<Expression<Convolution<kernel>, T>> : ExprTrait<T> {
+        template <std::integral auto... ns, CartAMRFieldExprType T, typename D>
+        struct ExprTrait<Expression<Convolution<ns...>, T, ScalarExpr<DS::FixedSizeTensor<D, ns...>>>>
+            : ExprTrait<T> {
             static constexpr int access_flag = 0;
         };
     }// namespace internal
 
-    template <typename Kernel, typename E>
-            requires StructuredFieldExprType<E> || CartAMRFieldExprType<E> auto conv(const E& expr) {
-        return makeExpression<Kernel>(expr);
+    template <std::integral auto... ns, typename E, typename D>
+    requires StructuredFieldExprType<E> || CartAMRFieldExprType<E>
+    auto conv(const E& expr, const DS::FixedSizeTensor<D, ns...>& kernel) {
+        return makeExpression<Convolution<ns...>>(expr, ScalarExpr(kernel));
     }
 }// namespace OpFlow
 #endif//OPFLOW_CONVOLUTION_HPP
