@@ -19,12 +19,21 @@
 #include "Core/Operator/BinOpDefMacros.hpp.in"
 #include "Core/Operator/Operator.hpp"
 
+#include <cmath>
+
 namespace OpFlow {
     DEFINE_BINOP(GreaterThan, >)
     DEFINE_BINOP(GreaterThanOrEqual, >=)
     DEFINE_BINOP(LessThan, <)
     DEFINE_BINOP(LessThanOrEqual, <=)
     DEFINE_BINOP(NotEqualTo, !=)
+
+    DEFINE_BINFUNC(Isgreater, std::isgreater, isgreater)
+    DEFINE_BINFUNC(Isgreaterequal, std::isgreaterequal, isgreaterequal)
+    DEFINE_BINFUNC(Isless, std::isless, isless)
+    DEFINE_BINFUNC(Islessequal, std::islessequal, islessequal)
+    DEFINE_BINFUNC(Islessgreater, std::islessgreater, islessgreater)
+    DEFINE_BINFUNC(Isunordered, std::isunordered, isunordered)
 #undef DEFINE_BINOP
 }// namespace OpFlow
 

@@ -86,6 +86,7 @@
 #include "Core/Operator/Interpolator/IndexShift.hpp"
 #include "Core/Operator/Logical/Boolean.hpp"
 #include "Core/Operator/Logical/Compare.hpp"
+#include "Core/Operator/Logical/Classify.hpp"
 #include "Core/Operator/Operator.hpp"
 #include "Core/Operator/IdentityOp.hpp"
 #include "Core/Operator/Convolution/Convolution.hpp"
