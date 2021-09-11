@@ -211,8 +211,7 @@ namespace OpFlow {
     }// namespace internal
 
     template <std::integral auto... ns, typename E, typename D>
-    requires StructuredFieldExprType<E> || CartAMRFieldExprType<E>
-    auto conv(const E& expr, const DS::FixedSizeTensor<D, ns...>& kernel) {
+            requires StructuredFieldExprType<E> || CartAMRFieldExprType<E> auto conv(const E& expr, const DS::FixedSizeTensor<D, ns...>& kernel) {
         return makeExpression<Convolution<ns...>>(expr, ScalarExpr(kernel));
     }
 }// namespace OpFlow
