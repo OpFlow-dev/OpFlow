@@ -45,8 +45,7 @@ namespace OpFlow::DS {
 
         template <Meta::Numerical T, auto... n>
         requires(std::integral<decltype(n)>&&...) struct is_fixed_size_tensor<FixedSizeTensor<T, n...>>
-            : std::true_type {
-        };
+            : std::true_type {};
     }// namespace internal
 
     template <typename T>

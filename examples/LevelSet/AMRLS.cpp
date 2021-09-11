@@ -162,9 +162,7 @@ void amrls() {
             constexpr auto functor = Utils::NamedFunctor<func, Utils::makeCXprString("smoothDelta")>();
             constexpr auto delta_op
                     = [=](auto&& e) { return makeExpression<UniOpAdaptor<functor>>(OP_PERFECT_FOWD(e)); };
-            constexpr auto int_op = [=](auto&& e) {
-                return h * h * conv(OP_PERFECT_FOWD(e), conv_ker);
-            };
+            constexpr auto int_op = [=](auto&& e) { return h * h * conv(OP_PERFECT_FOWD(e), conv_ker); };
 
             auto lambda = -int_op(delta_op(p0) * (p3 - p0) / (_ + 1)) / int_op(pow(delta_op(p0), 2) + 1e-14);
             p = p3 + lambda * (_ + 1) * delta_op(p0);
@@ -363,15 +361,13 @@ void amrls_3d() {
             p3 = p2 - dt / 12. * (-h1 - h2 + 8 * h3);
             constexpr auto _c = 64. / 90., _o = 1. / 90.;
             constexpr DS::FixedSizeTensor<double, 3, 3, 3> conv_ker {_o, _o, _o, _o, _o, _o, _o, _o, _o,
-                                                                        _o, _o, _o, _o, _c, _o, _o, _o, _o,
-                                                                        _o, _o, _o, _o, _o, _o, _o, _o, _o};
+                                                                     _o, _o, _o, _o, _c, _o, _o, _o, _o,
+                                                                     _o, _o, _o, _o, _o, _o, _o, _o, _o};
             constexpr auto func = [=](Real d) { return Math::smoothDelta(1.5 * h_min, d); };
             constexpr auto functor = Utils::NamedFunctor<func, Utils::makeCXprString("smoothDelta")>();
             constexpr auto delta_op
                     = [=](auto&& e) { return makeExpression<UniOpAdaptor<functor>>(OP_PERFECT_FOWD(e)); };
-            constexpr auto int_op = [=](auto&& e) {
-                return h * h * conv(OP_PERFECT_FOWD(e), conv_ker);
-            };
+            constexpr auto int_op = [=](auto&& e) { return h * h * conv(OP_PERFECT_FOWD(e), conv_ker); };
 
             auto lambda = -int_op(delta_op(p0) * (p3 - p0) / (_ + 1)) / int_op(pow(delta_op(p0), 2) + 1e-14);
             p = p3 + lambda * (_ + 1) * delta_op(p0);
