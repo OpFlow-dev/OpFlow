@@ -380,8 +380,33 @@ if (OPFLOW_BUILD_DOCS OR OPFLOW_BUILD_ALL)
     else ()
         message(STATUS "Found sphinx-build at ${SPHINX_PATH}")
     endif ()
+    find_program(DOXYGEN_PATH doxygen
+            HINTS ${DOXYGEN_DIR}
+            REQUIRED
+            )
+    if (NOT DOXYGEN_PATH)
+        message(FATAL_ERROR "Doxygen not found. Please install doxygen with version >= 1.9.2")
+    else ()
+        execute_process(
+                COMMAND ${DOXYGEN_PATH} --version
+                RESULT_VARIABLE _
+                OUTPUT_VARIABLE _out
+        )
+        string(REGEX REPLACE "\n$" "" _out "${_out}")
+        if (${_out} VERSION_LESS "1.9.2")
+            message(FATAL_ERROR "Doxygen version too low. Found v${_out}, require >= v1.9.2")
+        endif ()
+    endif ()
+    message(STATUS "Found Doxygen version: ${_out}")
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+    add_custom_target(doxygen_doc
+            COMMAND ${DOXYGEN_PATH} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     add_custom_target(doc
-            COMMAND ${SPHINX_PATH} ${CMAKE_CURRENT_LIST_DIR}/doc ${CMAKE_CURRENT_BINARY_DIR}/doc
+            COMMAND ${SPHINX_PATH} -b html
+            -Dbreathe_projects.OpFlow=${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/xml
+            ${CMAKE_CURRENT_LIST_DIR}/doc ${CMAKE_CURRENT_BINARY_DIR}/doc
+            DEPENDS doxygen_doc
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 endif ()
 

@@ -66,9 +66,10 @@ jobs:
         uses: actions/checkout@master
         with:
           submodules: recursive
+          fetch-depth: 0
       - name: Install dependence
         run: |
-          brew install gcc@11
+          brew install gcc@11 doxygen
           if [ "$RUNNER_OS" == "Linux" ]; then
                sudo apt install -y libopenmpi-dev libhdf5-mpi-dev libhdf5-dev python3-pip python3-sphinx lcov
           elif [ "$RUNNER_OS" == "macOS" ]; then
@@ -85,7 +86,7 @@ jobs:
         run: |
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.config.config }} -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 \
                 -DOPFLOW_WITH_HDF5=ON -DBENCHMARK_ENABLE_TESTING=OFF -DOPFLOW_BUILD_ALL=ON \
-                -DOPFLOW_WITH_VTK=OFF ..
+                -DOPFLOW_WITH_VTK=OFF -DDOXYGEN_DIR=$(brew --prefix doxygen)/bin ..
           cmake --build . -t AllExamples AllTests AllBenchmarks --parallel ${{ matrix.config.cores }} --config ${{ matrix.config.config }}
       - name: Test
         working-directory: ./build

@@ -49,8 +49,11 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinx_rtd_dark_mode',
-    'sphinx.ext.autosectionlabel'
+    'sphinx.ext.autosectionlabel',
+    'breathe'
 ]
+
+breathe_default_project = "OpFlow"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
