@@ -119,7 +119,7 @@ void ls() {
             constexpr auto functor = Utils::NamedFunctor<func, Utils::makeCXprString("smoothDelta")>();
             constexpr auto delta_op
                     = [=](auto&& e) { return makeExpression<UniOpAdaptor<functor>>(OP_PERFECT_FOWD(e)); };
-            constexpr auto int_op = [=](auto&& e) { return h * h * conv(OP_PERFECT_FOWD(e), conv_ker); };
+            constexpr auto int_op = [=](auto&& e) { return h * h * decay(conv(OP_PERFECT_FOWD(e), conv_ker), OP_PERFECT_FOWD(e)); };
 
             auto lambda = -int_op(delta_op(p0) * (p3 - p0) / (_ + 1)) / int_op(pow(delta_op(p0), 2) + 1e-14);
             p = p3 + lambda * (_ + 1) * delta_op(p0);
