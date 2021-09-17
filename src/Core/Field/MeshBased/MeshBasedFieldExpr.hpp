@@ -35,9 +35,10 @@ namespace OpFlow {
         void setMesh(const MeshType& m) { mesh = m; }
         auto getStencilField() const { return StencilField<Derived>(this->derived()); }
 
+    protected:
         template <MeshBasedFieldExprType Other>
-        void initPropsFrom(const Other& other) {
-            static_cast<FieldExpr<Derived>*>(this)->initPropsFrom(other);
+        void initPropsFromImpl_MeshBasedFieldExpr(const Other& other) {
+            this->initPropsFromImpl_FieldExpr(other);
             this->mesh = other.mesh;
         }
 

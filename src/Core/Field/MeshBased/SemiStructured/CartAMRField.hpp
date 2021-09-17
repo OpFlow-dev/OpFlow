@@ -31,6 +31,12 @@ namespace OpFlow {
 
     public:
         friend ExprBuilder<CartAMRField>;
+        friend Expr<CartAMRField>;
+        friend SemiStructuredFieldExpr<CartAMRField>;
+        using Expr<CartAMRField>::operator[];
+        using Expr<CartAMRField>::operator();
+        using Expr<CartAMRField>::operator=;
+
         CartAMRField() = default;
         CartAMRField(const CartAMRField& other)
             : CartAMRFieldExpr<CartAMRField<D, M, C>>(other), data(other.data), offset(other.offset) {}
@@ -38,7 +44,8 @@ namespace OpFlow {
             : CartAMRFieldExpr<CartAMRField<D, M, C>>(std::move(other)), data(std::move(other.data)),
               offset(std::move(other.offset)) {}
 
-        auto& operator=(const CartAMRField& other) {
+    protected:
+        auto& assignImpl_final(const CartAMRField& other) {
             if (this != &other) {
                 // only data is assigned
                 internal::FieldAssigner::assign(other, *this);
@@ -49,7 +56,7 @@ namespace OpFlow {
         }
 
         template <CartAMRFieldExprType T>
-        auto& operator=(T&& other) {
+        auto& assignImpl_final(T&& other) {
             if ((void*) this != (void*) &other) {
                 internal::FieldAssigner::assign(other, *this);
                 updateCovering();
@@ -58,6 +65,7 @@ namespace OpFlow {
             return *this;
         }
 
+    public:
         auto& operator=(const D& c) {
             auto levels = data.size();
 #pragma omp parallel
@@ -103,8 +111,9 @@ namespace OpFlow {
 
         auto& initBy(Meta::Numerical auto v) { return *this = v; }
 
-        void prepare() {}
-        void updateBC() {
+    protected:
+        void prepareImpl_final() {}
+        void updateBCImpl_final() {
             if (this->localRanges[0][0] == this->assignableRanges[0][0]) return;
             else {
                 for (auto i = 0; i < dim; ++i) {
@@ -145,6 +154,8 @@ namespace OpFlow {
                 }
             }
         }
+
+    public:
         void updatePadding() {
             // step 1: fill all halo regions covered by parents
 #pragma omp parallel
@@ -283,23 +294,26 @@ namespace OpFlow {
             updateCovering();
         }
 
-        auto getView() {
+    protected:
+        auto getViewImpl_final() {
             OP_NOT_IMPLEMENTED;
             return 0;
         }
-        auto& operator()(const index_type& i) { return data[i.l][i.p][i - offset[i.l][i.p]]; }
-        auto& operator[](const index_type& i) { return data[i.l][i.p][i - offset[i.l][i.p]]; }
-        const auto& operator()(const index_type& i) const { return data[i.l][i.p][i - offset[i.l][i.p]]; }
-        const auto& operator[](const index_type& i) const { return data[i.l][i.p][i - offset[i.l][i.p]]; }
-        const auto& evalAt(const index_type& i) const { return data[i.l][i.p][i - offset[i.l][i.p]]; }
-        const auto& evalSafeAt(const index_type& i) const { return data[i.l][i.p][i - offset[i.l][i.p]]; }
+        const auto& evalAtImpl_final(const index_type& i) const {
+            return data[i.l][i.p][i - offset[i.l][i.p]];
+        }
+        const auto& evalSafeAtImpl_final(const index_type& i) const {
+            return data[i.l][i.p][i - offset[i.l][i.p]];
+        }
+        auto& evalAtImpl_final(const index_type& i) { return data[i.l][i.p][i - offset[i.l][i.p]]; }
+        auto& evalSafeAtImpl_final(const index_type& i) { return data[i.l][i.p][i - offset[i.l][i.p]]; }
 
         template <typename Other>
-        requires(!std::same_as<Other, CartAMRField>) bool contains(const Other& o) const {
+        requires(!std::same_as<Other, CartAMRField>) bool containsImpl_final(const Other& o) const {
             return false;
         }
 
-        bool contains(const CartAMRField& other) const { return this == &other; }
+        bool containsImpl_final(const CartAMRField& other) const { return this == &other; }
     };
 
     template <typename D, typename M, typename C>

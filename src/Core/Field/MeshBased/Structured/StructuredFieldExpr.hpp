@@ -69,11 +69,13 @@ namespace OpFlow {
 
         auto getDims() const { return this->mesh.getDims(); }
         auto getOffset() const { return this->offset; }
-        void updateBC() { this->derived().updateBC(); }
-        void updatePadding() { this->derived().updatePadding(); }
+        void updateBC() { this->derived().updateBCImpl_final(); }
+        void updatePadding() { this->derived().updatePaddingImpl_final(); }
+
+    protected:
         template <StructuredFieldExprType Other>
-        void initPropsFrom(const Other& other) {
-            static_cast<MeshBasedFieldExpr<Derived>*>(this)->initPropsFrom(other);
+        void initPropsFromImpl_StructuredFieldExpr(const Other& other) {
+            this->initPropsFromImpl_MeshBasedFieldExpr(other);
             this->loc = other.loc;
             this->localRange = other.localRange;
             this->assignableRange = other.assignableRange;
@@ -99,6 +101,8 @@ namespace OpFlow {
                 }
             }
         }
+
+        bool couldEvalAtImpl_final(auto&& i) const { return DS::inRange(accessibleRange, i); }
 
     private:
         DEFINE_CRTP_HELPERS(Derived)

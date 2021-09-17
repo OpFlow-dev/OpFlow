@@ -56,11 +56,12 @@ namespace OpFlow {
         }
         auto getPartsOnLevel(int i) const { return accessibleRanges[i].size(); }
 
-        auto updateBC() { this->derived().updateBC(); }
+        auto updateBC() { this->derived().updateBCImpl_final(); }
 
+    protected:
         template <SemiStructuredFieldExprType Other>
-        void initPropsFrom(const Other& other) {
-            static_cast<MeshBasedFieldExpr<Derived>*>(this)->template initPropsFrom(other);
+        void initPropsFromImpl_SemiStructuredFieldExpr(const Other& other) {
+            this->initPropsFromImpl_MeshBasedFieldExpr(other);
             this->loc = other.loc;
             this->localRanges = other.localRanges;
             this->assignableRanges = other.assignableRanges;
@@ -74,6 +75,11 @@ namespace OpFlow {
                     bc[i].end = other.bc[i].end ? other.bc[i].end->getCopy() : nullptr;
                 }
             }
+        }
+
+        bool couldEvalAtImpl_final(auto&& i) const {
+            return accessibleRanges.size() > i.l && accessibleRanges[i.l].size() > i.p
+                   && DS::inRange(accessibleRanges[i.l][i.p], i);
         }
 
     private:

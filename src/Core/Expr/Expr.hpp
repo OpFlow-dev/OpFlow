@@ -21,61 +21,198 @@
 
 namespace OpFlow {
 
-    template <typename Derived>
+    template <typename Derived, bool rw, bool dir>
     struct Expr;
 
-    namespace internal {
-
-        template <typename Derived, bool rw>
-        struct ExprImpl;
-
-        template <typename Derived>
-        struct ExprImpl<Derived, true> {
-            template <typename Other>
-            auto& operator=(Expr<Other>& other) {
-                this->derived() = other;
-                return *this;
-            }
-
-            template <typename Other>
-            auto& operator=(Expr<Other>&& other) {
-                this->derived() = std::move(other);
-                return *this;
-            }
-
-            auto& operator=(const Derived& other) {
-                if (&other != this) { this->derived() = other; }
-                return *this;
-            }
-
-        private:
-            DEFINE_CRTP_HELPERS(Derived)
-        };
-
-        template <typename Derived>
-        struct ExprImpl<Derived, false> {};
-    }// namespace internal
-
     template <typename Derived>
-    struct Expr
-        : internal::ExprImpl<Derived, bool(internal::ExprTrait<Derived>::access_flag& HasWriteAccess)> {
+    struct Expr<Derived, true, true> {
         /// \typedef The result type of the expr
         using type = typename internal::ExprTrait<Derived>::type;
         std::string name;
 
-        [[nodiscard]] static constexpr bool isConcrete() { return Derived::isConcrete(); }
+        [[nodiscard]] static constexpr bool isConcrete() { return true; }
         [[maybe_unused]] [[nodiscard]] const auto& getName() const { return name; }
         template <typename T>
         bool contains(const T& t) const {
-            return this->derived().contains(t);
+            return this->derived().containsImpl_final(t);
         }
 
         /// \brief prepare all meta infos of the expr
-        void prepare() { derived().prepare(); }
+        void prepare() { this->derived().prepareImpl_final(); }
+
+        bool couldEvalAt(auto&& i) const { return this->derived().couldEvalAtImpl_final(OP_PERFECT_FOWD(i)); }
 
         /// init all props from another expr
         /// \param expr the src expr
-        void initPropsFrom(auto&& expr) { derived().initPropsFrom(OP_PERFECT_FOWD(expr)); }
+        void initPropsFrom(auto&& expr) { this->derived().initPropsFromImpl_final(OP_PERFECT_FOWD(expr)); }
+
+        template <ExprType Other>
+        auto& operator=(const Other& other) {
+            this->derived().assignImpl_final(other);
+            return *this;
+        }
+
+        template <ExprType Other>
+        auto& operator=(Other&& other) {
+            this->derived().assignImpl_final(std::move(other));
+            return *this;
+        }
+
+        // return a non-const view of the underlying field
+        auto getView() { return this->derived().getViewImpl_final(); }
+
+        // return the result field
+        auto instantiate() const { return this->derived(); }
+
+        // getters
+        auto& operator()(auto&&... i) { return evalAt(OP_PERFECT_FOWD(i)...); }
+        auto& operator[](auto&& i) { return evalAt(OP_PERFECT_FOWD(i)); }
+        // const getters
+        const auto& operator()(auto&&... i) const { return evalAt(OP_PERFECT_FOWD(i)...); }
+        const auto& operator[](auto&& i) const { return evalAt(OP_PERFECT_FOWD(i)); }
+        const auto& evalAt(auto&&... i) const {
+            return this->derived().evalAtImpl_final(std::forward<decltype(i)>(i)...);
+        }
+        const auto& evalSafeAt(auto&&... i) const {
+            return this->derived().evalSafeAtImpl_final(std::forward<decltype(i)>(i)...);
+        }
+        auto& evalAt(auto&&... i) {
+            return this->derived().evalAtImpl_final(std::forward<decltype(i)>(i)...);
+        }
+        auto& evalSafeAt(auto&&... i) {
+            return this->derived().evalSafeAtImpl_final(std::forward<decltype(i)>(i)...);
+        }
+
+    private:
+        DEFINE_CRTP_HELPERS(Derived)
+    };
+
+    template <typename Derived>
+    struct Expr<Derived, true, false> {
+        /// \typedef The result type of the expr
+        using type = typename internal::ExprTrait<Derived>::type;
+        std::string name;
+
+        [[nodiscard]] static constexpr bool isConcrete() { return false; }
+        [[maybe_unused]] [[nodiscard]] const auto& getName() const { return name; }
+        template <typename T>
+        bool contains(const T& t) const {
+            return this->derived().containsImpl_final(t);
+        }
+
+        /// \brief prepare all meta infos of the expr
+        void prepare() { this->derived().prepareImpl_final(); }
+
+        bool couldEvalAt(auto&& i) const { return this->derived().couldEvalAtImpl_final(OP_PERFECT_FOWD(i)); }
+
+        /// init all props from another expr
+        /// \param expr the src expr
+        void initPropsFrom(auto&& expr) { this->derived().initPropsFromImpl_final(OP_PERFECT_FOWD(expr)); }
+
+        template <typename Other>
+        auto& operator=(const Expr<Other>& other) {
+            this->derived().assignImpl_final(other);
+            return *this;
+        }
+
+        template <typename Other>
+        auto& operator=(Expr<Other>&& other) {
+            this->derived().assignImpl_final(std::move(other));
+            return *this;
+        }
+
+        auto& operator=(const Derived& other) {
+            if (&other != this) { this->derived().assignImpl_final(other); }
+            return *this;
+        }
+
+        auto getView() { return this->derived().getViewImpl_final(); }
+        auto instantiate() const { return typename internal::ExprTrait<Derived>::type(this->derived()); }
+
+        // getters
+        auto operator()(auto&&... i) { return evalAt(OP_PERFECT_FOWD(i)...); }
+        auto operator[](auto&& i) { return evalAt(OP_PERFECT_FOWD(i)); }
+        // const getters
+        auto operator()(auto&&... i) const { return evalAt(OP_PERFECT_FOWD(i)...); }
+        auto operator[](auto&& i) const { return evalAt(OP_PERFECT_FOWD(i)); }
+        auto evalAt(auto&&... i) const { return this->derived().evalAtImpl_final(OP_PERFECT_FOWD(i)...); }
+        auto evalSafeAt(auto&&... i) const {
+            return this->derived().evalSafeAtImpl_final(OP_PERFECT_FOWD(i)...);
+        }
+
+    private:
+        DEFINE_CRTP_HELPERS(Derived)
+    };
+
+    template <typename Derived>
+    struct Expr<Derived, false, true> {
+        /// \typedef The result type of the expr
+        using type = typename internal::ExprTrait<Derived>::type;
+        std::string name;
+
+        [[nodiscard]] static constexpr bool isConcrete() { return true; }
+        [[maybe_unused]] [[nodiscard]] const auto& getName() const { return name; }
+        template <typename T>
+        bool contains(const T& t) const {
+            return this->derived().containsImpl_final(t);
+        }
+
+        /// \brief prepare all meta infos of the expr
+        void prepare() { this->derived().prepareImpl_final(); }
+
+        bool couldEvalAt(auto&& i) const { return this->derived().couldEvalAtImpl_final(OP_PERFECT_FOWD(i)); }
+
+        /// init all props from another expr
+        /// \param expr the src expr
+        void initPropsFrom(auto&& expr) { this->derived().initPropsFromImpl_final(OP_PERFECT_FOWD(expr)); }
+
+        auto instantiate() const { return this->derived(); }
+
+        // const getters
+        const auto& operator()(auto&&... i) const { return evalAt(OP_PERFECT_FOWD(i)...); }
+        const auto& operator[](auto&& i) const { return evalAt(OP_PERFECT_FOWD(i)); }
+        const auto& evalAt(auto&&... i) const {
+            return this->derived().evalAtImpl_final(OP_PERFECT_FOWD(i)...);
+        }
+        const auto& evalSafeAt(auto&&... i) const {
+            return this->derived().evalSafeAtImpl_final(OP_PERFECT_FOWD(i)...);
+        }
+
+    private:
+        DEFINE_CRTP_HELPERS(Derived)
+    };
+
+    template <typename Derived>
+    struct Expr<Derived, false, false> {
+        /// \typedef The result type of the expr
+        using type = typename internal::ExprTrait<Derived>::type;
+        std::string name;
+
+        [[nodiscard]] static constexpr bool isConcrete() { return false; }
+        [[maybe_unused]] [[nodiscard]] const auto& getName() const { return name; }
+        template <typename T>
+        bool contains(const T& t) const {
+            return this->derived().containsImpl_final(t);
+        }
+
+        /// \brief prepare all meta infos of the expr
+        void prepare() { this->derived().prepareImpl_final(); }
+
+        bool couldEvalAt(auto&& i) const { return this->derived().couldEvalAtImpl_final(OP_PERFECT_FOWD(i)); }
+
+        /// init all props from another expr
+        /// \param expr the src expr
+        void initPropsFrom(auto&& expr) { this->derived().initPropsFromImpl_final(OP_PERFECT_FOWD(expr)); }
+
+        auto instantiate() const { return typename internal::ExprTrait<Derived>::type(this->derived()); }
+
+        // const getters
+        auto operator()(auto&&... i) const { return evalAt(OP_PERFECT_FOWD(i)...); }
+        auto operator[](auto&& i) const { return evalAt(OP_PERFECT_FOWD(i)); }
+        auto evalAt(auto&&... i) const { return this->derived().evalAtImpl_final(OP_PERFECT_FOWD(i)...); }
+        auto evalSafeAt(auto&&... i) const {
+            return this->derived().evalSafeAtImpl_final(OP_PERFECT_FOWD(i)...);
+        }
 
     private:
         DEFINE_CRTP_HELPERS(Derived)

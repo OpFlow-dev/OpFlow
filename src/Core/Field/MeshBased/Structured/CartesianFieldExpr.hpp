@@ -25,9 +25,15 @@ namespace OpFlow {
         CartesianFieldExpr(CartesianFieldExpr&& other) noexcept
             : StructuredFieldExpr<Derived>(std::move(other)) {}
 
+    protected:
         template <CartesianFieldExprType Other>
-        void initPropsFrom(const Other& expr) {
-            static_cast<StructuredFieldExpr<Derived>*>(this)->initPropsFrom(expr);
+        void initPropsFromImpl_CartesianFieldExpr(const Other& expr) {
+            this->initPropsFromImpl_StructuredFieldExpr(expr);
+        }
+
+        template <CartesianFieldExprType Other>
+        void initPropsFromImpl_final(const Other& expr) {
+            initPropsFromImpl_CartesianFieldExpr(expr);
         }
     };
 }// namespace OpFlow
