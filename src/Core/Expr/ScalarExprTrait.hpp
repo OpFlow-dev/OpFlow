@@ -23,6 +23,7 @@ namespace OpFlow {
         template <typename T>
         struct ExprTrait<ScalarExpr<T>> {
             using type = std::decay_t<T>;
+            using elem_type = std::decay_t<T>;
             static constexpr int access_flag = HasWriteAccess | HasDirectAccess;
         };
         template <typename T>

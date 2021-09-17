@@ -733,6 +733,7 @@ namespace OpFlow {
                     }
                 }
             }
+            return r.count() == 0;
         }
     };
 }// namespace OpFlow

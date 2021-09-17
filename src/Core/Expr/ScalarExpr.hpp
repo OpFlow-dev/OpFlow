@@ -59,6 +59,7 @@ namespace OpFlow {
         }
 
         bool contains(const ScalarExpr& t) const { return this == &t; }
+        bool couldEvalAt(auto&& i) const { return true; }
     };
 }// namespace OpFlow
 #endif//OPFLOW_SCALAREXPR_HPP

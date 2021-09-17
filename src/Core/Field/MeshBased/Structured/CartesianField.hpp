@@ -41,6 +41,11 @@ namespace OpFlow {
 
     public:
         friend ExprBuilder<CartesianField>;
+        friend Expr<CartesianField>;
+        using Expr<CartesianField>::operator();
+        using Expr<CartesianField>::operator[];
+        using Expr<CartesianField>::operator=;
+
         CartesianField() = default;
         CartesianField(const CartesianField& other)
             : CartesianFieldExpr<CartesianField<D, M, C>>(other), data(other.data), initialized(true) {}
@@ -48,20 +53,21 @@ namespace OpFlow {
             : CartesianFieldExpr<CartesianField<D, M, C>>(std::move(other)), data(std::move(other.data)),
               initialized(true) {}
 
-        auto& operator=(const CartesianField& other) {
+        auto& assignImpl_final(const CartesianField& other) {
             if (!initialized) {
                 this->initPropsFrom(other);
                 data = other.data;
                 initialized = true;
             } else if (this != &other) {
                 internal::FieldAssigner::assign(other, *this);
-                updatePadding();
+                this->updatePadding();
             }
             return *this;
         }
 
         template <CartesianFieldExprType T>
-        auto& operator=(T&& other) {// T is not const here for that we need to call other.prepare() later
+        auto&
+        assignImpl_final(T&& other) {// T is not const here for that we need to call other.prepare() later
             if (!initialized) {
                 this->initPropsFrom(other);
                 if constexpr (CartesianFieldType<T>) data = other.data;
@@ -72,13 +78,13 @@ namespace OpFlow {
                     this->updateBC();
                     // invoke the assigner
                     internal::FieldAssigner::assign(other, *this);
-                    updatePadding();
+                    this->updatePadding();
                 }
                 initialized = true;
             } else if ((void*) this != (void*) &other) {
                 // assign all values from T to assignable range
                 internal::FieldAssigner::assign(other, *this);
-                updatePadding();
+                this->updatePadding();
             }
             return *this;
         }
@@ -89,7 +95,7 @@ namespace OpFlow {
             }
             rangeFor(DS::commonRange(this->assignableRange, this->localRange),
                      [&](auto&& i) { this->operator[](i) = c; });
-            updatePadding();
+            this->updatePadding();
             return *this;
         }
 
@@ -103,10 +109,10 @@ namespace OpFlow {
                                        : this->mesh.x(k, i) + .5 * this->mesh.dx(k, i);
                 this->operator[](i) = f(cords);
             });
-            updatePadding();
+            this->updatePadding();
             return *this;
         }
-        void prepare() {}
+        void prepareImpl_final() {}
         void updateNeighbors() {
             if (this->splitMap.size() == 1) {
                 // single node mode
@@ -133,7 +139,7 @@ namespace OpFlow {
 #endif
             }
         }
-        void updateBC() {
+        void updateBCImpl_final() {
             if (this->localRange == this->assignableRange) return;
             else {
                 for (auto i = 0; i < CartesianField::dim; ++i) {
@@ -174,7 +180,7 @@ namespace OpFlow {
                 }
             }
         }
-        void updatePadding() {
+        void updatePaddingImpl_final() {
             auto plan = getGlobalParallelPlan();
             if (plan.singleNodeMode()) return;
             else {
@@ -190,7 +196,7 @@ namespace OpFlow {
                     // pack data into send buffer
                     send_buff.emplace_back();
                     requests.emplace_back();
-                    rangeFor_s(send_range, [&](auto&& i) { send_buff.back().push_back(evalAt(i)); });
+                    rangeFor_s(send_range, [&](auto&& i) { send_buff.back().push_back(this->evalAt(i)); });
                     MPI_Isend(send_buff.back().data(), send_buff.back().size() * sizeof(D) / sizeof(char),
                               MPI_CHAR, other_rank, rank, MPI_COMM_WORLD, &requests.back());
 
@@ -225,23 +231,21 @@ namespace OpFlow {
             }
         }
 
-        auto getView() {
+        auto getViewImpl_final() {
             OP_NOT_IMPLEMENTED;
             return 0;
         }
-        auto& operator()(const index_type& i) { return data[i - this->offset]; }
-        auto& operator[](const index_type& i) { return data[i - this->offset]; }
-        const auto& operator()(const index_type& i) const { return data[i - this->offset]; }
-        const auto& operator[](const index_type& i) const { return data[i - this->offset]; }
-        const auto& evalAt(const index_type& i) const { return data[i - this->offset]; }
-        const auto& evalSafeAt(const index_type& i) const { return data[i - this->offset]; }
+        const auto& evalAtImpl_final(const index_type& i) const { return data[i - this->offset]; }
+        const auto& evalSafeAtImpl_final(const index_type& i) const { return data[i - this->offset]; }
+        auto& evalAtImpl_final(const index_type& i) { return data[i - this->offset]; }
+        auto& evalSafeAtImpl_final(const index_type& i) { return data[i - this->offset]; }
 
         template <typename Other>
-        requires(!std::same_as<Other, CartesianField>) bool contains(const Other& o) const {
+        requires(!std::same_as<Other, CartesianField>) bool containsImpl_final(const Other& o) const {
             return false;
         }
 
-        bool contains(const CartesianField& other) const { return this == &other; }
+        bool containsImpl_final(const CartesianField& other) const { return this == &other; }
     };
 
     template <typename D, typename M, typename C>

@@ -39,7 +39,8 @@ namespace OpFlow {
         struct ExprTrait<T&&> : ExprTrait<T> {};
     }// namespace internal
 
-    template <typename Derived>
+    template <typename Derived, bool rw = bool(internal::ExprTrait<Derived>::access_flag& HasWriteAccess),
+              bool dir = bool(internal::ExprTrait<Derived>::access_flag& HasDirectAccess)>
     struct Expr;
 
     template <typename T>

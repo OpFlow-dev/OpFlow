@@ -18,10 +18,16 @@ namespace OpFlow {
             : SemiStructuredFieldExpr<Derived>(std::move(other)),
               maxLogicalRanges(std::move(other.maxLogicalRanges)) {}
 
+    protected:
         template <CartAMRFieldExprType Other>
-        void initPropsFrom(const Other& other) {
+        void initPropsFromImpl_CartAMRFieldExpr(const Other& other) {
+            this->initPropsFromImpl_SemiStructuredFieldExpr(other);
             maxLogicalRanges = other.maxLogicalRanges;
-            static_cast<SemiStructuredFieldExpr<Derived>*>(this)->initPropsFrom(other);
+        }
+
+        template <CartAMRFieldExprType Other>
+        void initPropsFromImpl_final(const Other& other) {
+            initPropsFromImpl_CartAMRFieldExpr(other);
         }
     };
 }// namespace OpFlow
