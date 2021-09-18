@@ -54,7 +54,7 @@ namespace OpFlow {
             DS::Range<d> range;
             for (auto j = 0; j < d; ++j) {
                 range.start[j] = i[j] - dims[j] / 2;
-                range.end[j] = i[j] + dims[j] / 2;
+                range.end[j] = i[j] + dims[j] / 2 + 1;
                 range.stride[j] = 1;
             }
             return rangeReduce_s(
@@ -72,7 +72,7 @@ namespace OpFlow {
             DS::LevelRange<d> range;
             for (auto j = 0; j < d; ++j) {
                 range.start[j] = i[j] - dims[j] / 2;
-                range.end[j] = i[j] + dims[j] / 2;
+                range.end[j] = i[j] + dims[j] / 2 + 1;
                 range.stride[j] = 1;
             }
             range.level = i.l;
@@ -93,7 +93,7 @@ namespace OpFlow {
             DS::Range<d> range;
             for (auto j = 0; j < d; ++j) {
                 range.start[j] = i[j] - dims[j] / 2;
-                range.end[j] = i[j] + dims[j] / 2;
+                range.end[j] = i[j] + dims[j] / 2 + 1;
                 range.stride[j] = 1;
             }
             return rangeReduce_s(
@@ -112,7 +112,7 @@ namespace OpFlow {
             DS::LevelRange<d> range;
             for (auto j = 0; j < d; ++j) {
                 range.start[j] = i[j] - dims[j] / 2;
-                range.end[j] = i[j] + dims[j] / 2;
+                range.end[j] = i[j] + dims[j] / 2 + 1;
                 range.stride[j] = 1;
             }
             range.level = i.l;
@@ -211,7 +211,7 @@ namespace OpFlow {
     }// namespace internal
 
     template <std::integral auto... ns, typename E, typename D>
-            requires StructuredFieldExprType<E> || CartAMRFieldExprType<E> auto conv(const E& expr, const DS::FixedSizeTensor<D, ns...>& kernel) {
+            requires StructuredFieldExprType<E> || CartAMRFieldExprType<E> auto conv(E&& expr, const DS::FixedSizeTensor<D, ns...>& kernel) {
         return makeExpression<Convolution<ns...>>(expr, ScalarExpr(kernel));
     }
 }// namespace OpFlow
