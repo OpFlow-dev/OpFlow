@@ -14,6 +14,9 @@
 #define OPFLOW_DECAYEXPR_HPP
 #include "Core/Expr/ExprTrait.hpp"
 #include "Core/Expr/Expression.hpp"
+#include "Core/Field/FieldExprTrait.hpp"
+#include "Core/Field/MeshBased/MeshBasedFieldExprTrait.hpp"
+#include "Core/Field/MeshBased/Structured/StructuredFieldExprTrait.hpp"
 #include "Core/Macros.hpp"
 
 namespace OpFlow {
@@ -39,6 +42,18 @@ namespace OpFlow {
 
         template <FieldExprType T1, FieldExprType T2>
         static void prepare(Expression<DecayOp, T1, T2>& expr) {
+            if constexpr (MeshBasedFieldExprType<T1>) {
+                static_assert(MeshBasedFieldExprType<T2>,
+                              "DecayOp Error: mismatch types of decay expression");
+                OP_ASSERT_MSG(expr.arg1.getMesh() == expr.arg2.getMesh(),
+                              "DecayOp Error: expressions must have the same mesh.");
+                if constexpr (StructuredFieldExprType<T1>) {
+                    static_assert(StructuredFieldExprType<T2>,
+                                  "DecayOp Error: mismatch types of decay expression");
+                    OP_ASSERT_MSG(expr.arg1.loc == expr.arg2.loc,
+                                  "DecayOp Error: expressions must have the same location on mesh.");
+                }
+            }
             expr.initPropsFrom(expr.arg2);
             // name
             expr.name = fmt::format("decayExpr({}, {})", expr.arg1.name, expr.arg2.name);
@@ -56,6 +71,7 @@ namespace OpFlow {
         template <std::size_t bc_w, typename Arg1, typename Arg2>
         struct ExprTrait<Expression<DecayOp<bc_w>, Arg1, Arg2>> : ExprTrait<Arg2> {
             static constexpr auto bc_width = bc_w;
+            static constexpr auto access_flag = 0;
         };
     }// namespace internal
 
