@@ -56,7 +56,7 @@ TEST_F(ConvTest_CartesianField, RangeCheck) {
     ASSERT_EQ(t.accessibleRange.end[1], u.accessibleRange.end[1] - 2);
 }
 
-TEST_F(ConvTest_CartesianField, ValueCheck) {
+TEST_F(ConvTest_CartesianField, ValueCheck_EqualSize) {
     rangeFor(u.assignableRange, [&](auto&& ii) { u[ii] = ii[1] * 10 + ii[0]; });
     for (auto j = 0; j < 3; ++j) {
         for (auto i = 0; i < 3; ++i) {
@@ -65,6 +65,19 @@ TEST_F(ConvTest_CartesianField, ValueCheck) {
             auto t = conv(u, kernel);
             t.prepare();
             ASSERT_EQ(t.evalAt(DS::MDIndex<2> {1, 1}), j * 10 + i);
+        }
+    }
+}
+
+TEST_F(ConvTest_CartesianField, ValueCheck_InequalSize) {
+    rangeFor(u.assignableRange, [&](auto&& ii) { u[ii] = ii[1] * 10 + ii[0]; });
+    for (auto j = 0; j < 3; ++j) {
+        for (auto i = 0; i < 5; ++i) {
+            auto kernel = DS::FixedSizeTensor<double, 5, 3> {0.};
+            kernel[DS::MDIndex<2> {i, j}] = 1.;
+            auto t = conv(u, kernel);
+            t.prepare();
+            ASSERT_EQ(t.evalAt(DS::MDIndex<2> {2, 1}), j * 10 + i);
         }
     }
 }
