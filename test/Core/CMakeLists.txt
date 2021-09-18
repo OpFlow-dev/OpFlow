@@ -24,6 +24,7 @@ add_gmock(CartesianFieldBuilderTest ${CMAKE_CURRENT_LIST_DIR}/Field/CartesianFie
 # Operators
 add_gmock(InterpolatorTest ${CMAKE_CURRENT_LIST_DIR}/Operator/InterpolatorTest.cpp)
 add_gmock(ConvolutionTest ${CMAKE_CURRENT_LIST_DIR}/Operator/ConvolutionTest.cpp)
+add_gmock(DecayExprTest ${CMAKE_CURRENT_LIST_DIR}/Operator/DecayExprTest.cpp)
 
 # RangeFor
 add_gmock(RangeForTest ${CMAKE_CURRENT_LIST_DIR}/Loops/RangeForTest.cpp)
