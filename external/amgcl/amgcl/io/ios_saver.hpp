@@ -35,22 +35,20 @@ THE SOFTWARE.
 
 namespace amgcl {
 
-// Save ostream flags in constructor, restore in destructor
-struct ios_saver {
-    std::ios_base &s;
-    std::ios_base::fmtflags f;
-    std::streamsize p;
+    // Save ostream flags in constructor, restore in destructor
+    struct ios_saver {
+        std::ios_base &s;
+        std::ios_base::fmtflags f;
+        std::streamsize p;
 
-    ios_saver(std::ios_base &s)
-        : s(s), f(s.flags()), p(s.precision())
-    {}
+        ios_saver(std::ios_base &s) : s(s), f(s.flags()), p(s.precision()) {}
 
-    ~ios_saver() {
-        s.flags(f);
-        s.precision(p);
-    }
-};
+        ~ios_saver() {
+            s.flags(f);
+            s.precision(p);
+        }
+    };
 
-} // namespace amgcl
+}// namespace amgcl
 
 #endif

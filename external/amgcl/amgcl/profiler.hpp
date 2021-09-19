@@ -31,27 +31,27 @@ THE SOFTWARE.
  * \brief  Profiler class.
  */
 
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <map>
 #include <string>
-#include <vector>
 #include <type_traits>
+#include <vector>
 
-#include <amgcl/perf_counter/clock.hpp>
 #include <amgcl/io/ios_saver.hpp>
+#include <amgcl/perf_counter/clock.hpp>
 
 namespace amgcl {
 
-/// Profiler class.
-/**
+    /// Profiler class.
+    /**
  * \param Counter     Performance counter to use for profiling.
  * \param SHIFT_WIDTH Indentation for output of profiling results.
  *
  * Provides simple to use, hierarchical profile with nicely formatted output.
  */
-template <class Counter = amgcl::perf_counter::clock, unsigned SHIFT_WIDTH = 2>
-class profiler {
+    template <class Counter = amgcl::perf_counter::clock, unsigned SHIFT_WIDTH = 2>
+    class profiler {
     public:
         typedef typename Counter::value_type value_type;
         typedef double delta_type;
@@ -59,9 +59,7 @@ class profiler {
         /// Initialization.
         /**
          */
-        profiler() : name("Profile") {
-            init();
-        }
+        profiler() : name("Profile") { init(); }
 
         /// Send additional parameters to counter.
         /**
@@ -69,9 +67,8 @@ class profiler {
          * \param args Counter arguments.
          */
         template <class... Args>
-        profiler(const std::string &name, Args&&... args)
-            : name(name), counter(std::forward<Args>(args)...)
-        {
+        profiler(const std::string &name, Args &&... args)
+            : name(name), counter(std::forward<Args>(args)...) {
             init();
         }
 
@@ -88,12 +85,12 @@ class profiler {
         /**
          * Returns delta in the measured value since the corresponding tic().
          */
-        delta_type toc(const std::string& /*name*/ = "") {
+        delta_type toc(const std::string & /*name*/ = "") {
             profile_unit *top = stack.back();
             stack.pop_back();
 
             value_type current = counter.current();
-            delta_type delta   = current - top->begin;
+            delta_type delta = current - top->begin;
 
             top->length += delta;
             root.length = current - root.begin;
@@ -113,36 +110,36 @@ class profiler {
         struct scoped_ticker {
             profiler &prof;
             scoped_ticker(profiler &prof) : prof(prof) {}
-            ~scoped_ticker() {
-                prof.toc();
-            }
+            ~scoped_ticker() { prof.toc(); }
         };
 
         scoped_ticker scoped_tic(const std::string &name) {
             tic(name);
             return scoped_ticker(*this);
         }
+
     private:
         struct profile_unit {
             profile_unit() : length(0) {}
 
             delta_type children_time() const {
                 delta_type s = delta_type();
-                for(typename std::map<std::string, profile_unit>::const_iterator c = children.begin(); c != children.end(); c++)
+                for (typename std::map<std::string, profile_unit>::const_iterator c = children.begin();
+                     c != children.end(); c++)
                     s += c->second.length;
                 return s;
             }
 
             size_t total_width(const std::string &name, int level) const {
                 size_t w = name.size() + level;
-                for(typename std::map<std::string, profile_unit>::const_iterator c = children.begin(); c != children.end(); c++)
+                for (typename std::map<std::string, profile_unit>::const_iterator c = children.begin();
+                     c != children.end(); c++)
                     w = std::max(w, c->second.total_width(c->first, level + SHIFT_WIDTH));
                 return w;
             }
 
-            void print(std::ostream &out, const std::string &name,
-                    int level, delta_type total, size_t width) const
-            {
+            void print(std::ostream &out, const std::string &name, int level, delta_type total,
+                       size_t width) const {
                 using namespace std;
 
                 out << "[" << setw(level) << "";
@@ -158,21 +155,18 @@ class profiler {
                     }
                 }
 
-                for(typename std::map<std::string, profile_unit>::const_iterator c = children.begin(); c != children.end(); c++)
+                for (typename std::map<std::string, profile_unit>::const_iterator c = children.begin();
+                     c != children.end(); c++)
                     c->second.print(out, c->first, level + SHIFT_WIDTH, total, width);
             }
 
-            void print_line(std::ostream &out, const std::string &name,
-                    delta_type time, double perc, size_t width) const
-            {
+            void print_line(std::ostream &out, const std::string &name, delta_type time, double perc,
+                            size_t width) const {
                 using namespace std;
 
-                out << name << ":"
-                    << setw(width - name.size()) << ""
-                    << setw(10)
-                    << fixed << setprecision(3) << time << " " << Counter::units()
-                    << "] (" << fixed << setprecision(2) << setw(6) << perc << "%)"
-                    << endl;
+                out << name << ":" << setw(width - name.size()) << "" << setw(10) << fixed << setprecision(3)
+                    << time << " " << Counter::units() << "] (" << fixed << setprecision(2) << setw(6) << perc
+                    << "%)" << endl;
             }
 
             value_type begin;
@@ -184,7 +178,7 @@ class profiler {
         std::string name;
         Counter counter;
         profile_unit root;
-        std::vector<profile_unit*> stack;
+        std::vector<profile_unit *> stack;
 
         void init() {
             stack.reserve(128);
@@ -193,8 +187,7 @@ class profiler {
         }
 
         void print(std::ostream &out) {
-            if (stack.back() != &root)
-                out << "Warning! Profile is incomplete." << std::endl;
+            if (stack.back() != &root) out << "Warning! Profile is incomplete." << std::endl;
             ios_saver ss(out);
             root.print(out, name, 0, root.length, root.total_width(name, 0));
         }
@@ -204,13 +197,13 @@ class profiler {
          * \param out  Output stream.
          * \param prof Profiler.
          */
-        friend std::ostream& operator<<(std::ostream &out, profiler &prof) {
+        friend std::ostream &operator<<(std::ostream &out, profiler &prof) {
             out << std::endl;
             prof.print(out);
             return out << std::endl;
         }
-};
+    };
 
-} // namespace amgcl
+}// namespace amgcl
 
 #endif

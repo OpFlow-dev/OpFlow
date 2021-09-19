@@ -15,8 +15,6 @@
 #  define FMT_HIDE_MODULE_BUGS
 #endif
 
-#define FMT_MODULE_TEST
-
 #include <bit>
 #include <chrono>
 #include <exception>
@@ -37,30 +35,18 @@
 #  define FMT_USE_FCNTL 0
 #endif
 #define FMT_NOEXCEPT noexcept
-#if defined(_WIN32) && !defined(__MINGW32__)
-#  define FMT_POSIX(call) _##call
-#else
-#  define FMT_POSIX(call) call
-#endif
-#define FMT_OS_H_  // don't pull in os.h directly or indirectly
 
 import fmt;
 
 // check for macros leaking from BMI
 static bool macro_leaked =
-#if defined(FMT_CORE_H_) || defined(FMT_FORMAT_H_)
+#if defined(FMT_CORE_H_) || defined(FMT_FORMAT_H)
     true;
 #else
     false;
 #endif
 
-// Include sources to pick up functions and classes from the module rather than
-// from the non-modular library which is baked into the 'test-main' library.
-// This averts linker problems:
-// - strong ownership model: missing linker symbols
-// - weak ownership model: duplicate linker symbols
-#include "gtest-extra.cc"
-#include "util.cc"
+#include "gtest-extra.h"
 
 // an implicitly exported namespace must be visible [module.interface]/2.2
 TEST(module_test, namespace) {

@@ -5,7 +5,6 @@
 // spdlog usage example
 
 #include <cstdio>
-#include <chrono>
 
 void load_levels_example();
 void stdout_logger_example();
@@ -20,7 +19,6 @@ void multi_sink_example();
 void user_defined_example();
 void err_handler_example();
 void syslog_example();
-void udp_example();
 void custom_flags_example();
 
 #include "spdlog/spdlog.h"
@@ -76,7 +74,6 @@ int main(int, char *[])
         err_handler_example();
         trace_example();
         stopwatch_example();
-        udp_example();
         custom_flags_example();
 
         // Flush all *registered* loggers using a worker thread every 3 seconds.
@@ -206,15 +203,6 @@ void stopwatch_example()
     spdlog::stopwatch sw;
     std::this_thread::sleep_for(std::chrono::milliseconds(123));
     spdlog::info("Stopwatch: {} seconds", sw);
-}
-
-#include "spdlog/sinks/udp_sink.h"
-void udp_example()
-{
-    spdlog::sinks::udp_sink_config cfg("127.0.0.1", 11091);
-    auto my_logger = spdlog::udp_logger_mt("udplog", cfg);
-    my_logger->set_level(spdlog::level::debug);
-    my_logger->info("hello world");
 }
 
 // A logger with multiple sinks (stdout and file) - each with a different format and log level.

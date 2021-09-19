@@ -31,93 +31,82 @@ THE SOFTWARE.
  * \brief  Use an amgcl smoother as a standalone preconditioner.
  */
 
-#include <vector>
-#include <memory>
 #include <amgcl/backend/builtin.hpp>
+#include <memory>
+#include <vector>
 
 namespace amgcl {
-namespace relaxation {
+    namespace relaxation {
 
-/// Allows to use an amgcl smoother as standalone preconditioner.
-template <class Backend, template <class> class Relax>
-class as_preconditioner {
-    public:
-        typedef Backend backend_type;
+        /// Allows to use an amgcl smoother as standalone preconditioner.
+        template <class Backend, template <class> class Relax>
+        class as_preconditioner {
+        public:
+            typedef Backend backend_type;
 
-        typedef Relax<Backend>            smoother;
+            typedef Relax<Backend> smoother;
 
-        typedef typename Backend::matrix  matrix;
-        typedef typename Backend::vector  vector;
-        typedef typename smoother::params params;
-        typedef typename Backend::params  backend_params;
+            typedef typename Backend::matrix matrix;
+            typedef typename Backend::vector vector;
+            typedef typename smoother::params params;
+            typedef typename Backend::params backend_params;
 
-        typedef typename Backend::value_type value_type;
-        typedef typename backend::builtin<value_type>::matrix build_matrix;
+            typedef typename Backend::value_type value_type;
+            typedef typename backend::builtin<value_type>::matrix build_matrix;
 
-        template <class Matrix>
-        as_preconditioner(
-                const Matrix &M,
-                const params &prm = params(),
-                const backend_params &bprm = backend_params()
-                )
-            : prm(prm)
-        {
-            init(std::make_shared<build_matrix>(M), bprm);
-        }
+            template <class Matrix>
+            as_preconditioner(const Matrix &M, const params &prm = params(),
+                              const backend_params &bprm = backend_params())
+                : prm(prm) {
+                init(std::make_shared<build_matrix>(M), bprm);
+            }
 
-        as_preconditioner(
-                std::shared_ptr<build_matrix> M,
-                const params &prm = params(),
-                const backend_params &bprm = backend_params()
-                )
-            : prm(prm)
-        {
-            init(M, bprm);
-        }
+            as_preconditioner(std::shared_ptr<build_matrix> M, const params &prm = params(),
+                              const backend_params &bprm = backend_params())
+                : prm(prm) {
+                init(M, bprm);
+            }
 
-        template <class Vec1, class Vec2>
-        void apply(const Vec1 &rhs, Vec2 &&x) const {
-            S->apply(*A, rhs, x);
-        }
+            template <class Vec1, class Vec2>
+            void apply(const Vec1 &rhs, Vec2 &&x) const {
+                S->apply(*A, rhs, x);
+            }
 
-        const matrix& system_matrix() const {
-            return *A;
-        }
+            const matrix &system_matrix() const { return *A; }
 
-        std::shared_ptr<matrix> system_matrix_ptr() const {
-            return A;
-        }
+            std::shared_ptr<matrix> system_matrix_ptr() const { return A; }
 
-        size_t bytes() const {
-            size_t b = 0;
+            size_t bytes() const {
+                size_t b = 0;
 
-            if (A) b += backend::bytes(*A);
-            if (S) b += backend::bytes(*S);
+                if (A) b += backend::bytes(*A);
+                if (S) b += backend::bytes(*S);
 
-            return b;
-        }
-    private:
-        params prm;
+                return b;
+            }
 
-        std::shared_ptr<matrix>   A;
-        std::shared_ptr<smoother> S;
+        private:
+            params prm;
 
-        void init(std::shared_ptr<build_matrix> M, const backend_params &bprm) {
-            A = Backend::copy_matrix(M, bprm);
-            S = std::make_shared<smoother>(*M, prm, bprm);
-        }
+            std::shared_ptr<matrix> A;
+            std::shared_ptr<smoother> S;
 
-        friend std::ostream& operator<<(std::ostream &os, const as_preconditioner &p) {
-            os << "Relaxation as preconditioner" << std::endl;
-            os << "  Unknowns: " << backend::rows(p.system_matrix()) << std::endl;
-            os << "  Nonzeros: " << backend::nonzeros(p.system_matrix()) << std::endl;
-            os << "  Memory:   " << human_readable_memory(p.bytes()) << std::endl;
+            void init(std::shared_ptr<build_matrix> M, const backend_params &bprm) {
+                A = Backend::copy_matrix(M, bprm);
+                S = std::make_shared<smoother>(*M, prm, bprm);
+            }
 
-            return os;
-        }
-};
+            friend std::ostream &operator<<(std::ostream &os, const as_preconditioner &p) {
+                os << "Relaxation as preconditioner" << std::endl;
+                os << "  Unknowns: " << backend::rows(p.system_matrix()) << std::endl;
+                os << "  Nonzeros: " << backend::nonzeros(p.system_matrix()) << std::endl;
+                os << "  Memory:   " << human_readable_memory(p.bytes()) << std::endl;
 
-} // namespace relaxation
-} // namespace amgcl
+                return os;
+            }
+        };
+
+    }// namespace relaxation
+}// namespace amgcl
 
 #endif

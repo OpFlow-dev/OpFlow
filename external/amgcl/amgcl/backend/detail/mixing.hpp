@@ -32,49 +32,40 @@ THE SOFTWARE.
  * \brief  Utilities for mixed-precision of mixed-block backends.
  */
 
-#include <type_traits>
 #include <amgcl/backend/builtin.hpp>
 #include <amgcl/value_type/interface.hpp>
+#include <type_traits>
 
 namespace amgcl {
-namespace backend {
-namespace detail {
+    namespace backend {
+        namespace detail {
 
-// Backend with scalar value_type of highest precision.
+            // Backend with scalar value_type of highest precision.
 
-template <class B1, class B2, class Enable = void>
-struct common_scalar_backend;
+            template <class B1, class B2, class Enable = void>
+            struct common_scalar_backend;
 
-template <class B>
-struct common_scalar_backend<B, B,
-    typename std::enable_if<
-        math::static_rows<typename B::value_type>::value == 1
-        >::type >
-{
-    typedef B type;
-};
+            template <class B>
+            struct common_scalar_backend<
+                    B, B,
+                    typename std::enable_if<math::static_rows<typename B::value_type>::value == 1>::type> {
+                typedef B type;
+            };
 
-template <class V1, class V2>
-struct common_scalar_backend< backend::builtin<V1>, backend::builtin<V2>,
-    typename std::enable_if<
-        math::static_rows<V1>::value != 1 ||
-        math::static_rows<V2>::value != 1
-        >::type>
-{
-    typedef typename math::scalar_of<V1>::type S1;
-    typedef typename math::scalar_of<V2>::type S2;
+            template <class V1, class V2>
+            struct common_scalar_backend<
+                    backend::builtin<V1>, backend::builtin<V2>,
+                    typename std::enable_if<math::static_rows<V1>::value != 1
+                                            || math::static_rows<V2>::value != 1>::type> {
+                typedef typename math::scalar_of<V1>::type S1;
+                typedef typename math::scalar_of<V2>::type S2;
 
-    typedef
-        typename std::conditional<
-            (sizeof(S1) > sizeof(S2)), backend::builtin<S1>, backend::builtin<S2>
-            >::type
-        type;
-};
+                typedef typename std::conditional<(sizeof(S1) > sizeof(S2)), backend::builtin<S1>,
+                                                  backend::builtin<S2>>::type type;
+            };
 
-} // namespace detail
-} // namespace backend
-} // namespace amgcl
-
-
+        }// namespace detail
+    }    // namespace backend
+}// namespace amgcl
 
 #endif

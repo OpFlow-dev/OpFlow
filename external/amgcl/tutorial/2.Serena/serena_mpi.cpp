@@ -1,15 +1,15 @@
-#include <vector>
 #include <iostream>
+#include <vector>
 
+#include <amgcl/adapter/block_matrix.hpp>
+#include <amgcl/adapter/crs_tuple.hpp>
 #include <amgcl/backend/builtin.hpp>
 #include <amgcl/value_type/static_matrix.hpp>
-#include <amgcl/adapter/crs_tuple.hpp>
-#include <amgcl/adapter/block_matrix.hpp>
 
-#include <amgcl/mpi/distributed_matrix.hpp>
-#include <amgcl/mpi/make_solver.hpp>
 #include <amgcl/mpi/amg.hpp>
 #include <amgcl/mpi/coarsening/smoothed_aggregation.hpp>
+#include <amgcl/mpi/distributed_matrix.hpp>
+#include <amgcl/mpi/make_solver.hpp>
 #include <amgcl/mpi/relaxation/spai0.hpp>
 #include <amgcl/mpi/solver/bicgstab.hpp>
 
@@ -17,9 +17,9 @@
 #include <amgcl/profiler.hpp>
 
 #if defined(AMGCL_HAVE_PARMETIS)
-#  include <amgcl/mpi/partition/parmetis.hpp>
+#include <amgcl/mpi/partition/parmetis.hpp>
 #elif defined(AMGCL_HAVE_SCOTCH)
-#  include <amgcl/mpi/partition/ptscotch.hpp>
+#include <amgcl/mpi/partition/ptscotch.hpp>
 #endif
 
 // Block size
@@ -58,25 +58,22 @@ int main(int argc, char *argv[]) {
     amgcl::io::read_crs(argv[1], rows, ptr, col, val, row_beg, row_end);
     prof.toc("read");
 
-    if (world.rank == 0) std::cout
-        << "World size: " << world.size << std::endl
-        << "Matrix " << argv[1] << ": " << rows << "x" << rows << std::endl;
+    if (world.rank == 0)
+        std::cout << "World size: " << world.size << std::endl
+                  << "Matrix " << argv[1] << ": " << rows << "x" << rows << std::endl;
 
     // Declare the backend and the solver types
     typedef amgcl::static_matrix<double, B, B> dmat_type;
     typedef amgcl::static_matrix<double, B, 1> dvec_type;
-    typedef amgcl::static_matrix<float,  B, B> fmat_type;
+    typedef amgcl::static_matrix<float, B, B> fmat_type;
     typedef amgcl::backend::builtin<dmat_type> DBackend;
     typedef amgcl::backend::builtin<fmat_type> FBackend;
 
     typedef amgcl::mpi::make_solver<
-        amgcl::mpi::amg<
-            FBackend,
-            amgcl::mpi::coarsening::smoothed_aggregation<FBackend>,
-            amgcl::mpi::relaxation::spai0<FBackend>
-            >,
-        amgcl::mpi::solver::bicgstab<DBackend>
-        > Solver;
+            amgcl::mpi::amg<FBackend, amgcl::mpi::coarsening::smoothed_aggregation<FBackend>,
+                            amgcl::mpi::relaxation::spai0<FBackend>>,
+            amgcl::mpi::solver::bicgstab<DBackend>>
+            Solver;
 
     // Solver parameters
     Solver::params prm;
@@ -91,10 +88,10 @@ int main(int argc, char *argv[]) {
     // and form the CRS arrays for a diagonal matrix.
     std::vector<double> dia(chunk, 1.0);
     std::vector<ptrdiff_t> d_ptr(chunk + 1), d_col(chunk);
-    for(ptrdiff_t i = 0, I = row_beg; i < chunk; ++i, ++I) {
+    for (ptrdiff_t i = 0, I = row_beg; i < chunk; ++i, ++I) {
         d_ptr[i] = i;
         d_col[i] = I;
-        for(ptrdiff_t j = ptr[i], e = ptr[i+1]; j < e; ++j) {
+        for (ptrdiff_t j = ptr[i], e = ptr[i + 1]; j < e; ++j) {
             if (col[j] == I) {
                 dia[i] = 1 / sqrt(val[j]);
                 break;
@@ -104,35 +101,34 @@ int main(int argc, char *argv[]) {
     d_ptr.back() = chunk;
 
     // Create the distributed diagonal matrix:
-    amgcl::mpi::distributed_matrix<DBackend> D(world,
-            amgcl::adapter::block_matrix<dmat_type>(
-                std::tie(chunk, d_ptr, d_col, dia)));
+    amgcl::mpi::distributed_matrix<DBackend> D(
+            world, amgcl::adapter::block_matrix<dmat_type>(std::tie(chunk, d_ptr, d_col, dia)));
 
     // The scaled matrix is formed as product D * A * D,
     // where A is the local chunk of the matrix
     // converted to the block format on the fly.
-    auto A = product(D, *product(
-                amgcl::mpi::distributed_matrix<DBackend>(world,
-                    amgcl::adapter::block_matrix<dmat_type>(
-                        std::tie(chunk, ptr, col, val))),
-                D));
+    auto A = product(
+            D,
+            *product(amgcl::mpi::distributed_matrix<DBackend>(
+                             world, amgcl::adapter::block_matrix<dmat_type>(std::tie(chunk, ptr, col, val))),
+                     D));
     prof.toc("scale");
 
     // Since the RHS in this case is filled with ones,
     // the scaled RHS is equal to dia.
     // Reinterpret the pointer to dia data to get the RHS in the block format:
-    auto f_ptr = reinterpret_cast<dvec_type*>(dia.data());
+    auto f_ptr = reinterpret_cast<dvec_type *>(dia.data());
     std::vector<dvec_type> rhs(f_ptr, f_ptr + chunk / B);
 
     // Partition the matrix and the RHS vector.
     // If neither ParMETIS not PT-SCOTCH are not available,
     // just keep the current naive partitioning.
 #if defined(AMGCL_HAVE_PARMETIS) || defined(AMGCL_HAVE_SCOTCH)
-#  if defined(AMGCL_HAVE_PARMETIS)
+#if defined(AMGCL_HAVE_PARMETIS)
     typedef amgcl::mpi::partition::parmetis<DBackend> Partition;
-#  elif defined(AMGCL_HAVE_SCOTCH)
+#elif defined(AMGCL_HAVE_SCOTCH)
     typedef amgcl::mpi::partition::ptscotch<DBackend> Partition;
-#  endif
+#endif
 
     if (world.size > 1) {
         prof.tic("partition");
@@ -179,8 +175,8 @@ int main(int argc, char *argv[]) {
 
     // Output the number of iterations, the relative error,
     // and the profiling data:
-    if (world.rank == 0) std::cout
-        << "Iterations: " << iters << std::endl
-        << "Error:      " << error << std::endl
-        << prof << std::endl;
+    if (world.rank == 0)
+        std::cout << "Iterations: " << iters << std::endl
+                  << "Error:      " << error << std::endl
+                  << prof << std::endl;
 }

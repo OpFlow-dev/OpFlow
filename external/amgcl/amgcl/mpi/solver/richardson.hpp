@@ -31,23 +31,23 @@ THE SOFTWARE.
  * \brief  MPI wrapper for Richardson iteration.
  */
 
-#include <amgcl/solver/richardson.hpp>
 #include <amgcl/mpi/inner_product.hpp>
+#include <amgcl/solver/richardson.hpp>
 
 namespace amgcl {
-namespace mpi {
-namespace solver {
+    namespace mpi {
+        namespace solver {
 
-template <class Backend, class InnerProduct = mpi::inner_product>
-class richardson : public amgcl::solver::richardson<Backend, InnerProduct> {
-    typedef amgcl::solver::richardson<Backend, InnerProduct> Base;
-    public:
-        using Base::Base;
-};
+            template <class Backend, class InnerProduct = mpi::inner_product>
+            class richardson : public amgcl::solver::richardson<Backend, InnerProduct> {
+                typedef amgcl::solver::richardson<Backend, InnerProduct> Base;
 
-} // namespace solver
-} // namespace mpi
-} // namespace amgcl
+            public:
+                using Base::Base;
+            };
 
+        }// namespace solver
+    }    // namespace mpi
+}// namespace amgcl
 
 #endif

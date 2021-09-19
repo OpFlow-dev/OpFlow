@@ -12,8 +12,9 @@
 // A type that should be raised as an exception in Python
 class MyException : public std::exception {
 public:
-    explicit MyException(const char * m) : message{m} {}
-    const char * what() const noexcept override {return message.c_str();}
+    explicit MyException(const char *m) : message {m} {}
+    const char *what() const noexcept override { return message.c_str(); }
+
 private:
     std::string message = "";
 };
@@ -21,8 +22,9 @@ private:
 // A type that should be translated to a standard Python exception
 class MyException2 : public std::exception {
 public:
-    explicit MyException2(const char * m) : message{m} {}
-    const char * what() const noexcept override {return message.c_str();}
+    explicit MyException2(const char *m) : message {m} {}
+    const char *what() const noexcept override { return message.c_str(); }
+
 private:
     std::string message = "";
 };
@@ -30,8 +32,9 @@ private:
 // A type that is not derived from std::exception (and is thus unknown)
 class MyException3 {
 public:
-    explicit MyException3(const char * m) : message{m} {}
-    virtual const char * what() const noexcept {return message.c_str();}
+    explicit MyException3(const char *m) : message {m} {}
+    virtual const char *what() const noexcept { return message.c_str(); }
+
 private:
     std::string message = "";
 };
@@ -40,12 +43,12 @@ private:
 // and delegated to its exception translator
 class MyException4 : public std::exception {
 public:
-    explicit MyException4(const char * m) : message{m} {}
-    const char * what() const noexcept override {return message.c_str();}
+    explicit MyException4(const char *m) : message {m} {}
+    const char *what() const noexcept override { return message.c_str(); }
+
 private:
     std::string message = "";
 };
-
 
 // Like the above, but declared via the helper function
 class MyException5 : public std::logic_error {
@@ -65,8 +68,6 @@ struct PythonCallInDestructor {
     py::dict d;
 };
 
-
-
 struct PythonAlreadySetInDestructor {
     PythonAlreadySetInDestructor(const py::str &s) : s(s) {}
     ~PythonAlreadySetInDestructor() {
@@ -74,20 +75,15 @@ struct PythonAlreadySetInDestructor {
         try {
             // Assign to a py::object to force read access of nonexistent dict entry
             py::object o = foo["bar"];
-        }
-        catch (py::error_already_set& ex) {
-            ex.discard_as_unraisable(s);
-        }
+        } catch (py::error_already_set &ex) { ex.discard_as_unraisable(s); }
     }
 
     py::str s;
 };
 
-
 TEST_SUBMODULE(exceptions, m) {
-    m.def("throw_std_exception", []() {
-        throw std::runtime_error("This exception was intentionally thrown.");
-    });
+    m.def("throw_std_exception",
+          []() { throw std::runtime_error("This exception was intentionally thrown."); });
 
     // make a new custom exception and use it as a translation target
     static py::exception<MyException> ex(m, "MyException");
@@ -118,9 +114,7 @@ TEST_SUBMODULE(exceptions, m) {
     py::register_exception_translator([](std::exception_ptr p) {
         try {
             if (p) std::rethrow_exception(p);
-        } catch (const MyException4 &e) {
-            throw MyException(e.what());
-        }
+        } catch (const MyException4 &e) { throw MyException(e.what()); }
     });
 
     // A simple exception translation:
@@ -134,15 +128,15 @@ TEST_SUBMODULE(exceptions, m) {
     m.def("throws4", []() { throw MyException4("this error is rethrown"); });
     m.def("throws5", []() { throw MyException5("this is a helper-defined translated exception"); });
     m.def("throws5_1", []() { throw MyException5_1("MyException5 subclass"); });
-    m.def("throws_logic_error", []() { throw std::logic_error("this error should fall through to the standard handler"); });
-    m.def("throws_overflow_error", []() {throw std::overflow_error(""); });
+    m.def("throws_logic_error",
+          []() { throw std::logic_error("this error should fall through to the standard handler"); });
+    m.def("throws_overflow_error", []() { throw std::overflow_error(""); });
     m.def("exception_matches", []() {
         py::dict foo;
         try {
             // Assign to a py::object to force read access of nonexistent dict entry
             py::object o = foo["bar"];
-        }
-        catch (py::error_already_set& ex) {
+        } catch (py::error_already_set &ex) {
             if (!ex.matches(PyExc_KeyError)) throw;
             return true;
         }
@@ -153,8 +147,7 @@ TEST_SUBMODULE(exceptions, m) {
         try {
             // Assign to a py::object to force read access of nonexistent dict entry
             py::object o = foo["bar"];
-        }
-        catch (py::error_already_set &ex) {
+        } catch (py::error_already_set &ex) {
             if (!ex.matches(PyExc_Exception)) throw;
             return true;
         }
@@ -164,8 +157,7 @@ TEST_SUBMODULE(exceptions, m) {
         try {
             // On Python >= 3.6, this raises a ModuleNotFoundError, a subclass of ImportError
             py::module_::import("nonexistent");
-        }
-        catch (py::error_already_set &ex) {
+        } catch (py::error_already_set &ex) {
             if (!ex.matches(PyExc_ImportError)) throw;
             return true;
         }
@@ -173,21 +165,18 @@ TEST_SUBMODULE(exceptions, m) {
     });
 
     m.def("throw_already_set", [](bool err) {
-        if (err)
-            PyErr_SetString(PyExc_ValueError, "foo");
+        if (err) PyErr_SetString(PyExc_ValueError, "foo");
         try {
             throw py::error_already_set();
-        } catch (const std::runtime_error& e) {
-            if ((err && e.what() != std::string("ValueError: foo")) ||
-                (!err && e.what() != std::string("Unknown internal error occurred")))
-            {
+        } catch (const std::runtime_error &e) {
+            if ((err && e.what() != std::string("ValueError: foo"))
+                || (!err && e.what() != std::string("Unknown internal error occurred"))) {
                 PyErr_Clear();
                 throw std::runtime_error("error message mismatch");
             }
         }
         PyErr_Clear();
-        if (err)
-            PyErr_SetString(PyExc_ValueError, "foo");
+        if (err) PyErr_SetString(PyExc_ValueError, "foo");
         throw py::error_already_set();
     });
 
@@ -196,9 +185,7 @@ TEST_SUBMODULE(exceptions, m) {
             PythonCallInDestructor set_dict_in_destructor(d);
             PyErr_SetString(PyExc_ValueError, "foo");
             throw py::error_already_set();
-        } catch (const py::error_already_set&) {
-            return true;
-        }
+        } catch (const py::error_already_set &) { return true; }
         return false;
     });
 
@@ -209,16 +196,15 @@ TEST_SUBMODULE(exceptions, m) {
 
     // test_nested_throws
     m.def("try_catch", [m](py::object exc_type, py::function f, py::args args) {
-        try { f(*args); }
-        catch (py::error_already_set &ex) {
-            if (ex.matches(exc_type))
-                py::print(ex.what());
+        try {
+            f(*args);
+        } catch (py::error_already_set &ex) {
+            if (ex.matches(exc_type)) py::print(ex.what());
             else
                 throw;
         }
     });
 
     // Test repr that cannot be displayed
-    m.def("simple_bool_passthrough", [](bool x) {return x;});
-
+    m.def("simple_bool_passthrough", [](bool x) { return x; });
 }

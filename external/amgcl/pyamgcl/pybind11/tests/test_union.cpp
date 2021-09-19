@@ -16,7 +16,7 @@ TEST_SUBMODULE(union_, m) {
     };
 
     py::class_<TestUnion>(m, "TestUnion")
-        .def(py::init<>())
-        .def_readonly("as_int", &TestUnion::value_int)
-        .def_readwrite("as_uint", &TestUnion::value_uint);
+            .def(py::init<>())
+            .def_readonly("as_int", &TestUnion::value_int)
+            .def_readwrite("as_uint", &TestUnion::value_uint);
 }

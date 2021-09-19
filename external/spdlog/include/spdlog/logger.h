@@ -28,17 +28,10 @@
 #include <vector>
 
 #ifndef SPDLOG_NO_EXCEPTIONS
-#    define SPDLOG_LOGGER_CATCH(location)                                                                                                  \
+#    define SPDLOG_LOGGER_CATCH()                                                                                                          \
         catch (const std::exception &ex)                                                                                                   \
         {                                                                                                                                  \
-            if(location.filename)                                                                                                          \
-            {                                                                                                                              \
-                err_handler_(fmt::format("{} [{}({})]", ex.what(), location.filename, location.line));                                     \
-            }                                                                                                                              \
-            else                                                                                                                           \
-            {                                                                                                                              \
-                err_handler_(ex.what());                                                                                                   \
-            }                                                                                                                              \
+            err_handler_(ex.what());                                                                                                       \
         }                                                                                                                                  \
         catch (...)                                                                                                                        \
         {                                                                                                                                  \
@@ -46,7 +39,7 @@
             throw;                                                                                                                         \
         }
 #else
-#    define SPDLOG_LOGGER_CATCH(location)
+#    define SPDLOG_LOGGER_CATCH()
 #endif
 
 namespace spdlog {
@@ -340,7 +333,7 @@ protected:
             details::log_msg log_msg(loc, name_, lvl, string_view_t(buf.data(), buf.size()));
             log_it_(log_msg, log_enabled, traceback_enabled);
         }
-        SPDLOG_LOGGER_CATCH(loc)
+        SPDLOG_LOGGER_CATCH()
     }
 
 #ifdef SPDLOG_WCHAR_TO_UTF8_SUPPORT
@@ -363,7 +356,7 @@ protected:
             details::log_msg log_msg(loc, name_, lvl, string_view_t(buf.data(), buf.size()));
             log_it_(log_msg, log_enabled, traceback_enabled);
         }
-        SPDLOG_LOGGER_CATCH(loc)
+        SPDLOG_LOGGER_CATCH()
     }
 
     // T can be statically converted to wstring_view, and no formatting needed.
@@ -383,7 +376,7 @@ protected:
             details::log_msg log_msg(loc, name_, lvl, string_view_t(buf.data(), buf.size()));
             log_it_(log_msg, log_enabled, traceback_enabled);
         }
-        SPDLOG_LOGGER_CATCH(loc)
+        SPDLOG_LOGGER_CATCH()
     }
 
 #endif // SPDLOG_WCHAR_TO_UTF8_SUPPORT

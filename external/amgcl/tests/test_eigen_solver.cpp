@@ -1,32 +1,30 @@
 #define BOOST_TEST_MODULE TestEigenSolver
 #include <boost/test/unit_test.hpp>
 
-#include <Eigen/SparseLU>
-#include <amgcl/solver/eigen.hpp>
-#include <amgcl/backend/builtin.hpp>
-#include <amgcl/adapter/crs_tuple.hpp>
-#include <amgcl/profiler.hpp>
 #include "sample_problem.hpp"
+#include <Eigen/SparseLU>
+#include <amgcl/adapter/crs_tuple.hpp>
+#include <amgcl/backend/builtin.hpp>
+#include <amgcl/profiler.hpp>
+#include <amgcl/solver/eigen.hpp>
 
 namespace amgcl {
     profiler<> prof;
 }
 
-BOOST_AUTO_TEST_SUITE( test_eigen_solver )
+BOOST_AUTO_TEST_SUITE(test_eigen_solver)
 
-BOOST_AUTO_TEST_CASE(eigen_solver)
-{
-    std::vector<int>    ptr;
-    std::vector<int>    col;
+BOOST_AUTO_TEST_CASE(eigen_solver) {
+    std::vector<int> ptr;
+    std::vector<int> col;
     std::vector<double> val;
     std::vector<double> rhs;
 
     size_t n = sample_problem(16, val, col, ptr, rhs);
     amgcl::backend::crs<double> A(std::tie(n, ptr, col, val));
 
-    typedef
-        amgcl::solver::EigenSolver<Eigen::SparseLU<Eigen::SparseMatrix<double, Eigen::ColMajor, int> > >
-        Solver;
+    typedef amgcl::solver::EigenSolver<Eigen::SparseLU<Eigen::SparseMatrix<double, Eigen::ColMajor, int>>>
+            Solver;
 
     Solver solve(A);
 
@@ -41,4 +39,3 @@ BOOST_AUTO_TEST_CASE(eigen_solver)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-

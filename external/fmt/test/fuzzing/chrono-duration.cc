@@ -1,9 +1,8 @@
 // Copyright (c) 2019, Paul Dreik
 // For the license information refer to format.h.
 
-#include <fmt/chrono.h>
-
 #include <cstdint>
+#include <fmt/chrono.h>
 
 #include "fuzzer-common.h"
 
@@ -14,8 +13,8 @@ void invoke_inner(fmt::string_view format_str, Rep rep) {
 #if FMT_FUZZ_FORMAT_TO_STRING
     std::string message = fmt::format(format_str, value);
 #else
-    auto buf = fmt::memory_buffer();
-    fmt::format_to(std::back_inserter(buf), format_str, value);
+    fmt::memory_buffer buf;
+    fmt::format_to(buf, format_str, value);
 #endif
   } catch (std::exception&) {
   }
@@ -32,7 +31,7 @@ void invoke_outer(const uint8_t* data, size_t size, int period) {
   data += fixed_size;
   size -= fixed_size;
 
-  // data is already allocated separately in libFuzzer so reading past the end
+  // data is already allocated separately in libFuzzer so reading past the end 
   // will most likely be detected anyway.
   const auto format_str = fmt::string_view(as_chars(data), size);
 
@@ -87,7 +86,7 @@ void invoke_outer(const uint8_t* data, size_t size, int period) {
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  if (size <= 4) return 0;
+  if (size <= 4)  return 0;
 
   const auto representation = data[0];
   const auto period = data[1];

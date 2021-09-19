@@ -1,47 +1,44 @@
-#include <vector>
 #include <tuple>
+#include <vector>
 
 #include <amgcl/adapter/crs_tuple.hpp>
-#include <amgcl/make_solver.hpp>
 #include <amgcl/amg.hpp>
 #include <amgcl/coarsening/smoothed_aggregation.hpp>
+#include <amgcl/make_solver.hpp>
+#include <amgcl/profiler.hpp>
 #include <amgcl/relaxation/spai0.hpp>
 #include <amgcl/solver/cg.hpp>
-#include <amgcl/profiler.hpp>
 
 #if defined(SOLVER_BACKEND_VEXCL)
-#  include <amgcl/backend/vexcl.hpp>
-   typedef amgcl::backend::vexcl<float>  fBackend;
-   typedef amgcl::backend::vexcl<double> dBackend;
+#include <amgcl/backend/vexcl.hpp>
+typedef amgcl::backend::vexcl<float> fBackend;
+typedef amgcl::backend::vexcl<double> dBackend;
 #else
-#  ifndef SOLVER_BACKEND_BUILTIN
-#    define SOLVER_BACKEND_BUILTIN
-#  endif
-#  include <amgcl/backend/builtin.hpp>
-   typedef amgcl::backend::builtin<float>  fBackend;
-   typedef amgcl::backend::builtin<double> dBackend;
+#ifndef SOLVER_BACKEND_BUILTIN
+#define SOLVER_BACKEND_BUILTIN
+#endif
+#include <amgcl/backend/builtin.hpp>
+typedef amgcl::backend::builtin<float> fBackend;
+typedef amgcl::backend::builtin<double> dBackend;
 #endif
 
 #include "sample_problem.hpp"
 
-namespace amgcl { profiler<> prof; }
+namespace amgcl {
+    profiler<> prof;
+}
 using amgcl::prof;
 
 int main() {
     // Combine single-precision preconditioner with a
     // double-precision Krylov solver.
     typedef amgcl::make_solver<
-        amgcl::amg<
-            fBackend,
-            amgcl::coarsening::smoothed_aggregation,
-            amgcl::relaxation::spai0
-            >,
-        amgcl::solver::cg< dBackend >
-        >
-        Solver;
+            amgcl::amg<fBackend, amgcl::coarsening::smoothed_aggregation, amgcl::relaxation::spai0>,
+            amgcl::solver::cg<dBackend>>
+            Solver;
 
     std::vector<ptrdiff_t> ptr, col;
-    std::vector<double>    val, rhs;
+    std::vector<double> val, rhs;
 
     dBackend::params bprm;
 

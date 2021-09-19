@@ -87,10 +87,6 @@ TEST(xchar_test, format) {
   EXPECT_EQ(L"abc1", fmt::format(L"{}c{}", L"ab", 1));
 }
 
-TEST(xchar_test, is_formattable) {
-  static_assert(!fmt::is_formattable<const wchar_t*>::value, "");
-}
-
 TEST(xchar_test, compile_time_string) {
 #if defined(FMT_USE_STRING_VIEW) && __cplusplus >= 201703L
   EXPECT_EQ(L"42", fmt::format(FMT_STRING(std::wstring_view(L"{}")), 42));
@@ -261,8 +257,6 @@ TEST(xchar_test, chrono) {
   EXPECT_EQ(fmt::format("The date is {:%Y-%m-%d %H:%M:%S}.", tm),
             "The date is 2016-04-25 11:22:33.");
   EXPECT_EQ(L"42s", fmt::format(L"{}", std::chrono::seconds(42)));
-  EXPECT_EQ(fmt::format(L"{:%F}", tm), L"2016-04-25");
-  EXPECT_EQ(fmt::format(L"{:%T}", tm), L"11:22:33");
 }
 
 TEST(xchar_test, color) {
@@ -307,12 +301,10 @@ template <typename Char> struct small_grouping : std::numpunct<Char> {
   Char do_thousands_sep() const override { return ','; }
 };
 
-TEST(locale_test, localized_double) {
+TEST(locale_test, double_decimal_point) {
   auto loc = std::locale(std::locale(), new numpunct<char>());
   EXPECT_EQ("1?23", fmt::format(loc, "{:L}", 1.23));
   EXPECT_EQ("1?230000", fmt::format(loc, "{:Lf}", 1.23));
-  EXPECT_EQ("1~234?5", fmt::format(loc, "{:L}", 1234.5));
-  EXPECT_EQ("12~000", fmt::format(loc, "{:L}", 12000.0));
 }
 
 TEST(locale_test, format) {
@@ -411,7 +403,7 @@ template <class charT> struct formatter<std::complex<double>, charT> {
         specs_.precision, specs_.precision_ref, ctx);
     auto specs = std::string();
     if (specs_.precision > 0) specs = fmt::format(".{}", specs_.precision);
-    if (specs_.type == presentation_type::fixed_lower) specs += 'f';
+    if (specs_.type) specs += specs_.type;
     auto real = fmt::format(ctx.locale().template get<std::locale>(),
                             fmt::runtime("{:" + specs + "}"), c.real());
     auto imag = fmt::format(ctx.locale().template get<std::locale>(),

@@ -31,22 +31,23 @@ THE SOFTWARE.
  * \brief  MPI wrapper for BiCGStab iterative method.
  */
 
-#include <amgcl/solver/bicgstab.hpp>
 #include <amgcl/mpi/inner_product.hpp>
+#include <amgcl/solver/bicgstab.hpp>
 
 namespace amgcl {
-namespace mpi {
-namespace solver {
+    namespace mpi {
+        namespace solver {
 
-template <class Backend, class InnerProduct = mpi::inner_product>
-class bicgstab : public amgcl::solver::bicgstab<Backend, InnerProduct> {
-    typedef amgcl::solver::bicgstab<Backend, InnerProduct> Base;
-    public:
-        using Base::Base;
-};
+            template <class Backend, class InnerProduct = mpi::inner_product>
+            class bicgstab : public amgcl::solver::bicgstab<Backend, InnerProduct> {
+                typedef amgcl::solver::bicgstab<Backend, InnerProduct> Base;
 
-} // namespace solver
-} // namespace mpi
-} // namespace amgcl
+            public:
+                using Base::Base;
+            };
+
+        }// namespace solver
+    }    // namespace mpi
+}// namespace amgcl
 
 #endif

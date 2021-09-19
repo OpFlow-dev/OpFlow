@@ -1,13 +1,13 @@
-#include <vector>
 #include <iostream>
+#include <vector>
 
-#include <amgcl/backend/vexcl.hpp>
 #include <amgcl/adapter/crs_tuple.hpp>
+#include <amgcl/backend/vexcl.hpp>
 
-#include <amgcl/mpi/distributed_matrix.hpp>
-#include <amgcl/mpi/make_solver.hpp>
 #include <amgcl/mpi/amg.hpp>
 #include <amgcl/mpi/coarsening/smoothed_aggregation.hpp>
+#include <amgcl/mpi/distributed_matrix.hpp>
+#include <amgcl/mpi/make_solver.hpp>
 #include <amgcl/mpi/relaxation/spai0.hpp>
 #include <amgcl/mpi/solver/bicgstab.hpp>
 
@@ -15,9 +15,9 @@
 #include <amgcl/profiler.hpp>
 
 #if defined(AMGCL_HAVE_PARMETIS)
-#  include <amgcl/mpi/partition/parmetis.hpp>
+#include <amgcl/mpi/partition/parmetis.hpp>
 #elif defined(AMGCL_HAVE_SCOTCH)
-#  include <amgcl/mpi/partition/ptscotch.hpp>
+#include <amgcl/mpi/partition/ptscotch.hpp>
 #endif
 
 //---------------------------------------------------------------------------
@@ -34,10 +34,9 @@ int main(int argc, char *argv[]) {
     // Create VexCL context. Use vex::Filter::Exclusive so that different MPI
     // processes get different GPUs. Each process gets a single GPU:
     vex::Context ctx(vex::Filter::Exclusive(vex::Filter::Count(1)));
-    for(int i = 0; i < world.size; ++i) {
+    for (int i = 0; i < world.size; ++i) {
         // unclutter the output:
-        if (i == world.rank)
-            std::cout << world.rank << ": " << ctx.queue(0) << std::endl;
+        if (i == world.rank) std::cout << world.rank << ": " << ctx.queue(0) << std::endl;
         MPI_Barrier(world);
     }
 
@@ -67,36 +66,32 @@ int main(int argc, char *argv[]) {
     vex::vector<double> f(ctx, rhs);
 
     if (world.rank == 0)
-        std::cout
-            << "World size: " << world.size << std::endl
-            << "Matrix " << argv[1] << ": " << rows << "x" << rows << std::endl
-            << "RHS " << argv[2] << ": " << rows << "x" << cols << std::endl;
+        std::cout << "World size: " << world.size << std::endl
+                  << "Matrix " << argv[1] << ": " << rows << "x" << rows << std::endl
+                  << "RHS " << argv[2] << ": " << rows << "x" << cols << std::endl;
 
     // Compose the solver type
     typedef amgcl::backend::vexcl<double> DBackend;
-    typedef amgcl::backend::vexcl<float>  FBackend;
+    typedef amgcl::backend::vexcl<float> FBackend;
     typedef amgcl::mpi::make_solver<
-        amgcl::mpi::amg<
-            FBackend,
-            amgcl::mpi::coarsening::smoothed_aggregation<FBackend>,
-            amgcl::mpi::relaxation::spai0<FBackend>
-            >,
-        amgcl::mpi::solver::bicgstab<DBackend>
-        > Solver;
+            amgcl::mpi::amg<FBackend, amgcl::mpi::coarsening::smoothed_aggregation<FBackend>,
+                            amgcl::mpi::relaxation::spai0<FBackend>>,
+            amgcl::mpi::solver::bicgstab<DBackend>>
+            Solver;
 
     // Create the distributed matrix from the local parts.
-    auto A = std::make_shared<amgcl::mpi::distributed_matrix<DBackend>>(
-            world, std::tie(chunk, ptr, col, val));
+    auto A = std::make_shared<amgcl::mpi::distributed_matrix<DBackend>>(world,
+                                                                        std::tie(chunk, ptr, col, val));
 
     // Partition the matrix and the RHS vector.
     // If neither ParMETIS not PT-SCOTCH are not available,
     // just keep the current naive partitioning.
 #if defined(AMGCL_HAVE_PARMETIS) || defined(AMGCL_HAVE_SCOTCH)
-#  if defined(AMGCL_HAVE_PARMETIS)
+#if defined(AMGCL_HAVE_PARMETIS)
     typedef amgcl::mpi::partition::parmetis<DBackend> Partition;
-#  elif defined(AMGCL_HAVE_SCOTCH)
+#elif defined(AMGCL_HAVE_SCOTCH)
     typedef amgcl::mpi::partition::ptscotch<DBackend> Partition;
-#  endif
+#endif
 
     if (world.size > 1) {
         prof.tic("partition");
@@ -132,8 +127,7 @@ int main(int argc, char *argv[]) {
     prof.toc("setup");
 
     // Show the mini-report on the constructed solver:
-    if (world.rank == 0)
-        std::cout << solve << std::endl;
+    if (world.rank == 0) std::cout << solve << std::endl;
 
     // Solve the system with the zero initial approximation:
     int iters;
@@ -148,8 +142,5 @@ int main(int argc, char *argv[]) {
     // Output the number of iterations, the relative error,
     // and the profiling data:
     if (world.rank == 0)
-        std::cout
-            << "Iters: " << iters << std::endl
-            << "Error: " << error << std::endl
-            << prof << std::endl;
+        std::cout << "Iters: " << iters << std::endl << "Error: " << error << std::endl << prof << std::endl;
 }

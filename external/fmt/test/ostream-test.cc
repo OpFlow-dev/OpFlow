@@ -23,7 +23,6 @@ template <> struct formatter<test> : formatter<int> {
 
 #include <sstream>
 
-#include "fmt/compile.h"
 #include "fmt/ostream.h"
 #include "fmt/ranges.h"
 #include "gmock/gmock.h"
@@ -116,12 +115,12 @@ TEST(ostream_test, write_to_ostream_max_size) {
   struct test_buffer final : fmt::detail::buffer<char> {
     explicit test_buffer(size_t size)
         : fmt::detail::buffer<char>(nullptr, size, size) {}
-    void grow(size_t) override {}
+    void grow(size_t) {}
   } buffer(max_size);
 
   struct mock_streambuf : std::streambuf {
     MOCK_METHOD2(xsputn, std::streamsize(const void* s, std::streamsize n));
-    std::streamsize xsputn(const char* s, std::streamsize n) override {
+    std::streamsize xsputn(const char* s, std::streamsize n) {
       const void* v = s;
       return xsputn(v, n);
     }
@@ -258,8 +257,7 @@ std::ostream& operator<<(std::ostream& os, streamable_and_convertible_to_bool) {
 }
 
 TEST(ostream_test, format_convertible_to_bool) {
-  // operator<< is intentionally not used because of potential ODR violations.
-  EXPECT_EQ(fmt::format("{}", streamable_and_convertible_to_bool()), "true");
+  EXPECT_EQ("foo", fmt::format("{}", streamable_and_convertible_to_bool()));
 }
 
 struct copyfmt_test {};
@@ -281,16 +279,4 @@ TEST(ostream_test, to_string) {
 TEST(ostream_test, range) {
   auto strs = std::vector<test_string>{test_string("foo"), test_string("bar")};
   EXPECT_EQ("[foo, bar]", fmt::format("{}", strs));
-}
-
-struct abstract {
-  virtual ~abstract() = default;
-  virtual void f() = 0;
-  friend std::ostream& operator<<(std::ostream& os, const abstract&) {
-    return os;
-  }
-};
-
-void format_abstract_compiles(const abstract& a) {
-  fmt::format(FMT_COMPILE("{}"), a);
 }

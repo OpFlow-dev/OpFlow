@@ -31,30 +31,27 @@ THE SOFTWARE.
  * \brief  Distributed memory incomplete LU with zero fill-in relaxation scheme.
  */
 
-#include <amgcl/relaxation/ilu0.hpp>
 #include <amgcl/mpi/distributed_matrix.hpp>
+#include <amgcl/relaxation/ilu0.hpp>
 
 namespace amgcl {
-namespace mpi {
-namespace relaxation {
+    namespace mpi {
+        namespace relaxation {
 
-template <class Backend>
-struct ilu0 : public amgcl::relaxation::ilu0<Backend> {
-    typedef Backend backend_type;
-    typedef amgcl::relaxation::ilu0<Backend> Base;
-    typedef typename Backend::params backend_params;
-    typedef typename Base::params params;
+            template <class Backend>
+            struct ilu0 : public amgcl::relaxation::ilu0<Backend> {
+                typedef Backend backend_type;
+                typedef amgcl::relaxation::ilu0<Backend> Base;
+                typedef typename Backend::params backend_params;
+                typedef typename Base::params params;
 
-    ilu0(
-            const distributed_matrix<Backend> &A,
-            const params &prm = params(),
-            const backend_params &bprm = backend_params()
-         ) : Base(*A.local(), prm, bprm)
-    {}
-};
+                ilu0(const distributed_matrix<Backend> &A, const params &prm = params(),
+                     const backend_params &bprm = backend_params())
+                    : Base(*A.local(), prm, bprm) {}
+            };
 
-} // namespace
-} // mpi
-} // amgcl
+        }// namespace relaxation
+    }    // namespace mpi
+}// namespace amgcl
 
 #endif

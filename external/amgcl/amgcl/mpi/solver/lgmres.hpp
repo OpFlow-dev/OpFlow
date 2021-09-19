@@ -31,23 +31,23 @@ THE SOFTWARE.
  * \brief  MPI wrapper for LGMRES iterative method.
  */
 
-#include <amgcl/solver/lgmres.hpp>
 #include <amgcl/mpi/inner_product.hpp>
+#include <amgcl/solver/lgmres.hpp>
 
 namespace amgcl {
-namespace mpi {
-namespace solver {
+    namespace mpi {
+        namespace solver {
 
-template <class Backend, class InnerProduct = mpi::inner_product>
-class lgmres : public amgcl::solver::lgmres<Backend, InnerProduct> {
-    typedef amgcl::solver::lgmres<Backend, InnerProduct> Base;
-    public:
-        using Base::Base;
-};
+            template <class Backend, class InnerProduct = mpi::inner_product>
+            class lgmres : public amgcl::solver::lgmres<Backend, InnerProduct> {
+                typedef amgcl::solver::lgmres<Backend, InnerProduct> Base;
 
-} // namespace solver
-} // namespace mpi
-} // namespace amgcl
+            public:
+                using Base::Base;
+            };
 
+        }// namespace solver
+    }    // namespace mpi
+}// namespace amgcl
 
 #endif

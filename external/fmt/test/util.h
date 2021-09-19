@@ -10,11 +10,7 @@
 #include <locale>
 #include <string>
 
-#ifdef FMT_MODULE_TEST
-import fmt;
-#else
 #include "fmt/os.h"
-#endif // FMT_MODULE_TEST
 
 #ifdef _MSC_VER
 #  define FMT_VSNPRINTF vsprintf_s
@@ -38,7 +34,7 @@ fmt::buffered_file open_buffered_file(FILE** fp = nullptr);
 inline FILE* safe_fopen(const char* filename, const char* mode) {
 #if defined(_WIN32) && !defined(__MINGW32__)
   // Fix MSVC warning about "unsafe" fopen.
-  FILE* f = nullptr;
+  FILE* f = 0;
   errno = fopen_s(&f, filename, mode);
   return f;
 #else

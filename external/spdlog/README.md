@@ -1,6 +1,6 @@
 # spdlog
 
-Very fast, header-only/compiled, C++ logging library. [![Build Status](https://app.travis-ci.com/gabime/spdlog.svg?branch=v1.x)](https://app.travis-ci.com/gabime/spdlog)&nbsp; [![Build status](https://ci.appveyor.com/api/projects/status/d2jnxclg20vd0o50?svg=true)](https://ci.appveyor.com/project/gabime/spdlog) [![Release](https://img.shields.io/github/release/gabime/spdlog.svg)](https://github.com/gabime/spdlog/releases/latest)
+Very fast, header-only/compiled, C++ logging library. [![Build Status](https://travis-ci.com/gabime/spdlog.svg?branch=v1.x)](https://travis-ci.com/gabime/spdlog)&nbsp; [![Build status](https://ci.appveyor.com/api/projects/status/d2jnxclg20vd0o50?svg=true)](https://ci.appveyor.com/project/gabime/spdlog) [![Release](https://img.shields.io/github/release/gabime/spdlog.svg)](https://github.com/gabime/spdlog/releases/latest)
 
 ## Install 
 #### Header only version
@@ -22,10 +22,9 @@ $ cmake .. && make -j
  * Android
 
 ## Package managers:
-* Debian: `sudo apt install libspdlog-dev`
 * Homebrew: `brew install spdlog`
 * MacPorts: `sudo port install spdlog`
-* FreeBSD:  `pkg install spdlog`
+* FreeBSD:  `cd /usr/ports/devel/spdlog/ && make install clean`
 * Fedora: `dnf install spdlog`
 * Gentoo: `emerge dev-libs/spdlog`
 * Arch Linux: `pacman -S spdlog`
@@ -33,6 +32,7 @@ $ cmake .. && make -j
 * conan: `spdlog/[>=1.4.1]`
 * conda: `conda install -c conda-forge spdlog`
 * build2: ```depends: spdlog ^1.8.2```
+
 
 
 ## Features

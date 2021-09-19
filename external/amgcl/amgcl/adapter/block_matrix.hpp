@@ -32,154 +32,137 @@ THE SOFTWARE.
 \ingroup adapters
 */
 
-#include <amgcl/util.hpp>
 #include <amgcl/backend/detail/matrix_ops.hpp>
+#include <amgcl/util.hpp>
 
 namespace amgcl {
-namespace adapter {
+    namespace adapter {
 
-template <class Matrix, class BlockType>
-struct block_matrix_adapter {
-    typedef BlockType value_type;
-    static const int BlockSize = math::static_rows<BlockType>::value;
+        template <class Matrix, class BlockType>
+        struct block_matrix_adapter {
+            typedef BlockType value_type;
+            static const int BlockSize = math::static_rows<BlockType>::value;
 
-    const Matrix &A;
+            const Matrix &A;
 
-    block_matrix_adapter(const Matrix &A) : A(A) {
-        precondition(
-                backend::rows(A) % BlockSize == 0 &&
-                backend::cols(A) % BlockSize == 0,
-                "Matrix size is not divisible by block size!"
-                );
-    }
+            block_matrix_adapter(const Matrix &A) : A(A) {
+                precondition(backend::rows(A) % BlockSize == 0 && backend::cols(A) % BlockSize == 0,
+                             "Matrix size is not divisible by block size!");
+            }
 
-    size_t rows() const {
-        return backend::rows(A) / BlockSize;
-    }
+            size_t rows() const { return backend::rows(A) / BlockSize; }
 
-    size_t cols() const {
-        return backend::cols(A) / BlockSize;
-    }
+            size_t cols() const { return backend::cols(A) / BlockSize; }
 
-    size_t nonzeros() const {
-        // Just an estimate:
-        return backend::nonzeros(A) / (BlockSize * BlockSize);
-    }
+            size_t nonzeros() const {
+                // Just an estimate:
+                return backend::nonzeros(A) / (BlockSize * BlockSize);
+            }
 
-    struct row_iterator {
-        typedef typename backend::row_iterator<Matrix>::type Base;
-        typedef ptrdiff_t col_type;
-        typedef BlockType val_type;
+            struct row_iterator {
+                typedef typename backend::row_iterator<Matrix>::type Base;
+                typedef ptrdiff_t col_type;
+                typedef BlockType val_type;
 
-        std::array<char, sizeof(Base) * BlockSize> buf;
-        Base * base;
+                std::array<char, sizeof(Base) * BlockSize> buf;
+                Base *base;
 
-        bool done;
-        col_type cur_col;
-        val_type cur_val;
+                bool done;
+                col_type cur_col;
+                val_type cur_val;
 
-        row_iterator(const Matrix &A, col_type row)
-            : base(reinterpret_cast<Base*>(buf.data())), done(true)
-        {
-            for(int i = 0; i < BlockSize; ++i) {
-                new (base + i) Base(backend::row_begin(A, row * BlockSize + i));
+                row_iterator(const Matrix &A, col_type row)
+                    : base(reinterpret_cast<Base *>(buf.data())), done(true) {
+                    for (int i = 0; i < BlockSize; ++i) {
+                        new (base + i) Base(backend::row_begin(A, row * BlockSize + i));
 
-                if (base[i]) {
-                    col_type col = base[i].col() / BlockSize;
-                    if (done) {
-                        cur_col = col;
-                        done = false;
-                    } else {
-                        cur_col = std::min<col_type>(cur_col, col);
+                        if (base[i]) {
+                            col_type col = base[i].col() / BlockSize;
+                            if (done) {
+                                cur_col = col;
+                                done = false;
+                            } else {
+                                cur_col = std::min<col_type>(cur_col, col);
+                            }
+                        }
+                    }
+
+                    if (done) return;
+
+                    // While we are gathering the current value,
+                    // base iteratirs are advanced to the next block-column.
+                    cur_val = math::zero<val_type>();
+                    col_type end = (cur_col + 1) * BlockSize;
+                    for (int i = 0; i < BlockSize; ++i) {
+                        for (; base[i] && static_cast<ptrdiff_t>(base[i].col()) < end; ++base[i]) {
+                            cur_val(i, base[i].col() % BlockSize) = base[i].value();
+                        }
                     }
                 }
-            }
 
-            if (done) return;
-
-            // While we are gathering the current value,
-            // base iteratirs are advanced to the next block-column.
-            cur_val = math::zero<val_type>();
-            col_type end = (cur_col + 1) * BlockSize;
-            for(int i = 0; i < BlockSize; ++i) {
-                for(; base[i] && static_cast<ptrdiff_t>(base[i].col()) < end; ++base[i]) {
-                    cur_val(i, base[i].col() % BlockSize) = base[i].value();
+                ~row_iterator() {
+                    for (int i = 0; i < BlockSize; ++i) base[i].~Base();
                 }
-            }
-        }
 
-        ~row_iterator() {
-            for(int i = 0; i < BlockSize; ++i) base[i].~Base();
-        }
+                operator bool() const { return !done; }
 
-        operator bool() const {
-            return !done;
-        }
+                row_iterator &operator++() {
+                    // Base iterators are already at the next block-column.
+                    // We just need to gather the current column and value.
+                    done = true;
 
-        row_iterator& operator++() {
-            // Base iterators are already at the next block-column.
-            // We just need to gather the current column and value.
-            done = true;
-
-            col_type end = (cur_col + 1) * BlockSize;
-            for(int i = 0; i < BlockSize; ++i) {
-                if (base[i]) {
-                    col_type col = base[i].col() / BlockSize;
-                    if (done) {
-                        cur_col = col;
-                        done = false;
-                    } else {
-                        cur_col = std::min<col_type>(cur_col, col);
+                    col_type end = (cur_col + 1) * BlockSize;
+                    for (int i = 0; i < BlockSize; ++i) {
+                        if (base[i]) {
+                            col_type col = base[i].col() / BlockSize;
+                            if (done) {
+                                cur_col = col;
+                                done = false;
+                            } else {
+                                cur_col = std::min<col_type>(cur_col, col);
+                            }
+                        }
                     }
+
+                    if (done) return *this;
+
+                    cur_val = math::zero<val_type>();
+                    end = (cur_col + 1) * BlockSize;
+                    for (int i = 0; i < BlockSize; ++i) {
+                        for (; base[i] && static_cast<ptrdiff_t>(base[i].col()) < end; ++base[i]) {
+                            cur_val(i, base[i].col() % BlockSize) = base[i].value();
+                        }
+                    }
+
+                    return *this;
                 }
-            }
 
-            if (done) return *this;
+                col_type col() const { return cur_col; }
 
-            cur_val = math::zero<val_type>();
-            end = (cur_col + 1) * BlockSize;
-            for(int i = 0; i < BlockSize; ++i) {
-                for(; base[i] && static_cast<ptrdiff_t>(base[i].col()) < end; ++base[i]) {
-                    cur_val(i, base[i].col() % BlockSize) = base[i].value();
-                }
-            }
+                val_type value() const { return cur_val; }
+            };
 
-            return *this;
+            row_iterator row_begin(size_t i) const { return row_iterator(A, i); }
+        };
+
+        /// Convert scalar-valued matrix to a block-valued one.
+        template <class BlockType, class Matrix>
+        block_matrix_adapter<Matrix, BlockType> block_matrix(const Matrix &A) {
+            return block_matrix_adapter<Matrix, BlockType>(A);
         }
 
-        col_type col() const {
-            return cur_col;
-        }
+    }// namespace adapter
 
-        val_type value() const {
-            return cur_val;
-        }
-    };
+    namespace backend {
 
-    row_iterator row_begin(size_t i) const {
-        return row_iterator(A, i);
-    }
-};
+        namespace detail {
 
-/// Convert scalar-valued matrix to a block-valued one.
-template <class BlockType, class Matrix>
-block_matrix_adapter<Matrix, BlockType> block_matrix(const Matrix &A) {
-    return block_matrix_adapter<Matrix, BlockType>(A);
-}
+            template <class Matrix, class BlockType>
+            struct use_builtin_matrix_ops<adapter::block_matrix_adapter<Matrix, BlockType>> : std::true_type {
+            };
 
-} // namespace adapter
-
-namespace backend {
-
-namespace detail {
-
-template <class Matrix, class BlockType>
-struct use_builtin_matrix_ops< adapter::block_matrix_adapter<Matrix, BlockType> >
-    : std::true_type
-{};
-
-} // namespace detail
-} // namespace backend
-} // namespace amgcl
+        }// namespace detail
+    }    // namespace backend
+}// namespace amgcl
 
 #endif

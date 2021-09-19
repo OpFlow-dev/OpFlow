@@ -7,9 +7,8 @@
     BSD-style license that can be found in the LICENSE file.
 */
 
-
-#include <pybind11/eval.h>
 #include "pybind11_tests.h"
+#include <pybind11/eval.h>
 
 TEST_SUBMODULE(eval_, m) {
     // test_evals
@@ -18,16 +17,12 @@ TEST_SUBMODULE(eval_, m) {
 
     m.def("test_eval_statements", [global]() {
         auto local = py::dict();
-        local["call_test"] = py::cpp_function([&]() -> int {
-            return 42;
-        });
+        local["call_test"] = py::cpp_function([&]() -> int { return 42; });
 
         // Regular string literal
-        py::exec(
-            "message = 'Hello World!'\n"
-            "x = call_test()",
-            global, local
-        );
+        py::exec("message = 'Hello World!'\n"
+                 "x = call_test()",
+                 global, local);
 
         // Multi-line raw string literal
         py::exec(R"(
@@ -35,8 +30,8 @@ TEST_SUBMODULE(eval_, m) {
                 print(message)
             else:
                 raise RuntimeError
-            )", global, local
-        );
+            )",
+                 global, local);
         auto x = local["x"].cast<int>();
 
         return x == 42;
@@ -51,9 +46,7 @@ TEST_SUBMODULE(eval_, m) {
 
     m.def("test_eval_single_statement", []() {
         auto local = py::dict();
-        local["call_test"] = py::cpp_function([&]() -> int {
-            return 42;
-        });
+        local["call_test"] = py::cpp_function([&]() -> int { return 42; });
 
         auto result = py::eval<py::eval_single_statement>("x = call_test()", py::dict(), local);
         auto x = local["x"].cast<int>();
@@ -74,18 +67,14 @@ TEST_SUBMODULE(eval_, m) {
     m.def("test_eval_failure", []() {
         try {
             py::eval("nonsense code ...");
-        } catch (py::error_already_set &) {
-            return true;
-        }
+        } catch (py::error_already_set &) { return true; }
         return false;
     });
 
     m.def("test_eval_file_failure", []() {
         try {
             py::eval_file("non-existing file");
-        } catch (std::exception &) {
-            return true;
-        }
+        } catch (std::exception &) { return true; }
         return false;
     });
 }

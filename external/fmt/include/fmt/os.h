@@ -394,14 +394,18 @@ struct ostream_params {
 
 FMT_END_DETAIL_NAMESPACE
 
-// Added {} below to work around default constructor error known to
-// occur in Xcode versions 7.2.1 and 8.2.1.
-constexpr detail::buffer_size buffer_size{};
+constexpr detail::buffer_size buffer_size;
 
 /** A fast output stream which is not thread-safe. */
 class FMT_API ostream final : private detail::buffer<char> {
  private:
   file file_;
+
+  void flush() {
+    if (size() == 0) return;
+    file_.write(data(), size());
+    clear();
+  }
 
   void grow(size_t) override;
 
@@ -420,12 +424,6 @@ class FMT_API ostream final : private detail::buffer<char> {
   ~ostream() {
     flush();
     delete[] data();
-  }
-
-  void flush() {
-    if (size() == 0) return;
-    file_.write(data(), size());
-    clear();
   }
 
   template <typename... T>
@@ -502,7 +500,7 @@ class locale {
 
   // Converts string to floating-point number and advances str past the end
   // of the parsed input.
-  FMT_DEPRECATED double strtod(const char*& str) const {
+  double strtod(const char*& str) const {
     char* end = nullptr;
     double result = strtod_l(str, &end, locale_);
     str = end;

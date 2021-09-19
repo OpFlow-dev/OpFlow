@@ -31,33 +31,33 @@ THE SOFTWARE.
  * \brief  Distributed non-smoothed aggregation coarsening scheme.
  */
 
-#include <tuple>
 #include <memory>
+#include <tuple>
 
 #include <amgcl/backend/builtin.hpp>
-#include <amgcl/util.hpp>
 #include <amgcl/coarsening/detail/scaled_galerkin.hpp>
-#include <amgcl/mpi/util.hpp>
-#include <amgcl/mpi/distributed_matrix.hpp>
 #include <amgcl/mpi/coarsening/pmis.hpp>
+#include <amgcl/mpi/distributed_matrix.hpp>
+#include <amgcl/mpi/util.hpp>
+#include <amgcl/util.hpp>
 
 namespace amgcl {
-namespace mpi {
-namespace coarsening {
+    namespace mpi {
+        namespace coarsening {
 
-template <class Backend>
-struct aggregation {
-    typedef typename Backend::value_type value_type;
-    typedef typename math::scalar_of<value_type>::type scalar_type;
-    typedef backend::crs<value_type> build_matrix;
+            template <class Backend>
+            struct aggregation {
+                typedef typename Backend::value_type value_type;
+                typedef typename math::scalar_of<value_type>::type scalar_type;
+                typedef backend::crs<value_type> build_matrix;
 
-    struct params {
-        // aggregation params
-        typedef typename pmis<Backend>::params aggr_params;
-        aggr_params aggr;
+                struct params {
+                    // aggregation params
+                    typedef typename pmis<Backend>::params aggr_params;
+                    aggr_params aggr;
 
-        /// Over-interpolation factor \f$\alpha\f$.
-        /**
+                    /// Over-interpolation factor \f$\alpha\f$.
+                    /**
          * In case of aggregation coarsening, coarse-grid
          * correction of smooth error, and by this the overall convergence, can
          * often be substantially improved by using "over-interpolation", that is,
@@ -69,56 +69,46 @@ struct aggregation {
          *
          * \sa  \cite Stuben1999, Section 9.1 "Re-scaling of the Galerkin operator".
          */
-        float over_interp;
+                    float over_interp;
 
-        params() : over_interp(1.5f) { }
+                    params() : over_interp(1.5f) {}
 
 #ifndef AMGCL_NO_BOOST
-        params(const boost::property_tree::ptree &p)
-            : AMGCL_PARAMS_IMPORT_CHILD(p, aggr),
-              AMGCL_PARAMS_IMPORT_VALUE(p, over_interp)
-        {
-            check_params(p, {"aggr", "over_interp"});
-        }
+                    params(const boost::property_tree::ptree &p)
+                        : AMGCL_PARAMS_IMPORT_CHILD(p, aggr), AMGCL_PARAMS_IMPORT_VALUE(p, over_interp) {
+                        check_params(p, {"aggr", "over_interp"});
+                    }
 
-        void get(boost::property_tree::ptree &p, const std::string &path) const {
-            AMGCL_PARAMS_EXPORT_CHILD(p, path, aggr);
-            AMGCL_PARAMS_EXPORT_VALUE(p, path, over_interp);
-        }
+                    void get(boost::property_tree::ptree &p, const std::string &path) const {
+                        AMGCL_PARAMS_EXPORT_CHILD(p, path, aggr);
+                        AMGCL_PARAMS_EXPORT_VALUE(p, path, over_interp);
+                    }
 #endif
-    } prm;
+                } prm;
 
-    aggregation(const params &prm = params()) : prm(prm) {}
+                aggregation(const params &prm = params()) : prm(prm) {}
 
-    std::tuple<
-        std::shared_ptr< distributed_matrix<Backend> >,
-        std::shared_ptr< distributed_matrix<Backend> >
-        >
-    transfer_operators(const distributed_matrix<Backend> &A) {
-        pmis<Backend> aggr(A, prm.aggr);
-        return std::make_tuple(aggr.p_tent, transpose(*aggr.p_tent));
-    }
+                std::tuple<std::shared_ptr<distributed_matrix<Backend>>,
+                           std::shared_ptr<distributed_matrix<Backend>>>
+                transfer_operators(const distributed_matrix<Backend> &A) {
+                    pmis<Backend> aggr(A, prm.aggr);
+                    return std::make_tuple(aggr.p_tent, transpose(*aggr.p_tent));
+                }
 
-    std::shared_ptr< distributed_matrix<Backend> >
-    coarse_operator(
-            const distributed_matrix<Backend> &A,
-            const distributed_matrix<Backend> &P,
-            const distributed_matrix<Backend> &R
-            ) const
-    {
-        return amgcl::coarsening::detail::scaled_galerkin(A, P, R, 1 / prm.over_interp);
-    }
+                std::shared_ptr<distributed_matrix<Backend>>
+                coarse_operator(const distributed_matrix<Backend> &A, const distributed_matrix<Backend> &P,
+                                const distributed_matrix<Backend> &R) const {
+                    return amgcl::coarsening::detail::scaled_galerkin(A, P, R, 1 / prm.over_interp);
+                }
+            };
 
-};
+            template <class Backend>
+            unsigned block_size(const aggregation<Backend> &c) {
+                return c.prm.aggr.block_size;
+            }
 
-template <class Backend>
-unsigned block_size(const aggregation<Backend> &c) {
-    return c.prm.aggr.block_size;
-}
-
-} // namespace coarsening
-} // namespace mpi
-} // namespace amgcl
-
+        }// namespace coarsening
+    }    // namespace mpi
+}// namespace amgcl
 
 #endif

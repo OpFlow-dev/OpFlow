@@ -31,75 +31,62 @@ THE SOFTWARE.
  * \brief  Use a distributed amgcl smoother as a standalone preconditioner.
  */
 
-#include <vector>
-#include <memory>
 #include <amgcl/backend/builtin.hpp>
 #include <amgcl/mpi/util.hpp>
+#include <memory>
+#include <vector>
 
 namespace amgcl {
-namespace mpi {
-namespace relaxation {
+    namespace mpi {
+        namespace relaxation {
 
-template <class Relaxation>
-struct as_preconditioner {
-    typedef typename Relaxation::params                params;
-    typedef typename Relaxation::backend_type          backend_type;
-    typedef typename backend_type::params              backend_params;
-    typedef typename backend_type::value_type          value_type;
-    typedef typename math::scalar_of<value_type>::type scalar_type;
-    typedef distributed_matrix<backend_type>           matrix;
-    typedef typename backend_type::vector              vector;
+            template <class Relaxation>
+            struct as_preconditioner {
+                typedef typename Relaxation::params params;
+                typedef typename Relaxation::backend_type backend_type;
+                typedef typename backend_type::params backend_params;
+                typedef typename backend_type::value_type value_type;
+                typedef typename math::scalar_of<value_type>::type scalar_type;
+                typedef distributed_matrix<backend_type> matrix;
+                typedef typename backend_type::vector vector;
 
-    template <class Matrix>
-    as_preconditioner(
-            communicator comm,
-            const Matrix &A,
-            const params &prm = params(),
-            const backend_params &bprm = backend_params()
-       ) : A(std::make_shared>(comm, A, backend::rows(A))),
-           S(A, prm, bprm)
-    {
-        this->A->move_to_backend(bprm);
-    }
+                template <class Matrix>
+                as_preconditioner(communicator comm, const Matrix &A, const params &prm = params(),
+                                  const backend_params &bprm = backend_params())
+                    : A(std::make_shared > (comm, A, backend::rows(A))), S(A, prm, bprm) {
+                    this->A->move_to_backend(bprm);
+                }
 
-    as_preconditioner(
-            communicator,
-            std::shared_ptr<matrix> A,
-            const params &prm = params(),
-            const backend_params &bprm = backend_params()
-       ) : A(A), S(*A, prm, bprm)
-    {
-        this->A->move_to_backend(bprm);
-    }
+                as_preconditioner(communicator, std::shared_ptr<matrix> A, const params &prm = params(),
+                                  const backend_params &bprm = backend_params())
+                    : A(A), S(*A, prm, bprm) {
+                    this->A->move_to_backend(bprm);
+                }
 
-    template <class Vec1, class Vec2>
-    void apply(const Vec1 &rhs, Vec2 &&x) const {
-        S.apply(*A, rhs, x);
-    }
+                template <class Vec1, class Vec2>
+                void apply(const Vec1 &rhs, Vec2 &&x) const {
+                    S.apply(*A, rhs, x);
+                }
 
-    std::shared_ptr<matrix> system_matrix_ptr() const {
-        return A;
-    }
+                std::shared_ptr<matrix> system_matrix_ptr() const { return A; }
 
-    const matrix& system_matrix() const {
-        return *system_matrix_ptr();
-    }
+                const matrix &system_matrix() const { return *system_matrix_ptr(); }
 
-    private:
-        std::shared_ptr<matrix> A;
-        Relaxation S;
+            private:
+                std::shared_ptr<matrix> A;
+                Relaxation S;
 
-        friend std::ostream& operator<<(std::ostream &os, const as_preconditioner &p) {
-            os << "Relaxation as preconditioner" << std::endl;
-            os << "  unknowns: " << p.system_matrix().glob_rows() << std::endl;
-            os << "  nonzeros: " << p.system_matrix().glob_nonzeros() << std::endl;
+                friend std::ostream &operator<<(std::ostream &os, const as_preconditioner &p) {
+                    os << "Relaxation as preconditioner" << std::endl;
+                    os << "  unknowns: " << p.system_matrix().glob_rows() << std::endl;
+                    os << "  nonzeros: " << p.system_matrix().glob_nonzeros() << std::endl;
 
-            return os;
-        }
-};
+                    return os;
+                }
+            };
 
-} // namespace relaxation
-} // namespace mpi
-} // namespace amgcl
+        }// namespace relaxation
+    }    // namespace mpi
+}// namespace amgcl
 
 #endif

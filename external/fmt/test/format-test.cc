@@ -555,7 +555,7 @@ TEST(format_test, fill) {
             fmt::format(string_view("{:\0>4}", 6), '*'));
   EXPECT_EQ("жж42", fmt::format("{0:ж>4}", 42));
   EXPECT_THROW_MSG(fmt::format(runtime("{:\x80\x80\x80\x80\x80>}"), 0),
-                   format_error, "invalid type specifier");
+                   format_error, "missing '}' in format string");
 }
 
 TEST(format_test, plus_sign) {
@@ -1037,7 +1037,7 @@ void check_unknown_types(const T& value, const char* types, const char*) {
 
 TEST(format_test, format_int) {
   EXPECT_THROW_MSG(fmt::format(runtime("{0:v"), 42), format_error,
-                   "invalid type specifier");
+                   "missing '}' in format string");
   check_unknown_types(42, "bBdoxXnLc", "integer");
   EXPECT_EQ("x", fmt::format("{:c}", static_cast<int>('x')));
 }
@@ -1593,11 +1593,6 @@ TEST(format_test, bytes) {
   auto s = fmt::format("{:10}", fmt::bytes("ёжик"));
   EXPECT_EQ("ёжик  ", s);
   EXPECT_EQ(10, s.size());
-}
-
-TEST(format_test, group_digits_view) {
-  EXPECT_EQ(fmt::format("{}", fmt::group_digits(10000000)), "10,000,000");
-  EXPECT_EQ(fmt::format("{:8}", fmt::group_digits(1000)), "   1,000");
 }
 
 enum test_enum { foo, bar };

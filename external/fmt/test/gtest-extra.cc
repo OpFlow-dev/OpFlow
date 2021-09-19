@@ -32,10 +32,11 @@ output_redirect::~output_redirect() FMT_NOEXCEPT {
 }
 
 void output_redirect::flush() {
+#  if EOF != -1
+#    error "FMT_RETRY assumes return value of -1 indicating failure"
+#  endif
   int result = 0;
-  do {
-    result = fflush(file_);
-  } while (result == EOF && errno == EINTR);
+  FMT_RETRY(result, fflush(file_));
   if (result != 0) throw fmt::system_error(errno, "cannot flush stream");
 }
 

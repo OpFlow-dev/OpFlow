@@ -190,14 +190,7 @@ TEST(ranges_test, range) {
   EXPECT_EQ(fmt::format("{}", z), "[0, 0, 0]");
 }
 
-enum class test_enum { foo };
-
-TEST(ranges_test, enum_range) {
-  auto v = std::vector<test_enum>{test_enum::foo};
-  EXPECT_EQ(fmt::format("{}", v), "[0]");
-}
-
-#if !FMT_MSC_VER
+#if !FMT_MSC_VER || FMT_MSC_VER >= 1927
 struct unformattable {};
 
 TEST(ranges_test, unformattable_range) {
@@ -224,21 +217,6 @@ TEST(ranges_test, join_tuple) {
   // Single element tuple.
   auto t4 = std::tuple<float>(4.0f);
   EXPECT_EQ(fmt::format("{}", fmt::join(t4, "/")), "4");
-
-#  if FMT_TUPLE_JOIN_SPECIFIERS
-  // Specs applied to each element.
-  auto t5 = std::tuple<int, int, long>(-3, 100, 1);
-  EXPECT_EQ(fmt::format("{:+03}", fmt::join(t5, ", ")), "-03, +100, +01");
-
-  auto t6 = std::tuple<float, double, long double>(3, 3.14, 3.1415);
-  EXPECT_EQ(fmt::format("{:5.5f}", fmt::join(t6, ", ")),
-            "3.00000, 3.14000, 3.14150");
-
-  // Testing lvalue tuple args.
-  int y = -1;
-  auto t7 = std::tuple<int, int&, const int&>(3, y, y);
-  EXPECT_EQ(fmt::format("{:03}", fmt::join(t7, ", ")), "003, -01, -01");
-#  endif
 }
 
 TEST(ranges_test, join_initializer_list) {
@@ -284,26 +262,3 @@ TEST(ranges_test, join_range) {
   EXPECT_EQ(fmt::format("{}", fmt::join(z, ",")), "0,0,0");
 }
 #endif  // FMT_RANGES_TEST_ENABLE_JOIN
-
-TEST(ranges_test, is_printable) {
-  using fmt::detail::is_printable;
-  EXPECT_TRUE(is_printable(0x0323));
-  EXPECT_FALSE(is_printable(0x0378));
-  EXPECT_FALSE(is_printable(0x110000));
-}
-
-TEST(ranges_test, escape_string) {
-  using vec = std::vector<std::string>;
-  EXPECT_EQ(fmt::format("{}", vec{"\n\r\t\"\\"}), "[\"\\n\\r\\t\\\"\\\\\"]");
-  EXPECT_EQ(fmt::format("{}", vec{"\x07"}), "[\"\\x07\"]");
-  EXPECT_EQ(fmt::format("{}", vec{"\x7f"}), "[\"\\x7f\"]");
-  EXPECT_EQ(fmt::format("{}", vec{"n\xcc\x83"}), "[\"n\xcc\x83\"]");
-
-  if (fmt::detail::is_utf8()) {
-    EXPECT_EQ(fmt::format("{}", vec{"\xcd\xb8"}), "[\"\\u0378\"]");
-    // Unassigned Unicode code points.
-    EXPECT_EQ(fmt::format("{}", vec{"\xf0\xaa\x9b\x9e"}), "[\"\\U0002a6de\"]");
-    EXPECT_EQ(fmt::format("{}", vec{"\xf4\x8f\xbf\xc0"}),
-              "[\"\\xf4\\x8f\\xbf\\xc0\"]");
-  }
-}
