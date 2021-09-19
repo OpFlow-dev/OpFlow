@@ -1,0 +1,72 @@
+language: cpp
+
+env:
+  global:
+    - OMP_NUM_THREADS=4
+    - BOOST_BASENAME=boost_1_62_0
+
+matrix:
+  include:
+  - compiler: gcc
+    env:
+    - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
+    - BUILD_EXAMPLES=ON
+    - TEST_COVERAGE=ON
+    - TEST_PYTHON=ON
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - gcc-5
+        - g++-5
+        - lcov
+        - openmpi-bin
+        - libopenmpi-dev
+        - python3-scipy
+  - compiler: clang
+    env:
+    - BUILD_EXAMPLES=OFF
+    - TEST_COVERAGE=OFF
+    - TEST_PYTHON=OFF
+  - os: osx
+    osx_image: xcode9.1
+    env:
+    - BUILD_EXAMPLES=OFF
+    - TEST_COVERAGE=OFF
+    - TEST_PYTHON=OFF
+
+cache:
+  directories:
+  - ${HOME}/${BOOST_BASENAME}/boost
+  - ${HOME}/${BOOST_BASENAME}/stage/lib
+
+before_install:
+  - eval "${MATRIX_EVAL}"
+  - |
+    if [ "$TRAVIS_OS_NAME" = "linux" ] ; then
+      source .travis/install_boost.sh
+    fi
+
+script:
+  - mkdir -p build && cd build
+  - |
+    if [ "$CC" = "clang" ] ; then
+      export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:$(dirname $(which clang++))/../lib
+    fi
+  - |
+    cmake -DAMGCL_TEST_COVERAGE=${TEST_COVERAGE}   \
+          -DAMGCL_BUILD_TESTS=ON                   \
+          -DAMGCL_BUILD_EXAMPLES=${BUILD_EXAMPLES} \
+          -DAMGCL_HAVE_PYTHON=${TEST_PYTHON}       \
+          -DPYTHON_EXECUTABLE:FILEPATH=/usr/bin/python3 ..
+  - make
+  - ctest --output-on-failure
+
+after_success:
+  - |
+    if [ "$TEST_COVERAGE" = "ON" ]; then
+      lcov --directory tests --base-directory ../amgcl --capture --output-file coverage.info
+      lcov --remove coverage.info '/usr*' -o coverage.info
+      bash <(curl -s https://codecov.io/bash)
+    fi
