@@ -145,7 +145,7 @@ hypre_CheckErrorDevice(cudaDeviceSynchronize());
    {
 
 #define zypre_newBoxLoop0End()                                                                               \
-    });                                                                                                  \
+    });                                                                                                      \
     hypre_fence();                                                                                           \
     }
 
@@ -175,7 +175,7 @@ hypre_CheckErrorDevice(cudaDeviceSynchronize());
      zypre_BoxLoopIncK(2,databox2,i2);
 
 #define zypre_newBoxLoop2End(i1, i2)                                                                         \
-    });                                                                                                        \
+    });                                                                                                      \
     hypre_fence();                                                                                           \
     }
 
@@ -215,7 +215,7 @@ hypre_CheckErrorDevice(cudaDeviceSynchronize());
       zypre_BoxLoopIncK(4,databox4,i4);
 
 #define zypre_newBoxLoop4End(i1, i2, i3, i4)                                                                 \
-    });                                                                                                       \
+    });                                                                                                      \
     hypre_fence();                                                                                           \
     }
 
@@ -265,7 +265,7 @@ hypre_CheckErrorDevice(cudaDeviceSynchronize());
    {
 
 #define hypre_LoopEnd()                                                                                      \
-    });                                                                                                       \
+    });                                                                                                      \
     hypre_fence();                                                                                           \
     }
 
@@ -420,7 +420,7 @@ typedef struct hypre_Boxloop_struct {
    {
 
 #define hypre_newBoxLoop0End(i1)                                                                             \
-    });                                                                                                       \
+    });                                                                                                      \
     hypre_fence();                                                                                           \
     }
 
@@ -434,7 +434,7 @@ typedef struct hypre_Boxloop_struct {
       hypre_BoxLoopIncK(1,databox1,i1);
 
 #define hypre_newBoxLoop1End(i1)                                                                             \
-    });                                                                                                       \
+    });                                                                                                      \
     hypre_fence();                                                                                           \
     }
 
@@ -450,7 +450,7 @@ typedef struct hypre_Boxloop_struct {
       hypre_BoxLoopIncK(2,databox2,i2);
 
 #define hypre_newBoxLoop2End(i1, i2)                                                                         \
-    });                                                                                                       \
+    });                                                                                                      \
     hypre_fence();                                                                                           \
     }
 
@@ -469,7 +469,7 @@ typedef struct hypre_Boxloop_struct {
       hypre_BoxLoopIncK(3,databox3,i3);
 
 #define hypre_newBoxLoop3End(i1, i2, i3)                                                                     \
-    });                                                                                                       \
+    });                                                                                                      \
     hypre_fence();                                                                                           \
     }
 
@@ -490,7 +490,7 @@ typedef struct hypre_Boxloop_struct {
       hypre_BoxLoopIncK(4,databox4,i4);
 
 #define hypre_newBoxLoop4End(i1, i2, i3, i4)                                                                 \
-    });                                                                                                       \
+    });                                                                                                      \
     hypre_fence();                                                                                           \
     }
 
@@ -547,7 +547,7 @@ typedef struct hypre_Boxloop_struct {
         hypre_BoxLoopIncK(1,databox1,i1);
 
 #define hypre_BoxLoop1ReductionEnd(i1, HYPRE_BOX_REDUCTION)                                                  \
-    }, HYPRE_BOX_REDUCTION);                                                                                \
+    }, HYPRE_BOX_REDUCTION);                                                                                 \
     hypre_fence();                                                                                           \
     HYPRE_BOX_REDUCTION += __hypre_sum_tmp;                                                                  \
     }
@@ -568,7 +568,7 @@ typedef struct hypre_Boxloop_struct {
          hypre_BoxLoopIncK(2,databox2,i2);
 
 #define hypre_BoxLoop2ReductionEnd(i1, i2, HYPRE_BOX_REDUCTION)                                              \
-    }, HYPRE_BOX_REDUCTION);                                                                                \
+    }, HYPRE_BOX_REDUCTION);                                                                                 \
     hypre_fence();                                                                                           \
     HYPRE_BOX_REDUCTION += __hypre_sum_tmp;                                                                  \
     }
@@ -579,7 +579,7 @@ typedef struct hypre_Boxloop_struct {
    {
 
 #define hypre_LoopEnd()                                                                                      \
-    });                                                                                                       \
+    });                                                                                                      \
     hypre_fence();                                                                                           \
     }
 
@@ -857,7 +857,7 @@ void ReductionBoxLoopforall(HYPRE_Int length, REDUCER &reducer, LOOP_BODY loop_b
    {
 
 #define hypre_newBoxLoop0End()                                                                               \
-    });                                                                                                       \
+    });                                                                                                      \
     }
 
 /* BoxLoop 1 */
@@ -871,7 +871,7 @@ void ReductionBoxLoopforall(HYPRE_Int length, REDUCER &reducer, LOOP_BODY loop_b
       hypre_BoxLoopIncK(1, databox1, i1);
 
 #define hypre_newBoxLoop1End(i1)                                                                             \
-    });                                                                                                       \
+    });                                                                                                      \
     }
 
 /* BoxLoop 2 */
@@ -887,7 +887,7 @@ void ReductionBoxLoopforall(HYPRE_Int length, REDUCER &reducer, LOOP_BODY loop_b
       hypre_BoxLoopIncK(2, databox2, i2);
 
 #define hypre_newBoxLoop2End(i1, i2)                                                                         \
-    });                                                                                                       \
+    });                                                                                                      \
     }
 
 /* BoxLoop 3 */
@@ -906,7 +906,7 @@ void ReductionBoxLoopforall(HYPRE_Int length, REDUCER &reducer, LOOP_BODY loop_b
       hypre_BoxLoopIncK(3, databox3, i3);
 
 #define hypre_newBoxLoop3End(i1, i2, i3)                                                                     \
-    });                                                                                                       \
+    });                                                                                                      \
     }
 
 /* BoxLoop 4 */
@@ -927,7 +927,7 @@ void ReductionBoxLoopforall(HYPRE_Int length, REDUCER &reducer, LOOP_BODY loop_b
       hypre_BoxLoopIncK(4, databox4, i4);
 
 #define hypre_newBoxLoop4End(i1, i2, i3, i4)                                                                 \
-    });                                                                                                       \
+    });                                                                                                      \
     }
 
 /* Basic BoxLoops have no boxes */
@@ -960,7 +960,7 @@ void ReductionBoxLoopforall(HYPRE_Int length, REDUCER &reducer, LOOP_BODY loop_b
    {
 
 #define hypre_LoopEnd()                                                                                      \
-    });                                                                                                       \
+    });                                                                                                      \
     }
 
 /* Reduction BoxLoop1 */
@@ -974,7 +974,7 @@ void ReductionBoxLoopforall(HYPRE_Int length, REDUCER &reducer, LOOP_BODY loop_b
       hypre_BoxLoopIncK(1, databox1, i1);
 
 #define hypre_BoxLoop1ReductionEnd(i1, reducesum)                                                            \
-    });                                                                                                       \
+    });                                                                                                      \
     }
 
 /* Reduction BoxLoop2 */
@@ -991,7 +991,7 @@ void ReductionBoxLoopforall(HYPRE_Int length, REDUCER &reducer, LOOP_BODY loop_b
       hypre_BoxLoopIncK(2, databox2, i2);
 
 #define hypre_BoxLoop2ReductionEnd(i1, i2, reducesum)                                                        \
-    });                                                                                                       \
+    });                                                                                                      \
     }
 
 /* Renamings */
