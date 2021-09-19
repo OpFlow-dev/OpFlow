@@ -31,6 +31,7 @@
 
 // Index Mapper
 #include "DataStructures/Index/LinearMapper/MDRangeMapper.hpp"
+#include "DataStructures/Index/LinearMapper/BlockedMDRangeMapper.hpp"
 #include "DataStructures/Index/LinearMapper/LevelMDRangeMapper.hpp"
 
 // Range
