@@ -29,6 +29,10 @@
 #include "DataStructures/Index/MDIndex.hpp"
 #include "DataStructures/Index/RangedIndex.hpp"
 
+// Index Mapper
+#include "DataStructures/Index/LinearMapper/MDRangeMapper.hpp"
+#include "DataStructures/Index/LinearMapper/LevelMDRangeMapper.hpp"
+
 // Range
 #include "DataStructures/Range/LevelRanges.hpp"
 #include "DataStructures/Range/Ranges.hpp"
