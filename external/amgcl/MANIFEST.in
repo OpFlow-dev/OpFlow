@@ -1,0 +1,2 @@
+recursive-include amgcl *.hpp
+include RELEASE-VERSION
