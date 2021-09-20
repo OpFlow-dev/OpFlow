@@ -14,9 +14,9 @@
 #define OPFLOW_BLOCKEDMDRANGEMAPPER_HPP
 
 #include "DataStructures/Range/Ranges.hpp"
+#include <algorithm>
 #include <array>
 #include <vector>
-#include <algorithm>
 
 namespace OpFlow::DS {
     template <std::size_t d>
@@ -24,24 +24,25 @@ namespace OpFlow::DS {
         BlockedMDRangeMapper() = default;
         BlockedMDRangeMapper(const std::vector<Range<d>>& ranges) : _ranges(ranges) { calculateMultiplier(); }
 
-        int operator()(const MDIndex<d>& idx) const { int ret = 0;
+        int operator()(const MDIndex<d>& idx) const {
             // we assume the _ranges are listed by column-major sequence
             int block_idx[d];
             for (auto i = 0; i < d; ++i) {
                 for (auto j = 0; j < _split[i].size() - 1; ++j) {
                     if (_split[i][j] <= idx[i] && idx[i] < _split[i][j + 1]) {
-                        block_idx[i] = j; break;
+                        block_idx[i] = j;
+                        break;
                     }
                 }
             }
             int block_rank = block_idx[d - 1];
-            for (auto i = d - 2; i >= 0; --i) {
+            for (int i = d - 2; i >= 0; --i) {
                 block_rank *= _split[i].size() - 1;
                 block_rank += block_idx[i];
             }
             const auto& _r = _ranges[block_rank];
             OP_ASSERT_MSG(inRange(_r, idx), "BlockedMDRangeMapper Error: index not in blocked range");
-            ret = _offset[block_rank];
+            int ret = _offset[block_rank];
             for (auto i = 0; i < d; ++i) ret += _fac[block_rank][i] * (idx[i] - _r.start[i]);
             return ret;
         }
@@ -58,7 +59,7 @@ namespace OpFlow::DS {
             for (auto i = 0; i < _fac.size(); ++i) {
                 _fac[i][0] = 1;
                 for (auto j = 1; j < d; ++j) {
-                    _fac[i][j] = (_ragnes[i].end[j] - _ranges[i].start[j]) * _fac[i][j - 1];
+                    _fac[i][j] = (_ranges[i].end[j - 1] - _ranges[i].start[j - 1]) * _fac[i][j - 1];
                 }
             }
 

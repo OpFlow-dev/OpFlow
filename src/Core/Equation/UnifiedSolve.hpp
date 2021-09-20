@@ -15,6 +15,7 @@
 
 #include "Core/Equation/EqnSolveHandler.hpp"
 #include "Core/Equation/Equation.hpp"
+#include "Core/Solvers/IJ/IJSolver.hpp"
 #include "Core/Solvers/SemiStruct/SemiStructSolver.hpp"
 #include "Core/Solvers/SemiStruct/SemiStructSolverFAC.hpp"
 #include "Core/Solvers/Struct/StructSolver.hpp"
@@ -56,6 +57,13 @@ namespace OpFlow {
                     func, target, solver);
             handler.solve();
         }
+    }
+
+    template <typename S, typename F, FieldExprType T>
+    void Solve(F&& func, T&& target, auto&& indexer, typename S::params params = typename S::params {},
+               typename S::backend_params bparams = typename S::backend_params {}) {
+        auto handler = makeEqnSolveHandler(func, target, indexer, params, bparams);
+        handler.solve();
     }
 
 }// namespace OpFlow

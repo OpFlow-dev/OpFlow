@@ -222,6 +222,12 @@ else ()
 endif ()
 
 # ----------------------------------------------------------------------------
+# Use AMGCL
+# ----------------------------------------------------------------------------
+target_include_directories(opflow INTERFACE "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/external/amgcl>"
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
+
+# ----------------------------------------------------------------------------
 # Find MPI
 # ----------------------------------------------------------------------------
 if (OPFLOW_WITH_MPI)
@@ -454,6 +460,8 @@ if (OPFLOW_INSTALL)
         install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/vtk/
                 DESTINATION "${CMAKE_INSTALL_PREFIX}")
     endif ()
+    install(DIRECTORY external/amgcl/amgcl/
+            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/amgcl")
 
     # ----------------------------------------------------------------------------
     # Install CMake config files
