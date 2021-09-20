@@ -35,9 +35,7 @@ namespace OpFlow::DS {
 
         int operator()(const LevelMDIndex<d>& idx) const {
             int ret = 0;
-            for (auto i = 0; i < d; ++i) {
-                ret += _fac[idx.l][idx.p][i] * idx[i];
-            }
+            for (auto i = 0; i < d; ++i) { ret += _fac[idx.l][idx.p][i] * idx[i]; }
             return ret + _offset[idx.l][idx.p];
         }
 

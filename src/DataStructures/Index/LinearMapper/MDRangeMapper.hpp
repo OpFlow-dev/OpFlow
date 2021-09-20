@@ -22,12 +22,13 @@ namespace OpFlow::DS {
     template <std::size_t d>
     struct MDRangeMapper {
         MDRangeMapper() = default;
-        explicit MDRangeMapper(const Range<d>& range) : _range(range) {
-            calculateMultiplier();
-        }
+        explicit MDRangeMapper(const Range<d>& range) : _range(range) { calculateMultiplier(); }
 
         const auto& getRange() const { return _range; }
-        void setRange(const Range<d>& range) { _range = range; calculateMultiplier(); }
+        void setRange(const Range<d>& range) {
+            _range = range;
+            calculateMultiplier();
+        }
 
         int operator()(const MDIndex<d>& idx) const {
             int ret = 0;
@@ -46,6 +47,6 @@ namespace OpFlow::DS {
         Range<d> _range;
         std::array<int, d> _fac;
     };
-}
+}// namespace OpFlow::DS
 
 #endif//OPFLOW_MDRANGEMAPPER_HPP

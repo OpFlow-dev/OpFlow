@@ -367,6 +367,7 @@ namespace amgcl {
 
                 A_loc.set_nonzeros(A_loc.scan_row_sizes());
                 A_rem.set_nonzeros(A_rem.scan_row_sizes());
+                OP_INFO("RANK {} 1", comm.rank);
 
 #pragma omp parallel for
                 for (ptrdiff_t i = 0; i < n_loc_rows; ++i) {
@@ -389,7 +390,9 @@ namespace amgcl {
                     }
                 }
 
+                OP_INFO("RANK {} 2", comm.rank);
                 C = std::make_shared<CommPattern>(comm, n_loc_cols, a_rem->nnz, a_rem->col);
+                OP_INFO("RANK {} 3", comm.rank);
                 a_rem->ncols = C->recv.count();
             }
 
