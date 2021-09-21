@@ -224,6 +224,11 @@ endif ()
 # ----------------------------------------------------------------------------
 # Use AMGCL
 # ----------------------------------------------------------------------------
+# Find boost
+find_package(Boost REQUIRED)
+target_include_directories(opflow SYSTEM INTERFACE
+        ${Boost_INCLUDE_DIRS}
+        )
 target_include_directories(opflow INTERFACE "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/external/amgcl>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 
