@@ -21,7 +21,6 @@ int main(int argc, char* argv[]) {
     using Field = CartesianField<Real, Mesh>;
 
     auto info = makeParallelInfo();
-    info.nodeInfo.node_count = 4;
     setGlobalParallelInfo(info);
     setGlobalParallelPlan(makeParallelPlan(getGlobalParallelInfo(), ParallelIdentifier::DistributeMem));
     std::shared_ptr<AbstractSplitStrategy<Field>> strategy = std::make_shared<EvenSplitStrategy<Field>>();
@@ -29,16 +28,14 @@ int main(int argc, char* argv[]) {
     auto m = MeshBuilder<Mesh>().newMesh(5, 5).setMeshOfDim(0, 0., 10.).setMeshOfDim(1, 0., 10.).build();
     auto u = ExprBuilder<Field>()
                      .setMesh(m)
-                     .setBC(0, OpFlow::DimPos::start, BCType::Dirc, 0.)
-                     .setBC(0, OpFlow::DimPos::end, BCType::Dirc, 0.)
-                     .setBC(1, OpFlow::DimPos::start, BCType::Dirc, 0.)
-                     .setBC(1, OpFlow::DimPos::end, BCType::Dirc, 0.)
-                     //.setLoc({LocOnMesh::Center, LocOnMesh::Center})
+                     .setBC(0, OpFlow::DimPos::start, BCType::Neum, 0.)
+                     .setBC(0, OpFlow::DimPos::end, BCType::Neum, 0.)
+                     .setBC(1, OpFlow::DimPos::start, BCType::Neum, 0.)
+                     .setBC(1, OpFlow::DimPos::end, BCType::Neum, 0.)
+                     .setLoc({LocOnMesh::Center, LocOnMesh::Center})
                      .setPadding(1)
                      .setSplitStrategy(strategy)
                      .build();
-
-    OP_INFO("Rank {} localRange = {}", getWorkerId(), u.localRange.toString());
 
     typedef amgcl::backend::builtin<double> DBackend;
     typedef amgcl::backend::builtin<float> FBackend;
@@ -51,14 +48,18 @@ int main(int argc, char* argv[]) {
         auto ass_splitMap = u.splitMap;
         for (auto& r : ass_splitMap) { r = DS::commonRange(r, u.assignableRange); }
 
+        IJSolverParams<Solver> p;
+        p.staticMat = true;
+        p.pinValue = true;
+        p.dumpPath = "./";
         auto handler = makeEqnSolveHandler<Solver>(
                 [&](auto&& e) {
                     return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0;
                 },
-                u, DS::BlockedMDRangeMapper<2> {ass_splitMap});
-        OP_INFO("Built solver handler.");
+                u, DS::BlockedMDRangeMapper<2> {ass_splitMap}, p);
+        OP_MPI_MASTER_INFO("Built solver handler.");
         handler.solve();
-        OP_INFO("Solver finished.");
+        OP_MPI_MASTER_INFO("Solver finished.");
     }
 
     FinalizeEnvironment();

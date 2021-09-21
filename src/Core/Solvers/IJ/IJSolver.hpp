@@ -50,12 +50,18 @@
 
 namespace OpFlow {
     template <typename Solver>
+    struct IJSolverParams {
+        typename Solver::params p;
+        typename Solver::backend_params bp;
+        bool staticMat = false, pinValue = false;
+        std::optional<std::string> dumpPath {};
+    };
+
+    template <typename Solver>
     struct IJSolver {
         IJSolver() = default;
-        ~IJSolver() { ; }
-        IJSolver(const typename Solver::params& p, const typename Solver::backend_params& bp)
-            : params(p), bparams(bp) {}
-        IJSolver(const IJSolver& other) : bparams(other.bparams), params(other.params) {
+        IJSolver(const IJSolverParams<Solver>& p) : params(p) {}
+        IJSolver(const IJSolver& other) : params(other.params) {
             if (other.solver) solver = std::make_unique<Solver>(*other.solver);
             if (other.A_shared)
                 A_shared = std::make_shared<amgcl::mpi::distributed_matrix<typename Solver::backend_type>>(
@@ -69,11 +75,10 @@ namespace OpFlow {
             amgcl::mpi::communicator world(MPI_COMM_WORLD);
             A_shared = std::make_shared<amgcl::mpi::distributed_matrix<typename Solver::backend_type>>(
                     world, std::tie(rows, ptr, col, val));
-            OP_INFO("Rank {} Built mat", getWorkerId());
-            solver = std::make_unique<Solver>(world, A_shared, params, bparams);
+            solver = std::make_unique<Solver>(world, A_shared, params.p, params.bp);
 #else
             auto A = std::tie(rows, ptr, col, val);
-            solver = std::make_unique<Solver>(A, params, bparams);
+            solver = std::make_unique<Solver>(A, params.p, params.bp);
 #endif
         }
 
@@ -86,14 +91,16 @@ namespace OpFlow {
 #endif
         }
 
+        const auto& getParams() const { return params; }
+        auto& getParams() { return params; }
+
         [[nodiscard]] std::string logInfo() const {
-            std::string ret = fmt::format("Iter = {}, Res = {}\n", iters, error);
+            std::string ret = fmt::format("Iter = {}, Res = {}", iters, error);
             return ret;
         }
 
     private:
-        typename Solver::backend_params bparams;
-        typename Solver::params params;
+        IJSolverParams<Solver> params;
         std::unique_ptr<Solver> solver = nullptr;
         std::shared_ptr<amgcl::mpi::distributed_matrix<typename Solver::backend_type>> A_shared = nullptr;
         int iters {};

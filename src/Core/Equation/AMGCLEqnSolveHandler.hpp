@@ -32,25 +32,22 @@ namespace OpFlow {
     struct AMGCLEqnSolveHandler;
 
     template <typename S, typename F, typename T, typename M>
-    auto makeEqnSolveHandler(F&& f, T&& t, M&& m,
-                             typename Meta::RealType<S>::params p = typename Meta::RealType<S>::params {},
-                             typename Meta::RealType<S>::backend_params bp
-                             = typename Meta::RealType<S>::backend_params {}) {
+    auto makeEqnSolveHandler(F&& f, T&& t, M&& m, IJSolverParams<S> params = IJSolverParams<S> {}) {
         return AMGCLEqnSolveHandler<F, Meta::RealType<T>, Meta::RealType<M>, Meta::RealType<S>>(
-                OP_PERFECT_FOWD(f), OP_PERFECT_FOWD(t), OP_PERFECT_FOWD(m), p, bp);
+                OP_PERFECT_FOWD(f), OP_PERFECT_FOWD(t), OP_PERFECT_FOWD(m), params);
     }
 
     template <typename F, CartesianFieldType T, typename M, typename S>
     struct AMGCLEqnSolveHandler<F, T, M, S> {
         AMGCLEqnSolveHandler() = default;
-        AMGCLEqnSolveHandler(const F& getter, T& target, const M& mapper,
-                             typename Meta::RealType<S>::params p,
-                             typename Meta::RealType<S>::backend_params bp)
-            : eqn_getter {getter}, target(&target), mapper(mapper), solver(p, bp) {
+        AMGCLEqnSolveHandler(const F& getter, T& target, const M& mapper, IJSolverParams<S> p)
+            : eqn_getter {getter}, target(&target), mapper(mapper), solver(p) {
             init();
         }
 
         void init() {
+            staticMat = solver.getParams().staticMat;
+            pinValue = solver.getParams().pinValue;
             auto stField = target->getStencilField();
             stField.pin(pinValue);
             stencilField = std::make_unique<StencilField<T>>(std::move(stField));
@@ -67,7 +64,6 @@ namespace OpFlow {
             col.clear();
             val.clear();
             rhs.clear();
-            std::vector<int> nnz_counts(getGlobalParallelPlan().distributed_workers_count, 0);
             // first pass: generate the local block of matrix
             int count = 0;
             row.push_back(count);
@@ -82,34 +78,29 @@ namespace OpFlow {
                 rhs.push_back(-currentStencil.bias);
                 row.push_back(count);
             });
-            nnz_counts[getWorkerId()] = count;
-            // communicate within group the nnz_counts
-#if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
-            MPI_Allgather(&count, 1, MPI_INT, nnz_counts.data(), 1, MPI_INT, MPI_COMM_WORLD);
-            if (getWorkerId() == 1) {
-                for (auto i = 0; i < nnz_counts.size(); ++i) OP_INFO("Rank {} count = {}", i, nnz_counts[i]);
+            if (pinValue) {
+                if (DS::inRange(target->localRange, DS::MDIndex<dim>(target->assignableRange.start))) {
+                    for (auto i = 0; i < row[1]; ++i) {
+                        val[i] = 0.;
+                        if (col[i] == 0) val[i] = 1.;
+                    }
+                    rhs[0] = 0.;
+                }
             }
-#endif
-            // second pass: add the row offset to the row array
-            if (false && getWorkerId() > 0) {
-                int offset = 0;
-                for (auto i = 0; i < getWorkerId(); ++i) offset += nnz_counts[i];
-                OP_INFO("RANK {} OFFSET = {}", getWorkerId(), offset);
-                for (auto& i : row) i += offset;
+
+            if (solver.getParams().dumpPath) {
+                std::fstream of;
+                of.open(fmt::format("{}A_{}.mat", solver.getParams().dumpPath.value(), getWorkerId()),
+                        std::ofstream::out | std::ofstream::ate);
+                for (const auto& p : row) of << fmt::format("{} ", p);
+                of << std::endl;
+                for (const auto& c : col) of << fmt::format("{} ", c);
+                of << std::endl;
+                for (const auto& v : val) of << fmt::format("{} ", v);
+                of << std::endl;
+                for (const auto& r : rhs) of << fmt::format("{} ", r);
+                of.flush();
             }
-            std::fstream of;
-            of.open(fmt::format("A_{}.mat", getWorkerId()), std::ofstream::out | std::ofstream::ate);
-            //auto& of = std::cout;
-            for (const auto& p : row) of << fmt::format("{} ", p);
-            of << std::endl;
-            for (const auto& c : col) of << fmt::format("{} ", c);
-            of << std::endl;
-            for (const auto& v : val) of << fmt::format("{} ", v);
-            of << std::endl;
-            for (const auto& r : rhs) of << fmt::format("{} ", r);
-            of.flush();
-            //of.close();
-            OP_INFO("Generate AB");
         }
 
         void generateb() {
@@ -137,11 +128,8 @@ namespace OpFlow {
             if (firstRun) {
                 generateAb();
                 initx();
-                OP_INFO("INIT0");
                 solver.init(x.size(), row, col, val);
-                OP_INFO("SOLVE0");
                 solver.solve(rhs, x);
-                OP_INFO("SOLVE1");
                 firstRun = false;
             } else {
                 if (staticMat) generateb();
@@ -152,7 +140,7 @@ namespace OpFlow {
                 solver.solve(rhs, x);
             }
 #ifndef NDEBUG
-            OP_INFO("AMGCL: {}", solver.logInfo());
+            OP_MPI_MASTER_INFO("AMGCL: {}", solver.logInfo());
 #endif
             returnValues();
         }
@@ -174,6 +162,8 @@ namespace OpFlow {
         bool fieldsAllocated = false;
         bool firstRun = true;
         bool staticMat = false, pinValue = false;
+
+        constexpr static auto dim = internal::CartesianFieldExprTrait<T>::dim;
     };
 }// namespace OpFlow
 
