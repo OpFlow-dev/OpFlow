@@ -32,12 +32,23 @@
 #include <amgcl/mpi/make_solver.hpp>
 #include <amgcl/mpi/relaxation/spai0.hpp>
 #include <amgcl/mpi/solver/bicgstab.hpp>
+#include <amgcl/mpi/solver/bicgstabl.hpp>
+#include <amgcl/mpi/solver/cg.hpp>
+#include <amgcl/mpi/solver/fgmres.hpp>
+#include <amgcl/mpi/solver/gmres.hpp>
+#include <amgcl/mpi/solver/preonly.hpp>
 
 #include <amgcl/amg.hpp>
 #include <amgcl/coarsening/smoothed_aggregation.hpp>
 #include <amgcl/make_solver.hpp>
 #include <amgcl/relaxation/spai0.hpp>
 #include <amgcl/solver/bicgstab.hpp>
+#include <amgcl/solver/bicgstabl.hpp>
+#include <amgcl/solver/cg.hpp>
+#include <amgcl/solver/fgmres.hpp>
+#include <amgcl/solver/gmres.hpp>
+#include <amgcl/solver/preonly.hpp>
+#include <amgcl/solver/skyline_lu.hpp>
 
 #include <amgcl/io/binary.hpp>
 #include <amgcl/profiler.hpp>
