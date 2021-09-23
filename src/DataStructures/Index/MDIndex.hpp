@@ -120,6 +120,13 @@ namespace OpFlow::DS {
             return c;
         }
 
+        constexpr auto flip() const {
+            auto c = copy();
+            for (auto i = 0; i < d; ++i)
+                c[i] = this->idx[d - i - 1];
+            return c;
+        }
+
         auto toString() const {
             std::string ret = "{";
             if constexpr (d > 0) ret += fmt::format("{}", idx[0]);

@@ -166,17 +166,21 @@ namespace OpFlow::Utils {
         {
             // calculate the dim info of the data set
             auto extends = f.localRange.getExtends();
+            auto inv_ext = extends;
             auto global_extends = f.accessibleRange.getExtends();
             hsize_t h_extends[dim], h_global_extends[dim];
             for (auto i = 0; i < dim; ++i) {
                 // column-major to row-major transpose
-                h_extends[i] = extends[dim - i - 1];
-                h_global_extends[i] = global_extends[dim - i - 1];
+                inv_ext[i] = extends[dim - i - 1];
+                h_extends[i] = extends[i];
+                h_global_extends[i] = global_extends[i];
             }
-            DS::PlainTensor<elem_type, dim> buffer(extends);
+            DS::PlainTensor<elem_type, dim> buffer(inv_ext);
             DS::MDIndex<dim> _offset;
             for (auto i = 0; i < dim; ++i) _offset[i] = f.localRange.start[i];
-            rangeFor(f.localRange, [&](auto&& i) { buffer[i - _offset] = f.evalSafeAt(i); });
+            rangeFor(f.localRange, [&](auto&& i) {
+                auto idx = i - _offset;
+                buffer[idx.flip()] = f.evalSafeAt(i); });
             auto dataspace = H5Screate_simple(OpFlow::internal::ExprTrait<T>::dim, h_global_extends, NULL);
             static_assert(Meta::Numerical<typename OpFlow::internal::ExprTrait<T>::elem_type>);
             hid_t datatype;
@@ -231,14 +235,16 @@ namespace OpFlow::Utils {
 
         // calculate the dim info of the data set
         auto extends = f.localRange.getExtends();
+        auto inv_ext = extends;
         auto global_extends = f.accessibleRange.getExtends();
         hsize_t h_extends[dim], h_global_extends[dim];
         for (auto i = 0; i < dim; ++i) {
             // column-major to row-major transpose
-            h_extends[i] = extends[dim - i - 1];
-            h_global_extends[i] = global_extends[dim - i - 1];
+            inv_ext[i] = extends[dim - i - 1];
+            h_extends[i] = extends[i];
+            h_global_extends[i] = global_extends[i];
         }
-        DS::PlainTensor<elem_type, dim> buffer(extends);
+        DS::PlainTensor<elem_type, dim> buffer(inv_ext);
         DS::MDIndex<dim> _offset;
         for (auto i = 0; i < dim; ++i) _offset[i] = f.localRange.start[i];
         auto dataspace = H5Screate_simple(OpFlow::internal::ExprTrait<T>::dim, h_global_extends, NULL);
@@ -276,7 +282,9 @@ namespace OpFlow::Utils {
         H5Dread(dataset, datatype, H5S_ALL, H5S_ALL, H5P_DEFAULT, buffer.raw());
 #endif
         // copy data from buffer to field
-        rangeFor(f.localRange, [&](auto&& i) { f[i] = buffer[i - _offset]; });
+        rangeFor(f.localRange, [&](auto&& i) {
+            auto idx = i - _offset;
+            f[i] = buffer[idx.flip()]; });
         // close everything
         H5Dclose(dataset);
         H5Sclose(dataspace);
