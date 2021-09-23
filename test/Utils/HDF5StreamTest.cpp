@@ -59,10 +59,8 @@ TEST(H5RWTest, WriteAfterReadInEqualDim) {
                      .build();
 
     u = 0.;
-    auto map = DS::MDRangeMapper<2>{u.accessibleRange};
-    rangeFor(u.assignableRange, [&](auto&& i) {
-        u[i] = map(i);
-    });
+    auto map = DS::MDRangeMapper<2> {u.accessibleRange};
+    rangeFor(u.assignableRange, [&](auto&& i) { u[i] = map(i); });
     Utils::H5Stream stream("./u_ieq.h5");
     stream << u;
 

@@ -180,7 +180,8 @@ namespace OpFlow::Utils {
             for (auto i = 0; i < dim; ++i) _offset[i] = f.localRange.start[i];
             rangeFor(f.localRange, [&](auto&& i) {
                 auto idx = i - _offset;
-                buffer[idx.flip()] = f.evalSafeAt(i); });
+                buffer[idx.flip()] = f.evalSafeAt(i);
+            });
             auto dataspace = H5Screate_simple(OpFlow::internal::ExprTrait<T>::dim, h_global_extends, NULL);
             static_assert(Meta::Numerical<typename OpFlow::internal::ExprTrait<T>::elem_type>);
             hid_t datatype;
@@ -284,7 +285,8 @@ namespace OpFlow::Utils {
         // copy data from buffer to field
         rangeFor(f.localRange, [&](auto&& i) {
             auto idx = i - _offset;
-            f[i] = buffer[idx.flip()]; });
+            f[i] = buffer[idx.flip()];
+        });
         // close everything
         H5Dclose(dataset);
         H5Sclose(dataspace);

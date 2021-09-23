@@ -122,8 +122,7 @@ namespace OpFlow::DS {
 
         constexpr auto flip() const {
             auto c = copy();
-            for (auto i = 0; i < d; ++i)
-                c[i] = this->idx[d - i - 1];
+            for (auto i = 0; i < d; ++i) c[i] = this->idx[d - i - 1];
             return c;
         }
 
