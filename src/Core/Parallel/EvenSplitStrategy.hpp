@@ -82,13 +82,13 @@ namespace OpFlow {
                 const auto& c = labeled_extends[i];
                 auto p = std::lower_bound(factors.begin(), factors.end(),
                                           std::pow(remain_proc * 1.0 / remain_vol, 1. / (d - i)) * c.second);
-                int n = (p != factors.end()) ? *p : plan.distributed_workers_count;
+                int n = i == d - 1 ? remain_proc : (p != factors.end()) ? *p : plan.distributed_workers_count;
                 splits_1[c.first] = n;
                 remain_proc /= n;
                 remain_vol /= _range.end[c.first] - _range.start[c.first];
             }
             auto cost_1 = 0.;
-            for (auto i = 0; i < d; ++i) cost_1 += splits_1[i] / (_range.end[i] - _range.start[i]);
+            for (auto i = 0; i < d; ++i) cost_1 += 1.0 * splits_1[i] / (_range.end[i] - _range.start[i]);
             // Strategy 2:
             std::array<int, d> splits_2;
             remain_vol = _range.count();
@@ -102,13 +102,13 @@ namespace OpFlow {
                 const auto& c = labeled_extends[i];
                 auto p = std::lower_bound(factors.begin(), factors.end(),
                                           std::pow(remain_proc * 1.0 / remain_vol, 1. / (d - i)) * c.second);
-                int n = (p != factors.begin()) ? *(p - 1) : 1;
+                int n = i == d - 1 ? remain_proc : (p != factors.begin()) ? *(p - 1) : 1;
                 splits_2[c.first] = n;
                 remain_proc /= n;
                 remain_vol /= _range.end[c.first] - _range.start[c.first];
             }
             auto cost_2 = 0.;
-            for (auto i = 0; i < d; ++i) cost_2 += splits_2[i] / (_range.end[i] - _range.start[i]);
+            for (auto i = 0; i < d; ++i) cost_2 += 1.0 * splits_2[i] / (_range.end[i] - _range.start[i]);
 
             // choose the smaller cost plan
             std::array<int, d> final_split;
