@@ -60,7 +60,7 @@ namespace OpFlow {
     }
 
     template <typename S, typename F, FieldExprType T>
-    void Solve(F&& func, T&& target, auto&& indexer, const IJSolverParams<S>& params) {
+    void Solve(F&& func, T&& target, auto&& indexer, IJSolverParams<S> params = IJSolverParams<S> {}) {
         auto handler = makeEqnSolveHandler(func, target, indexer, params);
         handler.solve();
     }
