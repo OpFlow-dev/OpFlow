@@ -29,5 +29,8 @@ add_gmock(DecayExprTest ${CMAKE_CURRENT_LIST_DIR}/Operator/DecayExprTest.cpp)
 # RangeFor
 add_gmock(RangeForTest ${CMAKE_CURRENT_LIST_DIR}/Loops/RangeForTest.cpp)
 
+# Parallel
+add_gmock(EvenSplitStrategyTest ${CMAKE_CURRENT_LIST_DIR}/Parallel/EvenSplitStrategyTest.cpp)
+
 # Equation
 add_gmock(EqnSolveHandlerTest ${CMAKE_CURRENT_LIST_DIR}/Equation/EqnSolveHandlerTest.cpp)
