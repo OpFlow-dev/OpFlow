@@ -248,3 +248,43 @@ TEST_F(EqnSolveHandlerTest, GMRESSMG) {
     Solve(poisson_eqn(), p, params, p_params);
     ASSERT_TRUE(check_solution(1e-10));
 }
+
+TEST_F(EqnSolveHandlerTest, AMGCLUnifiedSolve) {
+    this->reset_case(0.5, 0.5);
+    using Solver = amgcl::make_solver<
+            amgcl::amg<amgcl::backend::builtin<double>, amgcl::coarsening::smoothed_aggregation,
+                       amgcl::relaxation::spai0>,
+            amgcl::solver::bicgstab<amgcl::backend::builtin<double>>>;
+    Solve<Solver>(poisson_eqn(), p, DS::MDRangeMapper<2> {p.assignableRange});
+    ASSERT_TRUE(check_solution(1e-8));
+}
+
+TEST_F(EqnSolveHandlerTest, AMGCLUnifiedSolveMixedPercision) {
+    this->reset_case(0.5, 0.5);
+    using Solver = amgcl::make_solver<
+            amgcl::amg<amgcl::backend::builtin<float>, amgcl::coarsening::smoothed_aggregation,
+                       amgcl::relaxation::spai0>,
+            amgcl::solver::bicgstab<amgcl::backend::builtin<double>>>;
+    Solve<Solver>(poisson_eqn(), p, DS::MDRangeMapper<2> {p.assignableRange});
+    ASSERT_TRUE(check_solution(5e-7));
+}
+
+TEST_F(EqnSolveHandlerTest, AMGCLUnifiedSolveCG) {
+    this->reset_case(0.5, 0.5);
+    using Solver = amgcl::make_solver<
+            amgcl::amg<amgcl::backend::builtin<double>, amgcl::coarsening::smoothed_aggregation,
+                       amgcl::relaxation::spai0>,
+            amgcl::solver::cg<amgcl::backend::builtin<double>>>;
+    Solve<Solver>(poisson_eqn(), p, DS::MDRangeMapper<2> {p.assignableRange});
+    ASSERT_TRUE(check_solution(2e-8));
+}
+
+TEST_F(EqnSolveHandlerTest, AMGCLUnifiedSolveGMRES) {
+    this->reset_case(0.5, 0.5);
+    using Solver = amgcl::make_solver<
+            amgcl::amg<amgcl::backend::builtin<double>, amgcl::coarsening::smoothed_aggregation,
+                       amgcl::relaxation::spai0>,
+            amgcl::solver::gmres<amgcl::backend::builtin<double>>>;
+    Solve<Solver>(poisson_eqn(), p, DS::MDRangeMapper<2> {p.assignableRange});
+    ASSERT_TRUE(check_solution(2e-8));
+}
