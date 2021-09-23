@@ -70,7 +70,7 @@ namespace OpFlow {
     namespace internal {
         template <std::size_t bc_w, typename Arg1, typename Arg2>
         struct ExprTrait<Expression<DecayOp<bc_w>, Arg1, Arg2>> : ExprTrait<Arg2> {
-            static constexpr auto bc_width = bc_w;
+            static constexpr int bc_width = bc_w;
             static constexpr auto access_flag = 0;
         };
     }// namespace internal
