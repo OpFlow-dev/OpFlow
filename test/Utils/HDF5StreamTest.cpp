@@ -13,7 +13,7 @@
 #include <OpFlow>
 #include <gmock/gmock.h>
 
-TEST(H5RWTest, WriteAfterRead) {
+TEST(H5RWTest, ReadAfterWrite) {
     using namespace OpFlow;
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<Real, Mesh>;
@@ -38,11 +38,11 @@ TEST(H5RWTest, WriteAfterRead) {
     auto v = u;
     v = 0.;
     Utils::H5Stream istream("./u.h5", StreamIn);
-    stream >> v;
+    istream >> v;
     ASSERT_EQ(v.evalAt(DS::MDIndex<2>(2, 2)), u.evalAt(DS::MDIndex<2>(2, 2)));
 }
 
-TEST(H5RWTest, WriteAfterReadInEqualDim) {
+TEST(H5RWTest, ReadAfterWriteInEqualDim) {
     using namespace OpFlow;
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<Real, Mesh>;
@@ -63,10 +63,12 @@ TEST(H5RWTest, WriteAfterReadInEqualDim) {
     rangeFor(u.assignableRange, [&](auto&& i) { u[i] = map(i); });
     Utils::H5Stream stream("./u_ieq.h5");
     stream << u;
+    stream.close();
 
     auto v = u;
     v = 0.;
     Utils::H5Stream istream("./u_ieq.h5", StreamIn);
-    stream >> v;
+    istream >> v;
+    istream.close();
     ASSERT_EQ(v.evalAt(DS::MDIndex<2>(2, 2)), u.evalAt(DS::MDIndex<2>(2, 2)));
 }
