@@ -139,9 +139,7 @@ namespace OpFlow {
                 solver.init(x.size(), row, col, val);
                 solver.solve(rhs, x);
             }
-#ifndef NDEBUG
-            OP_MPI_MASTER_INFO("AMGCL: {}", solver.logInfo());
-#endif
+            if (solver.getParams().verbose && getWorkerId() == 0) fmt::print("AMGCL: {}\n", solver.logInfo());
             returnValues();
         }
 
