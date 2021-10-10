@@ -64,7 +64,7 @@ namespace OpFlow {
     struct IJSolverParams {
         typename Solver::params p;
         typename Solver::backend_params bp;
-        bool staticMat = false, pinValue = false;
+        bool staticMat = false, pinValue = false, verbose = false;
         std::optional<std::string> dumpPath {};
     };
 
