@@ -31,7 +31,9 @@ namespace OpFlow {
 
     protected:
         // recurse end
-        void initPropsFromImpl_FieldExpr(auto&& expr) {}
+        void initPropsFromImpl_FieldExpr(auto&& expr) {
+            if (this->name.empty()) this->name = expr.getName();
+        }
 
     private:
         constexpr static auto access_flag = internal::FieldExprTrait<Derived>::access_flag;
