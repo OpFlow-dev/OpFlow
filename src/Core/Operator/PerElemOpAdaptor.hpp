@@ -62,5 +62,49 @@ namespace OpFlow {
             using elem_type = decltype(functor(std::declval<const typename ExprTrait<E>::elem_type&>()));
         };
     }// namespace internal
+
+    template <Utils::NamedFunctorType auto Functor>
+    struct BinOpAdaptor {
+        constexpr static auto bc_width = 0;
+
+        template <StructuredFieldExprType E>
+        OPFLOW_STRONG_INLINE static auto couldSafeEval(const E& expr1, const auto&& expr2, auto&& i) {
+            return DS::inRange(expr1.accessibleRange, i);
+        }
+
+        template <ExprType E1, ExprType E2>
+        OPFLOW_STRONG_INLINE static auto eval_safe(const E1& expr1, const E2& expr2, auto&& i) {
+            return Functor(expr1.evalSafeAt(OP_PERFECT_FOWD(i)), expr2.evalSafeAt(OP_PERFECT_FOWD(i)));
+        }
+
+        template <ExprType E1, ExprType E2>
+        OPFLOW_STRONG_INLINE static auto eval(const E1& expr1, const E2& expr2, auto&& i) {
+            return Functor(expr1.evalAt(OP_PERFECT_FOWD(i)), expr2.evalAt(OP_PERFECT_FOWD(i)));
+        }
+
+        template <ExprType E1, ExprType E2>
+        static void prepare(Expression<BinOpAdaptor, E1, E2>& expr) {
+            expr.initPropsFrom(expr.arg1);
+            // name
+            expr.name = fmt::format("{}({}, {})", Functor.getName().to_string(), expr.arg1.name,
+                                    expr.arg2.name);
+        }
+    };
+
+    template <Utils::NamedFunctorType auto functor, ExprType E1, ExprType E2>
+    struct ResultType<BinOpAdaptor<functor>, E1, E2> {
+        using type = typename internal::ExprTrait<E1>::template twin_type<
+                Expression<BinOpAdaptor<functor>, E1, E2>>;
+        using core_type = Expression<BinOpAdaptor<functor>, E1, E2>;
+    };
+
+    namespace internal {
+        template <Utils::NamedFunctorType auto functor, ExprType E1, ExprType E2>
+        struct ExprTrait<Expression<BinOpAdaptor<functor>, E1, E2>> : ExprTrait<E1> {
+            static constexpr int access_flag = 0;
+            using elem_type = decltype(functor(std::declval<const typename ExprTrait<E1>::elem_type&>(),
+                                               std::declval<const typename ExprTrait<E2>::elem_type&>()));
+        };
+    }// namespace internal
 }// namespace OpFlow
 #endif//OPFLOW_PERELEMOPADAPTOR_HPP
