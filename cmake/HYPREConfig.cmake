@@ -26,6 +26,9 @@ macro(CONFIG_HYPRE)
     string(REPLACE " " "\t\n" _hypre_options ${HYPRE_OPTIONS})
     message(STATUS "HYPRE is to be configured with:\t\n${_hypre_options}")
 
+    set(OPFLOW_HYPRE_PRE_DOWNLOAD ON)
+    set(OPFLOW_HYPRE_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/external/hypre)
+
     if (${OPFLOW_HYPRE_PRE_DOWNLOAD})
         # use pre-downloaded source file
         if (NOT OPFLOW_HYPRE_SOURCE_DIR)
@@ -33,10 +36,10 @@ macro(CONFIG_HYPRE)
             OPFLOW_HYPRE_PRE_DOWNLOAD is enabled")
         endif ()
 
-        configure_file(cmake/UseExistingHYPRE.txt.in
+        configure_file(cmake/UseExistingHYPRE.cmake.in
                 ${CMAKE_CURRENT_BINARY_DIR}/hypre-download/CMakeLists.txt)
     else ()
-        configure_file(cmake/DownloadHYPRE.txt.in
+        configure_file(cmake/DownloadHYPRE.cmake.in
                 ${CMAKE_CURRENT_BINARY_DIR}/hypre-download/CMakeLists.txt)
     endif ()
     execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
