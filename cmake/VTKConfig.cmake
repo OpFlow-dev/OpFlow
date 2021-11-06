@@ -40,10 +40,10 @@ macro(CONFIG_VTK)
             OPFLOW_VTK_PRE_DOWNLOAD is enabled")
         endif ()
 
-        configure_file(cmake/UseExistingVTK.txt.in
+        configure_file(cmake/UseExistingVTK.cmake.in
                 ${CMAKE_CURRENT_BINARY_DIR}/vtk-download/CMakeLists.txt)
     else ()
-        configure_file(cmake/DownloadVTK.txt.in
+        configure_file(cmake/DownloadVTK.cmake.in
                 ${CMAKE_CURRENT_BINARY_DIR}/vtk-download/CMakeLists.txt)
     endif ()
     execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .

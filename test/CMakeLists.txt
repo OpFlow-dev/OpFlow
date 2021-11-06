@@ -43,7 +43,7 @@ function(add_gmock testname testfile)
 endfunction()
 
 # Download and unpack googletest at configure time
-configure_file(../cmake/DownloadGTest.txt.in googletest-download/CMakeLists.txt)
+configure_file(../cmake/DownloadGTest.cmake.in googletest-download/CMakeLists.txt)
 execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
         RESULT_VARIABLE result
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download)
