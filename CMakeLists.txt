@@ -118,6 +118,9 @@ option(OPFLOW_BUILD_BENCHMARKS "Build benchmarks" OFF)
 
 # sanitizer options
 option(OPFLOW_SANITIZE_ADDRESS "Enable address sanitizer in tests" OFF)
+option(OPFLOW_SANITIZE_LEAK "Enable leak sanitizer in tests" OFF)
+option(OPFLOW_SANITIZE_THREAD "Enable thread sanitizer in tests" OFF)
+option(OPFLOW_SANITIZE_UB "Enable undefined behavior sanitizer in tests" OFF)
 
 # warning options
 option(OPFLOW_BUILD_WARNINGS "Enable compiler warnings" OFF)
@@ -347,6 +350,18 @@ endforeach ()
 if (OPFLOW_NO_EXCEPTIONS AND NOT MSVC)
     target_compile_options(opflow INTERFACE -fno-exceptions)
 endif ()
+
+# sanitizer flags
+target_compile_options(opflow
+        INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_ADDRESS}>: -fsanitize=address>
+        INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_LEAK}>: -fsanitize=leak>
+        INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_THREAD}>: -fsanitize=thread>
+        INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_UB}>: -fsanitize=undefined>)
+target_link_options(opflow
+        INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_ADDRESS}>: -fsanitize=address>
+        INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_LEAK}>: -fsanitize=leak>
+        INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_THREAD}>: -fsanitize=thread>
+        INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_UB}>: -fsanitize=undefined>)
 
 # ----------------------------------------------------------------------------
 # Build binaries
