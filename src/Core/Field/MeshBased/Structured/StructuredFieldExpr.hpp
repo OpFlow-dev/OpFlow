@@ -39,7 +39,7 @@ namespace OpFlow {
         std::vector<std::pair<int, RangeType>> neighbors;///< Neighbor patches rank & range info
 
         std::array<
-                DS::Pair<std::unique_ptr<BCBase<typename internal::StructuredFieldExprTrait<Derived>::type>>>,
+                DS::Pair<std::unique_ptr<BCBase<Derived>>>,
                 internal::FieldExprTrait<Derived>::dim>
                 bc;
 
@@ -52,11 +52,39 @@ namespace OpFlow {
             for (auto i = 0; i < bc.size(); ++i) {
                 bc[i].start = other.bc[i].start ? other.bc[i].start->getCopy() : nullptr;
                 if (bc[i].start && isLogicalBC(bc[i].start->getBCType())) {
-                    dynamic_cast<LogicalBCBase<Derived>*>(bc[i].start.get())->rebindField(this->derived());
+                    // if base.bc[i].start is a logical bc, we build a new instance of the same type bc
+                    switch (other.bc[i].start->getBCType()) {
+                        case BCType::Symm:
+                            this->bc[i].start = genLogicalBC<BCType::Symm>(this->derived(), i, DimPos::start);
+                            break;
+                        case BCType::ASymm:
+                            this->bc[i].start = genLogicalBC<BCType::ASymm>(this->derived(), i, DimPos::start);
+                            break;
+                        case BCType::Periodic:
+                            this->bc[i].start = genLogicalBC<BCType::Periodic>(this->derived(), i, DimPos::start);
+                            break;
+                        default:
+                            OP_CRITICAL("{} is not a logical bc type", other.bc[i].start->getTypeName());
+                            OP_ABORT;
+                    }
                 }
                 bc[i].end = other.bc[i].end ? other.bc[i].end->getCopy() : nullptr;
                 if (bc[i].end && isLogicalBC(bc[i].end->getBCType())) {
-                    dynamic_cast<LogicalBCBase<Derived>*>(bc[i].end.get())->rebindField(this->derived());
+                    // if base.bc[i].start is a logical bc, we build a new instance of the same type bc
+                    switch (other.bc[i].end->getBCType()) {
+                        case BCType::Symm:
+                            this->bc[i].end = genLogicalBC<BCType::Symm>(this->derived(), i, DimPos::end);
+                            break;
+                        case BCType::ASymm:
+                            this->bc[i].end = genLogicalBC<BCType::ASymm>(this->derived(), i, DimPos::end);
+                            break;
+                        case BCType::Periodic:
+                            this->bc[i].end = genLogicalBC<BCType::Periodic>(this->derived(), i, DimPos::end);
+                            break;
+                        default:
+                            OP_CRITICAL("{} is not a logical bc type", other.bc[i].end->getTypeName());
+                            OP_ABORT;
+                    }
                 }
             }
         }
@@ -89,14 +117,41 @@ namespace OpFlow {
                         = std::is_same_v<typename internal::StructuredFieldExprTrait<Other>::elem_type,
                                          typename internal::StructuredFieldExprTrait<Derived>::elem_type>;
                 if constexpr (convertible) {
-                    bc[i].start = other.bc[i].start ? other.bc[i].start->getCopy() : nullptr;
+                    bc[i].start = other.bc[i].start ? genProxyBC<Derived, Other>(*other.bc[i].start) : nullptr;
                     if (bc[i].start && isLogicalBC(bc[i].start->getBCType())) {
-                        dynamic_cast<LogicalBCBase<Derived>*>(bc[i].start.get())
-                                ->rebindField(this->derived());
+                        // if base.bc[i].start is a logical bc, we build a new instance of the same type bc
+                        switch (other.bc[i].start->getBCType()) {
+                            case BCType::Symm:
+                                this->bc[i].start = genLogicalBC<BCType::Symm>(this->derived(), i, DimPos::start);
+                                break;
+                            case BCType::ASymm:
+                                this->bc[i].start = genLogicalBC<BCType::ASymm>(this->derived(), i, DimPos::start);
+                                break;
+                            case BCType::Periodic:
+                                this->bc[i].start = genLogicalBC<BCType::Periodic>(this->derived(), i, DimPos::start);
+                                break;
+                            default:
+                                OP_CRITICAL("{} is not a logical bc type", other.bc[i].start->getTypeName());
+                                OP_ABORT;
+                        }
                     }
-                    bc[i].end = other.bc[i].end ? other.bc[i].end->getCopy() : nullptr;
+                    bc[i].end = other.bc[i].end ? genProxyBC<Derived, Other>(*other.bc[i].end) : nullptr;
                     if (bc[i].end && isLogicalBC(bc[i].end->getBCType())) {
-                        dynamic_cast<LogicalBCBase<Derived>*>(bc[i].end.get())->rebindField(this->derived());
+                        // if base.bc[i].start is a logical bc, we build a new instance of the same type bc
+                        switch (other.bc[i].end->getBCType()) {
+                            case BCType::Symm:
+                                this->bc[i].end = genLogicalBC<BCType::Symm>(this->derived(), i, DimPos::end);
+                                break;
+                            case BCType::ASymm:
+                                this->bc[i].end = genLogicalBC<BCType::ASymm>(this->derived(), i, DimPos::end);
+                                break;
+                            case BCType::Periodic:
+                                this->bc[i].end = genLogicalBC<BCType::Periodic>(this->derived(), i, DimPos::end);
+                                break;
+                            default:
+                                OP_CRITICAL("{} is not a logical bc type", other.bc[i].end->getTypeName());
+                                OP_ABORT;
+                        }
                     }
                 }
             }

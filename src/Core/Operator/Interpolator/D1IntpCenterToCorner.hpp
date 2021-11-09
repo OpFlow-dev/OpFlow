@@ -99,8 +99,16 @@ namespace OpFlow {
             for (auto i = 0; i < internal::CartesianFieldExprTrait<T>::dim; ++i) {
                 // todo: introduce bc type detection and correct the impl here
 
-                expr.bc[i].start = expr.arg1.bc[i].start ? expr.arg1.bc[i].start->getCopy() : nullptr;
-                expr.bc[i].end = expr.arg1.bc[i].end ? expr.arg1.bc[i].end->getCopy() : nullptr;
+                expr.bc[i].start
+                        = expr.arg1.bc[i].start
+                                  ? genProxyBC<Meta::RealType<decltype(expr)>,
+                                               Meta::RealType<decltype(expr.arg1)>>(*expr.arg1.bc[i].start)
+                                  : nullptr;
+                expr.bc[i].end
+                        = expr.arg1.bc[i].end
+                                  ? genProxyBC<Meta::RealType<decltype(expr)>,
+                                               Meta::RealType<decltype(expr.arg1)>>(*expr.arg1.bc[i].end)
+                                  : nullptr;
             }
         }
     };

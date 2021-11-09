@@ -14,6 +14,8 @@
 #define OPFLOW_STENCILFIELD_HPP
 
 #include "Core/BC/BCBase.hpp"
+#include "Core/BC/LogicalBC.hpp"
+#include "Core/BC/ProxyBC.hpp"
 #include "Core/Field/MeshBased/MeshBasedFieldExprTrait.hpp"
 #include "Core/Field/MeshBased/SemiStructured/CartAMRFieldExprTrait.hpp"
 #include "Core/Field/MeshBased/SemiStructured/CartAMRFieldTrait.hpp"
@@ -37,11 +39,48 @@ namespace OpFlow {
             this->assignableRange = base.assignableRange;
             this->accessibleRange = base.accessibleRange;
             for (auto i = 0; i < internal::MeshBasedFieldExprTrait<T>::dim; ++i) {
-                this->bc[i].start
-                        = genProxyBC<typename internal::MeshBasedFieldExprTrait<StencilField>::type>(
-                                *(base.bc[i].start));
-                this->bc[i].end = genProxyBC<typename internal::MeshBasedFieldExprTrait<StencilField>::type>(
-                        *(base.bc[i].end));
+                if (base.bc[i].start && isLogicalBC(base.bc[i].start->getBCType())) {
+                    // if base.bc[i].start is a logical bc, we build a new instance of the same type bc
+                    switch (base.bc[i].start->getBCType()) {
+                        case BCType::Symm:
+                            this->bc[i].start = genLogicalBC<BCType::Symm>(*this, i, DimPos::start);
+                            break;
+                        case BCType::ASymm:
+                            this->bc[i].start = genLogicalBC<BCType::ASymm>(*this, i, DimPos::start);
+                            break;
+                        case BCType::Periodic:
+                            this->bc[i].start = genLogicalBC<BCType::Periodic>(*this, i, DimPos::start);
+                            break;
+                        default:
+                            OP_CRITICAL("{} is not a logical bc type", base.bc[i].start->getTypeName());
+                            OP_ABORT;
+                    }
+                } else {
+                    // other cases we build a proxy bc to convert original bc to the same bc returning stencilpads
+                    this->bc[i].start
+                            = genProxyBC<typename internal::MeshBasedFieldExprTrait<StencilField>::type>(
+                                    *(base.bc[i].start));
+                }
+                if (base.bc[i].end && isLogicalBC(base.bc[i].end->getBCType())) {
+                    // if base.bc[i].start is a logical bc, we build a new instance of the same type bc
+                    switch (base.bc[i].end->getBCType()) {
+                        case BCType::Symm:
+                            this->bc[i].end = genLogicalBC<BCType::Symm>(*this, i, DimPos::end);
+                            break;
+                        case BCType::ASymm:
+                            this->bc[i].end = genLogicalBC<BCType::ASymm>(*this, i, DimPos::end);
+                            break;
+                        case BCType::Periodic:
+                            this->bc[i].end = genLogicalBC<BCType::Periodic>(*this, i, DimPos::end);
+                            break;
+                        default:
+                            OP_CRITICAL("{} is not a logical bc type", base.bc[i].end->getTypeName());
+                            OP_ABORT;
+                    }
+                } else {
+                    this->bc[i].end = genProxyBC<typename internal::MeshBasedFieldExprTrait<StencilField>::type>(
+                            *(base.bc[i].end));
+                }
             }
         }
 

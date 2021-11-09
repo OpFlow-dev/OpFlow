@@ -28,6 +28,7 @@ namespace OpFlow {
             : ExprTrait<typename StructuredFieldExprTrait<T>::template other_type<
                       DS::StencilPad<typename StructuredFieldExprTrait<T>::index_type>>> {
             static constexpr auto access_flag = 0;
+            using type = StencilField<typename StructuredFieldExprTrait<T>::type>;
             using mesh_type
                     = decltype(std::declval<typename StructuredFieldExprTrait<T>::mesh_type&>().getView());
         };
@@ -37,6 +38,7 @@ namespace OpFlow {
             : ExprTrait<typename SemiStructuredFieldExprTrait<T>::template other_type<
                       DS::StencilPad<typename SemiStructuredFieldExprTrait<T>::index_type>>> {
             static constexpr auto access_flag = 0;
+            using type = StencilField<typename SemiStructuredFieldExprTrait<T>::type>;
         };
     }// namespace internal
 }// namespace OpFlow
