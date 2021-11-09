@@ -102,9 +102,17 @@ namespace OpFlow {
                     DS::inRange(DS::commonRange(this->_f->accessibleRange, this->_f->localRange), reflected),
                     "Reflected index {} out of range {}", reflected.toString(),
                     DS::commonRange(this->_f->accessibleRange, this->_f->localRange).toString());
-            OP_ASSERT_MSG((reflected != index || this->_f->evalAt(index) == 0),
-                          "ASymmetric BC specified on a boundary which is evaluated to {} != 0.",
-                          this->_f->evalAt(index));
+            if constexpr (Meta::Numerical<typename internal::StructuredFieldExprTrait<F>::elem_type>) {
+                OP_ASSERT_MSG((reflected != index || this->_f->evalAt(index) == 0),
+                              "ASymmetric BC specified on a boundary which is evaluated to {} != 0.",
+                              this->_f->evalAt(index));
+            } else {
+                OP_ASSERT_MSG((reflected != index
+                               || this->_f->evalAt(index) ==
+                                          typename internal::StructuredFieldExprTrait<F>::elem_type(0)),
+                              "ASymmetric BC specified on a boundary which is evaluated to {} != 0.",
+                              this->_f->evalAt(index).toString());
+            }
             return -this->_f->evalAt(reflected);
         }
 
@@ -196,6 +204,20 @@ namespace OpFlow {
         int dim = -1;
         DimPos pos = DimPos::start;
     };
+
+    template <BCType type, StructuredFieldExprType F>
+    auto genLogicalBC(const F& f, int dim, DimPos pos) {
+        if constexpr (type == BCType::Symm) {
+            return std::make_unique<SymmBC<F>>(f, dim, pos);
+        } else if constexpr (type == BCType::ASymm) {
+            return std::make_unique<ASymmBC<F>>(f, dim, pos);
+        } else if constexpr (type == BCType::Periodic) {
+            return std::make_unique<PeriodicBC<F>>(f, dim, pos);
+        } else {
+            OP_CRITICAL("type is not a logical bc type");
+            OP_ABORT;
+        }
+    }
 
 }// namespace OpFlow
 #endif//OPFLOW_LOGICALBC_HPP

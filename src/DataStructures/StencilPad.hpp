@@ -33,6 +33,13 @@ namespace OpFlow::DS {
     public:
         fake_map() = default;
 
+        bool operator==(const fake_map& other) const {
+            bool ret = _size == other._size;
+            if (!ret) return false;
+            for (auto i = 0; i < _size; ++i) ret &= val[i] == other.val[i];
+            return ret;
+        }
+
         auto& operator[](const K& key) {
             auto pos = -1;
             for (auto i = 0; i < _size; ++i) {
@@ -119,6 +126,17 @@ namespace OpFlow::DS {
                 ret += prefix + "\t" + fmt::format("({})\t {}\n", k.toString(), v);
             }
             ret += prefix + fmt::format("bias: {}", bias);
+            return ret;
+        }
+
+        bool operator==(const StencilPad& other) const { return pad == other.pad && bias == other.bias; }
+
+        auto operator+() const { return *this; }
+
+        auto operator-() const {
+            auto ret = *this;
+            for (auto& [k, v] : ret.pad) { v = -v; }
+            ret.bias = -ret.bias;
             return ret;
         }
 
