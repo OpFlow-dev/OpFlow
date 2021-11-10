@@ -31,7 +31,11 @@ namespace OpFlow {
             auto cond2 = e.bc[d].end && e.loc[d] == LocOnMesh::Center && i[d] == e.accessibleRange.end[d]
                          && (e.bc[d].end->getBCType() == BCType::Neum
                              || e.bc[d].end->getBCType() == BCType::Dirc);
-            return cond0 || cond1 || cond2;
+            auto cond3 = i[d] <= e.accessibleRange.start[d] && e.bc[d].start
+                         && isLogicalBC(e.bc[d].start->getBCType());
+            auto cond4 = i[d] >= e.accessibleRange.end[d] && e.bc[d].end
+                         && isLogicalBC(e.bc[d].end->getBCType());
+            return cond0 || cond1 || cond2 || cond3 || cond4;
         }
         template <CartesianFieldExprType E, typename I>
         OPFLOW_STRONG_INLINE static auto eval_safe(const E& e, I i) {
@@ -49,6 +53,28 @@ namespace OpFlow {
                            * 2.0;
                 }
             }
+            // logical left bc case
+            if (i[d] <= e.accessibleRange.start[d] && e.bc[d].start
+                && isLogicalBC(e.bc[d].start->getBCType())) {
+                auto i1 = i, i2 = i;
+                int len_d = e.accessibleRange.end[d] - e.accessibleRange.start[d];
+                switch (e.bc[d].start->getBCType()) {
+                    case BCType::Periodic:
+                        i1[d] = ((i1[d] - e.accessibleRange.start[d]) % len_d + len_d) % len_d
+                                + e.accessibleRange.start[d];
+                        i2[d] = ((i1[d] - 1 - e.accessibleRange.start[d]) % len_d + len_d) % len_d
+                                + e.accessibleRange.start[d];
+                        return (e.evalSafeAt(i1) - e.evalSafeAt(i2))
+                               / (e.loc[d] == LocOnMesh::Corner
+                                          ? e.mesh.dx(d, i2[d])
+                                          : (e.mesh.dx(d, i1[d]) + e.mesh.dx(d, i2[d])) * 0.5);
+                    case BCType::Symm:
+                    case BCType::ASymm:
+                    default:
+                        OP_NOT_IMPLEMENTED;
+                        OP_ABORT;
+                }
+            }
             // right bc case
             if (e.bc[d].end && e.loc[d] == LocOnMesh::Center && i[d] == e.accessibleRange.end[d]) {
                 if (e.bc[d].end->getBCType() == BCType::Neum) return e.bc[d].end->evalAt(i);
@@ -56,6 +82,27 @@ namespace OpFlow {
                     // assume asymmetric extension
                     return (e.bc[d].end->evalAt(i) - e.evalAt(i.template prev<d>())) * e.mesh.idx(d, i[d] - 1)
                            * 2.0;
+                }
+            }
+            // logical right bc case
+            if (i[d] >= e.accessibleRange.end[d] && e.bc[d].end && isLogicalBC(e.bc[d].end->getBCType())) {
+                auto i1 = i, i2 = i;
+                int len_d = e.accessibleRange.end[d] - e.accessibleRange.start[d];
+                switch (e.bc[d].start->getBCType()) {
+                    case BCType::Periodic:
+                        i1[d] = ((i1[d] - e.accessibleRange.start[d]) % len_d + len_d) % len_d
+                                + e.accessibleRange.start[d];
+                        i2[d] = ((i1[d] - 1 - e.accessibleRange.start[d]) % len_d + len_d) % len_d
+                                + e.accessibleRange.start[d];
+                        return (e.evalSafeAt(i1) - e.evalSafeAt(i2))
+                               / (e.loc[d] == LocOnMesh::Corner
+                                          ? e.mesh.dx(d, i2[d])
+                                          : (e.mesh.dx(d, i1[d]) + e.mesh.dx(d, i2[d])) * 0.5);
+                    case BCType::Symm:
+                    case BCType::ASymm:
+                    default:
+                        OP_NOT_IMPLEMENTED;
+                        OP_ABORT;
                 }
             }
             // not handled case

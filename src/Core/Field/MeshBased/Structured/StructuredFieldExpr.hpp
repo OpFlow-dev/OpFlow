@@ -38,10 +38,7 @@ namespace OpFlow {
         std::vector<RangeType> splitMap;///< Map of rank to range for distributed parallelization
         std::vector<std::pair<int, RangeType>> neighbors;///< Neighbor patches rank & range info
 
-        std::array<
-                DS::Pair<std::unique_ptr<BCBase<Derived>>>,
-                internal::FieldExprTrait<Derived>::dim>
-                bc;
+        std::array<DS::Pair<std::unique_ptr<BCBase<Derived>>>, internal::FieldExprTrait<Derived>::dim> bc;
 
         StructuredFieldExpr() = default;
         StructuredFieldExpr(const StructuredFieldExpr& other)
@@ -58,10 +55,12 @@ namespace OpFlow {
                             this->bc[i].start = genLogicalBC<BCType::Symm>(this->derived(), i, DimPos::start);
                             break;
                         case BCType::ASymm:
-                            this->bc[i].start = genLogicalBC<BCType::ASymm>(this->derived(), i, DimPos::start);
+                            this->bc[i].start
+                                    = genLogicalBC<BCType::ASymm>(this->derived(), i, DimPos::start);
                             break;
                         case BCType::Periodic:
-                            this->bc[i].start = genLogicalBC<BCType::Periodic>(this->derived(), i, DimPos::start);
+                            this->bc[i].start
+                                    = genLogicalBC<BCType::Periodic>(this->derived(), i, DimPos::start);
                             break;
                         default:
                             OP_CRITICAL("{} is not a logical bc type", other.bc[i].start->getTypeName());
@@ -117,18 +116,22 @@ namespace OpFlow {
                         = std::is_same_v<typename internal::StructuredFieldExprTrait<Other>::elem_type,
                                          typename internal::StructuredFieldExprTrait<Derived>::elem_type>;
                 if constexpr (convertible) {
-                    bc[i].start = other.bc[i].start ? genProxyBC<Derived, Other>(*other.bc[i].start) : nullptr;
+                    bc[i].start
+                            = other.bc[i].start ? genProxyBC<Derived, Other>(*other.bc[i].start) : nullptr;
                     if (bc[i].start && isLogicalBC(bc[i].start->getBCType())) {
                         // if base.bc[i].start is a logical bc, we build a new instance of the same type bc
                         switch (other.bc[i].start->getBCType()) {
                             case BCType::Symm:
-                                this->bc[i].start = genLogicalBC<BCType::Symm>(this->derived(), i, DimPos::start);
+                                this->bc[i].start
+                                        = genLogicalBC<BCType::Symm>(this->derived(), i, DimPos::start);
                                 break;
                             case BCType::ASymm:
-                                this->bc[i].start = genLogicalBC<BCType::ASymm>(this->derived(), i, DimPos::start);
+                                this->bc[i].start
+                                        = genLogicalBC<BCType::ASymm>(this->derived(), i, DimPos::start);
                                 break;
                             case BCType::Periodic:
-                                this->bc[i].start = genLogicalBC<BCType::Periodic>(this->derived(), i, DimPos::start);
+                                this->bc[i].start
+                                        = genLogicalBC<BCType::Periodic>(this->derived(), i, DimPos::start);
                                 break;
                             default:
                                 OP_CRITICAL("{} is not a logical bc type", other.bc[i].start->getTypeName());
@@ -143,10 +146,12 @@ namespace OpFlow {
                                 this->bc[i].end = genLogicalBC<BCType::Symm>(this->derived(), i, DimPos::end);
                                 break;
                             case BCType::ASymm:
-                                this->bc[i].end = genLogicalBC<BCType::ASymm>(this->derived(), i, DimPos::end);
+                                this->bc[i].end
+                                        = genLogicalBC<BCType::ASymm>(this->derived(), i, DimPos::end);
                                 break;
                             case BCType::Periodic:
-                                this->bc[i].end = genLogicalBC<BCType::Periodic>(this->derived(), i, DimPos::end);
+                                this->bc[i].end
+                                        = genLogicalBC<BCType::Periodic>(this->derived(), i, DimPos::end);
                                 break;
                             default:
                                 OP_CRITICAL("{} is not a logical bc type", other.bc[i].end->getTypeName());
