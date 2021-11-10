@@ -26,7 +26,7 @@ namespace OpFlow {
                                 typename internal::FieldExprTrait<From>::index_type> struct ProxyBC
         : BCBase<To> {
         ProxyBC() = default;
-        explicit ProxyBC(const BCBase<From>& src) : _src(&src) {}
+        explicit ProxyBC(const BCBase<From>& src) : _src(std::move(src.getCopy())) {}
         ProxyBC(BCBase<From>&& src) = delete;
 
         [[nodiscard]] BCType getBCType() const override { return _src->getBCType(); }
@@ -40,7 +40,7 @@ namespace OpFlow {
             return _src->evalAt(index);
         }
 
-        std::unique_ptr<BCBase<To>> getCopy() const override { return std::make_unique<ProxyBC>(*this); }
+        std::unique_ptr<BCBase<To>> getCopy() const override { return std::make_unique<ProxyBC>(*_src); }
 
     protected:
         // Proxy object is read-only, assign takes no effect
@@ -49,7 +49,7 @@ namespace OpFlow {
         }
 
     private:
-        const BCBase<From>* _src;
+        std::unique_ptr<BCBase<From>> _src;
     };
 
     // This is used to convert BCs of different data types. E.g., a bc of a real type field
