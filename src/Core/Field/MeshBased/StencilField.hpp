@@ -78,8 +78,9 @@ namespace OpFlow {
                             OP_ABORT;
                     }
                 } else {
-                    this->bc[i].end = genProxyBC<typename internal::MeshBasedFieldExprTrait<StencilField>::type>(
-                            *(base.bc[i].end));
+                    this->bc[i].end
+                            = genProxyBC<typename internal::MeshBasedFieldExprTrait<StencilField>::type>(
+                                    *(base.bc[i].end));
                 }
             }
         }

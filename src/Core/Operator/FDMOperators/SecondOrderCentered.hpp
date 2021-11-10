@@ -199,12 +199,16 @@ namespace OpFlow {
             expr.bc[d].end = nullptr;
             for (auto i = 0; i < dim; ++i) {
                 if (i != d) {
-                    expr.bc[i].start = expr.arg1.bc[i].start ? genProxyBC<Meta::RealType<decltype(expr)>,
+                    expr.bc[i].start = expr.arg1.bc[i].start
+                                               ? genProxyBC<Meta::RealType<decltype(expr)>,
                                                             Meta::RealType<decltype(expr.arg1)>>(
                                                        *expr.arg1.bc[i].start)
                                                : nullptr;
-                    expr.bc[i].end = expr.arg1.bc[i].end ? genProxyBC<Meta::RealType<decltype(expr)>,
-                                                                      Meta::RealType<decltype(expr.arg1)>>(*expr.arg1.bc[i].end) : nullptr;
+                    expr.bc[i].end
+                            = expr.arg1.bc[i].end
+                                      ? genProxyBC<Meta::RealType<decltype(expr)>,
+                                                   Meta::RealType<decltype(expr.arg1)>>(*expr.arg1.bc[i].end)
+                                      : nullptr;
                     OP_WARN("BC for result expr not calculated.");
                 }
             }
