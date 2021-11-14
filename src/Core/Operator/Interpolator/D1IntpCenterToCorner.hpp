@@ -24,12 +24,10 @@ namespace OpFlow {
 
         template <CartesianFieldExprType T>
         OPFLOW_STRONG_INLINE static auto couldSafeEval(const T& e, auto&& i) {
-            auto cond0 = e.accessibleRange.start[d] < i[d] && i[d] < e.accessibleRange.end[d];
-            auto cond1 = i[d] == e.accessibleRange.start[d] && e.bc[d].start
-                         && e.bc[d].start->getBCType() == BCType::Dirc;
-            auto cond2 = i[d] == e.accessibleRange.end[d] && e.bc[d].end
-                         && e.bc[d].end->getBCType() == BCType::Dirc;
-            return cond0 || cond1 || cond2;
+            try {
+                eval_safe(e, i);
+            } catch (const CouldNotSafeEval& e) { return false; }
+            return true;
         }
 
         template <CartesianFieldExprType T>
@@ -60,8 +58,8 @@ namespace OpFlow {
                     goto error_case;
             } else {
             error_case:
-                OP_ERROR("Cannot eval D1IntpCenterToCorner<{}>({}) at {}", d, e.name, i.toString());
-                OP_ABORT;
+                throw CouldNotSafeEval(fmt::format("Cannot eval D1IntpCenterToCorner<{}>({}) at {}", d,
+                                                   e.name, i.toString()));
             }
         }
 
@@ -77,39 +75,18 @@ namespace OpFlow {
 
         template <CartesianFieldExprType T>
         static void prepare(Expression<D1IntpCenterToCorner, T>& expr) {
+            expr.initPropsFrom(expr.arg1);
             expr.name = fmt::format("D1IntpCenterToCorner<{}>({})", d, expr.arg1.name);
             expr.loc = expr.arg1.loc;
             expr.loc[d] = LocOnMesh::Corner;
             expr.mesh = expr.arg1.mesh.getView();
-            expr.accessibleRange = expr.arg1.accessibleRange;
-            expr.localRange = expr.arg1.localRange;
-            if (!(expr.arg1.bc[d].start
-                  && (expr.arg1.bc[d].start->getBCType() == BCType::Dirc
-                      || expr.arg1.bc[d].start->getBCType() == BCType::Neum))) {
-                expr.accessibleRange.start[d]++;
-                expr.localRange.start[d]++;
-            }
-            if (expr.arg1.bc[d].end
-                && (expr.arg1.bc[d].end->getBCType() == BCType::Dirc
-                    || expr.arg1.bc[d].end->getBCType() == BCType::Neum)) {
-                expr.accessibleRange.end[d]++;
-                expr.localRange.end[d]++;
-            }
+            expr.accessibleRange.start[d]++;
+            expr.localRange.start[d]++;
+            //expr.accessibleRange.end[d]--;
+            //expr.localRange.end[d]--;
+            //expr.logicalRange.start[d]++;
+            //expr.logicalRange.end[d]--;
             expr.assignableRange.setEmpty();
-            for (auto i = 0; i < internal::CartesianFieldExprTrait<T>::dim; ++i) {
-                // todo: introduce bc type detection and correct the impl here
-
-                expr.bc[i].start
-                        = expr.arg1.bc[i].start
-                                  ? genProxyBC<Meta::RealType<decltype(expr)>,
-                                               Meta::RealType<decltype(expr.arg1)>>(*expr.arg1.bc[i].start)
-                                  : nullptr;
-                expr.bc[i].end
-                        = expr.arg1.bc[i].end
-                                  ? genProxyBC<Meta::RealType<decltype(expr)>,
-                                               Meta::RealType<decltype(expr.arg1)>>(*expr.arg1.bc[i].end)
-                                  : nullptr;
-            }
         }
     };
 

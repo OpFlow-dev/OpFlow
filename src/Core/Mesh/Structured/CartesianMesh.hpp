@@ -22,26 +22,29 @@
 #include "DataStructures/Arrays/OffsetVector.hpp"
 #include "DataStructures/Pair.hpp"
 #include "DataStructures/Range/Ranges.hpp"
+#include "Math/Function/Integral.hpp"
 #include <array>
 #include <concepts>
 #include <cstdarg>
 
 namespace OpFlow {
+    enum class MeshExtMode { Undefined, Symm, Periodic, Uniform };
+
     template <typename Dim>
     struct CartesianMesh : CartesianMeshBase<CartesianMesh<Dim>> {
         static constexpr Size dim = internal::MeshTrait<CartesianMesh>::dim;
 
         std::array<int, dim> _dims;
-        DS::Range<dim> _range;
+        DS::Range<dim> _range, _ext_range;
         std::array<std::vector<OpFlow::Real>, dim> _x;
         std::array<std::vector<OpFlow::Real>, dim> _dx, _idx;
 
-        auto x(int d, int i) const { return _x[d][i - _range.start[d]]; }
-        auto x(int d, const DS::MDIndex<dim>& i) const { return _x[d][i[d] - _range.start[d]]; }
-        auto dx(int d, int i) const { return _dx[d][i - _range.start[d]]; }
-        auto dx(int d, const DS::MDIndex<dim>& i) const { return _dx[d][i[d] - _range.start[d]]; }
-        auto idx(int d, int i) const { return _idx[d][i - _range.start[d]]; }
-        auto idx(int d, const DS::MDIndex<dim>& i) const { return _idx[d][i[d] - _range.start[d]]; }
+        auto x(int d, int i) const { return _x[d][i - _ext_range.start[d]]; }
+        auto x(int d, const DS::MDIndex<dim>& i) const { return _x[d][i[d] - _ext_range.start[d]]; }
+        auto dx(int d, int i) const { return _dx[d][i - _ext_range.start[d]]; }
+        auto dx(int d, const DS::MDIndex<dim>& i) const { return _dx[d][i[d] - _ext_range.start[d]]; }
+        auto idx(int d, int i) const { return _idx[d][i - _ext_range.start[d]]; }
+        auto idx(int d, const DS::MDIndex<dim>& i) const { return _idx[d][i[d] - _ext_range.start[d]]; }
 
         auto getPtr() const { return this; }
 
@@ -56,6 +59,7 @@ namespace OpFlow {
         auto getEnd() const { return DS::MDIndex<dim>(_range.end); }
         auto getEndOf(int i) const { return _range.end[i]; }
         const auto& getRange() const { return _range; }
+        const auto& getExtRange() const { return _ext_range; }
 
         auto operator==(const CartesianMesh& other) const {
             if (this == &other) return true;
@@ -72,13 +76,14 @@ namespace OpFlow {
         operator=(const CartesianMeshView<Other>& view) {
             _dims = view.getDims();
             _range = view.getRange();
+            _ext_range = view.getExtRange();
             for (auto i = 0; i < dim; ++i) {
-                for (auto j = _range.start[i]; j < _range.end[i]; ++j) {
-                    _x[i][j - _range.start[i]] = view.x(i, j);
+                for (auto j = _ext_range.start[i]; j < _ext_range.end[i]; ++j) {
+                    _x[i][j - _ext_range.start[i]] = view.x(i, j);
                 }
-                for (auto j = _range.start[i]; j < _range.end[i] - 1; ++j) {
-                    _dx[i][j - _range.start[i]] = view.dx(i, j);
-                    _idx[i][j - _range.start[i]] = view.idx(i, j);
+                for (auto j = _ext_range.start[i]; j < _ext_range.end[i] - 1; ++j) {
+                    _dx[i][j - _ext_range.start[i]] = view.dx(i, j);
+                    _idx[i][j - _ext_range.start[i]] = view.idx(i, j);
                 }
             }
             return *this;
@@ -88,10 +93,10 @@ namespace OpFlow {
         bool commonRangeEqualTo(const CartesianMesh& other) const {
             bool ret = true;
             for (auto i = 0; i < dim; ++i) {
-                auto start = std::max(_range.start[i], other._range.start[i]);
-                auto end = std::min(_range.end[i], other._range.end[i]);
+                auto start = std::max(_ext_range.start[i], other._ext_range.start[i]);
+                auto end = std::min(_ext_range.end[i], other._ext_range.end[i]);
                 for (auto j = start; j < end; ++j) {
-                    ret &= _x[i][j] == other._x[i][j];
+                    ret &= _x[i][j - _ext_range.start[i]] == other._x[i][j - other._ext_range.start[i]];
                     if (!ret) return false;
                 }
             }
@@ -101,10 +106,10 @@ namespace OpFlow {
         bool commonRangeEqualTo(const Other& other) const {
             bool ret = true;
             for (auto i = 0; i < dim; ++i) {
-                auto start = std::max(_range.start[i], other.getRange().start[i]);
-                auto end = std::min(_range.end[i], other.getRange().end[i]);
+                auto start = std::max(_ext_range.start[i], other.getExtRange().start[i]);
+                auto end = std::min(_ext_range.end[i], other.getExtRange().end[i]);
                 for (auto j = start; j < end; ++j) {
-                    ret &= _x[i][j] == other.x(i, j);
+                    ret &= _x[i][j - _ext_range.start[i]] == other.x(i, j);
                     if (!ret) return false;
                 }
             }
@@ -117,41 +122,23 @@ namespace OpFlow {
     private:
         static constexpr auto dim = internal::MeshTrait<CartesianMesh<Dim>>::dim;
         CartesianMesh<Dim> mesh;
+        int padding_width = 5;
+        std::array<int, dim> start;
+        std::array<MeshExtMode, dim> ext_mode;
 
     public:
         auto& newMesh(Index dim1, ...) {
             va_list ap;
             va_start(ap, dim1);
             mesh._dims[0] = dim1;
-            mesh._x[0].resize(mesh._dims[0]);
-            mesh._dx[0].resize(mesh._dims[0] - 1);
-            mesh._idx[0].resize(mesh._dims[0] - 1);
-            for (Index i = 1; i < dim; ++i) {
-                mesh._dims[i] = va_arg(ap, Index);
-                mesh._x[i].resize(mesh._dims[i]);
-                mesh._dx[i].resize(mesh._dims[i] - 1);
-                mesh._idx[i].resize(mesh._dims[i] - 1);
-            }
+            for (Index i = 1; i < dim; ++i) { mesh._dims[i] = va_arg(ap, Index); }
             va_end(ap);
-            for (auto i = 0; i < dim; ++i) {
-                mesh._range.start[i] = 0;
-                mesh._range.end[i] = mesh._dims[i];
-            }
             return *this;
         }
 
         template <Meta::BracketIndexable Array>
         auto& newMesh(const Array& d) {
-            for (Index i = 0; i < dim; ++i) {
-                mesh._dims[i] = d[i];
-                mesh._x[i].resize(mesh._dims[i]);
-                mesh._dx[i].resize(mesh._dims[i] - 1);
-                mesh._idx[i].resize(mesh._dims[i] - 1);
-            }
-            for (auto i = 0; i < dim; ++i) {
-                mesh._range.start[i] = 0;
-                mesh._range.end[i] = mesh._dims[i];
-            }
+            for (Index i = 0; i < dim; ++i) { mesh._dims[i] = d[i]; }
             return *this;
         }
 
@@ -160,20 +147,13 @@ namespace OpFlow {
             return *this;
         }
 
-        auto& resize1D(int d, int size) {
-            mesh._dims[d] = size;
-            mesh._x[d].resize(size);
-            mesh._dx[d].resize(size);
-            mesh._idx[d].resize(size);
-            mesh._range.end[d] = mesh._range.start[d] + size;
+        auto& setPadWidth(int w) {
+            padding_width = w;
             return *this;
         }
 
-        auto& setStart(auto&& start) {
-            for (auto i = 0; i < dim; ++i) {
-                mesh._range.end[i] += start[i] - mesh._range.start[i];
-                mesh._range.start[i] = start[i];
-            }
+        auto& setStart(auto&& s) {
+            start = s;
             return *this;
         }
 
@@ -186,6 +166,16 @@ namespace OpFlow {
 
         auto& setMeshOfDim(Index k, Real min, Real max) {
             set1DMesh(min, max, k);
+            return *this;
+        }
+
+        auto& setExtMode(MeshExtMode m) {
+            for (auto& mode : ext_mode) { mode = m; }
+            return *this;
+        }
+
+        auto& setExtModeOfDim(Index k, MeshExtMode m) {
+            ext_mode[k] = m;
             return *this;
         }
 
@@ -214,22 +204,100 @@ namespace OpFlow {
         auto&& build() { return std::move(mesh); }
 
     private:
-        void set1DMesh(const MeshSetter& f, Index k) {
-            for (Index i = 0; i < mesh._dims[k]; ++i) { mesh._x[k][i] = f(i + mesh._range.start[i]); }
-            for (Index j = 0; j < mesh._dims[k] - 1; ++j) {
-                mesh._dx[k][j] = (mesh._x[k][j + 1] - mesh._x[k][j]);
-                mesh._idx[k][j] = 1. / mesh._dx[k][j];
+        void set1DRange(Index k) {
+            mesh._range.start[k] = start[k];
+            mesh._range.end[k] = start[k] + mesh._dims[k];
+            mesh._ext_range.start[k] = mesh._range.start[k] - padding_width;
+            mesh._ext_range.end[k] = mesh._range.end[k] + padding_width;
+            mesh._x[k].resize(mesh._ext_range.end[k] - mesh._ext_range.start[k]);
+            mesh._dx[k].resize(mesh._ext_range.end[k] - mesh._ext_range.start[k] - 1);
+            mesh._idx[k].resize(mesh._ext_range.end[k] - mesh._ext_range.start[k] - 1);
+        }
+
+        void setExtMesh(Index k) {
+            // ext mesh
+            switch (ext_mode[k]) {
+                    // default mode is Symm
+                case MeshExtMode::Undefined:
+                case MeshExtMode::Symm:
+                    for (Index i = mesh._ext_range.start[k]; i < mesh._range.start[k]; ++i) {
+                        mesh._dx[k][i - mesh._ext_range.start[k]]
+                                = mesh._dx[k][2 * mesh._range.start[k] - 1 - i - mesh._ext_range.start[k]];
+                        mesh._idx[k][i - mesh._ext_range.start[k]]
+                                = 1. / mesh._dx[k][i - mesh._ext_range.start[k]];
+                    }
+                    for (Index i = mesh._range.end[k] - 1; i < mesh._ext_range.end[k] - 1; ++i) {
+                        mesh._dx[k][i - mesh._ext_range.start[k]]
+                                = mesh._dx[k][2 * mesh._range.end[k] - 3 - i - mesh._ext_range.start[k]];
+                        mesh._idx[k][i - mesh._ext_range.start[k]]
+                                = 1. / mesh._dx[k][i - mesh._ext_range.start[k]];
+                    }
+                    break;
+                case MeshExtMode::Periodic:
+                    for (Index i = mesh._ext_range.start[k]; i < mesh._range.start[k]; ++i) {
+                        mesh._dx[k][i - mesh._ext_range.start[k]]
+                                = mesh._dx[k][mesh._range.end[k] - (mesh._range.start[k] - i)
+                                              - mesh._ext_range.start[k]];
+                        mesh._idx[k][i - mesh._ext_range.start[k]]
+                                = 1. / mesh._dx[k][i - mesh._ext_range.start[k]];
+                    }
+                    for (Index i = mesh._range.end[k] - 1; i < mesh._ext_range.end[k] - 1; ++i) {
+                        mesh._dx[k][i - mesh._ext_range.start[k]]
+                                = mesh._dx[k][mesh._range.start[k] + i - mesh._range.end[k] + 1
+                                              - mesh._ext_range.start[k]];
+                        mesh._idx[k][i - mesh._ext_range.start[k]]
+                                = 1. / mesh._dx[k][i - mesh._ext_range.start[k]];
+                    }
+                    break;
+                case MeshExtMode::Uniform:
+                    for (Index i = mesh._ext_range.start[k]; i < mesh._range.start[k]; ++i) {
+                        mesh._dx[k][i - mesh._ext_range.start[k]]
+                                = mesh._dx[k][mesh._range.start[k] - mesh._ext_range.start[k]];
+                        mesh._idx[k][i - mesh._ext_range.start[k]]
+                                = 1. / mesh._dx[k][i - mesh._ext_range.start[k]];
+                    }
+                    for (Index i = mesh._range.end[k] - 1; i < mesh._ext_range.end[k] - 1; ++i) {
+                        mesh._dx[k][i - mesh._ext_range.start[k]]
+                                = mesh._dx[k][mesh._range.end[k] - 2 - mesh._ext_range.start[k]];
+                        mesh._idx[k][i - mesh._ext_range.start[k]]
+                                = 1. / mesh._idx[k][i - mesh._ext_range.start[k]];
+                    }
+            }
+            // integrate x
+            for (Index i = mesh._range.start[k] - 1; i >= mesh._ext_range.start[k]; --i) {
+                mesh._x[k][i - mesh._ext_range.start[k]] = mesh._x[k][i + 1 - mesh._ext_range.start[k]]
+                                                           - mesh._dx[k][i - mesh._ext_range.start[k]];
+            }
+            for (Index i = mesh._range.end[k]; i < mesh._ext_range.end[k]; ++i) {
+                mesh._x[k][i - mesh._ext_range.start[k]] = mesh._x[k][i - 1 - mesh._ext_range.start[k]]
+                                                           + mesh._dx[k][i - 1 - mesh._ext_range.start[k]];
             }
         }
 
+        void set1DMesh(const MeshSetter& f, Index k) {
+            set1DRange(k);
+            for (Index i = mesh._range.start[k]; i < mesh._range.end[k]; ++i) {
+                mesh._x[k][i - mesh._ext_range.start[k]] = f(i);
+            }
+            for (Index j = mesh._range.start[k]; j < mesh._range.end[k] - 1; ++j) {
+                mesh._dx[k][j - mesh._ext_range.start[k]] = (mesh._x[k][j + 1 - mesh._ext_range.start[k]]
+                                                             - mesh._x[k][j - mesh._ext_range.start[k]]);
+                mesh._idx[k][j - mesh._ext_range.start[k]] = 1. / mesh._dx[k][j - mesh._ext_range.start[k]];
+            }
+            setExtMesh(k);
+        }
+
         void set1DMesh(Real min, Real max, Index k) {
-            for (Index i = 0; i < mesh._dims[k]; ++i) {
-                mesh._x[k][i] = (max - min) / (mesh._dims[k] - 1) * i + min;
+            set1DRange(k);
+            for (Index i = mesh._range.start[k]; i < mesh._range.end[k]; ++i) {
+                mesh._x[k][i - mesh._ext_range.start[k]]
+                        = (max - min) / (mesh._dims[k] - 1) * (i - mesh._range.start[k]) + min;
             }
-            for (Index j = 0; j < mesh._dims[k] - 1; ++j) {
-                mesh._dx[k][j] = (max - min) / (mesh._dims[k] - 1);
-                mesh._idx[k][j] = 1. / mesh._dx[k][j];
+            for (Index j = mesh._range.start[k]; j < mesh._range.end[k] - 1; ++j) {
+                mesh._dx[k][j - mesh._ext_range.start[k]] = (max - min) / (mesh._dims[k] - 1);
+                mesh._idx[k][j - mesh._ext_range.start[k]] = 1. / mesh._dx[k][j - mesh._ext_range.start[k]];
             }
+            setExtMesh(k);
         }
     };
 }// namespace OpFlow

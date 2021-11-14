@@ -130,25 +130,6 @@ namespace OpFlow {
             expr.loc = expr.arg1.loc;
             expr.loc[d] = expr.arg1.loc[d] == LocOnMesh::Center ? LocOnMesh::Corner : LocOnMesh::Center;
 
-            // bc
-            expr.bc[d].start = nullptr;
-            expr.bc[d].end = nullptr;
-            for (auto i = 0; i < dim; ++i) {
-                if (i != d) {
-                    expr.bc[i].start = expr.arg1.bc[i].start
-                                               ? genProxyBC<Meta::RealType<decltype(expr)>,
-                                                            Meta::RealType<decltype(expr.arg1)>>(
-                                                       *expr.arg1.bc[i].start)
-                                               : nullptr;
-                    expr.bc[i].end
-                            = expr.arg1.bc[i].end
-                                      ? genProxyBC<Meta::RealType<decltype(expr)>,
-                                                   Meta::RealType<decltype(expr.arg1)>>(*expr.arg1.bc[i].end)
-                                      : nullptr;
-                    OP_WARN("BC for result expr not calculated.");
-                }
-            }
-
             // ranges
             expr.accessibleRange = expr.arg1.accessibleRange;
             if (expr.arg1.loc[d] == LocOnMesh::Corner) {
@@ -156,8 +137,7 @@ namespace OpFlow {
                 expr.accessibleRange.start[d]++;
             } else {
                 // center case
-                if (!expr.arg1.bc[d].start) { expr.accessibleRange.start[d]++; }
-                if (expr.arg1.bc[d].end) { expr.accessibleRange.end[d]++; }
+                expr.accessibleRange.start[d]++;
             }
             expr.localRange = expr.accessibleRange;
             // make the result expr read-only

@@ -134,12 +134,6 @@ namespace OpFlow {
             // name
             expr.name = fmt::format("Convolution<{}>({})", d, expr.arg1.name);
 
-            // bc
-            for (auto i = 0; i < d; ++i) {
-                expr.bc[i].start = nullptr;
-                expr.bc[i].end = nullptr;
-            }
-
             // ranges
             for (auto i = 0; i < d; ++i) {
                 expr.accessibleRange.start[i] += dims[i] / 2;

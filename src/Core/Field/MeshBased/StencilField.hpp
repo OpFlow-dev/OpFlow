@@ -28,8 +28,19 @@ namespace OpFlow {
 
     template <StructuredFieldExprType T>
     struct StencilField<T> : internal::StructuredFieldExprTrait<T>::template twin_type<StencilField<T>> {
+        std::array<DS::Pair<std::unique_ptr<BCBase<StencilField>>>, internal::ExprTrait<StencilField>::dim> bc;
+
         StencilField() = default;
-        StencilField(const StencilField&) = default;
+        StencilField(const StencilField& other) : internal::StructuredFieldExprTrait<T>::template twin_type<StencilField<T>>(other) {
+            for (auto i = 0; i < internal::ExprTrait<StencilField>::dim; ++i) {
+                bc[i].start = other.bc[i].start ? other.bc[i].start->getCopy() : nullptr;
+                if (isLogicalBC(bc[i].start->getBCType()))
+                    dynamic_cast<LogicalBCBase<StencilField>*>(bc[i].start.get())->rebindField(*this);
+                bc[i].end = other.bc[i].end ? other.bc[i].end->getCopy() : nullptr;
+                if (isLogicalBC(bc[i].end->getBCType()))
+                    dynamic_cast<LogicalBCBase<StencilField>*>(bc[i].end.get())->rebindField(*this);
+            }
+        }
         StencilField(StencilField&&) noexcept = default;
         explicit StencilField(const T& base) : base(&base) {
             this->name = fmt::format("StencilField({})", base.name);
