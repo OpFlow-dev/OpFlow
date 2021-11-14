@@ -36,27 +36,35 @@ namespace OpFlow {
         }
         template <CartesianFieldExprType E, typename I>
         OPFLOW_STRONG_INLINE static auto eval_safe(const E& e, I i) {
-            if (e.accessibleRange.start[d] <= i[d] && i[d] + 1 < e.accessibleRange.end[d])
+            if constexpr (CartesianFieldType<E>) {
+                if (e.accessibleRange.start[d] <= i[d] && i[d] + 1 < e.accessibleRange.end[d])
+                    return (e.evalSafeAt(i.template next<d>()) - e.evalSafeAt(i))
+                           / (e.loc[d] == LocOnMesh::Corner
+                                      ? e.mesh.dx(d, i[d])
+                                      : (e.mesh.dx(d, i[d]) + e.mesh.dx(d, i[d] + 1)) * 0.5);
+                // left bc case
+                if (e.bc[d].start && e.loc[d] == LocOnMesh::Center
+                    && i[d] + 1 == e.accessibleRange.start[d]) {
+                    if (e.bc[d].start->getBCType() == BCType::Neum) return e.bc[d].start->evalAt(i);
+                    else if (e.bc[d].start->getBCType() == BCType::Dirc) {
+                        // assume asymmetric extension
+                        return (e.evalAt(i.template next<d>()) - e.bc[d].start->evalAt(i))
+                               * (e.mesh.idx(d, i[d] + 1)) * 2.0;
+                    }
+                }
+                // right bc case
+                if (e.bc[d].end && e.loc[d] == LocOnMesh::Center && i[d] + 1 == e.accessibleRange.end[d]) {
+                    if (e.bc[d].end->getBCType() == BCType::Neum) return e.bc[d].end->evalAt(i);
+                    else if (e.bc[d].end->getBCType() == BCType::Dirc) {
+                        // assume asymmetric extension
+                        return (e.bc[d].end->evalAt(i) - e.evalAt(i)) * e.mesh.idx(d, i[d]) * 2.0;
+                    }
+                }
+            } else {
                 return (e.evalSafeAt(i.template next<d>()) - e.evalSafeAt(i))
                        / (e.loc[d] == LocOnMesh::Corner
-                                  ? e.mesh.dx(d, i[d])
-                                  : (e.mesh.dx(d, i[d]) + e.mesh.dx(d, i[d] + 1)) * 0.5);
-            // left bc case
-            if (e.bc[d].start && e.loc[d] == LocOnMesh::Center && i[d] + 1 == e.accessibleRange.start[d]) {
-                if (e.bc[d].start->getBCType() == BCType::Neum) return e.bc[d].start->evalAt(i);
-                else if (e.bc[d].start->getBCType() == BCType::Dirc) {
-                    // assume asymmetric extension
-                    return (e.evalAt(i.template next<d>()) - e.bc[d].start->evalAt(i))
-                           * (e.mesh.idx(d, i[d] + 1)) * 2.0;
-                }
-            }
-            // right bc case
-            if (e.bc[d].end && e.loc[d] == LocOnMesh::Center && i[d] + 1 == e.accessibleRange.end[d]) {
-                if (e.bc[d].end->getBCType() == BCType::Neum) return e.bc[d].end->evalAt(i);
-                else if (e.bc[d].end->getBCType() == BCType::Dirc) {
-                    // assume asymmetric extension
-                    return (e.bc[d].end->evalAt(i) - e.evalAt(i)) * e.mesh.idx(d, i[d]) * 2.0;
-                }
+                                  ? e.mesh.dx_s(d, i[d])
+                                  : (e.mesh.dx_s(d, i[d]) + e.mesh.dx_s(d, i[d] + 1)) * 0.5);
             }
             // not handled case
             OP_ERROR("Cannot handle current case.");
@@ -84,25 +92,6 @@ namespace OpFlow {
             expr.loc = expr.arg1.loc;
             expr.loc[d] = expr.arg1.loc[d] == LocOnMesh::Center ? LocOnMesh::Corner : LocOnMesh::Center;
 
-            // bc
-            expr.bc[d].start = nullptr;
-            expr.bc[d].end = nullptr;
-            for (auto i = 0; i < dim; ++i) {
-                if (i != d) {
-                    expr.bc[i].start = expr.arg1.bc[i].start
-                                               ? genProxyBC<Meta::RealType<decltype(expr)>,
-                                                            Meta::RealType<decltype(expr.arg1)>>(
-                                                       *expr.arg1.bc[i].start)
-                                               : nullptr;
-                    expr.bc[i].end
-                            = expr.arg1.bc[i].end
-                                      ? genProxyBC<Meta::RealType<decltype(expr)>,
-                                                   Meta::RealType<decltype(expr.arg1)>>(*expr.arg1.bc[i].end)
-                                      : nullptr;
-                    OP_WARN("BC for result expr not calculated.");
-                }
-            }
-
             // ranges
             expr.accessibleRange = expr.arg1.accessibleRange;
             if (expr.arg1.loc[d] == LocOnMesh::Corner) {
@@ -110,8 +99,7 @@ namespace OpFlow {
                 expr.accessibleRange.end[d]--;
             } else {
                 // center case
-                if (expr.arg1.bc[d].start) { expr.accessibleRange.start[d]--; }
-                if (!expr.arg1.bc[d].end) { expr.accessibleRange.end[d]--; }
+                expr.accessibleRange.end[d]--;
             }
             expr.localRange = expr.accessibleRange;
             // make the result expr read-only

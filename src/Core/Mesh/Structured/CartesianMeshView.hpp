@@ -24,7 +24,7 @@ namespace OpFlow {
     private:
         std::add_pointer_t<typename std::add_const<T>::type> base = nullptr;
         static constexpr auto dim = internal::MeshTrait<T>::dim;
-        DS::Range<dim> range;
+        DS::Range<dim> range, ext_range;
         std::array<int, dim> dims;
         DS::MDIndex<dim> offset {0};
 
@@ -37,6 +37,7 @@ namespace OpFlow {
         auto& operator=(const T& mesh) {
             base = mesh.getPtr();
             range = mesh.getRange();
+            ext_range = mesh.getExtRange();
             dims = mesh.getDims();
             return *this;
         }
@@ -50,6 +51,7 @@ namespace OpFlow {
         auto getEnd() const { return DS::MDIndex<dim> {range.end}; }
         auto getEndOf(int i) const { return range.end[i]; }
         auto getRange() const -> decltype(auto) { return range; }
+        auto getExtRange() const -> decltype(auto) { return ext_range; }
         void setRange(const DS::Range<dim>& r) {
             range = r;
             for (auto i = 0; i < dim; ++i) dims[i] = range.end[i] - range.start[i];

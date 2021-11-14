@@ -58,6 +58,12 @@ namespace OpFlow {
             return *this;
         }
 
+        template <Meta::Numerical D>
+        auto& operator=(const D& d) {
+            this->derived().assignImpl_final(d);
+            return *this;
+        }
+
         // return a non-const view of the underlying field
         auto getView() { return this->derived().getViewImpl_final(); }
 
@@ -73,14 +79,12 @@ namespace OpFlow {
         const auto& evalAt(auto&&... i) const {
             return this->derived().evalAtImpl_final(std::forward<decltype(i)>(i)...);
         }
-        const auto& evalSafeAt(auto&&... i) const {
+        // even for direct accessible expr, safe eval cannot get ref to elements
+        auto evalSafeAt(auto&&... i) const {
             return this->derived().evalSafeAtImpl_final(std::forward<decltype(i)>(i)...);
         }
         auto& evalAt(auto&&... i) {
             return this->derived().evalAtImpl_final(std::forward<decltype(i)>(i)...);
-        }
-        auto& evalSafeAt(auto&&... i) {
-            return this->derived().evalSafeAtImpl_final(std::forward<decltype(i)>(i)...);
         }
 
     private:
@@ -174,7 +178,7 @@ namespace OpFlow {
         const auto& evalAt(auto&&... i) const {
             return this->derived().evalAtImpl_final(OP_PERFECT_FOWD(i)...);
         }
-        const auto& evalSafeAt(auto&&... i) const {
+        auto evalSafeAt(auto&&... i) const {
             return this->derived().evalSafeAtImpl_final(OP_PERFECT_FOWD(i)...);
         }
 

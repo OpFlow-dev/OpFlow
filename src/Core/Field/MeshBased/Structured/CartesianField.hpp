@@ -31,12 +31,16 @@
 
 namespace OpFlow {
 
+    enum class FieldExtMode { Undefined, Periodic, Symm, ASymm };
+
     template <typename D, typename M, typename C = DS::PlainTensor<D, internal::MeshTrait<M>::dim>>
     struct CartesianField : CartesianFieldExpr<CartesianField<D, M, C>> {
         using index_type = typename internal::CartesianFieldExprTrait<CartesianField>::index_type;
 
     private:
         C data;
+        std::array<DS::Pair<int>, internal::MeshTrait<M>::dim> ext_width;
+        std::array<DS::Pair<FieldExtMode>, internal::MeshTrait<M>::dim> ext_mode;
         bool initialized = false;
 
     public:
@@ -46,17 +50,32 @@ namespace OpFlow {
         using Expr<CartesianField>::operator[];
         using Expr<CartesianField>::operator=;
 
+        std::array<DS::Pair<std::unique_ptr<BCBase<CartesianField>>>, internal::MeshTrait<M>::dim> bc;
+
         CartesianField() = default;
         CartesianField(const CartesianField& other)
-            : CartesianFieldExpr<CartesianField<D, M, C>>(other), data(other.data), initialized(true) {}
+            : CartesianFieldExpr<CartesianField<D, M, C>>(other), data(other.data),
+              ext_width(other.ext_width), ext_mode(other.ext_mode), initialized(true) {
+            for (auto i = 0; i < internal::ExprTrait<CartesianField>::dim; ++i) {
+                bc[i].start = other.bc[i].start ? other.bc[i].start->getCopy() : nullptr;
+                if (bc[i].start && isLogicalBC(bc[i].start->getBCType()))
+                    dynamic_cast<LogicalBCBase<CartesianField>*>(bc[i].start.get())->rebindField(*this);
+                bc[i].end = other.bc[i].end ? other.bc[i].end->getCopy() : nullptr;
+                if (bc[i].end && isLogicalBC(bc[i].end->getBCType()))
+                    dynamic_cast<LogicalBCBase<CartesianField>*>(bc[i].end.get())->rebindField(*this);
+            }
+        }
         CartesianField(CartesianField&& other) noexcept
             : CartesianFieldExpr<CartesianField<D, M, C>>(std::move(other)), data(std::move(other.data)),
-              initialized(true) {}
+              initialized(true), bc(std::move(other.bc)), ext_width(std::move(other.ext_width)),
+              ext_mode(std::move(other.ext_mode)) {}
 
         auto& assignImpl_final(const CartesianField& other) {
             if (!initialized) {
                 this->initPropsFrom(other);
                 data = other.data;
+                ext_width = other.ext_width;
+                ext_mode = other.ext_mode;
                 initialized = true;
             } else if (this != &other) {
                 internal::FieldAssigner::assign(other, *this);
@@ -68,10 +87,14 @@ namespace OpFlow {
         template <CartesianFieldExprType T>
         auto&
         assignImpl_final(T&& other) {// T is not const here for that we need to call other.prepare() later
+            other.prepare();
             if (!initialized) {
                 this->initPropsFrom(other);
-                if constexpr (CartesianFieldType<T>) data = other.data;
-                else {
+                if constexpr (CartesianFieldType<T>) {
+                    data = other.data;
+                    ext_width = other.ext_width;
+                    ext_mode = other.ext_mode;
+                } else {
                     this->data.reShape(this->localRange.getInnerRange(-this->padding).getExtends());
                     this->offset = typename internal::CartesianFieldExprTrait<CartesianField>::index_type(
                             this->localRange.getInnerRange(-this->padding).getOffset());
@@ -88,7 +111,8 @@ namespace OpFlow {
             }
             return *this;
         }
-        auto& operator=(const D& c) {
+
+        auto& assignImpl_final(const D& c) {
             if (!initialized) {
                 OP_CRITICAL("CartesianField not initialized. Cannot assign constant to it.");
                 OP_ABORT;
@@ -236,9 +260,47 @@ namespace OpFlow {
             return 0;
         }
         const auto& evalAtImpl_final(const index_type& i) const { return data[i - this->offset]; }
-        const auto& evalSafeAtImpl_final(const index_type& i) const { return data[i - this->offset]; }
+        auto evalSafeAtImpl_final(const index_type& i) const {
+            if (DS::inRange(this->accessibleRange, i)) {
+                if (DS::inRange(this->localRange.getInnerRange(-this->padding), i))
+                    return data[i - this->offset];
+                else
+                    throw CouldNotSafeEval(
+                            fmt::format("Index {} not in the current patch {}", i.toString(),
+                                        this->localRange.getInnerRange(-this->padding).toString()));
+            } else if (DS::inRange(this->logicalRange, i)) {
+                if (DS::inRange(this->localRange.getInnerRange(-this->padding), i)) {
+                    // fold one dim at one time
+                    for (int idx = 0; idx < this->dim; ++idx) {
+                        // left boundary case
+                        if (i[idx] < this->accessibleRange.start[idx]) {
+                            switch (this->ext_mode[idx].start) {
+                                case FieldExtMode::Symm:
+                                    if (this->loc[idx].start == LocOnMesh::Corner) {
+                                        auto ii = i; ii[idx] = 2 * this->mesh.getRange().start[idx] - i[idx];
+                                        return evalSafeAtImpl_final(ii);
+                                    } else {
+                                        auto ii = i; ii[idx] = 2 * this->mesh.getRange().start[idx] - 1 - i[idx];
+                                        return evalSafeAtImpl_final(ii);
+                                    }
+                                case FieldExtMode::ASymm:
+                                    if (this->loc[idx].start == LocOnMesh::Corner) {
+                                        auto ii = i; ii[idx] = 2 * this->mesh.getRange().start[idx] - i[idx];
+                                        return -evalSafeAtImpl_final(ii);
+                                    } else {
+                                        auto ii = i; ii[idx] = 2 * this->mesh.getRange().start[idx] - 1 - i[idx];
+                                        return -evalSafeAtImpl_final(ii);
+                                    }
+                                case FieldExtMode::Periodic:
+                                    // assume i fall in padding
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
         auto& evalAtImpl_final(const index_type& i) { return data[i - this->offset]; }
-        auto& evalSafeAtImpl_final(const index_type& i) { return data[i - this->offset]; }
 
         template <typename Other>
         requires(!std::same_as<Other, CartesianField>) bool containsImpl_final(const Other& o) const {
@@ -285,15 +347,23 @@ namespace OpFlow {
             OP_ASSERT(d < dim);
             OP_ASSERT(type != BCType::Dirc && type != BCType::Neum);
             auto& targetBC = pos == DimPos::start ? f.bc[d].start : f.bc[d].end;
+            auto& targetWidth = pos == DimPos::start ? f.ext_width[d].start : f.ext_width[d].end;
+            auto& targetMode = pos == DimPos::start ? f.ext_mode[d].start : f.ext_mode[d].end;
             switch (type) {
                 case BCType::Symm:
                     targetBC = std::make_unique<SymmBC<CartesianField<D, M, C>>>(f, d, pos);
+                    targetWidth = LARGE_INT;
+                    targetMode = FieldExtMode::Symm;
                     break;
                 case BCType::ASymm:
                     targetBC = std::make_unique<ASymmBC<CartesianField<D, M, C>>>(f, d, pos);
+                    targetWidth = LARGE_INT;
+                    targetMode = FieldExtMode ::ASymm;
                     break;
                 case BCType::Periodic:
                     targetBC = std::make_unique<PeriodicBC<CartesianField<D, M, C>>>(f, d, pos);
+                    targetWidth = LARGE_INT;
+                    targetMode = FieldExtMode::Periodic;
                     break;
                 default:
                     OP_ERROR("BC Type not supported.");
@@ -324,8 +394,9 @@ namespace OpFlow {
         // set a functor bc
         template <typename F>
         requires requires(F f) {
-            { f(std::declval<typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>()) }
-            ->std::convertible_to<typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
+            {
+                f(std::declval<typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>())
+                } -> std::convertible_to<typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
         }
         auto& setBC(int d, DimPos pos, BCType type, F&& functor) {
             OP_ASSERT(d < dim);
@@ -352,6 +423,16 @@ namespace OpFlow {
             return *this;
         }
 
+        auto& setAllowedExt(int d, DimPos pos, FieldExtMode mode, int width) {
+            if (pos == DimPos::start) {
+                f.ext_mode[d].start = mode;
+                f.ext_width[d].start = width;
+            } else {
+                f.ext_mode[d].end = mode;
+                f.ext_width[d].end = width;
+            }
+        }
+
         auto& setPadding(int p) {
             f.padding = p;
             return *this;
@@ -375,13 +456,17 @@ namespace OpFlow {
 
     private:
         void validateRanges() {
-            f.accessibleRange = commonRange(f.accessibleRange, f.mesh.getRange());
-            f.localRange = commonRange(f.localRange, f.accessibleRange);
+            // accessibleRange <= logicalRange
+            f.accessibleRange = commonRange(f.accessibleRange, f.logicalRange);
+            // localRange <= logicalRange
+            f.localRange = commonRange(f.localRange, f.logicalRange);
+            // assignableRange <= accessibleRange
+            f.assignableRange = commonRange(f.assignableRange, f.accessibleRange);
         }
 
         void calculateRanges() {
             // init ranges to mesh range
-            f.assignableRange = f.localRange = f.accessibleRange = f.mesh.getRange();
+            f.logicalRange = f.assignableRange = f.localRange = f.accessibleRange = f.mesh.getRange();
             // trim ranges according to bcs
             for (auto i = 0; i < dim; ++i) {
                 auto loc = f.loc[i];
@@ -428,6 +513,8 @@ namespace OpFlow {
                     default:
                         OP_NOT_IMPLEMENTED;
                 }
+                f.logicalRange.start[i] = f.accessibleRange.start[i] - f.ext_width.start[i];
+                f.logicalRange.end[i] = f.accessibleRange.end[i] + f.ext_width.end[i];
             }
             // calculate localRange
             if (strategy) {

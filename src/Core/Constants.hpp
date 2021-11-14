@@ -50,5 +50,8 @@ namespace OpFlow {
     enum class LocOnMesh { Corner, Center };
 
     enum PinValue { PINNED, UNPINNED };
+
+    constexpr ConstantI LARGE_INT = 100000;
+    constexpr ConstantD LARGE_FLT = 1.E16;
 }// namespace OpFlow
 #endif//OPFLOW_CONSTANTS_HPP

@@ -14,6 +14,7 @@
 #define OPFLOW_BASICDATATYPES_HPP
 
 #include <complex>
+#include <exception>
 
 namespace OpFlow {
 
@@ -32,6 +33,18 @@ namespace OpFlow {
     inline constexpr Real operator""_r(long double x) { return (Real) x; }
 
     inline constexpr Real operator""_r(unsigned long long int x) { return (Real) x; }
+
+    // exception objects
+    struct CouldNotSafeEval : std::exception {
+
+        std::string reason;
+        CouldNotSafeEval() = default;
+        CouldNotSafeEval(const std::string& r) : reason(r) {}
+
+        [[nodiscard]] const char* what() const noexcept override {
+            return reason.c_str();
+        }
+    };
 
 }// namespace OpFlow
 #endif//OPFLOW_BASICDATATYPES_HPP

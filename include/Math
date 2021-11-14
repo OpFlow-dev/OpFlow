@@ -12,6 +12,7 @@
 
 // Function
 #include "Math/Function/Numeric.hpp"
+#include "Math/Function/Integral.hpp"
 
 // Solver
 //#include "Math/Solver/HelmholtzSolvers/HelmholtzSolver.hpp"
