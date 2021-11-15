@@ -79,10 +79,6 @@ namespace OpFlow {
         const auto& evalAt(auto&&... i) const {
             return this->derived().evalAtImpl_final(std::forward<decltype(i)>(i)...);
         }
-        // even for direct accessible expr, safe eval cannot get ref to elements
-        auto evalSafeAt(auto&&... i) const {
-            return this->derived().evalSafeAtImpl_final(std::forward<decltype(i)>(i)...);
-        }
         auto& evalAt(auto&&... i) {
             return this->derived().evalAtImpl_final(std::forward<decltype(i)>(i)...);
         }
@@ -140,9 +136,6 @@ namespace OpFlow {
         auto operator()(auto&&... i) const { return evalAt(OP_PERFECT_FOWD(i)...); }
         auto operator[](auto&& i) const { return evalAt(OP_PERFECT_FOWD(i)); }
         auto evalAt(auto&&... i) const { return this->derived().evalAtImpl_final(OP_PERFECT_FOWD(i)...); }
-        auto evalSafeAt(auto&&... i) const {
-            return this->derived().evalSafeAtImpl_final(OP_PERFECT_FOWD(i)...);
-        }
 
     private:
         DEFINE_CRTP_HELPERS(Derived)
@@ -178,9 +171,6 @@ namespace OpFlow {
         const auto& evalAt(auto&&... i) const {
             return this->derived().evalAtImpl_final(OP_PERFECT_FOWD(i)...);
         }
-        auto evalSafeAt(auto&&... i) const {
-            return this->derived().evalSafeAtImpl_final(OP_PERFECT_FOWD(i)...);
-        }
 
     private:
         DEFINE_CRTP_HELPERS(Derived)
@@ -214,9 +204,6 @@ namespace OpFlow {
         auto operator()(auto&&... i) const { return evalAt(OP_PERFECT_FOWD(i)...); }
         auto operator[](auto&& i) const { return evalAt(OP_PERFECT_FOWD(i)); }
         auto evalAt(auto&&... i) const { return this->derived().evalAtImpl_final(OP_PERFECT_FOWD(i)...); }
-        auto evalSafeAt(auto&&... i) const {
-            return this->derived().evalSafeAtImpl_final(OP_PERFECT_FOWD(i)...);
-        }
 
     private:
         DEFINE_CRTP_HELPERS(Derived)

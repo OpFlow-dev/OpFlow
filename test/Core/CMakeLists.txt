@@ -19,7 +19,12 @@ add_gmock(MetaTest ${CMAKE_CURRENT_LIST_DIR}/MetaTest.cpp)
 add_gmock(CartesianMeshTest ${CMAKE_CURRENT_LIST_DIR}/Mesh/CartesianMeshTest.cpp)
 
 # Fields
-add_gmock(CartesianFieldBuilderTest ${CMAKE_CURRENT_LIST_DIR}/Field/CartesianFieldBuilderTest.cpp)
+add_gmock(CartesianFieldTest ${CMAKE_CURRENT_LIST_DIR}/Field/CartesianFieldTest.cpp)
+
+# BCs
+add_gmock(DircBCTest ${CMAKE_CURRENT_LIST_DIR}/BC/DircBCTest.cpp)
+add_gmock(NeumBCTest ${CMAKE_CURRENT_LIST_DIR}/BC/NeumBCTest.cpp)
+add_gmock(PeriodicBCTest ${CMAKE_CURRENT_LIST_DIR}/BC/PeriodicBCTest.cpp)
 
 # Operators
 add_gmock(InterpolatorTest ${CMAKE_CURRENT_LIST_DIR}/Operator/InterpolatorTest.cpp)

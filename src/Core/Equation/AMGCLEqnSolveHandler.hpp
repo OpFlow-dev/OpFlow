@@ -68,7 +68,7 @@ namespace OpFlow {
             int count = 0;
             row.push_back(count);
             rangeFor_s(DS::commonRange(target->assignableRange, target->localRange), [&](auto&& k) {
-                auto currentStencil = uniEqn->evalSafeAt(k);
+                auto currentStencil = uniEqn->evalAt(k);
                 for (const auto& [key, v] : currentStencil.pad) {
                     auto idx = mapper(key);
                     col.push_back(idx);
@@ -106,7 +106,7 @@ namespace OpFlow {
         void generateb() {
             rhs.clear();
             rangeFor_s(DS::commonRange(target->assignableRange, target->localRange), [&](auto&& k) {
-                auto currentStencil = uniEqn->evalSafeAt(k);
+                auto currentStencil = uniEqn->evalAt(k);
                 rhs.push_back(-currentStencil.bias);
             });
         }

@@ -27,12 +27,10 @@
 #include "Core/Mesh/Structured/CartesianMesh.hpp"
 #include "Core/Parallel/AbstractSplitStrategy.hpp"
 #include "Core/Parallel/ParallelPlan.hpp"
+#include "Math/Interpolator/Interpolator.hpp"
 #include <memory>
 
 namespace OpFlow {
-
-    enum class FieldExtMode { Undefined, Periodic, Symm, ASymm };
-
     template <typename D, typename M, typename C = DS::PlainTensor<D, internal::MeshTrait<M>::dim>>
     struct CartesianField : CartesianFieldExpr<CartesianField<D, M, C>> {
         using index_type = typename internal::CartesianFieldExprTrait<CartesianField>::index_type;
@@ -40,8 +38,8 @@ namespace OpFlow {
     private:
         C data;
         std::array<DS::Pair<int>, internal::MeshTrait<M>::dim> ext_width;
-        std::array<DS::Pair<FieldExtMode>, internal::MeshTrait<M>::dim> ext_mode;
         bool initialized = false;
+        constexpr static auto dim = internal::MeshTrait<M>::dim;
 
     public:
         friend ExprBuilder<CartesianField>;
@@ -55,7 +53,7 @@ namespace OpFlow {
         CartesianField() = default;
         CartesianField(const CartesianField& other)
             : CartesianFieldExpr<CartesianField<D, M, C>>(other), data(other.data),
-              ext_width(other.ext_width), ext_mode(other.ext_mode), initialized(true) {
+              ext_width(other.ext_width), initialized(true) {
             for (auto i = 0; i < internal::ExprTrait<CartesianField>::dim; ++i) {
                 bc[i].start = other.bc[i].start ? other.bc[i].start->getCopy() : nullptr;
                 if (bc[i].start && isLogicalBC(bc[i].start->getBCType()))
@@ -67,15 +65,13 @@ namespace OpFlow {
         }
         CartesianField(CartesianField&& other) noexcept
             : CartesianFieldExpr<CartesianField<D, M, C>>(std::move(other)), data(std::move(other.data)),
-              initialized(true), bc(std::move(other.bc)), ext_width(std::move(other.ext_width)),
-              ext_mode(std::move(other.ext_mode)) {}
+              initialized(true), bc(std::move(other.bc)), ext_width(std::move(other.ext_width)) {}
 
         auto& assignImpl_final(const CartesianField& other) {
             if (!initialized) {
                 this->initPropsFrom(other);
                 data = other.data;
                 ext_width = other.ext_width;
-                ext_mode = other.ext_mode;
                 initialized = true;
             } else if (this != &other) {
                 internal::FieldAssigner::assign(other, *this);
@@ -93,12 +89,10 @@ namespace OpFlow {
                 if constexpr (CartesianFieldType<T>) {
                     data = other.data;
                     ext_width = other.ext_width;
-                    ext_mode = other.ext_mode;
                 } else {
                     this->data.reShape(this->localRange.getInnerRange(-this->padding).getExtends());
                     this->offset = typename internal::CartesianFieldExprTrait<CartesianField>::index_type(
                             this->localRange.getInnerRange(-this->padding).getOffset());
-                    this->updateBC();
                     // invoke the assigner
                     internal::FieldAssigner::assign(other, *this);
                     this->updatePadding();
@@ -143,6 +137,7 @@ namespace OpFlow {
                 this->neighbors.clear();
             } else {
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
+                // todo: periodic bc
                 int rank;
                 MPI_Comm_rank(MPI_COMM_WORLD, &rank);
                 this->neighbors.clear();
@@ -163,51 +158,270 @@ namespace OpFlow {
 #endif
             }
         }
-        void updateBCImpl_final() {
-            if (this->localRange == this->assignableRange) return;
-            else {
-                for (auto i = 0; i < CartesianField::dim; ++i) {
-                    if (this->loc[i] == LocOnMesh::Center) continue;// only nodal dims needs to be update
-                    auto type = this->bc[i].start ? this->bc[i].start->getBCType() : BCType::Undefined;
-                    switch (type) {
-                        case BCType::Dirc:
-                            rangeFor_s(DS::commonRange(
-                                               this->accessibleRange.slice(i, this->accessibleRange.start[i]),
-                                               this->localRange),
-                                       [&](auto&& pos) {
-                                           data[pos - this->offset] = this->bc[i].start->evalAt(pos);
-                                       });
-                            break;
-                        case BCType::Neum:
-                        case BCType::Undefined:
-                            break;
-                        default:
-                            OP_NOT_IMPLEMENTED;
-                    }
-
-                    type = this->bc[i].end ? this->bc[i].end->getBCType() : BCType::Undefined;
-                    switch (type) {
-                        case BCType::Dirc:
-                            rangeFor_s(DS::commonRange(this->accessibleRange.slice(
-                                                               i, this->accessibleRange.end[i] - 1),
-                                                       this->localRange),
-                                       [&](auto&& pos) {
-                                           data[pos - this->offset] = this->bc[i].end->evalAt(pos);
-                                       });
-                            break;
-                        case BCType::Neum:
-                        case BCType::Undefined:
-                            break;
-                        default:
-                            OP_NOT_IMPLEMENTED;
-                    }
+        void updatePaddingImpl_final() {
+            // step 0: update dirc bc for corner case
+            for (int i = 0; i < dim; ++i) {
+                // lower side
+                if (this->localRange.start[i] == this->accessibleRange.start[i] && this->bc[i].start
+                    && this->bc[i].start->getBCType() == BCType::Dirc && this->loc[i] == LocOnMesh::Corner) {
+                    auto r = this->localRange.slice(i, this->localRange.start[i]);
+                    rangeFor(r, [&](auto&& idx) { this->operator()(idx) = this->bc[i].start->evalAt(idx); });
+                }
+                // upper side
+                if (this->localRange.end[i] == this->accessibleRange.end[i] && this->bc[i].end
+                    && this->bc[i].end->getBCType() == BCType::Dirc && this->loc[i] == LocOnMesh::Corner) {
+                    auto r = this->localRange.slice(i, this->localRange.end[i] - 1);
+                    rangeFor(r, [&](auto&& idx) { this->operator()(idx) = this->bc[i].end->evalAt(idx); });
                 }
             }
-        }
-        void updatePaddingImpl_final() {
+            // step 1: update paddings by bc extension
+            // start/end record the start/end index of last padding operation
+            // the latter padding op pads the outer range of the former padding zone
+            std::array<int, dim> start, end;
+            for (int i = 0; i < dim; ++i) {
+                // lower side
+                if (this->localRange.start[i] == this->accessibleRange.start[i] && this->bc[i].start
+                    && this->bc[i].start->getBCType() != BCType::Periodic) {
+                    start[i] = this->logicalRange.start[i];
+                    // current padding zone
+                    auto r = this->localRange;
+                    for (int j = 0; j < i; ++j) {
+                        r.start[j] = start[j];
+                        r.end[j] = end[j];
+                    }
+                    r.start[i] = start[i];
+                    r.end[i] = this->localRange.start[i];
+                    if (this->loc[i] == LocOnMesh::Corner) {
+                        switch (this->bc[i].start->getBCType()) {
+                            case BCType::Dirc:
+                                // mid-point rule
+                                rangeFor(r, [&](auto&& idx) {
+                                    auto bc_v = this->bc[i].start->evalAt(idx);
+                                    auto mirror_idx = idx;
+                                    mirror_idx[i] = 2 * this->localRange.start[i] - idx[i];
+                                    this->operator()(idx) = Math::Interpolator1D::intp(
+                                            this->mesh.x(i, this->localRange.start[i]), bc_v,
+                                            this->mesh.x(i, mirror_idx[i]), this->evalAt(mirror_idx),
+                                            this->mesh.x(i, idx[i]));
+                                });
+                                break;
+                            case BCType::Neum:
+                                // mid-diff = bc
+                                rangeFor(r, [&](auto&& idx) {
+                                    auto bc_v = this->bc[i].start->evalAt(idx);
+                                    auto mirror_idx = idx;
+                                    mirror_idx[i] = 2 * this->localRange.start[i] - idx[i];
+                                    this->operator()(idx)
+                                            = this->evalAt(mirror_idx)
+                                              + bc_v * (this->mesh.x(i, idx) - this->mesh.x(i, mirror_idx));
+                                });
+                                break;
+                            case BCType::Symm:
+                                rangeFor(r, [&](auto&& idx) {
+                                    auto mirror_idx = idx;
+                                    mirror_idx[i] = 2 * this->localRange.start[i] - idx[i];
+                                    this->operator()(idx) = this->evalAt(mirror_idx);
+                                });
+                                break;
+                            case BCType::ASymm:
+                                rangeFor(r, [&](auto&& idx) {
+                                    auto mirror_idx = idx;
+                                    mirror_idx[i] = 2 * this->localRange.start[i] - idx[i];
+                                    this->operator()(idx) = -this->evalAt(mirror_idx);
+                                });
+                            default:
+                                OP_ERROR("Cannot handle current bc padding: bc type {}",
+                                         this->bc[i].start->getTypeName());
+                                OP_ABORT;
+                        }
+                    } else {
+                        // center case
+                        switch (this->bc[i].start->getBCType()) {
+                            case BCType::Dirc:
+                                // mid-point rule
+                                rangeFor(r, [&](auto&& idx) {
+                                    auto bc_v = this->bc[i].start->evalAt(idx);
+                                    auto mirror_idx = idx;
+                                    mirror_idx[i] = 2 * this->localRange.start[i] - 1 - idx[i];
+                                    this->operator()(idx) = Math::Interpolator1D::intp(
+                                            this->mesh.x(i, this->localRange.start[i]), bc_v,
+                                            this->mesh.x(i, mirror_idx[i])
+                                                    + this->mesh.dx(i, mirror_idx) / 2.,
+                                            this->evalAt(mirror_idx),
+                                            this->mesh.x(i, idx[i]) + this->mesh.dx(i, idx) / 2.);
+                                });
+                                break;
+                            case BCType::Neum:
+                                // mid-diff = bc
+                                rangeFor(r, [&](auto&& idx) {
+                                    auto bc_v = this->bc[i].start->evalAt(idx);
+                                    auto mirror_idx = idx;
+                                    mirror_idx[i] = 2 * this->localRange.start[i] - 1 - idx[i];
+                                    this->operator()(idx)
+                                            = this->evalAt(mirror_idx)
+                                              + bc_v
+                                                        * (this->mesh.x(i, idx) + this->mesh.dx(i, idx) / 2.
+                                                           - this->mesh.x(i, mirror_idx)
+                                                           - this->mesh.dx(i, mirror_idx) / 2.);
+                                });
+                                break;
+                            case BCType::Symm:
+                                rangeFor(r, [&](auto&& idx) {
+                                    auto mirror_idx = idx;
+                                    mirror_idx[i] = 2 * this->localRange.start[i] - 1 - idx[i];
+                                    this->operator()(idx) = this->evalAt(mirror_idx);
+                                });
+                                break;
+                            case BCType::ASymm:
+                                rangeFor(r, [&](auto&& idx) {
+                                    auto mirror_idx = idx;
+                                    mirror_idx[i] = 2 * this->localRange.start[i] - 1 - idx[i];
+                                    this->operator()(idx) = -this->evalAt(mirror_idx);
+                                });
+                            default:
+                                OP_ERROR("Cannot handle current bc padding: bc type {}",
+                                         this->bc[i].start->getTypeName());
+                                OP_ABORT;
+                        }
+                    }
+                } else {
+                    start[i] = this->localRange.start[i];
+                }
+
+                // upper side
+                if (this->localRange.end[i] == this->accessibleRange.end[i] && this->bc[i].end
+                    && this->bc[i].end->getBCType() != BCType::Periodic) {
+                    end[i] = this->logicalRange.end[i];
+                    // current padding zone
+                    auto r = this->localRange;
+                    for (int j = 0; j < i; ++j) {
+                        r.start[j] = start[j];
+                        r.end[j] = end[j];
+                    }
+                    r.start[i] = this->localRange.end[i];
+                    r.end[i] = this->logicalRange.end[i];
+                    if (this->loc[i] == LocOnMesh::Corner) {
+                        switch (this->bc[i].end->getBCType()) {
+                            case BCType::Dirc:
+                                // mid-point rule
+                                rangeFor(r, [&](auto&& idx) {
+                                    auto bc_v = this->bc[i].end->evalAt(idx);
+                                    auto mirror_idx = idx;
+                                    mirror_idx[i] = 2 * this->localRange.end[i] - 2 - idx[i];
+                                    this->operator()(idx) = Math::Interpolator1D::intp(
+                                            this->mesh.x(i, this->localRange.end[i] - 1), bc_v,
+                                            this->mesh.x(i, mirror_idx[i]), this->evalAt(mirror_idx),
+                                            this->mesh.x(i, idx[i]));
+                                });
+                                break;
+                            case BCType::Neum:
+                                // mid-diff = bc
+                                rangeFor(r, [&](auto&& idx) {
+                                    auto bc_v = this->bc[i].end->evalAt(idx);
+                                    auto mirror_idx = idx;
+                                    mirror_idx[i] = 2 * this->localRange.end[i] - 2 - idx[i];
+                                    this->operator()(idx)
+                                            = this->evalAt(mirror_idx)
+                                              + bc_v * (this->mesh.x(i, idx) - this->mesh.x(i, mirror_idx));
+                                });
+                                break;
+                            case BCType::Symm:
+                                rangeFor(r, [&](auto&& idx) {
+                                    auto mirror_idx = idx;
+                                    mirror_idx[i] = 2 * this->localRange.end[i] - 2 - idx[i];
+                                    this->operator()(idx) = this->evalAt(mirror_idx);
+                                });
+                                break;
+                            case BCType::ASymm:
+                                rangeFor(r, [&](auto&& idx) {
+                                    auto mirror_idx = idx;
+                                    mirror_idx[i] = 2 * this->localRange.end[i] - 2 - idx[i];
+                                    this->operator()(idx) = -this->evalAt(mirror_idx);
+                                });
+                            default:
+                                OP_ERROR("Cannot handle current bc padding: bc type {}",
+                                         this->bc[i].end->getTypeName());
+                                OP_ABORT;
+                        }
+                    } else {
+                        // center case
+                        switch (this->bc[i].end->getBCType()) {
+                            case BCType::Dirc:
+                                // mid-point rule
+                                rangeFor(r, [&](auto&& idx) {
+                                    auto bc_v = this->bc[i].end->evalAt(idx);
+                                    auto mirror_idx = idx;
+                                    mirror_idx[i] = 2 * this->localRange.end[i] - 1 - idx[i];
+                                    this->operator()(idx) = Math::Interpolator1D::intp(
+                                            this->mesh.x(i, this->localRange.end[i]), bc_v,
+                                            this->mesh.x(i, mirror_idx[i])
+                                                    + this->mesh.dx(i, mirror_idx) / 2.,
+                                            this->evalAt(mirror_idx),
+                                            this->mesh.x(i, idx[i]) + this->mesh.dx(i, idx) / 2.);
+                                });
+                                break;
+                            case BCType::Neum:
+                                // mid-diff = bc
+                                rangeFor(r, [&](auto&& idx) {
+                                    auto bc_v = this->bc[i].end->evalAt(idx);
+                                    auto mirror_idx = idx;
+                                    mirror_idx[i] = 2 * this->localRange.end[i] - 1 - idx[i];
+                                    this->operator()(idx)
+                                            = this->evalAt(mirror_idx)
+                                              + bc_v
+                                                        * (this->mesh.x(i, idx) + this->mesh.dx(i, idx) / 2.
+                                                           - this->mesh.x(i, mirror_idx)
+                                                           - this->mesh.dx(i, mirror_idx) / 2.);
+                                });
+                                break;
+                            case BCType::Symm:
+                                rangeFor(r, [&](auto&& idx) {
+                                    auto mirror_idx = idx;
+                                    mirror_idx[i] = 2 * this->localRange.end[i] - 1 - idx[i];
+                                    this->operator()(idx) = this->evalAt(mirror_idx);
+                                });
+                                break;
+                            case BCType::ASymm:
+                                rangeFor(r, [&](auto&& idx) {
+                                    auto mirror_idx = idx;
+                                    mirror_idx[i] = 2 * this->localRange.end[i] - 1 - idx[i];
+                                    this->operator()(idx) = -this->evalAt(mirror_idx);
+                                });
+                            default:
+                                OP_ERROR("Cannot handle current bc padding: bc type {}",
+                                         this->bc[i].end->getTypeName());
+                                OP_ABORT;
+                        }
+                    }
+                } else {
+                    end[i] = this->localRange.end[i];
+                }
+            }
+
+            // step 2: update paddings by MPI communication
             auto plan = getGlobalParallelPlan();
-            if (plan.singleNodeMode()) return;
-            else {
+            if (plan.singleNodeMode()) {
+                // update along periodic dims
+                for (int i = 0; i < dim; ++i) {
+                    if (this->bc[i].start && this->bc[i].start->getBCType() == BCType::Periodic) {
+                        // issue an update
+                        auto rl = this->logicalRange.slice(i, this->logicalRange.start[i],
+                                                           this->accessibleRange.start[i]);
+                        rangeFor(rl, [&](auto&& idx) {
+                            auto mirror_idx = idx;
+                            mirror_idx[i] += this->accessibleRange.end[i] - this->accessibleRange.start[i];
+                            this->operator()(idx) = this->operator()(mirror_idx);
+                        });
+                        auto rh = this->logicalRange.slice(i, this->accessibleRange.end[i],
+                                                           this->logicalRange.end[i]);
+                        rangeFor(rh, [&](auto&& idx) {
+                            auto mirror_idx = idx;
+                            mirror_idx[i] -= this->accessibleRange.end[i] - this->accessibleRange.start[i];
+                            this->operator()(idx) = this->operator()(mirror_idx);
+                        });
+                    }
+                }
+            } else {
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
                 int rank;
                 MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -259,48 +473,20 @@ namespace OpFlow {
             OP_NOT_IMPLEMENTED;
             return 0;
         }
-        const auto& evalAtImpl_final(const index_type& i) const { return data[i - this->offset]; }
-        auto evalSafeAtImpl_final(const index_type& i) const {
-            if (DS::inRange(this->accessibleRange, i)) {
-                if (DS::inRange(this->localRange.getInnerRange(-this->padding), i))
-                    return data[i - this->offset];
-                else
-                    throw CouldNotSafeEval(
-                            fmt::format("Index {} not in the current patch {}", i.toString(),
-                                        this->localRange.getInnerRange(-this->padding).toString()));
-            } else if (DS::inRange(this->logicalRange, i)) {
-                if (DS::inRange(this->localRange.getInnerRange(-this->padding), i)) {
-                    // fold one dim at one time
-                    for (int idx = 0; idx < this->dim; ++idx) {
-                        // left boundary case
-                        if (i[idx] < this->accessibleRange.start[idx]) {
-                            switch (this->ext_mode[idx].start) {
-                                case FieldExtMode::Symm:
-                                    if (this->loc[idx].start == LocOnMesh::Corner) {
-                                        auto ii = i; ii[idx] = 2 * this->mesh.getRange().start[idx] - i[idx];
-                                        return evalSafeAtImpl_final(ii);
-                                    } else {
-                                        auto ii = i; ii[idx] = 2 * this->mesh.getRange().start[idx] - 1 - i[idx];
-                                        return evalSafeAtImpl_final(ii);
-                                    }
-                                case FieldExtMode::ASymm:
-                                    if (this->loc[idx].start == LocOnMesh::Corner) {
-                                        auto ii = i; ii[idx] = 2 * this->mesh.getRange().start[idx] - i[idx];
-                                        return -evalSafeAtImpl_final(ii);
-                                    } else {
-                                        auto ii = i; ii[idx] = 2 * this->mesh.getRange().start[idx] - 1 - i[idx];
-                                        return -evalSafeAtImpl_final(ii);
-                                    }
-                                case FieldExtMode::Periodic:
-                                    // assume i fall in padding
-
-                            }
-                        }
-                    }
-                }
-            }
+        const auto& evalAtImpl_final(const index_type& i) const {
+            OP_ASSERT_MSG(DS::inRange(DS::commonRange(this->logicalRange,
+                                                      this->localRange.getInnerRange(-this->padding)),
+                                      i),
+                          "CartesianField cannot eval at {}: out of range", i.toString());
+            return data[i - this->offset];
         }
-        auto& evalAtImpl_final(const index_type& i) { return data[i - this->offset]; }
+        auto& evalAtImpl_final(const index_type& i) {
+            OP_ASSERT_MSG(DS::inRange(DS::commonRange(this->logicalRange,
+                                                      this->localRange.getInnerRange(-this->padding)),
+                                      i),
+                          "CartesianField cannot eval at {}: out of range", i.toString());
+            return data[i - this->offset];
+        }
 
         template <typename Other>
         requires(!std::same_as<Other, CartesianField>) bool containsImpl_final(const Other& o) const {
@@ -347,23 +533,15 @@ namespace OpFlow {
             OP_ASSERT(d < dim);
             OP_ASSERT(type != BCType::Dirc && type != BCType::Neum);
             auto& targetBC = pos == DimPos::start ? f.bc[d].start : f.bc[d].end;
-            auto& targetWidth = pos == DimPos::start ? f.ext_width[d].start : f.ext_width[d].end;
-            auto& targetMode = pos == DimPos::start ? f.ext_mode[d].start : f.ext_mode[d].end;
             switch (type) {
                 case BCType::Symm:
                     targetBC = std::make_unique<SymmBC<CartesianField<D, M, C>>>(f, d, pos);
-                    targetWidth = LARGE_INT;
-                    targetMode = FieldExtMode::Symm;
                     break;
                 case BCType::ASymm:
                     targetBC = std::make_unique<ASymmBC<CartesianField<D, M, C>>>(f, d, pos);
-                    targetWidth = LARGE_INT;
-                    targetMode = FieldExtMode ::ASymm;
                     break;
                 case BCType::Periodic:
                     targetBC = std::make_unique<PeriodicBC<CartesianField<D, M, C>>>(f, d, pos);
-                    targetWidth = LARGE_INT;
-                    targetMode = FieldExtMode::Periodic;
                     break;
                 default:
                     OP_ERROR("BC Type not supported.");
@@ -423,14 +601,13 @@ namespace OpFlow {
             return *this;
         }
 
-        auto& setAllowedExt(int d, DimPos pos, FieldExtMode mode, int width) {
+        auto& setExt(int d, DimPos pos, int width) {
             if (pos == DimPos::start) {
-                f.ext_mode[d].start = mode;
                 f.ext_width[d].start = width;
             } else {
-                f.ext_mode[d].end = mode;
                 f.ext_width[d].end = width;
             }
+            return *this;
         }
 
         auto& setPadding(int p) {
@@ -450,7 +627,7 @@ namespace OpFlow {
             f.data.reShape(f.localRange.getInnerRange(-f.padding).getExtends());
             f.offset = typename internal::CartesianFieldExprTrait<Field>::index_type(
                     f.localRange.getInnerRange(-f.padding).getOffset());
-            f.updateBC();
+            f.updatePadding();
             return f;
         }
 
@@ -465,6 +642,8 @@ namespace OpFlow {
         }
 
         void calculateRanges() {
+            // padding take the max of {padding, ext_width}
+            for (const auto& w : f.ext_width) f.padding = std::max({f.padding, w.start, w.end});
             // init ranges to mesh range
             f.logicalRange = f.assignableRange = f.localRange = f.accessibleRange = f.mesh.getRange();
             // trim ranges according to bcs
@@ -513,8 +692,8 @@ namespace OpFlow {
                     default:
                         OP_NOT_IMPLEMENTED;
                 }
-                f.logicalRange.start[i] = f.accessibleRange.start[i] - f.ext_width.start[i];
-                f.logicalRange.end[i] = f.accessibleRange.end[i] + f.ext_width.end[i];
+                f.logicalRange.start[i] = f.accessibleRange.start[i] - f.ext_width[i].start;
+                f.logicalRange.end[i] = f.accessibleRange.end[i] + f.ext_width[i].end;
             }
             // calculate localRange
             if (strategy) {

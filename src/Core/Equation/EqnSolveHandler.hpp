@@ -88,7 +88,7 @@ namespace OpFlow {
             DS::MDIndex<dim> middle;
             for (auto i = 0; i < dim; ++i)
                 middle[i] = (target->assignableRange.start[i] + target->assignableRange.end[i]) / 2;
-            commStencil = getOffsetStencil(uniEqn->evalSafeAt(middle), middle);
+            commStencil = getOffsetStencil(uniEqn->evalAt(middle), middle);
             HYPRE_StructStencilCreate(dim, commStencil.pad.size(), &stencil);
             auto iter = commStencil.pad.begin();
             for (auto i = 0; i < commStencil.pad.size(); ++i, ++iter) {
@@ -116,7 +116,7 @@ namespace OpFlow {
             for (auto i = 0; i < entries.size(); ++i) entries[i] = i;
 
             rangeFor(DS::commonRange(target->assignableRange, target->localRange), [&](auto&& k) {
-                auto currentStencil = getOffsetStencil(uniEqn->evalSafeAt(k), k);
+                auto currentStencil = getOffsetStencil(uniEqn->evalAt(k), k);
                 auto extendedStencil = commonStencil(currentStencil, commStencil);
                 std::vector<Real> vals;
                 for (const auto& [key, val] : commStencil.pad) { vals.push_back(extendedStencil.pad[key]); }
@@ -149,7 +149,7 @@ namespace OpFlow {
 
         void generateb() {
             rangeFor(DS::commonRange(target->assignableRange, target->localRange), [&](auto&& k) {
-                auto currentStencil = uniEqn->evalSafeAt(k);
+                auto currentStencil = uniEqn->evalAt(k);
                 HYPRE_StructVectorSetValues(b, const_cast<int*>(k.get().data()), -currentStencil.bias);
             });
             if (solver.params.pinValue) {
@@ -248,7 +248,7 @@ namespace OpFlow {
             for (auto i = 0; i < dim; ++i)
                 middle[i] = (target->assignableRanges[0][0].start[i] + target->assignableRanges[0][0].end[i])
                             / 2;
-            //commStencil = getOffsetStencil(uniEqn->evalSafeAt(middle), middle);
+            //commStencil = getOffsetStencil(uniEqn->evalAt(middle), middle);
             DS::StencilPad<index_type> _st;
             _st.pad[middle] = 0;
             _st.pad[middle.template next<0>()] = 0;
@@ -271,7 +271,7 @@ namespace OpFlow {
                 for (auto p = 0; p < target->localRanges[l].size(); ++p) {
                     rangeFor_s(target->localRanges[l][p], [&](auto&& i) {
                         if (stencilField->blocked(i)) return;
-                        auto st = uniEqn->evalSafeAt(i);
+                        auto st = uniEqn->evalAt(i);
                         for (auto& [k, v] : st.pad) {
                             if (k.l != l) {
                                 HYPRE_SStructGraphAddEntries(graph, l, i.c_arr(), c_var, k.l, k.c_arr(),
@@ -309,7 +309,7 @@ namespace OpFlow {
                     rangeFor_s(target->localRanges[l][p], [&](auto&& i) {
                         if (stencilField->blocked(i)) return;
                         // stencil part
-                        auto currentStencil = uniEqn->evalSafeAt(i);
+                        auto currentStencil = uniEqn->evalAt(i);
                         auto offsetStencil = currentStencil;
                         for (auto& [k, v] : offsetStencil.pad) {
                             if (k.l == l) { k -= i; }
