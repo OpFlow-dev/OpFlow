@@ -39,6 +39,8 @@ namespace OpFlow {
 
         template <CartesianFieldExprType T>
         static void prepare(Expression<D1IntpCornerToCenter, T>& expr) {
+            // TODO: CHECK HERE
+            OP_NOT_IMPLEMENTED;
             expr.name = fmt::format("D1IntpCornerToCenter<{}>({})", d, expr.arg1.name);
             expr.loc = expr.arg1.loc;
             expr.loc[d] = LocOnMesh::Center;
@@ -48,27 +50,6 @@ namespace OpFlow {
             expr.assignableRange.setEmpty();
             expr.localRange = expr.arg1.localRange;
             expr.localRange.end[d]--;
-            // only logical bc can be deducted here
-            if (expr.arg1.bc[d].start && isLogicalBC(expr.arg1.bc[d].start->getBCType())) {
-                switch (expr.arg1.bc[d].start->getBCType()) {
-                    case BCType::Periodic:
-                        expr.bc[d].start = genLogicalBC<BCType::Periodic>(expr, d, DimPos::start);
-                        break;
-                    default:
-                        OP_NOT_IMPLEMENTED;
-                        OP_ABORT;
-                }
-            }
-            if (expr.arg1.bc[d].end && isLogicalBC(expr.arg1.bc[d].end->getBCType())) {
-                switch (expr.arg1.bc[d].end->getBCType()) {
-                    case BCType::Periodic:
-                        expr.bc[d].end = genLogicalBC<BCType::Periodic>(expr, d, DimPos::end);
-                        break;
-                    default:
-                        OP_NOT_IMPLEMENTED;
-                        OP_ABORT;
-                }
-            }
         }
     };
 

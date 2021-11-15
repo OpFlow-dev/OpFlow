@@ -185,8 +185,6 @@ namespace OpFlow {
         }
         template <CartesianFieldExprType E>
         OPFLOW_STRONG_INLINE static void prepare(Expression<D2SecondOrderCentered, E>& expr) {
-            constexpr auto dim = internal::CartesianFieldExprTrait<E>::dim;
-
             // name
             expr.name = fmt::format("d2<D2SecondOrderCentered<{}>>({})", d, expr.arg1.name);
 
@@ -194,39 +192,13 @@ namespace OpFlow {
             expr.mesh = expr.arg1.mesh.getView();
             expr.loc = expr.arg1.loc;
 
-            // bc
-            expr.bc[d].start = nullptr;
-            expr.bc[d].end = nullptr;
-            for (auto i = 0; i < dim; ++i) {
-                if (i != d) {
-                    expr.bc[i].start = expr.arg1.bc[i].start
-                                               ? genProxyBC<Meta::RealType<decltype(expr)>,
-                                                            Meta::RealType<decltype(expr.arg1)>>(
-                                                       *expr.arg1.bc[i].start)
-                                               : nullptr;
-                    expr.bc[i].end
-                            = expr.arg1.bc[i].end
-                                      ? genProxyBC<Meta::RealType<decltype(expr)>,
-                                                   Meta::RealType<decltype(expr.arg1)>>(*expr.arg1.bc[i].end)
-                                      : nullptr;
-                    OP_WARN("BC for result expr not calculated.");
-                }
-            }
-
             // ranges
             expr.accessibleRange = expr.arg1.accessibleRange;
-            if (expr.arg1.loc[d] == LocOnMesh::Corner) {
-                // nodal case
-                if (!expr.arg1.bc[d].start || expr.arg1.bc[d].start->getBCType() == BCType::Dirc)
-                    expr.accessibleRange.start[d]++;
-                if (!expr.arg1.bc[d].end || expr.arg1.bc[d].end->getBCType() == BCType::Dirc)
-                    expr.accessibleRange.end[d]--;
-            } else {
-                // center case
-                if (!expr.arg1.bc[d].start) { expr.accessibleRange.start[d]++; }
-                if (!expr.arg1.bc[d].end) expr.accessibleRange.end[d]--;
-            }
-            expr.localRange = expr.accessibleRange;
+            expr.logicalRange = expr.arg1.logicalRange;
+            expr.localRange = expr.arg1.localRange;
+
+            // todo: impl here
+            OP_NOT_IMPLEMENTED;
             expr.assignableRange.setEmpty();
         }
 

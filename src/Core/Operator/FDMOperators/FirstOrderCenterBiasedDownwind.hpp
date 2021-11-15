@@ -24,91 +24,7 @@ namespace OpFlow {
 
         template <CartesianFieldExprType E>
         OPFLOW_STRONG_INLINE static auto couldSafeEval(const E& e, auto&& i) {
-            auto cond0 = e.accessibleRange.start[d] <= i[d] - 1 && i[d] < e.accessibleRange.end[d];
-            auto cond1 = e.bc[d].start && e.loc[d] == LocOnMesh::Center && i[d] == e.accessibleRange.start[d]
-                         && (e.bc[d].start->getBCType() == BCType::Neum
-                             || e.bc[d].start->getBCType() == BCType::Dirc);
-            auto cond2 = e.bc[d].end && e.loc[d] == LocOnMesh::Center && i[d] == e.accessibleRange.end[d]
-                         && (e.bc[d].end->getBCType() == BCType::Neum
-                             || e.bc[d].end->getBCType() == BCType::Dirc);
-            auto cond3 = i[d] <= e.accessibleRange.start[d] && e.bc[d].start
-                         && isLogicalBC(e.bc[d].start->getBCType());
-            auto cond4 = i[d] >= e.accessibleRange.end[d] && e.bc[d].end
-                         && isLogicalBC(e.bc[d].end->getBCType());
-            return cond0 || cond1 || cond2 || cond3 || cond4;
-        }
-        template <CartesianFieldExprType E, typename I>
-        OPFLOW_STRONG_INLINE static auto eval_safe(const E& e, I i) {
-            if (e.accessibleRange.start[d] <= i[d] - 1 && i[d] < e.accessibleRange.end[d])
-                return (e.evalSafeAt(i) - e.evalSafeAt(i.template prev<d>()))
-                       / (e.loc[d] == LocOnMesh::Corner
-                                  ? e.mesh.dx(d, i[d] - 1)
-                                  : (e.mesh.dx(d, i[d] - 1) + e.mesh.dx(d, i[d])) * 0.5);
-            // left bc case
-            if (e.bc[d].start && e.loc[d] == LocOnMesh::Center && i[d] == e.accessibleRange.start[d]) {
-                if (e.bc[d].start->getBCType() == BCType::Neum) return e.bc[d].start->evalAt(i);
-                else if (e.bc[d].start->getBCType() == BCType::Dirc) {
-                    // assume asymmetric extension
-                    return (e.evalAt(i) - e.bc[d].start->evalAt(i.template prev<d>())) * (e.mesh.idx(d, i[d]))
-                           * 2.0;
-                }
-            }
-            // logical left bc case
-            if (i[d] <= e.accessibleRange.start[d] && e.bc[d].start
-                && isLogicalBC(e.bc[d].start->getBCType())) {
-                auto i1 = i, i2 = i;
-                int len_d = e.accessibleRange.end[d] - e.accessibleRange.start[d];
-                switch (e.bc[d].start->getBCType()) {
-                    case BCType::Periodic:
-                        i1[d] = ((i1[d] - e.accessibleRange.start[d]) % len_d + len_d) % len_d
-                                + e.accessibleRange.start[d];
-                        i2[d] = ((i1[d] - 1 - e.accessibleRange.start[d]) % len_d + len_d) % len_d
-                                + e.accessibleRange.start[d];
-                        return (e.evalSafeAt(i1) - e.evalSafeAt(i2))
-                               / (e.loc[d] == LocOnMesh::Corner
-                                          ? e.mesh.dx(d, i2[d])
-                                          : (e.mesh.dx(d, i1[d]) + e.mesh.dx(d, i2[d])) * 0.5);
-                    case BCType::Symm:
-                    case BCType::ASymm:
-                    default:
-                        OP_NOT_IMPLEMENTED;
-                        OP_ABORT;
-                }
-            }
-            // right bc case
-            if (e.bc[d].end && e.loc[d] == LocOnMesh::Center && i[d] == e.accessibleRange.end[d]) {
-                if (e.bc[d].end->getBCType() == BCType::Neum) return e.bc[d].end->evalAt(i);
-                else if (e.bc[d].end->getBCType() == BCType::Dirc) {
-                    // assume asymmetric extension
-                    return (e.bc[d].end->evalAt(i) - e.evalAt(i.template prev<d>())) * e.mesh.idx(d, i[d] - 1)
-                           * 2.0;
-                }
-            }
-            // logical right bc case
-            if (i[d] >= e.accessibleRange.end[d] && e.bc[d].end && isLogicalBC(e.bc[d].end->getBCType())) {
-                auto i1 = i, i2 = i;
-                int len_d = e.accessibleRange.end[d] - e.accessibleRange.start[d];
-                switch (e.bc[d].start->getBCType()) {
-                    case BCType::Periodic:
-                        i1[d] = ((i1[d] - e.accessibleRange.start[d]) % len_d + len_d) % len_d
-                                + e.accessibleRange.start[d];
-                        i2[d] = ((i1[d] - 1 - e.accessibleRange.start[d]) % len_d + len_d) % len_d
-                                + e.accessibleRange.start[d];
-                        return (e.evalSafeAt(i1) - e.evalSafeAt(i2))
-                               / (e.loc[d] == LocOnMesh::Corner
-                                          ? e.mesh.dx(d, i2[d])
-                                          : (e.mesh.dx(d, i1[d]) + e.mesh.dx(d, i2[d])) * 0.5);
-                    case BCType::Symm:
-                    case BCType::ASymm:
-                    default:
-                        OP_NOT_IMPLEMENTED;
-                        OP_ABORT;
-                }
-            }
-            // not handled case
-            OP_ERROR("Cannot handle current case.");
-            //OP_ERROR("Expr and index are: \n{}\nIndex = {}", e.toString(), i.toString());
-            OP_ABORT;
+            return e.couldEvalAt(i) && e.couldEvalAt(i.template prev<d>());
         }
 
         template <CartesianFieldExprType E, typename I>
@@ -120,8 +36,6 @@ namespace OpFlow {
 
         template <CartesianFieldExprType E>
         static inline void prepare(Expression<D1FirstOrderCenteredDownwind, E>& expr) {
-            constexpr auto dim = internal::CartesianFieldExprTrait<E>::dim;
-
             // name
             expr.name = fmt::format("d1<D1FirstOrderCenteredDownwind<{}>>(", d) + expr.arg1.name + ")";
 
@@ -132,14 +46,14 @@ namespace OpFlow {
 
             // ranges
             expr.accessibleRange = expr.arg1.accessibleRange;
-            if (expr.arg1.loc[d] == LocOnMesh::Corner) {
+            expr.localRange = expr.arg1.localRange;
+            expr.logicalRange = expr.arg1.logicalRange;
+            if (expr.arg1.loc[d] == LocOnMesh::Center) {
                 // nodal case
                 expr.accessibleRange.start[d]++;
-            } else {
-                // center case
-                expr.accessibleRange.start[d]++;
+                expr.localRange.start[d]++;
+                expr.logicalRange.start[d]++;
             }
-            expr.localRange = expr.accessibleRange;
             // make the result expr read-only
             expr.assignableRange.setEmpty();
         }

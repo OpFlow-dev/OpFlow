@@ -38,21 +38,15 @@ namespace OpFlow::internal {
         template <CartesianFieldType To, CartesianFieldExprType From>
         static auto& assign_impl(From& src, To& dst) {
             src.prepare();
-            constexpr auto width = CartesianFieldExprTrait<From>::bc_width;
             OP_EXPECT_MSG(dst.assignableRange == DS::commonRange(dst.assignableRange, src.accessibleRange),
                           "Assign warning: dst's assignableRange not covered by src's accessibleRange.\ndst "
                           "= {}, range = {}\nsrc = {}, range = {}",
                           dst.getName(), dst.assignableRange.toString(), src.getName(),
                           src.accessibleRange.toString());
-            auto bc_ranges = src.accessibleRange.getBCRanges(width + 1);
-            for (const auto& r : bc_ranges) {
-                rangeFor(DS::commonRange(DS::commonRange(dst.assignableRange, dst.localRange), r),
-                         [&](auto&& i) { dst[i] = src.evalSafeAt(i); });
-            }
-            auto inner_range = src.accessibleRange.getInnerRange(width + 1);
-            rangeFor(DS::commonRange(DS::commonRange(dst.assignableRange, dst.localRange), inner_range),
+
+            rangeFor(DS::commonRange(dst.assignableRange, dst.localRange),
                      [&](auto&& i) { dst[i] = src.evalAt(i); });
-            dst.updateBC();
+            dst.updatePadding();
             return dst;
         }
         template <CartAMRFieldType To, CartAMRFieldExprType From>
@@ -81,7 +75,7 @@ namespace OpFlow::internal {
                                [&](auto&& k) { dst[k] = src.evalAt(k); });
                 }
             }
-            dst.updateBC();
+            dst.updatePadding();
             return dst;
         }
     };

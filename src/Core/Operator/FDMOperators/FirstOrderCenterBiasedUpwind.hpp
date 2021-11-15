@@ -63,8 +63,8 @@ namespace OpFlow {
             } else {
                 return (e.evalSafeAt(i.template next<d>()) - e.evalSafeAt(i))
                        / (e.loc[d] == LocOnMesh::Corner
-                                  ? e.mesh.dx_s(d, i[d])
-                                  : (e.mesh.dx_s(d, i[d]) + e.mesh.dx_s(d, i[d] + 1)) * 0.5);
+                                  ? e.mesh.dx(d, i[d])
+                                  : (e.mesh.dx(d, i[d]) + e.mesh.dx(d, i[d] + 1)) * 0.5);
             }
             // not handled case
             OP_ERROR("Cannot handle current case.");

@@ -110,12 +110,11 @@ namespace OpFlow {
                     return ret;
                 }
             else
-                [[unlikely]] { return DS::StencilPad<index_type>(base->evalSafeAt(index)); }
+                [[unlikely]] { return DS::StencilPad<index_type>(base->evalAt(index)); }
         }
         void prepare() const {}
         auto operator[](const index_type& index) const { return this->operator()(index); }
         auto evalAt(const index_type& index) const { return this->operator()(index); }
-        auto evalSafeAt(const index_type& index) const { return this->operator()(index); }
 
         template <typename Other>
         requires(!std::same_as<Other, StencilField>) bool contains(const Other& o) const {
@@ -296,7 +295,6 @@ namespace OpFlow {
         const auto& operator()(const index_type& i) const { return data[i.l][i.p][i - offset[i.l][i.p]]; }
         const auto& operator[](const index_type& i) const { return data[i.l][i.p][i - offset[i.l][i.p]]; }
         const auto& evalAt(const index_type& i) const { return data[i.l][i.p][i - offset[i.l][i.p]]; }
-        const auto& evalSafeAt(const index_type& i) const { return data[i.l][i.p][i - offset[i.l][i.p]]; }
         auto& blocked(const index_type& i) { return block_mark[i.l][i.p][i - offset[i.l][i.p]]; }
         const auto& blocked(const index_type& i) const { return block_mark[i.l][i.p][i - offset[i.l][i.p]]; }
 
