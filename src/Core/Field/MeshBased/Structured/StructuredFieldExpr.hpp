@@ -69,7 +69,9 @@ namespace OpFlow {
             this->neighbors = other.neighbors;
         }
 
-        bool couldEvalAtImpl_final(auto&& i) const { return DS::inRange(accessibleRange, i); }
+        bool couldEvalAtImpl_final(auto&& i) const {
+            return DS::inRange(DS::commonRange(localRange.getInnerRange(-padding), logicalRange), i);
+        }
 
     private:
         DEFINE_CRTP_HELPERS(Derived)

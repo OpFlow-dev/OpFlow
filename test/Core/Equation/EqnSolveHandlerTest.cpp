@@ -27,6 +27,10 @@ protected:
                     .setBC(0, DimPos::end, BCType::Dirc, 0.)
                     .setBC(1, DimPos::start, BCType::Dirc, 0.)
                     .setBC(1, DimPos::end, BCType::Dirc, 0.)
+                    .setExt(0, DimPos::start, 1)
+                    .setExt(0, DimPos::end, 1)
+                    .setExt(1, DimPos::start, 1)
+                    .setExt(1, DimPos::end, 1)
                     .setLoc({LocOnMesh::Center, LocOnMesh::Center})
                     .build();
         p_true = p;
@@ -38,6 +42,10 @@ protected:
                     .setBC(0, DimPos::end, BCType::Dirc, 1.)
                     .setBC(1, DimPos::start, BCType::Dirc, 1.)
                     .setBC(1, DimPos::end, BCType::Dirc, 1.)
+                    .setExt(0, DimPos::start, 1)
+                    .setExt(0, DimPos::end, 1)
+                    .setExt(1, DimPos::start, 1)
+                    .setExt(1, DimPos::end, 1)
                     .setLoc({LocOnMesh::Center, LocOnMesh::Center})
                     .build();
         b = p;

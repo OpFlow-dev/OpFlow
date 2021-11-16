@@ -89,6 +89,19 @@ namespace OpFlow {
                 if constexpr (CartesianFieldType<T>) {
                     data = other.data;
                     ext_width = other.ext_width;
+                    if constexpr (std::same_as<Meta::RealType<T>, CartesianField>)
+                        for (int i = 0; i < dim; ++i) {
+                            this->bc[i].start = other.bc[i].start ? other.bc[i].start->getCopy() : nullptr;
+                            this->bc[i].end = other.bc[i].end ? other.bc[i].end->getCopy() : nullptr;
+                        }
+                    else
+                        for (int i = 0; i < dim; ++i) {
+                            this->bc[i].start = other.bc[i].start
+                                                        ? genProxyBC<CartesianField>(*other.bc[i].start)
+                                                        : nullptr;
+                            this->bc[i].end = other.bc[i].end ? genProxyBC<CartesianField>(*other.bc[i].end)
+                                                              : nullptr;
+                        }
                 } else {
                     this->data.reShape(this->localRange.getInnerRange(-this->padding).getExtends());
                     this->offset = typename internal::CartesianFieldExprTrait<CartesianField>::index_type(
