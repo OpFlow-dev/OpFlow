@@ -40,16 +40,15 @@ namespace OpFlow {
         template <CartesianFieldExprType T>
         static void prepare(Expression<D1IntpCornerToCenter, T>& expr) {
             // TODO: CHECK HERE
-            OP_NOT_IMPLEMENTED;
+            expr.initPropsFrom(expr.arg1);
             expr.name = fmt::format("D1IntpCornerToCenter<{}>({})", d, expr.arg1.name);
             expr.loc = expr.arg1.loc;
             expr.loc[d] = LocOnMesh::Center;
             expr.mesh = expr.arg1.mesh.getView();
-            expr.accessibleRange = expr.arg1.accessibleRange;
             expr.accessibleRange.end[d]--;
-            expr.assignableRange.setEmpty();
-            expr.localRange = expr.arg1.localRange;
+            expr.logicalRange.end[d]--;
             expr.localRange.end[d]--;
+            expr.assignableRange.setEmpty();
         }
     };
 

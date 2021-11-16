@@ -23,15 +23,19 @@
 #include "Core/Field/MeshBased/StencilFieldTrait.hpp"
 #include "Core/Field/MeshBased/Structured/StructuredFieldExprTrait.hpp"
 #include "DataStructures/StencilPad.hpp"
+#include "Math/Interpolator/Interpolator.hpp"
 
 namespace OpFlow {
 
     template <StructuredFieldExprType T>
     struct StencilField<T> : internal::StructuredFieldExprTrait<T>::template twin_type<StencilField<T>> {
-        std::array<DS::Pair<std::unique_ptr<BCBase<StencilField>>>, internal::ExprTrait<StencilField>::dim> bc;
+        std::array<DS::Pair<std::unique_ptr<BCBase<StencilField>>>, internal::ExprTrait<StencilField>::dim>
+                bc;
 
         StencilField() = default;
-        StencilField(const StencilField& other) : internal::StructuredFieldExprTrait<T>::template twin_type<StencilField<T>>(other) {
+        StencilField(const StencilField& other)
+            : internal::StructuredFieldExprTrait<T>::template twin_type<StencilField<T>>(other),
+        base(other.base), pinned(other.pinned){
             for (auto i = 0; i < internal::ExprTrait<StencilField>::dim; ++i) {
                 bc[i].start = other.bc[i].start ? other.bc[i].start->getCopy() : nullptr;
                 if (isLogicalBC(bc[i].start->getBCType()))
@@ -49,6 +53,7 @@ namespace OpFlow {
             this->localRange = base.localRange;
             this->assignableRange = base.assignableRange;
             this->accessibleRange = base.accessibleRange;
+            this->logicalRange = base.logicalRange;
             for (auto i = 0; i < internal::MeshBasedFieldExprTrait<T>::dim; ++i) {
                 if (base.bc[i].start && isLogicalBC(base.bc[i].start->getBCType())) {
                     // if base.bc[i].start is a logical bc, we build a new instance of the same type bc
@@ -100,26 +105,225 @@ namespace OpFlow {
 
         void pin(bool p) { pinned = p; }
 
-        auto operator()(const index_type& index) const {
+        auto evalAt(const index_type& index) const {
+            OP_ASSERT_MSG(base, "base ptr of stencil field is nullptr");
             if (DS::inRange(this->assignableRange, index)) [[likely]] {
-                    auto ret = DS::StencilPad<index_type>(0);
-                    if (pinned && index == index_type(this->assignableRange.start))
-                        [[unlikely]] ret.pad[index] = 0.;
-                    else
-                        [[likely]] ret.pad[index] = 1.0;
-                    return ret;
+                auto ret = DS::StencilPad<index_type>(0);
+                if (pinned && index == index_type(this->assignableRange.start)) [[unlikely]]
+                    ret.pad[index] = 0.;
+                else [[likely]]
+                    ret.pad[index] = 1.0;
+                return ret;
+            } else if (DS::inRange(this->accessibleRange, index)) {
+                // index lay on dirc bc
+                return DS::StencilPad<index_type> {base->evalAt(index)};
+            } else if (!DS::inRange(this->logicalRange, index)) {
+                OP_ERROR("Index {} out of range {}", index.toString(), this->logicalRange.toString());
+                OP_ABORT;
+            } else {
+                // index has to be extended by bc
+                for (int i = 0; i < dim; ++i) {
+                    if (this->accessibleRange.start[i] <= index[i] && index[i] < this->accessibleRange.end[i])
+                        continue;
+                    if (this->loc[i] == LocOnMesh::Corner) {
+                        // corner case
+                        if (index[i] < this->accessibleRange.start[i]) {
+                            // lower case
+                            switch (this->bc[i].start->getBCType()) {
+                                case BCType::Dirc: {
+                                    // mid point rule
+                                    auto bc_v = this->bc[i].start->evalAt(index);
+                                    auto mirror_idx = index;
+                                    mirror_idx[i] = 2 * this->accessibleRange.start[i] - index[i];
+                                    return Math::Interpolator1D::intp(
+                                            base->mesh.x(i, this->accessibleRange.start[i]), bc_v,
+                                            base->mesh.x(i, mirror_idx), this->evalAt(mirror_idx),
+                                            base->mesh.x(i, index));
+                                } break;
+                                case BCType::Neum: {
+                                    // mid-diff = bc
+                                    auto bc_v = this->bc[i].start->evalAt(index);
+                                    auto mirror_idx = index;
+                                    mirror_idx[i] = 2 * this->accessibleRange.start[i] - index[i];
+                                    return this->evalAt(mirror_idx)
+                                           + bc_v * (base->mesh.x(i, index) - base->mesh.x(i, mirror_idx));
+                                } break;
+                                case BCType::Symm: {
+                                    auto mirror_idx = index;
+                                    mirror_idx[i] = 2 * this->accessibleRange.start[i] - index[i];
+                                    return this->evalAt(mirror_idx);
+                                } break;
+                                case BCType::ASymm: {
+                                    auto mirror_idx = index;
+                                    mirror_idx[i] = 2 * this->accessibleRange.start[i] - index[i];
+                                    return -1. * this->evalAt(mirror_idx);
+                                } break;
+                                case BCType::Periodic: {
+                                    auto mirror_idx = index;
+                                    mirror_idx[i]
+                                            += this->accessibleRange.end[i] - this->accessibleRange.start[i];
+                                    return this->evalAt(mirror_idx);
+                                }
+                                default:
+                                    OP_ERROR("Cannot handle current bc padding for stencil field: bc type {}",
+                                             this->bc[i].start->getTypeName());
+                                    OP_ABORT;
+                            }
+                        } else {
+                            // upper case
+                            switch (this->bc[i].end->getBCType()) {
+                                case BCType::Dirc: {
+                                    // mid-point rule
+                                    auto bc_v = this->bc[i].end->evalAt(index);
+                                    auto mirror_idx = index;
+                                    mirror_idx[i] = 2 * this->accessibleRange.end[i] - 2 - index[i];
+                                    return Math::Interpolator1D::intp(
+                                            base->mesh.x(i, this->accessibleRange.end[i] - 1), bc_v,
+                                            base->mesh.x(i, mirror_idx), this->evalAt(mirror_idx),
+                                            base->mesh.x(i, index));
+                                } break;
+                                case BCType::Neum: {
+                                    // mid-diff = bc
+                                    auto bc_v = this->bc[i].end->evalAt(index);
+                                    auto mirror_idx = index;
+                                    mirror_idx[i] = 2 * this->accessibleRange.end[i] - 2 - index[i];
+                                    return this->evalAt(mirror_idx)
+                                           + bc_v * (base->mesh.x(i, index) - base->mesh.x(i, mirror_idx));
+                                } break;
+                                case BCType::Symm: {
+                                    auto mirror_idx = index;
+                                    mirror_idx[i] = 2 * this->accessibleRange.end[i] - 2 - index[i];
+                                    return this->evalAt(mirror_idx);
+                                } break;
+                                case BCType::ASymm: {
+                                    auto mirror_idx = index;
+                                    mirror_idx[i] = 2 * this->accessibleRange.end[i] - 2 - index[i];
+                                    return -1. * this->evalAt(mirror_idx);
+                                } break;
+                                case BCType::Periodic: {
+                                    auto mirror_idx = index;
+                                    mirror_idx[i]
+                                            -= this->accessibleRange.end[i] - this->accessibleRange.start[i];
+                                    return this->evalAt(mirror_idx);
+                                } break;
+                                default:
+                                    OP_ERROR("Cannot handle current bc padding for stencil field: bc type {}",
+                                             this->bc[i].end->getTypeName());
+                                    OP_ABORT;
+                            }
+                        }
+                    } else {
+                        // center case
+                        if (index[i] < this->accessibleRange.start[i]) {
+                            // lower case
+                            switch (this->bc[i].start->getBCType()) {
+                                case BCType::Dirc: {
+                                    // mid-point rule
+                                    auto bc_v = this->bc[i].start->evalAt(index);
+                                    auto mirror_index = index;
+                                    mirror_index[i] = 2 * this->accessibleRange.start[i] - 1 - index[i];
+                                    return Math::Interpolator1D::intp(
+                                            base->mesh.x(i, this->accessibleRange.start[i]), bc_v,
+                                            base->mesh.x(i, mirror_index[i])
+                                                    + base->mesh.dx(i, mirror_index) / 2.,
+                                            this->evalAt(mirror_index),
+                                            base->mesh.x(i, index[i]) + base->mesh.dx(i, index) / 2.);
+                                } break;
+                                case BCType::Neum: {
+                                    // mid-diff = bc
+                                    auto bc_v = this->bc[i].start->evalAt(index);
+                                    auto mirror_index = index;
+                                    mirror_index[i] = 2 * this->accessibleRange.start[i] - 1 - index[i];
+                                    return this->evalAt(mirror_index)
+                                           + bc_v
+                                                     * (base->mesh.x(i, index) + base->mesh.dx(i, index) / 2.
+                                                        - base->mesh.x(i, mirror_index)
+                                                        - base->mesh.dx(i, mirror_index) / 2.);
+                                } break;
+                                case BCType::Symm: {
+                                    auto mirror_index = index;
+                                    mirror_index[i] = 2 * this->accessibleRange.start[i] - 1 - index[i];
+                                    return this->evalAt(mirror_index);
+
+                                } break;
+                                case BCType::ASymm: {
+                                    auto mirror_index = index;
+                                    mirror_index[i] = 2 * this->accessibleRange.start[i] - 1 - index[i];
+                                    return -1.0 * this->evalAt(mirror_index);
+
+                                } break;
+                                case BCType::Periodic: {
+                                    auto mirror_idx = index;
+                                    mirror_idx[i]
+                                            += this->accessibleRange.end[i] - this->accessibleRange.start[i];
+                                    return this->evalAt(mirror_idx);
+                                } break;
+                                default:
+                                    OP_ERROR("Cannot handle current bc padding: bc type {}",
+                                             this->bc[i].start->getTypeName());
+                                    OP_ABORT;
+                            }
+                        } else {
+                            // upper case
+                            switch (this->bc[i].end->getBCType()) {
+                                case BCType::Dirc: {
+                                    auto bc_v = this->bc[i].end->evalAt(index);
+                                    auto mirror_index = index;
+                                    mirror_index[i] = 2 * this->accessibleRange.end[i] - 1 - index[i];
+                                    return Math::Interpolator1D::intp(
+                                            base->mesh.x(i, this->accessibleRange.end[i]), bc_v,
+                                            base->mesh.x(i, mirror_index[i])
+                                                    + base->mesh.dx(i, mirror_index) / 2.,
+                                            this->evalAt(mirror_index),
+                                            base->mesh.x(i, index[i]) + base->mesh.dx(i, index) / 2.);
+
+                                } break;
+                                case BCType::Neum: {
+                                    auto bc_v = this->bc[i].end->evalAt(index);
+                                    auto mirror_index = index;
+                                    mirror_index[i] = 2 * this->accessibleRange.end[i] - 1 - index[i];
+                                    return this->evalAt(mirror_index)
+                                           + bc_v
+                                                     * (base->mesh.x(i, index) + base->mesh.dx(i, index) / 2.
+                                                        - base->mesh.x(i, mirror_index)
+                                                        - base->mesh.dx(i, mirror_index) / 2.);
+                                } break;
+                                case BCType::Symm: {
+                                    auto mirror_index = index;
+                                    mirror_index[i] = 2 * this->accessibleRange.end[i] - 1 - index[i];
+                                    return this->evalAt(mirror_index);
+                                    
+                                } break;
+                                case BCType::ASymm: {
+                                    auto mirror_index = index;
+                                    mirror_index[i] = 2 * this->accessibleRange.end[i] - 1 - index[i];
+                                    return -1. * this->evalAt(mirror_index);
+                                    
+                                } break;
+                                case BCType::Periodic: {
+                                    auto mirror_idx = index;
+                                    mirror_idx[i] -= this->accessibleRange.end[i] - this->accessibleRange.start[i];
+                                    return this->evalAt(mirror_idx);
+                                } break;
+                                default:
+                                    OP_ERROR("Cannot handle current bc padding: bc type {}",
+                                             this->bc[i].end->getTypeName());
+                                    OP_ABORT;
+                            }
+                        }
+                    }
                 }
-            else
-                [[unlikely]] { return DS::StencilPad<index_type>(base->evalAt(index)); }
+                // should not reach here
+                OP_ERROR("Could not handle current case: i = {}", index.toString());
+                OP_ABORT;
+            }
         }
         void prepare() const {}
-        auto operator[](const index_type& index) const { return this->operator()(index); }
-        auto evalAt(const index_type& index) const { return this->operator()(index); }
+        auto operator[](const index_type& index) const { return this->evalAt(index); }
+        auto operator()(const index_type& index) const { return this->evalAt(index); }
 
         template <typename Other>
-        requires(!std::same_as<Other, StencilField>) bool contains(const Other& o) const {
-            return false;
-        }
+        requires(!std::same_as<Other, StencilField>) bool contains(const Other& o) const { return false; }
         bool contains(const StencilField& o) const { return this == &o; }
 
     private:
@@ -299,9 +503,7 @@ namespace OpFlow {
         const auto& blocked(const index_type& i) const { return block_mark[i.l][i.p][i - offset[i.l][i.p]]; }
 
         template <typename Other>
-        requires(!std::same_as<Other, StencilField>) bool contains(const Other& o) const {
-            return false;
-        }
+        requires(!std::same_as<Other, StencilField>) bool contains(const Other& o) const { return false; }
         bool contains(const StencilField& o) const { return this == &o; }
 
     private:

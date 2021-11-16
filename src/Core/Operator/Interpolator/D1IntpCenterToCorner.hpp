@@ -24,43 +24,7 @@ namespace OpFlow {
 
         template <CartesianFieldExprType T>
         OPFLOW_STRONG_INLINE static auto couldSafeEval(const T& e, auto&& i) {
-            try {
-                eval_safe(e, i);
-            } catch (const CouldNotSafeEval& e) { return false; }
-            return true;
-        }
-
-        template <CartesianFieldExprType T>
-        OPFLOW_STRONG_INLINE static auto eval_safe(const T& e, auto&& i) {
-            if (e.accessibleRange.start[d] < i[d] && i[d] < e.accessibleRange.end[d]) {
-                auto x1 = e.mesh.x(d, i[d] - 1) + 0.5 * e.mesh.dx(d, i[d] - 1);
-                auto x2 = e.mesh.x(d, i[d]) + 0.5 * e.mesh.dx(d, i[d]);
-                auto y1 = e.evalSafeAt(i.template prev<d>());
-                auto y2 = e.evalSafeAt(i);
-                auto x = e.mesh.x(d, i[d]);
-                return Math::Interpolator1D::intp(x1, y1, x2, y2, x);
-            } else if (i[d] == e.accessibleRange.start[d] && e.bc[d].start) {
-                // left bc case
-                if (e.bc[d].start->getBCType() == BCType::Dirc) {
-                    return e.bc[d].start->evalAt(i);
-                } else if (e.bc[d].start->getBCType() == BCType::Neum) {
-                    return e.evalSafeAt(i) - e.bc[d].start->evalAt(i) * e.mesh.dx(d, i[d]) / 2;
-                } else
-                    goto error_case;
-            } else if (i[d] == e.accessibleRange.end[d] && e.bc[d].end) {
-                // right bc case
-                if (e.bc[d].end->getBCType() == BCType::Dirc) {
-                    return e.bc[d].end->evalAt(i);
-                } else if (e.bc[d].end->getBCType() == BCType::Neum) {
-                    return e.evalSafeAt(i.template prev<d>())
-                           + e.bc[d].end->evalAt(i) * e.mesh.dx(d, i[d] - 1) / 2;
-                } else
-                    goto error_case;
-            } else {
-            error_case:
-                throw CouldNotSafeEval(fmt::format("Cannot eval D1IntpCenterToCorner<{}>({}) at {}", d,
-                                                   e.name, i.toString()));
-            }
+            return e.couldEvalAt(i) && e.couldEvalAt(i.template prev<d>());
         }
 
         template <CartesianFieldExprType T>
@@ -82,10 +46,7 @@ namespace OpFlow {
             expr.mesh = expr.arg1.mesh.getView();
             expr.accessibleRange.start[d]++;
             expr.localRange.start[d]++;
-            //expr.accessibleRange.end[d]--;
-            //expr.localRange.end[d]--;
-            //expr.logicalRange.start[d]++;
-            //expr.logicalRange.end[d]--;
+            expr.logicalRange.start[d]++;
             expr.assignableRange.setEmpty();
         }
     };
