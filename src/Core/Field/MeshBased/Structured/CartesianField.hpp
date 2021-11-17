@@ -622,6 +622,15 @@ namespace OpFlow {
             return *this;
         }
 
+        auto& setExt(int width) {
+            // a uniform ext
+            for (auto& e : f.ext_width) {
+                e.start = width;
+                e.end = width;
+            }
+            return *this;
+        }
+
         auto& setPadding(int p) {
             f.padding = p;
             return *this;
