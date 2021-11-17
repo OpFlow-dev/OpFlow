@@ -133,8 +133,7 @@ namespace OpFlow {
                 requires std::same_as<
                         Op,
                         D1FirstOrderBiasedUpwind> || (DecableOpType<Op> && std::same_as<typename LastOpOfDecableOp<Op>::type, D1FirstOrderBiasedUpwind>) static inline void prepare(Expression<Op, E>& expr) {
-            constexpr auto dim = internal::CartesianFieldExprTrait<E>::dim;
-
+            expr.initPropsFrom(expr.arg1);
             // name
             expr.name = fmt::format("d1<D1FirstOrderBiasedUpwind<{}>>(", d) + expr.arg1.name + ")";
 
@@ -142,36 +141,10 @@ namespace OpFlow {
             expr.mesh = expr.arg1.mesh.getView();
             expr.loc = expr.arg1.loc;
 
-            // bc
-            expr.bc[d].start = nullptr;
-            expr.bc[d].end = nullptr;
-            for (auto i = 0; i < dim; ++i) {
-                if (i != d) {
-                    expr.bc[i].start = expr.arg1.bc[i].start
-                                               ? genProxyBC<Meta::RealType<decltype(expr)>,
-                                                            Meta::RealType<decltype(expr.arg1)>>(
-                                                       *expr.arg1.bc[i].start)
-                                               : nullptr;
-                    expr.bc[i].end
-                            = expr.arg1.bc[i].end
-                                      ? genProxyBC<Meta::RealType<decltype(expr)>,
-                                                   Meta::RealType<decltype(expr.arg1)>>(*expr.arg1.bc[i].end)
-                                      : nullptr;
-                    OP_WARN("BC for result expr not calculated.");
-                }
-            }
-
             // ranges
-            expr.accessibleRange = expr.arg1.accessibleRange;
-            if (expr.arg1.loc[d] == LocOnMesh::Corner) {
-                // nodal case
-                expr.accessibleRange.end[d]--;
-            } else {
-                // center case
-                if (expr.arg1.bc[d].start) { expr.accessibleRange.start[d]--; }
-                if (!expr.arg1.bc[d].end) { expr.accessibleRange.end[d]--; }
-            }
-            expr.localRange = expr.accessibleRange;
+            expr.accessibleRange.end[d]--;
+            expr.logicalRange.end[d]--;
+            expr.localRange.end[d]--;
             // make the result expr read-only
             expr.assignableRange.setEmpty();
         }

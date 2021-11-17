@@ -112,11 +112,11 @@ TEST_F(CartesianFieldTest, CornerDircWithExtRangeCheck) {
 
 TEST_F(CartesianFieldTest, CornerPeriodicRangeCheck) {
     auto u = ExprBuilder<Field>()
-                         .setMesh(m)
-                         .setBC(0, DimPos::start, BCType::Periodic)
-                         .setBC(0, DimPos::end, BCType::Periodic)
-                         .setLoc(LocOnMesh::Corner)
-                         .build();
+                     .setMesh(m)
+                     .setBC(0, DimPos::start, BCType::Periodic)
+                     .setBC(0, DimPos::end, BCType::Periodic)
+                     .setLoc(LocOnMesh::Corner)
+                     .build();
     auto mr = m.getRange();
     ASSERT_EQ(u.accessibleRange.start[0], mr.start[0]);
     ASSERT_EQ(u.accessibleRange.end[0], mr.end[0] - 1);
@@ -145,7 +145,6 @@ TEST_F(CartesianFieldTest, CenterPeriodicRangeCheck) {
     ASSERT_EQ(u.logicalRange.start[0], u.accessibleRange.start[0]);
     ASSERT_EQ(u.logicalRange.end[0], u.accessibleRange.end[0]);
 }
-
 
 TEST_F(CartesianFieldTest, BuildAfterDeclear) {
     auto u = ExprBuilder<Field2>().setMesh(m2).build();

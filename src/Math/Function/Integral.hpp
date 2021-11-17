@@ -20,6 +20,6 @@ namespace OpFlow::Math {
         int len = end - start;
         return (off % len + len) % len + start;
     }
-}
+}// namespace OpFlow::Math
 
 #endif//OPFLOW_INTEGRAL_HPP
