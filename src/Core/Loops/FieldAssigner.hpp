@@ -38,11 +38,11 @@ namespace OpFlow::internal {
         template <CartesianFieldType To, CartesianFieldExprType From>
         static auto& assign_impl(From& src, To& dst) {
             src.prepare();
-            OP_EXPECT_MSG(dst.assignableRange == DS::commonRange(dst.assignableRange, src.accessibleRange),
+            OP_EXPECT_MSG(dst.assignableRange == DS::commonRange(dst.assignableRange, src.logicalRange),
                           "Assign warning: dst's assignableRange not covered by src's accessibleRange.\ndst "
                           "= {}, range = {}\nsrc = {}, range = {}",
                           dst.getName(), dst.assignableRange.toString(), src.getName(),
-                          src.accessibleRange.toString());
+                          src.logicalRange.toString());
 
             rangeFor(DS::commonRange(dst.assignableRange, dst.localRange),
                      [&](auto&& i) { dst[i] = src.evalAt(i); });
@@ -52,26 +52,19 @@ namespace OpFlow::internal {
         template <CartAMRFieldType To, CartAMRFieldExprType From>
         static auto& assign_impl(From& src, To& dst) {
             src.prepare();
-            constexpr auto width = CartAMRFieldExprTrait<From>::bc_width;
             auto levels = dst.getLevels();
 #pragma omp parallel
             for (auto i = 0; i < levels; ++i) {
                 auto parts = dst.accessibleRanges[i].size();
 #pragma omp for nowait schedule(dynamic)
                 for (auto j = 0; j < parts; ++j) {
-                    OP_EXPECT_MSG(DS::inRange(dst.assignableRanges[i][j], src.accessibleRanges[i][j]),
+                    OP_EXPECT_MSG(DS::inRange(dst.assignableRanges[i][j], src.logicalRanges[i][j]),
                                   "Assign warning: dst's assignableRange not covered by src's "
-                                  "accessibleRange at level {} part {}.\ndst "
+                                  "logicalRanges at level {} part {}.\ndst "
                                   "= {}, range = {}\nsrc = {}, range = {}",
                                   i, j, dst.getName(), dst.assignableRanges[i][j].toString(), src.getName(),
-                                  src.accessibleRanges[i][j].toString());
-                    auto bc_ranges = src.accessibleRanges[i][j].getBCRanges(width + 1);
-                    for (const auto& r : bc_ranges) {
-                        rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], r),
-                                   [&](auto&& k) { dst[k] = src.evalSafeAt(k); });
-                    }
-                    auto inner_range = src.accessibleRanges[i][j].getInnerRange(width + 1);
-                    rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], inner_range),
+                                  src.logicalRanges[i][j].toString());
+                    rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], dst.logicalRanges[i][j]),
                                [&](auto&& k) { dst[k] = src.evalAt(k); });
                 }
             }

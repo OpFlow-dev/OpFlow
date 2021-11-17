@@ -585,9 +585,8 @@ namespace OpFlow {
         // set a functor bc
         template <typename F>
         requires requires(F f) {
-            {
-                f(std::declval<typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>())
-                } -> std::convertible_to<typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
+            { f(std::declval<typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>()) }
+            ->std::convertible_to<typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
         }
         auto& setBC(int d, DimPos pos, BCType type, F&& functor) {
             OP_ASSERT(d < dim);

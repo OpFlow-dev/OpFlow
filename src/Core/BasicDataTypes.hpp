@@ -41,9 +41,7 @@ namespace OpFlow {
         CouldNotSafeEval() = default;
         CouldNotSafeEval(const std::string& r) : reason(r) {}
 
-        [[nodiscard]] const char* what() const noexcept override {
-            return reason.c_str();
-        }
+        [[nodiscard]] const char* what() const noexcept override { return reason.c_str(); }
     };
 
 }// namespace OpFlow

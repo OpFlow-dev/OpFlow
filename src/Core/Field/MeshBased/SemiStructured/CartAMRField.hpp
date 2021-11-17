@@ -44,7 +44,6 @@ namespace OpFlow {
             : CartAMRFieldExpr<CartAMRField<D, M, C>>(std::move(other)), data(std::move(other.data)),
               offset(std::move(other.offset)) {}
 
-    protected:
         auto& assignImpl_final(const CartAMRField& other) {
             if (this != &other) {
                 // only data is assigned
@@ -65,8 +64,7 @@ namespace OpFlow {
             return *this;
         }
 
-    public:
-        auto& operator=(const D& c) {
+        auto& assignImpl_final(const D& c) {
             auto levels = data.size();
 #pragma omp parallel
             for (auto l = 0; l < levels; ++l) {

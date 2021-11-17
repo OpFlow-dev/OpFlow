@@ -23,7 +23,7 @@ namespace OpFlow {
     template <typename Derived>
     struct SemiStructuredFieldExpr : MeshBasedFieldExpr<Derived> {
         std::vector<std::vector<typename internal::SemiStructuredFieldExprTrait<Derived>::range_type>>
-                localRanges, assignableRanges, accessibleRanges;
+                localRanges, assignableRanges, accessibleRanges, logicalRanges;
         std::array<LocOnMesh, internal::SemiStructuredFieldExprTrait<Derived>::dim> loc;
         std::array<DS::Pair<std::unique_ptr<
                            BCBase<typename internal::SemiStructuredFieldExprTrait<Derived>::type>>>,
@@ -34,7 +34,7 @@ namespace OpFlow {
         SemiStructuredFieldExpr(const SemiStructuredFieldExpr& other)
             : MeshBasedFieldExpr<Derived>(other), localRanges(other.localRanges),
               assignableRanges(other.assignableRanges), accessibleRanges(other.accessibleRanges),
-              loc(other.loc) {
+              logicalRanges(other.logicalRanges), loc(other.loc) {
             for (auto i = 0; i < bc.size(); ++i) {
                 bc[i].start = other.bc[i].start ? other.bc[i].start->getCopy() : nullptr;
                 bc[i].end = other.bc[i].end ? other.bc[i].end->getCopy() : nullptr;
@@ -44,6 +44,7 @@ namespace OpFlow {
         SemiStructuredFieldExpr(SemiStructuredFieldExpr&& other) noexcept
             : MeshBasedFieldExpr<Derived>(std::move(other)), bc(std::move(other.bc)),
               loc(std::move(other.loc)), localRanges(std::move(other.localRanges)),
+              logicalRanges(std::move(other.logicalRanges)),
               assignableRanges(std::move(other.assignableRanges)),
               accessibleRanges(std::move(other.accessibleRanges)) {}
 
@@ -64,6 +65,7 @@ namespace OpFlow {
             this->initPropsFromImpl_MeshBasedFieldExpr(other);
             this->loc = other.loc;
             this->localRanges = other.localRanges;
+            this->logicalRanges = other.logicalRanges;
             this->assignableRanges = other.assignableRanges;
             this->accessibleRanges = other.accessibleRanges;
             for (auto i = 0; i < internal::FieldExprTrait<Derived>::dim; ++i) {
@@ -78,8 +80,8 @@ namespace OpFlow {
         }
 
         bool couldEvalAtImpl_final(auto&& i) const {
-            return accessibleRanges.size() > i.l && accessibleRanges[i.l].size() > i.p
-                   && DS::inRange(accessibleRanges[i.l][i.p], i);
+            return logicalRanges.size() > i.l && logicalRanges[i.l].size() > i.p
+                   && DS::inRange(logicalRanges[i.l][i.p], i);
         }
 
     private:

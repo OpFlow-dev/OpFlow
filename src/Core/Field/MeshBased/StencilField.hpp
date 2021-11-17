@@ -35,7 +35,7 @@ namespace OpFlow {
         StencilField() = default;
         StencilField(const StencilField& other)
             : internal::StructuredFieldExprTrait<T>::template twin_type<StencilField<T>>(other),
-        base(other.base), pinned(other.pinned){
+              base(other.base), pinned(other.pinned) {
             for (auto i = 0; i < internal::ExprTrait<StencilField>::dim; ++i) {
                 bc[i].start = other.bc[i].start ? other.bc[i].start->getCopy() : nullptr;
                 if (isLogicalBC(bc[i].start->getBCType()))
@@ -108,13 +108,14 @@ namespace OpFlow {
         auto evalAt(const index_type& index) const {
             OP_ASSERT_MSG(base, "base ptr of stencil field is nullptr");
             if (DS::inRange(this->assignableRange, index)) [[likely]] {
-                auto ret = DS::StencilPad<index_type>(0);
-                if (pinned && index == index_type(this->assignableRange.start)) [[unlikely]]
-                    ret.pad[index] = 0.;
-                else [[likely]]
-                    ret.pad[index] = 1.0;
-                return ret;
-            } else if (DS::inRange(this->accessibleRange, index)) {
+                    auto ret = DS::StencilPad<index_type>(0);
+                    if (pinned && index == index_type(this->assignableRange.start))
+                        [[unlikely]] ret.pad[index] = 0.;
+                    else
+                        [[likely]] ret.pad[index] = 1.0;
+                    return ret;
+                }
+            else if (DS::inRange(this->accessibleRange, index)) {
                 // index lay on dirc bc
                 return DS::StencilPad<index_type> {base->evalAt(index)};
             } else if (!DS::inRange(this->logicalRange, index)) {
@@ -292,17 +293,18 @@ namespace OpFlow {
                                     auto mirror_index = index;
                                     mirror_index[i] = 2 * this->accessibleRange.end[i] - 1 - index[i];
                                     return this->evalAt(mirror_index);
-                                    
+
                                 } break;
                                 case BCType::ASymm: {
                                     auto mirror_index = index;
                                     mirror_index[i] = 2 * this->accessibleRange.end[i] - 1 - index[i];
                                     return -1. * this->evalAt(mirror_index);
-                                    
+
                                 } break;
                                 case BCType::Periodic: {
                                     auto mirror_idx = index;
-                                    mirror_idx[i] -= this->accessibleRange.end[i] - this->accessibleRange.start[i];
+                                    mirror_idx[i]
+                                            -= this->accessibleRange.end[i] - this->accessibleRange.start[i];
                                     return this->evalAt(mirror_idx);
                                 } break;
                                 default:
@@ -323,7 +325,9 @@ namespace OpFlow {
         auto operator()(const index_type& index) const { return this->evalAt(index); }
 
         template <typename Other>
-        requires(!std::same_as<Other, StencilField>) bool contains(const Other& o) const { return false; }
+        requires(!std::same_as<Other, StencilField>) bool contains(const Other& o) const {
+            return false;
+        }
         bool contains(const StencilField& o) const { return this == &o; }
 
     private:
@@ -503,7 +507,9 @@ namespace OpFlow {
         const auto& blocked(const index_type& i) const { return block_mark[i.l][i.p][i - offset[i.l][i.p]]; }
 
         template <typename Other>
-        requires(!std::same_as<Other, StencilField>) bool contains(const Other& o) const { return false; }
+        requires(!std::same_as<Other, StencilField>) bool contains(const Other& o) const {
+            return false;
+        }
         bool contains(const StencilField& o) const { return this == &o; }
 
     private:

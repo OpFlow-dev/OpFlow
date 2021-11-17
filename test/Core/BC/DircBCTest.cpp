@@ -17,15 +17,12 @@ using namespace OpFlow;
 
 class DircBCTest : public testing::Test {
 protected:
-    void SetUp() override {
-        m = MeshBuilder<Mesh>().newMesh(11).setMeshOfDim(0, 0., 1.).build();
-    }
+    void SetUp() override { m = MeshBuilder<Mesh>().newMesh(11).setMeshOfDim(0, 0., 1.).build(); }
 
     using Mesh = CartesianMesh<Meta::int_<1>>;
     using Field = CartesianField<double, Mesh>;
     Mesh m;
 };
-
 
 TEST_F(DircBCTest, CornerDircWithExtValCheck) {
     auto u = ExprBuilder<Field>()
