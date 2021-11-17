@@ -185,6 +185,7 @@ namespace OpFlow {
         }
         template <CartesianFieldExprType E>
         OPFLOW_STRONG_INLINE static void prepare(Expression<D2SecondOrderCentered, E>& expr) {
+            expr.initPropsFrom(expr.arg1);
             // name
             expr.name = fmt::format("d2<D2SecondOrderCentered<{}>>({})", d, expr.arg1.name);
 
@@ -193,12 +194,12 @@ namespace OpFlow {
             expr.loc = expr.arg1.loc;
 
             // ranges
-            expr.accessibleRange = expr.arg1.accessibleRange;
-            expr.logicalRange = expr.arg1.logicalRange;
-            expr.localRange = expr.arg1.localRange;
-
-            // todo: impl here
-            OP_NOT_IMPLEMENTED;
+            expr.accessibleRange.start[d]++;
+            expr.accessibleRange.end[d]--;
+            expr.logicalRange.start[d]++;
+            expr.logicalRange.end[d]--;
+            expr.localRange.start[d]++;
+            expr.localRange.end[d]--;
             expr.assignableRange.setEmpty();
         }
 
