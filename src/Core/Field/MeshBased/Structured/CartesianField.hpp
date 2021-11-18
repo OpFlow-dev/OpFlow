@@ -67,24 +67,29 @@ namespace OpFlow {
             : CartesianFieldExpr<CartesianField<D, M, C>>(std::move(other)), data(std::move(other.data)),
               initialized(true), bc(std::move(other.bc)), ext_width(std::move(other.ext_width)) {}
 
+        template <BasicArithOp Op = BasicArithOp::Eq>
         auto& assignImpl_final(const CartesianField& other) {
             if (!initialized) {
+                OP_ASSERT_MSG(Op == BasicArithOp::Eq,
+                              "Incremental assignment to uninitialized field is illegal");
                 this->initPropsFrom(other);
                 data = other.data;
                 ext_width = other.ext_width;
                 initialized = true;
             } else if (this != &other) {
-                internal::FieldAssigner::assign(other, *this);
+                internal::FieldAssigner::assign<Op>(other, *this);
                 this->updatePadding();
             }
             return *this;
         }
 
-        template <CartesianFieldExprType T>
+        template <BasicArithOp Op = BasicArithOp::Eq, CartesianFieldExprType T>
         auto&
         assignImpl_final(T&& other) {// T is not const here for that we need to call other.prepare() later
             other.prepare();
             if (!initialized) {
+                OP_ASSERT_MSG(Op == BasicArithOp::Eq,
+                              "Incremental assignment to uninitialized field is illegal");
                 this->initPropsFrom(other);
                 if constexpr (CartesianFieldType<T>) {
                     data = other.data;
@@ -106,26 +111,61 @@ namespace OpFlow {
                     this->data.reShape(this->localRange.getInnerRange(-this->padding).getExtends());
                     this->offset = typename internal::CartesianFieldExprTrait<CartesianField>::index_type(
                             this->localRange.getInnerRange(-this->padding).getOffset());
-                    // invoke the assigner
-                    internal::FieldAssigner::assign(other, *this);
-                    this->updatePadding();
                 }
+                // invoke the assigner
+                internal::FieldAssigner::assign<Op>(other, *this);
+                this->updatePadding();
                 initialized = true;
             } else if ((void*) this != (void*) &other) {
                 // assign all values from T to assignable range
-                internal::FieldAssigner::assign(other, *this);
+                internal::FieldAssigner::assign<Op>(other, *this);
                 this->updatePadding();
             }
             return *this;
         }
 
+        template <BasicArithOp Op = BasicArithOp::Eq>
         auto& assignImpl_final(const D& c) {
             if (!initialized) {
                 OP_CRITICAL("CartesianField not initialized. Cannot assign constant to it.");
                 OP_ABORT;
             }
-            rangeFor(DS::commonRange(this->assignableRange, this->localRange),
-                     [&](auto&& i) { this->operator[](i) = c; });
+            if constexpr (Op == BasicArithOp::Eq)
+                rangeFor(DS::commonRange(this->assignableRange, this->localRange),
+                         [&](auto&& i) { this->operator[](i) = c; });
+            else if constexpr (Op == BasicArithOp::Add)
+                rangeFor(DS::commonRange(this->assignableRange, this->localRange),
+                         [&](auto&& i) { this->operator[](i) += c; });
+            else if constexpr (Op == BasicArithOp::Minus)
+                rangeFor(DS::commonRange(this->assignableRange, this->localRange),
+                         [&](auto&& i) { this->operator[](i) -= c; });
+            else if constexpr (Op == BasicArithOp::Mul)
+                rangeFor(DS::commonRange(this->assignableRange, this->localRange),
+                         [&](auto&& i) { this->operator[](i) *= c; });
+            else if constexpr (Op == BasicArithOp::Div)
+                rangeFor(DS::commonRange(this->assignableRange, this->localRange),
+                         [&](auto&& i) { this->operator[](i) /= c; });
+            else if constexpr (Op == BasicArithOp::Mod)
+                rangeFor(DS::commonRange(this->assignableRange, this->localRange),
+                         [&](auto&& i) { this->operator[](i) %= c; });
+            else if constexpr (Op == BasicArithOp::And)
+                rangeFor(DS::commonRange(this->assignableRange, this->localRange),
+                         [&](auto&& i) { this->operator[](i) &= c; });
+            else if constexpr (Op == BasicArithOp::Or)
+                rangeFor(DS::commonRange(this->assignableRange, this->localRange),
+                         [&](auto&& i) { this->operator[](i) |= c; });
+            else if constexpr (Op == BasicArithOp::Xor)
+                rangeFor(DS::commonRange(this->assignableRange, this->localRange),
+                         [&](auto&& i) { this->operator[](i) ^= c; });
+            else if constexpr (Op == BasicArithOp::LShift)
+                rangeFor(DS::commonRange(this->assignableRange, this->localRange),
+                         [&](auto&& i) { this->operator[](i) <<= c; });
+            else if constexpr (Op == BasicArithOp::RShift)
+                rangeFor(DS::commonRange(this->assignableRange, this->localRange),
+                         [&](auto&& i) { this->operator[](i) >>= c; });
+            else
+                OP_NOT_IMPLEMENTED;
+
             this->updatePadding();
             return *this;
         }

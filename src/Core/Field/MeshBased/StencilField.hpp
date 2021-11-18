@@ -105,6 +105,18 @@ namespace OpFlow {
 
         void pin(bool p) { pinned = p; }
 
+        // only used for HYPRE solvers to get the exact offset stencil pad
+        void ignorePeriodicBC() {
+            for (auto i = 0; i < dim; ++i) {
+                if (base->bc[i].start->getBCType() == BCType::Periodic) {
+                    this->assignableRange.start[i] = base->logicalRange.start[i];
+                    this->accessibleRange.start[i] = base->logicalRange.start[i];
+                    this->assignableRange.end[i] = base->logicalRange.end[i];
+                    this->accessibleRange.end[i] = base->logicalRange.end[i];
+                }
+            }
+        }
+
         auto evalAt(const index_type& index) const {
             OP_ASSERT_MSG(base, "base ptr of stencil field is nullptr");
             if (DS::inRange(this->assignableRange, index)) [[likely]] {

@@ -50,6 +50,7 @@ namespace OpFlow {
     enum class LocOnMesh { Corner, Center };
 
     enum PinValue { PINNED, UNPINNED };
+    enum class BasicArithOp { Eq, Add, Minus, Mul, Div, Mod, And, Or, Xor, LShift, RShift };
 
     constexpr ConstantI LARGE_INT = 100000;
     constexpr ConstantD LARGE_FLT = 1.E16;
