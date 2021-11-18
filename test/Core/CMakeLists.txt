@@ -39,3 +39,4 @@ add_gmock(EvenSplitStrategyTest ${CMAKE_CURRENT_LIST_DIR}/Parallel/EvenSplitStra
 
 # Equation
 add_gmock(EqnSolveHandlerTest ${CMAKE_CURRENT_LIST_DIR}/Equation/EqnSolveHandlerTest.cpp)
+add_gmock(PeriodicEqnTest ${CMAKE_CURRENT_LIST_DIR}/Equation/PeriodicEqnTest.cpp)

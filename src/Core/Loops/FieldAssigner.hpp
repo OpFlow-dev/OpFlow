@@ -23,19 +23,20 @@
 
 namespace OpFlow::internal {
     struct FieldAssigner {
+        template <BasicArithOp Op = BasicArithOp::Eq>
         static auto& assign(auto&& src, auto&& dst) {
             if (src.contains(dst)) {
                 auto temp = dst;
-                assign_impl(src, temp);
-                assign_impl(temp, dst);
+                assign_impl<BasicArithOp::Eq>(src, temp);
+                assign_impl<Op>(temp, dst);
             } else {
-                assign_impl(src, dst);
+                assign_impl<Op>(src, dst);
             }
             return dst;
         }
 
     private:
-        template <CartesianFieldType To, CartesianFieldExprType From>
+        template <BasicArithOp Op = BasicArithOp::Eq, CartesianFieldType To, CartesianFieldExprType From>
         static auto& assign_impl(From& src, To& dst) {
             src.prepare();
             OP_EXPECT_MSG(dst.assignableRange == DS::commonRange(dst.assignableRange, src.logicalRange),
@@ -44,12 +45,46 @@ namespace OpFlow::internal {
                           dst.getName(), dst.assignableRange.toString(), src.getName(),
                           src.logicalRange.toString());
 
-            rangeFor(DS::commonRange(dst.assignableRange, dst.localRange),
-                     [&](auto&& i) { dst[i] = src.evalAt(i); });
+            if constexpr (Op == BasicArithOp::Eq)
+                rangeFor(DS::commonRange(dst.assignableRange, dst.localRange),
+                         [&](auto&& i) { dst[i] = src.evalAt(i); });
+            else if constexpr (Op == BasicArithOp::Add)
+                rangeFor(DS::commonRange(dst.assignableRange, dst.localRange),
+                         [&](auto&& i) { dst[i] += src.evalAt(i); });
+            else if constexpr (Op == BasicArithOp::Minus)
+                rangeFor(DS::commonRange(dst.assignableRange, dst.localRange),
+                         [&](auto&& i) { dst[i] -= src.evalAt(i); });
+            else if constexpr (Op == BasicArithOp::Mul)
+                rangeFor(DS::commonRange(dst.assignableRange, dst.localRange),
+                         [&](auto&& i) { dst[i] *= src.evalAt(i); });
+            else if constexpr (Op == BasicArithOp::Div)
+                rangeFor(DS::commonRange(dst.assignableRange, dst.localRange),
+                         [&](auto&& i) { dst[i] /= src.evalAt(i); });
+            else if constexpr (Op == BasicArithOp::Mod)
+                rangeFor(DS::commonRange(dst.assignableRange, dst.localRange),
+                         [&](auto&& i) { dst[i] %= src.evalAt(i); });
+            else if constexpr (Op == BasicArithOp::And)
+                rangeFor(DS::commonRange(dst.assignableRange, dst.localRange),
+                         [&](auto&& i) { dst[i] &= src.evalAt(i); });
+            else if constexpr (Op == BasicArithOp::Or)
+                rangeFor(DS::commonRange(dst.assignableRange, dst.localRange),
+                         [&](auto&& i) { dst[i] |= src.evalAt(i); });
+            else if constexpr (Op == BasicArithOp::Xor)
+                rangeFor(DS::commonRange(dst.assignableRange, dst.localRange),
+                         [&](auto&& i) { dst[i] ^= src.evalAt(i); });
+            else if constexpr (Op == BasicArithOp::LShift)
+                rangeFor(DS::commonRange(dst.assignableRange, dst.localRange),
+                         [&](auto&& i) { dst[i] <<= src.evalAt(i); });
+            else if constexpr (Op == BasicArithOp::RShift)
+                rangeFor(DS::commonRange(dst.assignableRange, dst.localRange),
+                         [&](auto&& i) { dst[i] >>= src.evalAt(i); });
+            else
+                OP_NOT_IMPLEMENTED;
+
             dst.updatePadding();
             return dst;
         }
-        template <CartAMRFieldType To, CartAMRFieldExprType From>
+        template <BasicArithOp Op = BasicArithOp::Eq, CartAMRFieldType To, CartAMRFieldExprType From>
         static auto& assign_impl(From& src, To& dst) {
             src.prepare();
             auto levels = dst.getLevels();
@@ -64,8 +99,41 @@ namespace OpFlow::internal {
                                   "= {}, range = {}\nsrc = {}, range = {}",
                                   i, j, dst.getName(), dst.assignableRanges[i][j].toString(), src.getName(),
                                   src.logicalRanges[i][j].toString());
-                    rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], dst.logicalRanges[i][j]),
-                               [&](auto&& k) { dst[k] = src.evalAt(k); });
+                    if constexpr (Op == BasicArithOp::Eq)
+                        rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], dst.logicalRanges[i][j]),
+                                   [&](auto&& k) { dst[k] = src.evalAt(k); });
+                    else if constexpr (Op == BasicArithOp::Add)
+                        rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], dst.logicalRanges[i][j]),
+                                   [&](auto&& k) { dst[k] += src.evalAt(k); });
+                    else if constexpr (Op == BasicArithOp::Minus)
+                        rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], dst.logicalRanges[i][j]),
+                                   [&](auto&& k) { dst[k] -= src.evalAt(k); });
+                    else if constexpr (Op == BasicArithOp::Mul)
+                        rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], dst.logicalRanges[i][j]),
+                                   [&](auto&& k) { dst[k] *= src.evalAt(k); });
+                    else if constexpr (Op == BasicArithOp::Div)
+                        rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], dst.logicalRanges[i][j]),
+                                   [&](auto&& k) { dst[k] /= src.evalAt(k); });
+                    else if constexpr (Op == BasicArithOp::Mod)
+                        rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], dst.logicalRanges[i][j]),
+                                   [&](auto&& k) { dst[k] %= src.evalAt(k); });
+                    else if constexpr (Op == BasicArithOp::And)
+                        rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], dst.logicalRanges[i][j]),
+                                   [&](auto&& k) { dst[k] &= src.evalAt(k); });
+                    else if constexpr (Op == BasicArithOp::Or)
+                        rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], dst.logicalRanges[i][j]),
+                                   [&](auto&& k) { dst[k] |= src.evalAt(k); });
+                    else if constexpr (Op == BasicArithOp::Xor)
+                        rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], dst.logicalRanges[i][j]),
+                                   [&](auto&& k) { dst[k] ^= src.evalAt(k); });
+                    else if constexpr (Op == BasicArithOp::LShift)
+                        rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], dst.logicalRanges[i][j]),
+                                   [&](auto&& k) { dst[k] <<= src.evalAt(k); });
+                    else if constexpr (Op == BasicArithOp::RShift)
+                        rangeFor_s(DS::commonRange(dst.assignableRanges[i][j], dst.logicalRanges[i][j]),
+                                   [&](auto&& k) { dst[k] >>= src.evalAt(k); });
+                    else
+                        OP_NOT_IMPLEMENTED;
                 }
             }
             dst.updatePadding();

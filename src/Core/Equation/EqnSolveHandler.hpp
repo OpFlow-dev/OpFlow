@@ -64,6 +64,7 @@ namespace OpFlow {
             auto stField = target->getStencilField();
             stField.pin(solver.params.pinValue);
             stencilField = std::make_unique<StencilField<T>>(std::move(stField));
+            stencilField->ignorePeriodicBC();
             equation = std::make_unique<Eqn>(eqn_getter(*stencilField));
             fieldsAllocated = true;
 
@@ -81,6 +82,13 @@ namespace OpFlow {
             auto r = local_assignable_range.end;
             for (auto j = 0; j < r.size(); ++j) r[j] -= 1;
             HYPRE_StructGridSetExtents(grid, local_assignable_range.start.data(), r.data());
+            int periodic[dim];
+            for (auto j = 0; j < dim; ++j)
+                if (target->bc[j].start && target->bc[j].start->getBCType() == BCType::Periodic)
+                    periodic[j] = target->assignableRange.end[j] - target->assignableRange.start[j];
+                else
+                    periodic[j] = 0;
+            HYPRE_StructGridSetPeriodic(grid, periodic);
             HYPRE_StructGridAssemble(grid);
 
             // assume the middle stencil is complete
@@ -114,6 +122,12 @@ namespace OpFlow {
         void generateAb() {
             std::vector<int> entries(commStencil.pad.size());
             for (auto i = 0; i < entries.size(); ++i) entries[i] = i;
+            int periodic[dim];
+            for (auto j = 0; j < dim; ++j)
+                if (target->bc[j].start && target->bc[j].start->getBCType() == BCType::Periodic)
+                    periodic[j] = target->assignableRange.end[j] - target->assignableRange.start[j];
+                else
+                    periodic[j] = 0;
 
             rangeFor(DS::commonRange(target->assignableRange, target->localRange), [&](auto&& k) {
                 auto currentStencil = getOffsetStencil(uniEqn->evalAt(k), k);

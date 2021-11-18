@@ -46,21 +46,69 @@ namespace OpFlow {
         /// \param expr the src expr
         void initPropsFrom(auto&& expr) { this->derived().initPropsFromImpl_final(OP_PERFECT_FOWD(expr)); }
 
-        template <ExprType Other>
-        auto& operator=(const Other& other) {
-            this->derived().assignImpl_final(other);
+        template <typename Other>
+                requires ExprType<Other> || Meta::Numerical<Other> auto& operator=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::Eq>(std::forward<Other>(other));
             return *this;
         }
 
-        template <ExprType Other>
-        auto& operator=(Other&& other) {
-            this->derived().assignImpl_final(std::move(other));
+        template <typename Other>
+                requires ExprType<Other> || Meta::Numerical<Other> auto& operator+=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::Add>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
-        template <Meta::Numerical D>
-        auto& operator=(const D& d) {
-            this->derived().assignImpl_final(d);
+        template <typename Other>
+                requires ExprType<Other> || Meta::Numerical<Other> auto& operator-=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::Minus>(OP_PERFECT_FOWD(other));
+            return *this;
+        }
+
+        template <typename Other>
+                requires ExprType<Other> || Meta::Numerical<Other> auto& operator*=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::Mul>(OP_PERFECT_FOWD(other));
+            return *this;
+        }
+
+        template <typename Other>
+                requires ExprType<Other> || Meta::Numerical<Other> auto& operator/=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::Div>(OP_PERFECT_FOWD(other));
+            return *this;
+        }
+
+        template <typename Other>
+                requires ExprType<Other>&& std::integral<typename internal::ExprTrait<Other>::elem_type>&& std::integral<typename internal::ExprTrait<Expr>::elem_type> || std::integral<Meta::RealType<Other>> auto& operator%=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::Mod>(OP_PERFECT_FOWD(other));
+            return *this;
+        }
+
+        template <typename Other>
+                requires ExprType<Other>&& std::integral<typename internal::ExprTrait<Other>::elem_type>&& std::integral<typename internal::ExprTrait<Expr>::elem_type> || std::integral<Meta::RealType<Other>> auto& operator&=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::And>(OP_PERFECT_FOWD(other));
+            return *this;
+        }
+
+        template <typename Other>
+                requires ExprType<Other>&& std::integral<typename internal::ExprTrait<Other>::elem_type>&& std::integral<typename internal::ExprTrait<Expr>::elem_type> || std::integral<Meta::RealType<Other>> auto& operator|=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::Or>(OP_PERFECT_FOWD(other));
+            return *this;
+        }
+
+        template <typename Other>
+                requires ExprType<Other>&& std::integral<typename internal::ExprTrait<Other>::elem_type>&& std::integral<typename internal::ExprTrait<Expr>::elem_type> || std::integral<Meta::RealType<Other>> auto& operator^=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::Xor>(OP_PERFECT_FOWD(other));
+            return *this;
+        }
+
+        template <typename Other>
+                requires ExprType<Other>&& std::integral<typename internal::ExprTrait<Other>::elem_type>&& std::integral<typename internal::ExprTrait<Expr>::elem_type> || std::integral<Meta::RealType<Other>> auto& operator<<=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::LShift>(OP_PERFECT_FOWD(other));
+            return *this;
+        }
+
+        template <typename Other>
+                requires ExprType<Other>&& std::integral<typename internal::ExprTrait<Other>::elem_type>&& std::integral<typename internal::ExprTrait<Expr>::elem_type> || std::integral<Meta::RealType<Other>> auto& operator>>=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::RShift>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
@@ -110,19 +158,68 @@ namespace OpFlow {
         void initPropsFrom(auto&& expr) { this->derived().initPropsFromImpl_final(OP_PERFECT_FOWD(expr)); }
 
         template <typename Other>
-        auto& operator=(const Expr<Other>& other) {
-            this->derived().assignImpl_final(other);
+                requires ExprType<Other> || Meta::Numerical<Other> auto& operator=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::Eq>(std::forward<Other>(other));
             return *this;
         }
 
         template <typename Other>
-        auto& operator=(Expr<Other>&& other) {
-            this->derived().assignImpl_final(std::move(other));
+                requires ExprType<Other> || Meta::Numerical<Other> auto& operator+=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::Add>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
-        auto& operator=(const Derived& other) {
-            if (&other != this) { this->derived().assignImpl_final(other); }
+        template <typename Other>
+                requires ExprType<Other> || Meta::Numerical<Other> auto& operator-=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::Minus>(OP_PERFECT_FOWD(other));
+            return *this;
+        }
+
+        template <typename Other>
+                requires ExprType<Other> || Meta::Numerical<Other> auto& operator*=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::Mul>(OP_PERFECT_FOWD(other));
+            return *this;
+        }
+
+        template <typename Other>
+                requires ExprType<Other> || Meta::Numerical<Other> auto& operator/=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::Div>(OP_PERFECT_FOWD(other));
+            return *this;
+        }
+
+        template <typename Other>
+                requires ExprType<Other>&& std::integral<typename internal::ExprTrait<Other>::elem_type>&& std::integral<typename internal::ExprTrait<Expr>::elem_type> || std::integral<Meta::RealType<Other>> auto& operator%=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::Mod>(OP_PERFECT_FOWD(other));
+            return *this;
+        }
+
+        template <typename Other>
+                requires ExprType<Other>&& std::integral<typename internal::ExprTrait<Other>::elem_type>&& std::integral<typename internal::ExprTrait<Expr>::elem_type> || std::integral<Meta::RealType<Other>> auto& operator&=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::And>(OP_PERFECT_FOWD(other));
+            return *this;
+        }
+
+        template <typename Other>
+                requires ExprType<Other>&& std::integral<typename internal::ExprTrait<Other>::elem_type>&& std::integral<typename internal::ExprTrait<Expr>::elem_type> || std::integral<Meta::RealType<Other>> auto& operator|=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::Or>(OP_PERFECT_FOWD(other));
+            return *this;
+        }
+
+        template <typename Other>
+                requires ExprType<Other>&& std::integral<typename internal::ExprTrait<Other>::elem_type>&& std::integral<typename internal::ExprTrait<Expr>::elem_type> || std::integral<Meta::RealType<Other>> auto& operator^=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::Xor>(OP_PERFECT_FOWD(other));
+            return *this;
+        }
+
+        template <typename Other>
+                requires ExprType<Other>&& std::integral<typename internal::ExprTrait<Other>::elem_type>&& std::integral<typename internal::ExprTrait<Expr>::elem_type> || std::integral<Meta::RealType<Other>> auto& operator<<=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::LShift>(OP_PERFECT_FOWD(other));
+            return *this;
+        }
+
+        template <typename Other>
+                requires ExprType<Other>&& std::integral<typename internal::ExprTrait<Other>::elem_type>&& std::integral<typename internal::ExprTrait<Expr>::elem_type> || std::integral<Meta::RealType<Other>> auto& operator>>=(Other&& other) {
+            this->derived().template assignImpl_final<BasicArithOp::RShift>(OP_PERFECT_FOWD(other));
             return *this;
         }
 

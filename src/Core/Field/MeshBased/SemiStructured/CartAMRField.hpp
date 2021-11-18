@@ -44,26 +44,28 @@ namespace OpFlow {
             : CartAMRFieldExpr<CartAMRField<D, M, C>>(std::move(other)), data(std::move(other.data)),
               offset(std::move(other.offset)) {}
 
+        template <BasicArithOp Op = BasicArithOp::Eq>
         auto& assignImpl_final(const CartAMRField& other) {
             if (this != &other) {
                 // only data is assigned
-                internal::FieldAssigner::assign(other, *this);
+                internal::FieldAssigner::assign<Op>(other, *this);
                 updateCovering();
                 updatePadding();
             }
             return *this;
         }
 
-        template <CartAMRFieldExprType T>
+        template <BasicArithOp Op = BasicArithOp::Eq, CartAMRFieldExprType T>
         auto& assignImpl_final(T&& other) {
             if ((void*) this != (void*) &other) {
-                internal::FieldAssigner::assign(other, *this);
+                internal::FieldAssigner::assign<Op>(other, *this);
                 updateCovering();
                 updatePadding();
             }
             return *this;
         }
 
+        template <BasicArithOp Op = BasicArithOp::Eq>
         auto& assignImpl_final(const D& c) {
             auto levels = data.size();
 #pragma omp parallel
@@ -71,7 +73,32 @@ namespace OpFlow {
                 auto parts = data[l].size();
 #pragma omp for schedule(dynamic) nowait
                 for (auto p = 0; p < parts; ++p) {
-                    rangeFor_s(this->assignableRanges[l][p], [&](auto&& i) { this->operator[](i) = c; });
+                    if constexpr (Op == BasicArithOp::Eq)
+                        rangeFor_s(this->assignableRanges[l][p], [&](auto&& i) { this->operator[](i) = c; });
+                    else if constexpr (Op == BasicArithOp::Add)
+                        rangeFor_s(this->assignableRanges[l][p], [&](auto&& i) { this->operator[](i) += c; });
+                    else if constexpr (Op == BasicArithOp::Minus)
+                        rangeFor_s(this->assignableRanges[l][p], [&](auto&& i) { this->operator[](i) -= c; });
+                    else if constexpr (Op == BasicArithOp::Mul)
+                        rangeFor_s(this->assignableRanges[l][p], [&](auto&& i) { this->operator[](i) *= c; });
+                    else if constexpr (Op == BasicArithOp::Div)
+                        rangeFor_s(this->assignableRanges[l][p], [&](auto&& i) { this->operator[](i) /= c; });
+                    else if constexpr (Op == BasicArithOp::Mod)
+                        rangeFor_s(this->assignableRanges[l][p], [&](auto&& i) { this->operator[](i) %= c; });
+                    else if constexpr (Op == BasicArithOp::And)
+                        rangeFor_s(this->assignableRanges[l][p], [&](auto&& i) { this->operator[](i) &= c; });
+                    else if constexpr (Op == BasicArithOp::Or)
+                        rangeFor_s(this->assignableRanges[l][p], [&](auto&& i) { this->operator[](i) |= c; });
+                    else if constexpr (Op == BasicArithOp::Xor)
+                        rangeFor_s(this->assignableRanges[l][p], [&](auto&& i) { this->operator[](i) ^= c; });
+                    else if constexpr (Op == BasicArithOp::LShift)
+                        rangeFor_s(this->assignableRanges[l][p],
+                                   [&](auto&& i) { this->operator[](i) <<= c; });
+                    else if constexpr (Op == BasicArithOp::RShift)
+                        rangeFor_s(this->assignableRanges[l][p],
+                                   [&](auto&& i) { this->operator[](i) >>= c; });
+                    else
+                        OP_NOT_IMPLEMENTED;
                 }
             }
             updateCovering();
