@@ -121,7 +121,11 @@ namespace OpFlow {
             OP_ASSERT_MSG(base, "base ptr of stencil field is nullptr");
             if (DS::inRange(this->assignableRange, index)) [[likely]] {
                     auto ret = DS::StencilPad<index_type>(0);
-                    if (pinned && index == index_type(this->assignableRange.start))
+                    // note: here solution is pinned at base->assignableRange.start
+                    // rather than this->assignableRange.start; This is because
+                    // for periodic case the assignableRange of this will be changed
+                    // to logicalRange for HYPRE solver to get exact offset.
+                    if (pinned && index == index_type(base->assignableRange.start))
                         [[unlikely]] ret.pad[index] = 0.;
                     else
                         [[likely]] ret.pad[index] = 1.0;
