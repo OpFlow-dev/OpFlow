@@ -17,9 +17,9 @@
 using namespace OpFlow;
 
 template <std::size_t d>
-using DU = DecableOp<D1WENO53Upwind<d>, D1FirstOrderBiasedUpwind<d>>;
+using DU = D1WENO53Upwind<d>;
 template <std::size_t d>
-using DD = DecableOp<D1WENO53Downwind<d>, D1FirstOrderBiasedDownwind<d>>;
+using DD = D1WENO53Downwind<d>;
 
 void amrls() {
     using Mesh = CartesianAMRMesh<Meta::int_<2>>;
@@ -162,9 +162,7 @@ void amrls() {
             constexpr auto functor = Utils::NamedFunctor<func, Utils::makeCXprString("smoothDelta")>();
             constexpr auto delta_op
                     = [=](auto&& e) { return makeExpression<UniOpAdaptor<functor>>(OP_PERFECT_FOWD(e)); };
-            constexpr auto int_op = [=](auto&& e) {
-                return h * h * decay(conv(OP_PERFECT_FOWD(e), conv_ker), OP_PERFECT_FOWD(e));
-            };
+            constexpr auto int_op = [=](auto&& e) { return h * h * conv(OP_PERFECT_FOWD(e), conv_ker); };
 
             auto lambda = -int_op(delta_op(p0) * (p3 - p0) / (_ + 1)) / int_op(pow(delta_op(p0), 2) + 1e-14);
             p = p3 + lambda * (_ + 1) * delta_op(p0);

@@ -29,23 +29,18 @@ namespace OpFlow {
         template <StructuredFieldExprType E, typename T, typename I>
         OPFLOW_STRONG_INLINE static auto
         couldSafeEval(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>& kernel, I&& i) {
-            auto ret = true;
-            for (auto j = 0; j < d; ++j) {
-                ret &= (i[j] - dims[j] / 2 >= e.arg1.accessibleRange.start[j])
-                       && (i[j] + dims[j] / 2 < e.arg1.accessibleRange.end[j]);
-            }
-            return ret;
+            Meta::RealType<I> off;
+            for (int j = 0; j < d; ++j) off[j] = dims[j] / 2;
+            // assumes corner indexes are the lowest & highest ranks of the array
+            return e.couldEvalAt(i + off) && e.couldEvalAt(i - off);
         }
 
         template <CartAMRFieldExprType E, typename T, typename I>
         OPFLOW_STRONG_INLINE static auto
         couldSafeEval(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>& kernel, I&& i) {
-            auto ret = true;
-            for (auto j = 0; j < d; ++j) {
-                ret &= (i[j] - dims[j] / 2 >= e.arg1.accessibleRanges[i.l][i.p].start[j])
-                       && (i[j] + dims[j] / 2 < e.arg1.accessibleRanges[i.l][i.p].end[j]);
-            }
-            return ret;
+            auto off = i;
+            for (int j = 0; j < d; ++j) off[j] = dims[j] / 2;
+            return e.couldEvalAt(i + off) && e.couldEvalAt(i - off);
         }
 
         template <StructuredFieldExprType E, typename T, typename I>
@@ -83,46 +78,6 @@ namespace OpFlow {
                         auto _ker_idx = (DS::MDIndex<d>) idx;
                         for (auto j = 0; j < d; ++j) { _ker_idx[j] = _ker_idx[j] - i[j] + dims[j] / 2; }
                         return kernel.val[_ker_idx] * e.evalAt(idx);
-                    });
-        }
-
-        template <StructuredFieldExprType E, typename T, typename I>
-        requires(internal::ExprTrait<E>::dim == d) OPFLOW_STRONG_INLINE
-                static auto eval_safe(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>& kernel,
-                                      I&& i) {
-            DS::Range<d> range;
-            for (auto j = 0; j < d; ++j) {
-                range.start[j] = i[j] - dims[j] / 2;
-                range.end[j] = i[j] + dims[j] / 2 + 1;
-                range.stride[j] = 1;
-            }
-            return rangeReduce_s(
-                    range, [](auto&& a, auto&& b) { return a + b; },
-                    [&](auto&& idx) {
-                        auto _ker_idx = idx;
-                        for (auto j = 0; j < d; ++j) { _ker_idx[j] = _ker_idx[j] - i[j] + dims[j] / 2; }
-                        return kernel.val[_ker_idx] * e.evalSafeAt(idx);
-                    });
-        }
-
-        template <CartAMRFieldExprType E, typename T, typename I>
-        requires(internal::ExprTrait<E>::dim == d) OPFLOW_STRONG_INLINE
-                static auto eval_safe(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>& kernel,
-                                      I&& i) {
-            DS::LevelRange<d> range;
-            for (auto j = 0; j < d; ++j) {
-                range.start[j] = i[j] - dims[j] / 2;
-                range.end[j] = i[j] + dims[j] / 2 + 1;
-                range.stride[j] = 1;
-            }
-            range.level = i.l;
-            range.part = i.p;
-            return rangeReduce_s(
-                    range, [](auto&& a, auto&& b) { return a + b; },
-                    [&](auto&& idx) {
-                        auto _ker_idx = (DS::MDIndex<d>) idx;
-                        for (auto j = 0; j < d; ++j) { _ker_idx[j] = _ker_idx[j] - i[j] + dims[j] / 2; }
-                        return kernel.val[_ker_idx] * e.evalSafeAt(idx);
                     });
         }
 
@@ -140,6 +95,8 @@ namespace OpFlow {
                 expr.accessibleRange.end[i] -= dims[i] / 2;
                 expr.localRange.start[i] += dims[i] / 2;
                 expr.localRange.end[i] -= dims[i] / 2;
+                expr.logicalRange.start[i] += dims[i] / 2;
+                expr.logicalRange.end[i] -= dims[i] / 2;
             }
             expr.assignableRange.setEmpty();
         }
@@ -152,12 +109,6 @@ namespace OpFlow {
             // name
             expr.name = fmt::format("Convolution<{}>({})", d, expr.arg1.name);
 
-            // bc
-            for (auto i = 0; i < d; ++i) {
-                expr.bc[i].start = nullptr;
-                expr.bc[i].end = nullptr;
-            }
-
             // ranges
             for (auto& l : expr.accessibleRanges)
                 for (auto& r : l)
@@ -166,6 +117,12 @@ namespace OpFlow {
                         r.end[i] -= dims[i] / 2;
                     }
             for (auto& l : expr.localRanges)
+                for (auto& r : l)
+                    for (auto i = 0; i < d; ++i) {
+                        r.start[i] += dims[i] / 2;
+                        r.end[i] -= dims[i] / 2;
+                    }
+            for (auto& l : expr.logicalRanges)
                 for (auto& r : l)
                     for (auto i = 0; i < d; ++i) {
                         r.start[i] += dims[i] / 2;
