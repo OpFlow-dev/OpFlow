@@ -58,6 +58,8 @@ TEST_F(DecayExprTest, ValueCheck) {
     kernel[DS::MDIndex<2> {1, 1}] = 1.;
     auto t = decay(conv(v, kernel), u);
     t.prepare();
+    auto idx = DS::MDIndex<2>(0, 0);
+    auto val = t.evalAt(idx);
     ASSERT_DOUBLE_EQ(t.evalAt(DS::MDIndex<2>(0, 0)), u[DS::MDIndex<2>(0, 0)]);
     ASSERT_DOUBLE_EQ(t.evalAt(DS::MDIndex<2>(1, 1)), v[DS::MDIndex<2>(1, 1)]);
 }

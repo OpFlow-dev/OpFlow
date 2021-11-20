@@ -72,8 +72,8 @@
 #include "Core/Operator/Arithmetic/AMDS.hpp"
 #include "Core/Operator/Arithmetic/MinMax.hpp"
 #include "Core/Operator/Conditional.hpp"
-#include "Core/Operator/DecableOp.hpp"
-#include "Core/Operator/DecayExpr.hpp"
+//#include "Core/Operator/DecableOp.hpp"
+//#include "Core/Operator/DecayExpr.hpp"
 #include "Core/Operator/PerElemOpAdaptor.hpp"
 #include "Core/Operator/FDMOperators/DiffsInterface.hpp"
 #include "Core/Operator/FDMOperators/FirstOrderBiasedDownwind.hpp"
@@ -95,11 +95,9 @@
 // BC
 #include "Core/BC/BCBase.hpp"
 #include "Core/BC/DircBC.hpp"
-//#include "Core/BC/InternalBC.hpp"
 #include "Core/BC/LogicalBC.hpp"
 #include "Core/BC/NeumBC.hpp"
 #include "Core/BC/ProxyBC.hpp"
-#include "Core/BC/ExtBC.hpp"
 
 // Equation
 #include "Core/Equation/EqnSolveHandler.hpp"
