@@ -19,7 +19,7 @@
 #include <memory>
 
 namespace OpFlow {
-    enum class BCType { Undefined, Dirc, Neum, Periodic, Internal, Symm, ASymm, Ext };
+    enum class BCType { Undefined, Dirc, Neum, Periodic, Internal, Symm, ASymm };
 
     inline static auto isLogicalBC(BCType type) {
         return type == BCType::Periodic || type == BCType::Internal || type == BCType::Symm
