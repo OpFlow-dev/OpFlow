@@ -15,7 +15,6 @@
 
 #include "Core/Field/MeshBased/SemiStructured/CartAMRFieldExprTrait.hpp"
 #include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
-#include "Core/Operator/DecableOp.hpp"
 #include "Core/Operator/Interpolator/IndexShift.hpp"
 #include "DataStructures/Range/Ranges.hpp"
 
@@ -50,70 +49,6 @@ namespace OpFlow {
                              || e.bc[d].end->getBCType() == BCType::Dirc);
             return cond0 || cond1 || cond2;
         }
-        template <CartesianFieldExprType E, typename I>
-        OPFLOW_STRONG_INLINE static auto eval_safe(const E& e, I i) {
-            if (e.accessibleRange.start[d] <= i[d] - 1 && i[d] < e.accessibleRange.end[d])
-                return (e.evalSafeAt(i) - e.evalSafeAt(i.template prev<d>()))
-                       / (e.loc[d] == LocOnMesh::Corner
-                                  ? e.mesh.dx(d, i[d] - 1)
-                                  : (e.mesh.dx(d, i[d] - 1) + e.mesh.dx(d, i[d])) * 0.5);
-            // left bc case
-            if (e.bc[d].start && e.loc[d] == LocOnMesh::Center && i[d] == e.accessibleRange.start[d]) {
-                if (e.bc[d].start->getBCType() == BCType::Neum) return e.bc[d].start->evalAt(i);
-                else if (e.bc[d].start->getBCType() == BCType::Dirc) {
-                    // assume asymmetric extension
-                    return (e.evalSafeAt(i) - e.bc[d].start->evalAt(i.template prev<d>()))
-                           * (e.mesh.idx(d, i[d])) * 2.0;
-                }
-            }
-            // right bc case
-            if (e.bc[d].end && e.loc[d] == LocOnMesh::Center && i[d] == e.accessibleRange.end[d]) {
-                if (e.bc[d].end->getBCType() == BCType::Neum) return e.bc[d].end->evalAt(i);
-                else if (e.bc[d].end->getBCType() == BCType::Dirc) {
-                    // assume asymmetric extension
-                    return (e.bc[d].end->evalAt(i) - e.evalSafeAt(i.template prev<d>()))
-                           * e.mesh.idx(d, i[d] - 1) * 2.0;
-                }
-            }
-            // not handled case
-            OP_ERROR("Cannot handle current case.");
-            //OP_ERROR("Expr and index are: \n{}\nIndex = {}", e.toString(), i.toString());
-            OP_ABORT;
-        }
-
-        template <CartAMRFieldExprType E>
-        OPFLOW_STRONG_INLINE static auto eval_safe(const E& e, auto&& i) {
-            if (e.accessibleRanges[i.l][i.p].start[d] <= i[d] - 1
-                && i[d] < e.accessibleRanges[i.l][i.p].end[d])
-                return (e.evalSafeAt(i) - e.evalSafeAt(i.template prev<d>()))
-                       / (e.loc[d] == LocOnMesh::Corner
-                                  ? e.mesh.dx(d, i.l, i[d] - 1)
-                                  : (e.mesh.dx(d, i.l, i[d] - 1) + e.mesh.dx(d, i.l, i[d])) * 0.5);
-            // left bc case
-            if (e.bc[d].start && e.loc[d] == LocOnMesh::Center && i[d] == e.maxLogicalRanges[i.l].start[d]) {
-                if (e.bc[d].start->getBCType() == BCType::Neum)
-                    return e.bc[d].start->evalAt(i.toLevel(0, e.mesh.refinementRatio));
-                else if (e.bc[d].start->getBCType() == BCType::Dirc) {
-                    // assume asymmetric extension
-                    return (e.evalSafeAt(i) - e.bc[d].start->evalAt(i.toLevel(0, e.mesh.refinementRatio)))
-                           * (e.mesh.idx(d, i.l, i[d])) * 2.0;
-                }
-            }
-            // right bc case
-            if (e.bc[d].end && e.loc[d] == LocOnMesh::Center && i[d] == e.maxLogicalRanges[i.l].end[d]) {
-                if (e.bc[d].end->getBCType() == BCType::Neum)
-                    return e.bc[d].end->evalAt(i.toLevel(0, e.mesh.refinementRatio));
-                else if (e.bc[d].end->getBCType() == BCType::Dirc) {
-                    // assume asymmetric extension
-                    return (e.bc[d].end->evalAt(i.toLevel(0, e.mesh.refinementRatio))
-                            - e.evalSafeAt(i.template prev<d>()))
-                           * e.mesh.idx(d, i.l, i[d] - 1) * 2.0;
-                }
-            }
-            // not handled case
-            OP_ERROR("Cannot handle current case.");
-            OP_ABORT;
-        }
 
         template <CartesianFieldExprType E, typename I>
         OPFLOW_STRONG_INLINE static auto eval(const E& e, I i) {
@@ -130,9 +65,8 @@ namespace OpFlow {
                               : (e.mesh.dx(d, i.l, i[d] - 1) + e.mesh.dx(d, i.l, i[d])) * 0.5);
         }
 
-        template <typename Op, CartesianFieldExprType E>
-        requires DecableTo<Op, D1FirstOrderBiasedDownwind> static inline void
-        prepare(Expression<Op, E>& expr) {
+        template <CartesianFieldExprType E>
+        static inline void prepare(Expression<D1FirstOrderBiasedDownwind, E>& expr) {
             expr.initPropsFrom(expr.arg1);
 
             // name
@@ -150,10 +84,8 @@ namespace OpFlow {
             expr.assignableRange.setEmpty();
         }
 
-        template <typename Op, CartAMRFieldExprType E>
-                requires std::same_as<
-                        Op,
-                        D1FirstOrderBiasedDownwind> || (DecableOpType<Op> && std::same_as<typename LastOpOfDecableOp<Op>::type, D1FirstOrderBiasedDownwind>) static void prepare(Expression<Op, E>& expr) {
+        template <CartAMRFieldExprType E>
+        static void prepare(Expression<D1FirstOrderBiasedDownwind, E>& expr) {
             constexpr auto dim = internal::CartAMRFieldExprTrait<E>::dim;
             expr.initPropsFrom(expr.arg1);
 
