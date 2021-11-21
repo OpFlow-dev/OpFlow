@@ -76,7 +76,7 @@ namespace OpFlow {
         void assignImpl(const BCBase<F>& other) override {
             OP_ASSERT_MSG(other.getBCType() == BCType::Symm, "Trying to assign a {} typed BC to SymmBC.",
                           other.getTypeName());
-            const auto& _other = reinterpret_cast<const SymmBC<F>&>(other);
+            const auto& _other = dynamic_cast<const SymmBC<F>&>(other);
             this->_f = _other._f;
             dim = _other.dim;
             pos = _other.pos;
@@ -146,7 +146,7 @@ namespace OpFlow {
         void assignImpl(const BCBase<F>& other) override {
             OP_ASSERT_MSG(other.getBCType() == BCType::ASymm, "Trying to assign a {} typed BC to ASymmBC.",
                           other.getTypeName());
-            const auto& _other = reinterpret_cast<const ASymmBC<F>&>(other);
+            const auto& _other = dynamic_cast<const ASymmBC<F>&>(other);
             this->_f = _other._f;
             dim = _other.dim;
             pos = _other.pos;
@@ -195,7 +195,7 @@ namespace OpFlow {
         void assignImpl(const BCBase<F>& other) override {
             OP_ASSERT_MSG(other.getBCType() == BCType::Periodic, "Try to assign a {} typed BC to PeriodicBC.",
                           other.getTypeName());
-            const auto& _other = reinterpret_cast<const PeriodicBC<F>&>(other);
+            const auto& _other = dynamic_cast<const PeriodicBC<F>&>(other);
             this->_f = _other._f;
             dim = _other.dim;
             pos = _other.pos;

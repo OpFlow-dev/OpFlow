@@ -21,7 +21,7 @@
 namespace OpFlow {
     template <FieldExprType F>
     struct AbstractSplitStrategy {
-        virtual std::string strategyName() const = 0;
+        [[nodiscard]] virtual std::string strategyName() const = 0;
         virtual std::vector<typename internal::ExprTrait<F>::range_type>
         getSplitMap(const typename internal::ExprTrait<F>::range_type& range, const ParallelPlan& plan) = 0;
         virtual typename internal::ExprTrait<F>::range_type

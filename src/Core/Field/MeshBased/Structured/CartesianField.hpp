@@ -14,6 +14,7 @@
 #define OPFLOW_CARTESIANFIELD_HPP
 
 #include "CartesianFieldExpr.hpp"
+#include "CartesianFieldTrait.hpp"
 #include "Core/BC/BCBase.hpp"
 #include "Core/BC/DircBC.hpp"
 #include "Core/BC/LogicalBC.hpp"
