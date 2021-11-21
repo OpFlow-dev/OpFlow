@@ -72,8 +72,6 @@
 #include "Core/Operator/Arithmetic/AMDS.hpp"
 #include "Core/Operator/Arithmetic/MinMax.hpp"
 #include "Core/Operator/Conditional.hpp"
-//#include "Core/Operator/DecableOp.hpp"
-//#include "Core/Operator/DecayExpr.hpp"
 #include "Core/Operator/PerElemOpAdaptor.hpp"
 #include "Core/Operator/FDMOperators/DiffsInterface.hpp"
 #include "Core/Operator/FDMOperators/FirstOrderBiasedDownwind.hpp"

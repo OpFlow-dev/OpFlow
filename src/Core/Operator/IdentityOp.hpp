@@ -30,12 +30,7 @@ namespace OpFlow {
         }
 
         template <typename E>
-                requires FieldExprType<E> || ScalarExprType<E> OPFLOW_STRONG_INLINE static auto eval_safe(const E& e, auto&& i) {
-            return e.evalSafeAt(OP_PERFECT_FOWD(i));
-        }
-
-        template <typename Op, typename E>
-        requires DecableTo<Op, IdentityOp> static void prepare(Expression<Op, E>& expr) {
+        static void prepare(Expression<IdentityOp, E>& expr) {
             expr.initPropsFrom(expr.arg1);
             // name
             expr.name = fmt::format("Identity({})", expr.arg1.name);
