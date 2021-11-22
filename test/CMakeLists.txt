@@ -29,9 +29,9 @@ set(TEST_MAIN_CPP ${CMAKE_CURRENT_LIST_DIR}/test_main.cpp)
 function(add_gmock testname testfile)
     add_executable(${testname} EXCLUDE_FROM_ALL ${testfile} ${ARGN} ${TEST_MAIN_CPP})
     target_link_libraries(${testname} gmock opflow::opflow gcov)
-    target_compile_options(${testname} PRIVATE "$<$<CXX_COMPILER_ID:GNU>:--coverage>"
-            PRIVATE "$<$<CXX_COMPILER_ID:GNU>:-fconcepts-diagnostics-depth=5>"
-            PRIVATE "$<$<CXX_COMPILER_ID:Clang>:-fprofile-instr-generate -fcoverage-mapping>")
+    target_compile_options(${testname} PRIVATE $<$<CXX_COMPILER_ID:GNU>:--coverage>
+            PRIVATE $<$<CXX_COMPILER_ID:GNU>:-fconcepts-diagnostics-depth=5>
+            PRIVATE $<$<CXX_COMPILER_ID:Clang>:-fprofile-instr-generate -fcoverage-mapping>)
     set_property(GLOBAL APPEND PROPERTY all_test_srcs ${testfile} ${ARGN})
     add_dependencies(AllTests ${testname})
     if (NOT ${testname} STREQUAL "UniTests")
