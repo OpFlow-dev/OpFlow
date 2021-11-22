@@ -80,7 +80,16 @@ if (CMAKE_SYSTEM_NAME MATCHES "CYGWIN" OR CMAKE_SYSTEM_NAME MATCHES "MSYS")
     set(CMAKE_CXX_EXTENSIONS ON)
 endif ()
 
-# ----------------------------------------------------------------------------
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(CMAKE_THREAD_LIBS_INIT "-lpthread")
+    set(CMAKE_HAVE_THREADS_LIBRARY 1)
+    set(CMAKE_USE_WIN32_THREADS_INIT 0)
+    set(CMAKE_USE_PTHREADS_INIT 1)
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
+endif()
+
+    # ----------------------------------------------------------------------------
 # Set OPFLOW_MASTER_PROJECT to ON if we are building opflow
 # ----------------------------------------------------------------------------
 # Check if opflow is being used directly or via add_subdirectory, but allow overriding
