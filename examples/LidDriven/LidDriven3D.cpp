@@ -147,8 +147,8 @@ int main(int argc, char* argv[]) {
         u_handler.solve();
         v_handler.solve();
         w_handler.solve();
-        dv = dv - dt * conv_yz(v, dw);
-        du = du - dt * conv_xy(u, dv) - dt * conv_xz(u, dw);
+        dv = dv - 0.5 * dt * conv_yz(v, dw);
+        du = du - 0.5 * dt * conv_xy(u, dv) - 0.5 * dt * conv_xz(u, dw);
         u = u + du;
         v = v + dv;
         w = w + dw;
