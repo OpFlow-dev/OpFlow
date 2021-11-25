@@ -42,8 +42,15 @@ function(add_gmock testname testfile)
     endif ()
 endfunction()
 
-# Download and unpack googletest at configure time
-configure_file(../cmake/DownloadGTest.cmake.in googletest-download/CMakeLists.txt)
+if (OPFLOW_USE_BUNDLED_GTEST)
+    # Use bundled googletest framework (v1.11.0)
+    set(OPFLOW_GTEST_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../external/googletest)
+    configure_file(${CMAKE_CURRENT_LIST_DIR}/../cmake/UseBundledGTest.cmake.in
+            ${CMAKE_CURRENT_BINARY_DIR}/googletest-download/CMakeLists.txt)
+else ()
+    # Download and unpack googletest at configure time
+    configure_file(../cmake/DownloadGTest.cmake.in googletest-download/CMakeLists.txt)
+endif ()
 execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
         RESULT_VARIABLE result
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download)
