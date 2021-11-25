@@ -10,7 +10,7 @@ int main(int argc, char* argv[]) {
     // meshes & fields
     auto n = 65;
     auto mesh = MeshBuilder<Mesh>().newMesh(n, n).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
-    auto builder = ExprBuilder<Field>().setMesh(mesh)
+    auto builder = ExprBuilder<Field>().setMesh(mesh).setExt(1)
             .setBC(0, DimPos::start, BCType::Dirc, 0.).setBC(0, DimPos::end, BCType::Dirc, 0.)
             .setBC(1, DimPos::start, BCType::Dirc, 0.).setBC(1, DimPos::end, BCType::Dirc, 0.);
     auto u = builder.setName("u").setBC(1, DimPos::end, BCType::Dirc, 1.)
