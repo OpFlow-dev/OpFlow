@@ -10,20 +10,21 @@
 #
 # ----------------------------------------------------------------------------
 #
-# Template cmake config file for HYPRE's private build (pre-downloaded version)
+# Template cmake config file for GTest's build & config
 #
 # ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.10)
 
-project(hypre-acquire NONE)
+project(googletest-bundled NONE)
 
 include(ExternalProject)
-ExternalProject_Add(_hypre_build
-        SOURCE_DIR        ${OPFLOW_HYPRE_SOURCE_DIR}
-        BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/hypre_build"
-        INSTALL_DIR       "${CMAKE_CURRENT_BINARY_DIR}/hypre"
-        SOURCE_SUBDIR     "./src"
-        CMAKE_ARGS        ${HYPRE_OPTIONS}
-        TEST_COMMAND      ""
-        )
+ExternalProject_Add(googletest_build
+  SOURCE_DIR        ${OPFLOW_GTEST_SOURCE_DIR}
+  BINARY_DIR        "${CMAKE_CURRENT_BINARY_DIR}/googletest-build"
+  INSTALL_DIR       "${CMAKE_CURRENT_BINARY_DIR}/googletest"
+  CONFIGURE_COMMAND ""
+  BUILD_COMMAND     ""
+  INSTALL_COMMAND   ""
+  TEST_COMMAND      ""
+)

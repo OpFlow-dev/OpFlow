@@ -29,14 +29,9 @@ macro(CONFIG_HYPRE)
     set(OPFLOW_HYPRE_PRE_DOWNLOAD ON)
     set(OPFLOW_HYPRE_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/external/hypre)
 
-    if (${OPFLOW_HYPRE_PRE_DOWNLOAD})
+    if (OPFLOW_USE_BUNDLED_HYPRE)
         # use pre-downloaded source file
-        if (NOT OPFLOW_HYPRE_SOURCE_DIR)
-            message(FATAL_ERROR "OPFLOW_HYPRE_SOURCE_DIR must be defined when
-            OPFLOW_HYPRE_PRE_DOWNLOAD is enabled")
-        endif ()
-
-        configure_file(cmake/UseExistingHYPRE.cmake.in
+        configure_file(cmake/UseBundledHYPRE.cmake.in
                 ${CMAKE_CURRENT_BINARY_DIR}/hypre-download/CMakeLists.txt)
     else ()
         configure_file(cmake/DownloadHYPRE.cmake.in

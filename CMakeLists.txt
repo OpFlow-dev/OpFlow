@@ -121,6 +121,7 @@ option(OPFLOW_WITH_HDF5 "Build OpFlow with HDF5 support" OFF)
 
 # testing options
 option(OPFLOW_BUILD_TESTS "Build tests" OFF)
+option(OPFLOW_USE_BUNDLED_GTEST "Use bundled googletest" ON)
 
 # benchmark options
 option(OPFLOW_BUILD_BENCHMARKS "Build benchmarks" OFF)
@@ -144,7 +145,7 @@ option(OPFLOW_SPDLOG_EXTERNAL_HO "Use external spdlog header-only library instea
 # set these options to avoid internet requirement
 option(OPFLOW_WITH_VTK "Build OpFlow with VTK" ON)
 option(OPFLOW_HYPRE_EXTERNAL "Use external HYPRE library instead of bundled" OFF)
-option(OPFLOW_HYPRE_PRE_DOWNLOAD "Use pre-downloaded HYPRE library" OFF)
+option(OPFLOW_USE_BUNDLED_HYPRE "Use bundled HYPRE library" ON)
 option(OPFLOW_VTK_EXTERNAL "Use external VTK library instead of bundled" OFF)
 option(OPFLOW_VTK_PRE_DOWNLOAD "Use pre-downloaded VTK library" OFF)
 option(OPFLOW_NO_EXCEPTIONS "Compile with -fno-exceptions. Call abort() on any OpFlow exceptions" OFF)
