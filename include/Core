@@ -83,6 +83,7 @@
 #include "Core/Operator/FDMOperators/SecondOrderCentered.hpp"
 #include "Core/Operator/Interpolator/D1IntpCenterToCorner.hpp"
 #include "Core/Operator/Interpolator/D1IntpCornerToCenter.hpp"
+#include "Core/Operator/Interpolator/D1QUICKIntpCenterToCorner.hpp"
 #include "Core/Operator/Interpolator/IndexShift.hpp"
 #include "Core/Operator/Logical/Boolean.hpp"
 #include "Core/Operator/Logical/Compare.hpp"
