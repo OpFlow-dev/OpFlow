@@ -59,6 +59,8 @@ namespace OpFlow {
                 expr.assignableRange.setEmpty();
                 expr.localRange = DS::commonRange(expr.arg1.localRange, expr.arg2.localRange);
                 expr.localRange = DS::commonRange(expr.localRange, expr.arg3.localRange);
+                expr.logicalRange = DS::commonRange(expr.arg1.logicalRange, expr.arg2.logicalRange);
+                expr.logicalRange = DS::commonRange(expr.logicalRange, expr.arg3.logicalRange);
             } else if constexpr (SemiStructuredFieldExprType<T1>) {
                 for (auto i = 0; i < expr.getLevels(); ++i) {
                     expr.accessibleRanges[i]
@@ -68,6 +70,10 @@ namespace OpFlow {
                     expr.localRanges[i]
                             = DS::commonRanges(expr.arg1.localRanges[i], expr.arg2.localRanges[i]);
                     expr.localRanges[i] = DS::commonRanges(expr.localRanges[i], expr.arg3.localRanges[i]);
+                    expr.logicalRanges[i]
+                            = DS::commonRanges(expr.arg1.logicalRanges[i], expr.arg2.logicalRanges[i]);
+                    expr.logicalRanges[i]
+                            = DS::commonRanges(expr.logicalRanges[i], expr.arg3.logicalRanges[i]);
                     for (auto& r : expr.assignableRanges[i]) r.setEmpty();
                 }
             }
@@ -82,12 +88,15 @@ namespace OpFlow {
                 expr.accessibleRange = DS::commonRange(expr.arg2.accessibleRange, expr.arg3.accessibleRange);
                 expr.assignableRange.setEmpty();
                 expr.localRange = DS::commonRange(expr.arg2.localRange, expr.arg3.localRange);
+                expr.logicalRange = DS::commonRange(expr.arg2.logicalRange, expr.arg3.logicalRange);
             } else if constexpr (SemiStructuredFieldExprType<T1>) {
                 for (auto i = 0; i < expr.getLevels(); ++i) {
                     expr.accessibleRanges[i]
                             = DS::commonRanges(expr.arg2.accessibleRanges[i], expr.arg3.accessibleRanges[i]);
                     expr.localRanges[i]
                             = DS::commonRanges(expr.arg2.localRanges[i], expr.arg3.localRanges[i]);
+                    expr.logicalRanges[i]
+                            = DS::commonRanges(expr.arg2.logicalRanges[i], expr.arg3.logicalRanges[i]);
                     for (auto& r : expr.assignableRanges[i]) r.setEmpty();
                 }
             }
