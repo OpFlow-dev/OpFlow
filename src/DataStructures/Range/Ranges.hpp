@@ -65,7 +65,7 @@ namespace OpFlow::DS {
         }
 
         constexpr void reValidPace() const {
-            for (auto i = 0; i < dim; ++i) pace[i] = (end[i] - start[i]) / stride[i];
+            for (std::size_t i = 0; i < dim; ++i) pace[i] = (end[i] - start[i]) / stride[i];
         }
 
         constexpr auto operator==(const Range& other) const {
@@ -75,7 +75,7 @@ namespace OpFlow::DS {
         constexpr auto check() const {
             bool ret = true;
             ret &= (d == start.size()) && (d == end.size()) && (d == stride.size());
-            for (auto i = 0; i < d; ++i) {
+            for (std::size_t i = 0; i < d; ++i) {
                 ret &= (end[i] >= start[i]);
                 ret &= (stride[i] >= 1);
             }
@@ -85,11 +85,11 @@ namespace OpFlow::DS {
         constexpr auto count() const {
             // make sure the pace is valid
             reValidPace();
-            for (auto i = 0; i < d; ++i) {
+            for (std::size_t i = 0; i < d; ++i) {
                 if (pace[i] <= 0) return 0;
             }
             auto ret = 1;
-            for (auto i = 0; i < d; ++i) { ret *= pace[i]; }
+            for (std::size_t i = 0; i < d; ++i) { ret *= pace[i]; }
             return ret;
         }
 
@@ -98,7 +98,7 @@ namespace OpFlow::DS {
         /// \brief Get the sliced range (1 layer thick) along dim \p k at position \p pos
         /// \param k normal dimension of the slice
         /// \param pos position of the slice
-        constexpr auto slice(int k, int pos) const {
+        constexpr auto slice(std::size_t k, int pos) const {
             assert(k < d);
             Range ret = *this;
             ret.start[k] = pos;
@@ -112,7 +112,7 @@ namespace OpFlow::DS {
         /// \param pos_start Position of the start
         /// \param pos_end Position of the end
         /// \return The sliced range
-        constexpr auto slice(int k, int pos_start, int pos_end) const {
+        constexpr auto slice(std::size_t k, int pos_start, int pos_end) const {
             assert(k < d);
             Range ret = *this;
             ret.start[k] = pos_start;
@@ -131,19 +131,19 @@ namespace OpFlow::DS {
         constexpr auto getExtends() const {
             reValidPace();
             std::array<int, d> ret;
-            for (auto i = 0; i < d; ++i) { ret[i] = pace[i]; }
+            for (std::size_t i = 0; i < d; ++i) { ret[i] = pace[i]; }
             return ret;
         }
 
         constexpr auto getOffset() const {
             std::array<int, d> ret;
-            for (auto i = 0; i < d; ++i) ret[i] = start[i];
+            for (std::size_t i = 0; i < d; ++i) ret[i] = start[i];
             return ret;
         }
 
         auto getBCRanges(int width) const {
             std::vector<Range> ret;
-            for (auto i = 0; i < d; ++i) {
+            for (std::size_t i = 0; i < d; ++i) {
                 ret.push_back(*this);
                 ret.back().end[i] = ret.back().start[i] + width;
                 ret.back().pace[i] = width;
@@ -156,7 +156,7 @@ namespace OpFlow::DS {
 
         auto getInnerRange(int width) const {
             auto ret = *this;
-            for (auto i = 0; i < dim; ++i) {
+            for (std::size_t i = 0; i < dim; ++i) {
                 ret.start[i] += width;
                 ret.end[i] -= width;
                 ret.pace[i] -= 2 * width;
@@ -188,7 +188,7 @@ namespace OpFlow::DS {
             constexpr auto dim = dim1;
             start.fill(std::numeric_limits<int>::min());
             end.fill(std::numeric_limits<int>::max());
-            for (auto i = 0; i < dim; ++i) {
+            for (std::size_t i = 0; i < dim; ++i) {
                 start[i] = std::max(a.start[i], b.start[i]);
                 end[i] = std::min(a.end[i], b.end[i]);
             }
@@ -216,7 +216,7 @@ namespace OpFlow::DS {
             static_assert(dim1 == dim2, OP_ERRMSG_DIM_MISMATCH);
             constexpr auto dim = dim1;
             Range<dim> ret;
-            for (auto i = 0; i < dim; ++i) {
+            for (std::size_t i = 0; i < dim; ++i) {
                 ret.start[i] = std::min(a.start[i], b.start[i]);
                 ret.end[i] = std::max(a.end[i], b.end[i]);
                 OP_ASSERT(a.stride[i] == b.stride[i]);
@@ -238,7 +238,7 @@ namespace OpFlow::DS {
     template <std::size_t dim, Meta::BracketIndexable T>
     constexpr auto inRange(const Range<dim>& r, const T& t) {
         auto ret = true;
-        for (auto i = 0; i < dim; ++i) { ret &= (r.start[i] <= t[i] && t[i] < r.end[i]); }
+        for (std::size_t i = 0; i < dim; ++i) { ret &= (r.start[i] <= t[i] && t[i] < r.end[i]); }
         return ret;
     }
 

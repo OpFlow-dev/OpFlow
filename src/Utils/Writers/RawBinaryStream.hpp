@@ -167,10 +167,11 @@ namespace OpFlow::Utils {
         std::string name;
         int name_len;
         fread(&name_len, sizeof(int), 1, data);
-        char name_c_str[name_len + 1];
+        char* name_c_str = new char[name_len + 1];
         fread(name_c_str, sizeof(char), name_len, data);
         name_c_str[name_len] = 0;
         name = std::string(name_c_str);
+        delete[] name_c_str;
         OP_EXPECT_MSG(name == f.getName(), "Field's name {} in file is different from dst field {}", name,
                       f.getName());
         int f_dim;

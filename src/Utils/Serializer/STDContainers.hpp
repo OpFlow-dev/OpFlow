@@ -25,7 +25,7 @@ namespace OpFlow::Utils::Serializer {
         if (arr.empty()) return ret + postfix;
         else {
             ret += fmt::to_string(arr[0]);
-            for (auto i = 1; i < arr.size(); ++i) { ret += fmt::format("{}{}", splitter, arr[i]); }
+            for (std::size_t i = 1; i < arr.size(); ++i) { ret += fmt::format("{}{}", splitter, arr[i]); }
             ret += postfix;
             return ret;
         }

@@ -13,19 +13,21 @@
 #ifndef OPFLOW_STRUCTSOLVERPFMG_HPP
 #define OPFLOW_STRUCTSOLVERPFMG_HPP
 
+#include <utility>
+
 #include "StructSolver.hpp"
 
 namespace OpFlow {
     template <>
     struct StructSolverParams<StructSolverType::PFMG> : StructSolverParamsBase {
-        std::optional<int> maxLevels, relChange;
-        std::optional<bool> useZeroGuess;
-        std::optional<int> relaxType;
-        std::optional<Real> jacobiWeight;
-        std::optional<int> rapType;
-        std::optional<int> numPreRelax, numPostRelax, skipRelax;
-        std::optional<std::vector<Real>> dxyz;
-        std::optional<int> logging, printLevel;
+        std::optional<int> maxLevels {}, relChange {};
+        std::optional<bool> useZeroGuess {};
+        std::optional<int> relaxType {};
+        std::optional<Real> jacobiWeight {};
+        std::optional<int> rapType {};
+        std::optional<int> numPreRelax {}, numPostRelax {}, skipRelax {};
+        std::optional<std::vector<Real>> dxyz {};
+        std::optional<int> logging {}, printLevel {};
     };
 
     template <>
@@ -35,12 +37,14 @@ namespace OpFlow {
         Param params;
 
         StructSolver() { HYPRE_StructPFMGCreate(params.comm, &solver); }
-        StructSolver(const Param& p) : params(p) { HYPRE_StructPFMGCreate(params.comm, &solver); }
+        explicit StructSolver(Param p) : params(std::move(p)) {
+            HYPRE_StructPFMGCreate(params.comm, &solver);
+        }
         ~StructSolver() { HYPRE_StructPFMGDestroy(solver); }
         StructSolver(const StructSolver& s) : params(s.params) {
             HYPRE_StructPFMGCreate(params.comm, &solver);
         }
-        StructSolver(StructSolver&& s) noexcept : params(std::move(s.params)), solver(std::move(s.solver)) {
+        StructSolver(StructSolver&& s) noexcept : params(std::move(s.params)), solver(s.solver) {
             s.solver = nullptr;
         }
 
@@ -80,24 +84,24 @@ namespace OpFlow {
         }
 
         auto& getSolver() { return solver; }
-        const auto& getSolver() const { return solver; }
-        auto getSolveFunc() const { return HYPRE_StructPFMGSolve; }
-        auto getSetUpFunc() const { return HYPRE_StructPFMGSetup; }
+        [[nodiscard]] const auto& getSolver() const { return solver; }
+        static auto getSolveFunc() { return HYPRE_StructPFMGSolve; }
+        static auto getSetUpFunc() { return HYPRE_StructPFMGSetup; }
 
-        auto getIterNum() const {
+        [[nodiscard]] auto getIterNum() const {
             int ret;
             HYPRE_StructPFMGGetNumIterations(solver, &ret);
             return ret;
         }
 
-        auto getFinalRes() const {
+        [[nodiscard]] auto getFinalRes() const {
             Real ret;
             HYPRE_StructPFMGGetFinalRelativeResidualNorm(solver, &ret);
             return ret;
         }
 
     private:
-        HYPRE_StructSolver solver;
+        HYPRE_StructSolver solver {};
     };
 
 }// namespace OpFlow

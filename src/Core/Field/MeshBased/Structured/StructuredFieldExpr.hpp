@@ -39,15 +39,15 @@ namespace OpFlow {
 
         StructuredFieldExpr() = default;
         StructuredFieldExpr(const StructuredFieldExpr& other)
-            : MeshBasedFieldExpr<Derived>(other), localRange(other.localRange),
+            : MeshBasedFieldExpr<Derived>(other), loc(other.loc), localRange(other.localRange),
               assignableRange(other.assignableRange), accessibleRange(other.accessibleRange),
-              logicalRange(other.logicalRange), offset(other.offset), padding(other.padding), loc(other.loc),
+              logicalRange(other.logicalRange), offset(other.offset), padding(other.padding),
               splitMap(other.splitMap), neighbors(other.neighbors) {}
         StructuredFieldExpr(StructuredFieldExpr&& other) noexcept
-            : MeshBasedFieldExpr<Derived>(std::move(other)), localRange(std::move(other.localRange)),
-              assignableRange(std::move(other.assignableRange)), logicalRange(std::move(other.logicalRange)),
-              accessibleRange(std::move(other.accessibleRange)), offset(std::move(other.offset)),
-              padding(other.padding), loc(std::move(other.loc)), splitMap(std::move(other.splitMap)),
+            : MeshBasedFieldExpr<Derived>(std::move(other)), loc(std::move(other.loc)),
+              localRange(std::move(other.localRange)), assignableRange(std::move(other.assignableRange)),
+              accessibleRange(std::move(other.accessibleRange)), logicalRange(std::move(other.logicalRange)),
+              offset(std::move(other.offset)), padding(other.padding), splitMap(std::move(other.splitMap)),
               neighbors(std::move(other.neighbors)) {}
 
         auto getDims() const { return this->mesh.getDims(); }

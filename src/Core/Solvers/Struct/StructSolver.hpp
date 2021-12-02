@@ -37,7 +37,7 @@ namespace OpFlow {
     struct StructSolverParamsBase {
         // common params
         std::optional<Real> tol {};
-        std::optional<int> maxIter;
+        std::optional<int> maxIter {};
         MPI_Comm comm = MPI_COMM_WORLD;
         bool staticMat = false;
         bool pinValue = false;

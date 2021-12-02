@@ -370,7 +370,8 @@ namespace OpFlow {
                     });
                 }
             }
-            int rfactors[target->getLevels()][HYPRE_MAXDIM];
+            int(*rfactors)[HYPRE_MAXDIM];
+            rfactors = new int[target->getLevels()][HYPRE_MAXDIM];
             for (auto l = 0; l < target->getLevels(); ++l)
                 for (auto d = 0; d < HYPRE_MAXDIM; ++d) rfactors[l][d] = 1;
             for (auto l = 1; l < target->getLevels(); ++l) {
@@ -386,6 +387,7 @@ namespace OpFlow {
             std::iota(plevels.begin(), plevels.end(), 0);
             HYPRE_SStructFACZeroAMRVectorData(b, plevels.data(), rfactors);
             HYPRE_SStructVectorAssemble(b);
+            delete[] rfactors;
         }
         void initx() {
             for (auto l = 0; l < target->getLevels(); ++l) {
@@ -396,7 +398,8 @@ namespace OpFlow {
                     });
                 }
             }
-            int rfactors[target->getLevels()][HYPRE_MAXDIM];
+            int(*rfactors)[HYPRE_MAXDIM];
+            rfactors = new int[target->getLevels()][HYPRE_MAXDIM];
             for (auto l = 0; l < target->getLevels(); ++l)
                 for (auto d = 0; d < HYPRE_MAXDIM; ++d) rfactors[l][d] = 1;
             for (auto l = 1; l < target->getLevels(); ++l) {
@@ -406,6 +409,7 @@ namespace OpFlow {
             std::iota(plevels.begin(), plevels.end(), 0);
             HYPRE_SStructFACZeroAMRVectorData(x, plevels.data(), rfactors);
             HYPRE_SStructVectorAssemble(x);
+            delete[] rfactors;
         }
         void returnValues() {
             for (auto l = 0; l < target->getLevels(); ++l) {

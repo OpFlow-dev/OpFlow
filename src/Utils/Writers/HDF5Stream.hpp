@@ -65,7 +65,7 @@ namespace OpFlow::Utils {
             MPI_Barrier(mpi_comm);
             if (file_inited) {
                 if (group_inited) {
-                    auto stat = H5Gclose(current_group);
+                    H5Gclose(current_group);
                     group_inited = false;
                 }
                 H5Fclose(file);
@@ -82,7 +82,7 @@ namespace OpFlow::Utils {
 #ifdef OPFLOW_WITH_HDF5
             // create a new group
             if (!first_run) {
-                auto stat = H5Gclose(current_group);
+                H5Gclose(current_group);
             } else {
                 first_run = false;
             }

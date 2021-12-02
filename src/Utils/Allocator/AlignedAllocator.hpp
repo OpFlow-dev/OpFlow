@@ -38,7 +38,7 @@ namespace OpFlow::Utils {
             }
         }
 
-        static void deallocate(T* ptr, std::size_t size) {
+        static void deallocate(T* ptr, std::size_t) {
             if (!ptr) return;
             if constexpr (Meta::is_numerical_v<T>)
 #ifdef _MSC_VER
