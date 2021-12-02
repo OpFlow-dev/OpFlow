@@ -32,14 +32,14 @@ namespace OpFlow::DS {
 
         int operator()(const MDIndex<d>& idx) const {
             int ret = 0;
-            for (auto i = 0; i < d; ++i) ret += (idx[i] - _range.start[i]) * _fac[i];
+            for (std::size_t i = 0; i < d; ++i) ret += (idx[i] - _range.start[i]) * _fac[i];
             return ret;
         }
 
     private:
         void calculateMultiplier() {
             _fac[0] = 1;
-            for (auto i = 1; i < d; ++i) {
+            for (std::size_t i = 1; i < d; ++i) {
                 _fac[i] = (_range.end[i - 1] - _range.start[i - 1]) * _fac[i - 1];
             }
         }

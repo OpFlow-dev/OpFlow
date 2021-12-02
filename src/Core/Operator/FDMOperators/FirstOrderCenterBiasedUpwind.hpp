@@ -81,8 +81,6 @@ namespace OpFlow {
 
         template <CartesianFieldExprType E>
         static inline void prepare(Expression<D1FirstOrderCenteredUpwind, E>& expr) {
-            constexpr auto dim = internal::CartesianFieldExprTrait<E>::dim;
-
             // name
             expr.name = fmt::format("d1<D1FirstOrderCenteredUpwind<{}>>(", d) + expr.arg1.name + ")";
 

@@ -31,10 +31,8 @@ namespace OpFlow {
         // const evaluators
         auto operatorT() const { return val; }
         const auto& get() const { return val; }
-        const auto& evalAt(auto&&...) const { return val; }
-        const auto& evalSafeAt(auto&&...) const { return val; }
-        const auto& operator()(auto&&...) const { return val; }
-        const auto& operator[](auto&&...) const { return val; }
+        const auto& evalAtImpl_final(auto&&...) const { return val; }
+        auto& evalAtImpl_final(auto&&...) { return val; }
 
         // modifiers
         auto& get() { return val; }
@@ -47,19 +45,17 @@ namespace OpFlow {
             val = o;
             return *this;
         }
-        auto& operator()(auto&&...) { return val; }
-        auto& operator[](auto&&...) { return val; }
         void set(const T& t) { val = t; }
 
         static constexpr bool isConcrete() { return true; }
-        void prepare() {}
+        void prepareImpl_final() {}
         template <typename O>
-        requires(!std::same_as<O, ScalarExpr>) bool contains(const O& t) const {
+        requires(!std::same_as<O, ScalarExpr>) bool containsImpl_final(const O&) const {
             return false;
         }
 
-        bool contains(const ScalarExpr& t) const { return this == &t; }
-        bool couldEvalAt(auto&& i) const { return true; }
+        bool containsImpl_final(const ScalarExpr& t) const { return this == &t; }
+        bool couldEvalAtImpl_final(auto&&) const { return true; }
     };
 }// namespace OpFlow
 #endif//OPFLOW_SCALAREXPR_HPP

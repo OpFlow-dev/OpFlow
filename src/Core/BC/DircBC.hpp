@@ -43,7 +43,7 @@ namespace OpFlow {
         explicit ConstDircBC(auto c) : _c(c) {}
         using DircBCBase<F>::operator=;
         typename internal::FieldExprTrait<F>::elem_type
-        evalAt(const typename internal::FieldExprTrait<F>::index_type& index) const override {
+        evalAt(const typename internal::FieldExprTrait<F>::index_type&) const override {
             return _c;
         }
 

@@ -65,7 +65,7 @@ namespace OpFlow::DS {
 
         constexpr auto count() const {
             auto ret = 1;
-            for (auto i = 0; i < dim; ++i) {
+            for (std::size_t i = 0; i < dim; ++i) {
                 ret *= (range.end[i] - range.start[i] - 1) / range.stride[i] + 1;
             }
             return ret;
@@ -73,7 +73,7 @@ namespace OpFlow::DS {
 
         constexpr auto last() const {
             RangedIndex ret = *this;
-            for (auto i = 0; i < dim; ++i) {
+            for (std::size_t i = 0; i < dim; ++i) {
                 ret[i] = ((range.end[i] - range.start[i] - 1) / range.stride[i]) * range.stride[i]
                          + range.start[i];
             }
@@ -95,11 +95,11 @@ namespace OpFlow::DS {
             std::array<int, dim> off;
             off.fill(0);
             const auto& pace = range.getPace();
-            for (auto i = 0; i < dim && k > 0; ++i) {
+            for (std::size_t i = 0; i < dim && k > 0; ++i) {
                 off[i] = k % pace[i];
                 k /= pace[i];
             }
-            for (auto i = 0; i < dim; ++i) {
+            for (std::size_t i = 0; i < dim; ++i) {
                 if (this->idx[i] + off[i] >= range.end[i]) {
                     this->idx[i] = this->idx[i] + off[i] - pace[i];
                     if (i + 1 == dim) {
@@ -118,11 +118,11 @@ namespace OpFlow::DS {
             std::array<int, dim> off;
             off.fill(0);
             const auto& pace = range.getPace();
-            for (auto i = 0; i < dim && k > 0; ++i) {
+            for (std::size_t i = 0; i < dim && k > 0; ++i) {
                 off[i] = k % pace[i];
                 k /= pace[i];
             }
-            for (auto i = 0; i < dim; ++i) {
+            for (std::size_t i = 0; i < dim; ++i) {
                 if (this->idx[i] - off[i] < range.start[i]) {
                     this->idx[i] = this->idx[i] - off[i] + pace[i];
                     if (i + 1 == dim) {

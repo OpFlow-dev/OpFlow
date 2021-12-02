@@ -58,7 +58,6 @@ namespace OpFlow {
     template <typename R, typename F>
     F rangeFor(const R& range, F&& func) {
         constexpr static auto dim = R::dim;
-        std::array<int, dim> dims = range.getExtends();
         auto total_count = range.count();
         auto line_size = range.end[0] - range.start[0];
         if (line_size <= 0) return std::forward<F>(func);
@@ -112,14 +111,13 @@ namespace OpFlow {
     auto rangeReduce(const R& range, ReOp&& op, F&& func) {
         using resultType = Meta::RealType<decltype(func(std::declval<typename R::base_index_type&>()))>;
         constexpr static auto dim = R::dim;
-        std::array<int, dim> dims = range.getExtends();
         auto total_count = range.count();
         auto line_size = range.end[0] - range.start[0];
         if (line_size <= 0) return resultType();
         if (range.stride[0] == 1) {
             if constexpr (dim == 1) {
                 auto numCore = omp_get_max_threads();
-                resultType result[numCore];
+                std::vector<resultType> result(numCore);
 #pragma omp parallel
                 {
                     auto thread_id = omp_get_thread_num();
@@ -137,7 +135,7 @@ namespace OpFlow {
                 return result[0];
             } else {
                 auto numCore = omp_get_max_threads();
-                resultType result[numCore];
+                std::vector<resultType> result(numCore);
                 auto workSize = total_count / numCore / line_size * line_size;
                 if (workSize == 0) {
                     auto line_count = total_count / line_size;

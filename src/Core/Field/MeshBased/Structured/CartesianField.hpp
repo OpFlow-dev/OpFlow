@@ -283,6 +283,7 @@ namespace OpFlow {
                                     mirror_idx[i] = 2 * this->localRange.start[i] - idx[i];
                                     this->operator()(idx) = -this->evalAt(mirror_idx);
                                 });
+                                break;
                             default:
                                 OP_ERROR("Cannot handle current bc padding: bc type {}",
                                          this->bc[i].start->getTypeName());
@@ -332,6 +333,7 @@ namespace OpFlow {
                                     mirror_idx[i] = 2 * this->localRange.start[i] - 1 - idx[i];
                                     this->operator()(idx) = -this->evalAt(mirror_idx);
                                 });
+                                break;
                             default:
                                 OP_ERROR("Cannot handle current bc padding: bc type {}",
                                          this->bc[i].start->getTypeName());
@@ -392,6 +394,7 @@ namespace OpFlow {
                                     mirror_idx[i] = 2 * this->localRange.end[i] - 2 - idx[i];
                                     this->operator()(idx) = -this->evalAt(mirror_idx);
                                 });
+                                break;
                             default:
                                 OP_ERROR("Cannot handle current bc padding: bc type {}",
                                          this->bc[i].end->getTypeName());
@@ -441,6 +444,7 @@ namespace OpFlow {
                                     mirror_idx[i] = 2 * this->localRange.end[i] - 1 - idx[i];
                                     this->operator()(idx) = -this->evalAt(mirror_idx);
                                 });
+                                break;
                             default:
                                 OP_ERROR("Cannot handle current bc padding: bc type {}",
                                          this->bc[i].end->getTypeName());

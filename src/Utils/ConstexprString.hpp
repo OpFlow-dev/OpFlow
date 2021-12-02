@@ -21,7 +21,7 @@ namespace OpFlow::Utils {
     struct CXprString {
         constexpr CXprString() = default;
         constexpr explicit CXprString(const char str[N]) {
-            for (auto i = 0; i < N; ++i) _str[i] = str[i];
+            for (std::size_t i = 0; i < N; ++i) _str[i] = str[i];
         }
 
         constexpr const char* c_str() const { return _str.begin(); }

@@ -61,10 +61,10 @@ namespace OpFlow {
 
             // assume the input range is nodal range, convert to central range
             auto _range = range;
-            for (auto i = 0; i < d; ++i) _range.end[i]--;
+            for (std::size_t i = 0; i < d; ++i) _range.end[i]--;
             auto extends = _range.getExtends();
             std::vector<std::pair<int, int>> labeled_extends;
-            for (auto i = 0; i < d; ++i) { labeled_extends.emplace_back(i, extends[i]); }
+            for (std::size_t i = 0; i < d; ++i) { labeled_extends.emplace_back(i, extends[i]); }
             std::sort(labeled_extends.begin(), labeled_extends.end(), [](auto&& a, auto&& b) {
                 // sort according to dim size
                 return a.second < b.second;
@@ -73,7 +73,7 @@ namespace OpFlow {
             std::array<int, d> splits_1;
             int remain_vol = _range.count();
             int remain_proc = plan.distributed_workers_count;
-            for (auto i = 0; i < d; ++i) {
+            for (std::size_t i = 0; i < d; ++i) {
                 // find all factors of the remained proc
                 std::vector<int> factors;
                 for (auto j = 1; j <= remain_proc; ++j) {
@@ -88,12 +88,13 @@ namespace OpFlow {
                 remain_vol /= _range.end[c.first] - _range.start[c.first];
             }
             auto cost_1 = 0.;
-            for (auto i = 0; i < d; ++i) cost_1 += 1.0 * splits_1[i] / (_range.end[i] - _range.start[i]);
+            for (std::size_t i = 0; i < d; ++i)
+                cost_1 += 1.0 * splits_1[i] / (_range.end[i] - _range.start[i]);
             // Strategy 2:
             std::array<int, d> splits_2;
             remain_vol = _range.count();
             remain_proc = plan.distributed_workers_count;
-            for (auto i = 0; i < d; ++i) {
+            for (std::size_t i = 0; i < d; ++i) {
                 // find all factors of the remained proc
                 std::vector<int> factors;
                 for (auto j = 1; j <= remain_proc; ++j) {
@@ -108,7 +109,8 @@ namespace OpFlow {
                 remain_vol /= _range.end[c.first] - _range.start[c.first];
             }
             auto cost_2 = 0.;
-            for (auto i = 0; i < d; ++i) cost_2 += 1.0 * splits_2[i] / (_range.end[i] - _range.start[i]);
+            for (std::size_t i = 0; i < d; ++i)
+                cost_2 += 1.0 * splits_2[i] / (_range.end[i] - _range.start[i]);
 
             // choose the smaller cost plan
             std::array<int, d> final_split;
@@ -126,7 +128,7 @@ namespace OpFlow {
                 auto split_plan = gen_split_plan(range, plan);
                 // assume the input range is nodal range, convert to central range
                 auto _range = range;
-                for (auto i = 0; i < d; ++i) _range.end[i]--;
+                for (std::size_t i = 0; i < d; ++i) _range.end[i]--;
 
 #ifdef OPFLOW_WITH_MPI
                 int proc_rank;
@@ -135,7 +137,7 @@ namespace OpFlow {
                 DS::RangedIndex<d> idx(proc_range);
                 idx += proc_rank;
                 DS::Range<d> ret;
-                for (auto i = 0; i < d; ++i) {
+                for (std::size_t i = 0; i < d; ++i) {
                     ret.start[i]
                             = _range.start[i] + (_range.end[i] - _range.start[i]) / split_plan[i] * idx[i];
                     if (idx[i] < proc_range.end[i] - 1)
@@ -158,7 +160,7 @@ namespace OpFlow {
                 auto split_plan = gen_split_plan(range, plan);
                 // assume the input range is nodal range, convert to central range
                 auto _range = range;
-                for (auto i = 0; i < d; ++i) _range.end[i]--;
+                for (std::size_t i = 0; i < d; ++i) _range.end[i]--;
 
 #ifdef OPFLOW_WITH_MPI
                 int worker_count = plan.distributed_workers_count;
@@ -167,7 +169,7 @@ namespace OpFlow {
                 std::vector<DS::Range<d>> ret(worker_count);
                 for (auto rank = 0; rank < worker_count; ++rank, ++idx) {
                     DS::Range<d> current_range;
-                    for (auto i = 0; i < d; ++i) {
+                    for (std::size_t i = 0; i < d; ++i) {
                         current_range.start[i] = _range.start[i]
                                                  + (_range.end[i] - _range.start[i]) / split_plan[i] * idx[i];
                         if (idx[i] < proc_range.end[i] - 1)

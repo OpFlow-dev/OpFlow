@@ -132,36 +132,16 @@ option(OPFLOW_SANITIZE_LEAK "Enable leak sanitizer in tests" OFF)
 option(OPFLOW_SANITIZE_THREAD "Enable thread sanitizer in tests" OFF)
 option(OPFLOW_SANITIZE_UB "Enable undefined behavior sanitizer in tests" OFF)
 
-# warning options
+# compile options
 option(OPFLOW_BUILD_WARNINGS "Enable compiler warnings" OFF)
+option(OPFLOW_NO_EXCEPTIONS "Compile with -fno-exceptions" OFF)
 
 # install options
 option(OPFLOW_INSTALL "Generate the install target" ${OPFLOW_MASTER_PROJECT})
-option(OPFLOW_FMT_EXTERNAL "Use external fmt library instead of bundled" OFF)
-option(OPFLOW_FMT_EXTERNAL_HO "Use external fmt header-only library instead of bundled" OFF)
-option(OPFLOW_SPDLOG_EXTERNAL "Use external spdlog library instead of bundled" OFF)
-option(OPFLOW_SPDLOG_EXTERNAL_HO "Use external spdlog header-only library instead of bundled" OFF)
-# the default behavior is to download & config HYPRE & VTK on-the-fly.
-# set these options to avoid internet requirement
-option(OPFLOW_WITH_VTK "Build OpFlow with VTK" ON)
+# the default behavior is to use bundled HYPRE & VTK
+option(OPFLOW_WITH_VTK "Build OpFlow with VTK" OFF)
 option(OPFLOW_HYPRE_EXTERNAL "Use external HYPRE library instead of bundled" OFF)
-option(OPFLOW_USE_BUNDLED_HYPRE "Use bundled HYPRE library" ON)
 option(OPFLOW_VTK_EXTERNAL "Use external VTK library instead of bundled" OFF)
-option(OPFLOW_VTK_PRE_DOWNLOAD "Use pre-downloaded VTK library" OFF)
-option(OPFLOW_NO_EXCEPTIONS "Compile with -fno-exceptions. Call abort() on any OpFlow exceptions" OFF)
-
-if (OPFLOW_FMT_EXTERNAL AND OPFLOW_FMT_EXTERNAL_HO)
-    message(FATAL_ERROR "OPFLOW_FMT_EXTERNAL and OPFLOW_FMT_EXTERNAL_HO are mutually exclusive")
-endif ()
-if (OPFLOW_SPDLOG_EXTERNAL AND OPFLOW_SPDLOG_EXTERNAL_HO)
-    message(FATAL_ERROR "OPFLOW_SPDLOG_EXTERNAL and OPFLOW_SPDLOG_EXTERNAL_HO are mutually exclusive")
-endif ()
-if (OPFLOW_HYPRE_EXTERNAL AND OPFLOW_HYPRE_PRE_DOWNLOAD)
-    message(WARNING "OPFLOW_HYPRE_EXTERNAL and OPFLOW_HYPRE_PRE_DOWNLOAD are mutually exclusive. Use OPFLOW_HYPRE_EXTERNAL hereafter")
-endif ()
-if (OPFLOW_VTK_EXTERNAL AND OPFLOW_VTK_PRE_DOWNLAOD)
-    message(WARNING "OPFLOW_VTK_EXTERNAL and OPFLOW_VTK_PRE_DOWNLOAD are mutually exclusive. Use OPFLOW_VTK_EXTERNAL hereafter")
-endif ()
 
 # clang-tidy
 if (${CMAKE_VERSION} VERSION_GREATER "3.5")
@@ -182,7 +162,8 @@ message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
 add_library(opflow INTERFACE)
 add_library(opflow::opflow ALIAS opflow)
 
-target_include_directories(opflow INTERFACE "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
+target_include_directories(opflow INTERFACE
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/src>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/src>")
@@ -190,49 +171,14 @@ target_include_directories(opflow INTERFACE "$<BUILD_INTERFACE:${CMAKE_CURRENT_L
 # ----------------------------------------------------------------------------
 # Use fmt package
 # ----------------------------------------------------------------------------
-if (OPFLOW_FMT_EXTERNAL OR OPFLOW_FMT_EXTERNAL_HO)
-    if (NOT TARGET fmt::fmt)
-        find_package(fmt CONFIG REQUIRED)
-    endif ()
-    target_compile_definitions(opflow INTERFACE OPFLOW_FMT_EXTERNAL)
-
-    # use external fmt-header-only
-    if (OPFLOW_FMT_EXTERNAL_HO)
-        target_link_libraries(opflow INTERFACE fmt::fmt-header-only)
-    else () # use external compile fmt
-        target_link_libraries(opflow INTERFACE fmt::fmt)
-    endif ()
-
-    set(PKG_CONFIG_REQUIRES fmt) # add dependency to pkg-config
-else ()
-    # use the header-only fmt by default
-    target_include_directories(opflow INTERFACE
-            "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/external/fmt/include>"
-            "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
-endif ()
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/fmt EXCLUDE_FROM_ALL)
+target_link_libraries(opflow INTERFACE $<BUILD_INTERFACE:fmt::fmt>)
 
 # ----------------------------------------------------------------------------
 # Use spdlog package
 # ----------------------------------------------------------------------------
-if (OPFLOW_SPDLOG_EXTERNAL OR OPFLOW_SPDLOG_EXTERNAL_HO)
-    if (NOT TARGET spdlog::spdlog)
-        find_package(spdlog CONFIG REQUIRED)
-    endif ()
-    target_compile_definitions(opflow INTERFACE OPFLOW_SPDLOG_EXTERNAL)
-
-    # use external spdlog-header-only
-    if (OPFLOW_SPDLOG_EXTERNAL_HO)
-        target_link_libraries(opflow INTERFACE spdlog::spdlog_header_only)
-    else () # use external compile spdlog
-        target_link_libraries(opflow INTERFACE spdlog::spdlog)
-    endif ()
-
-    list(APPEND PKG_CONFIG_REQUIRES spdlog) # add dependency to pkg-config
-else ()
-    # use the header-only spdlog by default
-    target_include_directories(opflow INTERFACE "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/external/spdlog/include>"
-            "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
-endif ()
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/spdlog EXCLUDE_FROM_ALL)
+target_link_libraries(opflow INTERFACE $<BUILD_INTERFACE:spdlog::spdlog>)
 
 # ----------------------------------------------------------------------------
 # Use AMGCL
@@ -264,20 +210,8 @@ endif ()
 # ----------------------------------------------------------------------------
 # Use HYPRE package
 # ----------------------------------------------------------------------------
-if (OPFLOW_HYPRE_EXTERNAL)
-    if (NOT TARGET HYPRE)
-        if (OPFLOW_WITH_OPENMP)
-            set(CMAKE_REQUIRED_FLAGS "-fopenmp")
-        endif ()
-        find_package(HYPRE REQUIRED)
-        target_compile_definitions(opflow INTERFACE OPFLOW_HYPRE_EXTERNAL)
-    endif ()
-else ()
-    include(cmake/HYPREConfig.cmake)
-    CONFIG_HYPRE()
-endif ()
-list(APPEND PKG_CONFIG_REQUIRES HYPRE)
-target_link_libraries(opflow INTERFACE HYPRE::HYPRE)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/hypre/src EXCLUDE_FROM_ALL)
+target_link_libraries(opflow INTERFACE HYPRE)
 
 # ----------------------------------------------------------------------------
 # Use VTK package

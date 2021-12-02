@@ -44,7 +44,7 @@ namespace OpFlow {
 
     protected:
         // Proxy object is read-only, assign takes no effect
-        void assignImpl(const BCBase<To>& other) final {
+        void assignImpl(const BCBase<To>&) final {
             OP_ERROR("Trying to assign to a proxy BC object. This behavior is undefined.");
         }
 

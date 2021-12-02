@@ -28,7 +28,9 @@ namespace OpFlow {
 
     template <typename F>
     struct BCBase {
+        BCBase() = default;
         virtual ~BCBase() = default;
+        BCBase(const BCBase&) = default;
 
         [[nodiscard]] std::string toString() const { return this->toString(0); }
         [[nodiscard]] virtual std::string toString(int level) const = 0;
