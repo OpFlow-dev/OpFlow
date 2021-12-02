@@ -50,4 +50,7 @@ if (${OPFLOW_WITH_MPI})
     find_dependency(MPI)
 endif ()
 
+# Find AMGCL
+find_dependency(amgcl HINTS @CMAKE_INSTALL_PREFIX@/amgcl)
+
 include("${CMAKE_CURRENT_LIST_DIR}/${config_targets_file}")
