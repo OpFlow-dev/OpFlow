@@ -71,7 +71,7 @@ jobs:
         run: |
           brew install gcc@11 doxygen
           if [ "$RUNNER_OS" == "Linux" ]; then
-               sudo apt install -y libopenmpi-dev libhdf5-mpi-dev libhdf5-dev python3-pip python3-sphinx lcov libboost-dev
+               sudo apt install -y libopenmpi-dev libhdf5-mpi-dev libhdf5-dev python3-pip python3-sphinx lcov libboost-all-dev
           elif [ "$RUNNER_OS" == "macOS" ]; then
                brew install open-mpi hdf5-mpi sphinx lcov boost
           else
