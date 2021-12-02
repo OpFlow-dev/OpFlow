@@ -87,9 +87,9 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_USE_PTHREADS_INIT 1)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
-endif()
+endif ()
 
-    # ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Set OPFLOW_MASTER_PROJECT to ON if we are building opflow
 # ----------------------------------------------------------------------------
 # Check if opflow is being used directly or via add_subdirectory, but allow overriding
@@ -237,13 +237,8 @@ endif ()
 # ----------------------------------------------------------------------------
 # Use AMGCL
 # ----------------------------------------------------------------------------
-# Find boost
-find_package(Boost REQUIRED)
-target_include_directories(opflow SYSTEM INTERFACE
-        ${Boost_INCLUDE_DIRS}
-        )
-target_include_directories(opflow INTERFACE "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/external/amgcl>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/amgcl EXCLUDE_FROM_ALL)
+target_link_libraries(opflow INTERFACE $<BUILD_INTERFACE:amgcl::amgcl>)
 
 # ----------------------------------------------------------------------------
 # Find MPI
@@ -399,7 +394,7 @@ if (OPFLOW_BUILD_BENCHMARKS OR OPFLOW_BUILD_ALL)
     set(BENCHMARK_ENABLE_INSTALL OFF)
     set(BENCHMARK_ENABLE_TESTING OFF)
     set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
-    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/benchmark)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/benchmark EXCLUDE_FROM_ALL)
     add_subdirectory(benchmark)
 endif ()
 
@@ -453,6 +448,7 @@ if (OPFLOW_INSTALL)
     message(STATUS "Generating install")
     IF (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
         SET(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}" CACHE PATH "" FORCE)
+        message(STATUS "Install prefix set to: ${CMAKE_INSTALL_PREFIX}")
     ENDIF (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(project_config_in "${CMAKE_CURRENT_LIST_DIR}/cmake/opflowConfig.cmake.in")
     set(project_config_out "${CMAKE_CURRENT_BINARY_DIR}/opflowConfig.cmake")
@@ -465,8 +461,8 @@ if (OPFLOW_INSTALL)
     # ----------------------------------------------------------------------------
     # Include files
     # ----------------------------------------------------------------------------
-    install(DIRECTORY include/ DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
-    install(DIRECTORY src/ DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/src")
+    install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/ DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+    install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/src/ DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/src")
     install(
             TARGETS opflow
             EXPORT opflow
@@ -490,8 +486,12 @@ if (OPFLOW_INSTALL)
         install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/vtk/
                 DESTINATION "${CMAKE_INSTALL_PREFIX}")
     endif ()
-    install(DIRECTORY external/amgcl/amgcl/
-            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/amgcl")
+    # Build & install AMGCL
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AMGCLConfig.cmake.in
+            ${CMAKE_CURRENT_BINARY_DIR}/cmake/AMGCLConfig.cmake)
+    install(CODE "
+    include(${CMAKE_CURRENT_BINARY_DIR}/cmake/AMGCLConfig.cmake)
+    CONFIG_AND_INSTALL_AMGCL()")
 
     # ----------------------------------------------------------------------------
     # Install CMake config files
