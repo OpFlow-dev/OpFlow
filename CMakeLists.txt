@@ -199,7 +199,7 @@ target_link_libraries(opflow INTERFACE spdlog::spdlog)
 # Use AMGCL
 # ----------------------------------------------------------------------------
 if (OPFLOW_INSTALL)
-    include(${CMAKE_CURRENT_BINARY_DIR}/cmake/AMGCLConfig.cmake)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AMGCLConfig.cmake)
     CONFIG_AND_INSTALL_AMGCL()
     find_package(amgcl REQUIRED PATHS ${CMAKE_INSTALL_PREFIX})
 else ()
