@@ -54,8 +54,7 @@ static void UniFieldAssignRaw_2d(benchmark::State& state) {
 #pragma omp parallel for
 #pragma omp tile sizes(8, 8)
         for (auto j = 0; j < n - 1; ++j)
-            for (auto i = 0; i < n - 1; ++i)
-                u(DS::MDIndex<2>{i, j}) = v(DS::MDIndex<2>{i, j});
+            for (auto i = 0; i < n - 1; ++i) u(DS::MDIndex<2> {i, j}) = v(DS::MDIndex<2> {i, j});
     }
 }
 
