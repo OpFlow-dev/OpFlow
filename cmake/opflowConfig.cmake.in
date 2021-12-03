@@ -14,30 +14,35 @@
 #
 # ----------------------------------------------------------------------------
 
-set(OPFLOW_FMT_EXTERNAL @OPFLOW_FMT_EXTERNAL@)
-set(OPFLOW_SPDLOG_EXTERNAL @OPFLOW_SPDLOG_EXTERNAL@)
 set(OPFLOW_HYPRE_EXTERNAL @OPFLOW_HYPRE_EXTERNAL@)
+set(OPFLOW_WITH_VTK @OPFLOW_WITH_VTK@)
 set(OPFLOW_VTK_EXTERNAL @OPFLOW_VTK_EXTERNAL@)
-set(config_targets_file @config_targets_file@)
+set(OPFLOW_CONFIG_TARGETS_FILE @config_targets_file@)
 include(CMakeFindDependencyMacro)
 
-if (OPFLOW_FMT_EXTERNAL)
-    find_dependency(fmt CONFIG)
-endif ()
-if (OPFLOW_SPDLOG_EXTERNAL)
-    find_dependency(spdlog CONFIG)
-endif ()
+# Find fmt & spdlog
+find_dependency(fmt PATHS @CMAKE_INSTALL_PREFIX@)
+find_dependency(spdlog PATHS @CMAKE_INSTALL_PREFIX@)
+
+# Find HYPRE
 if (OPFLOW_HYPRE_EXTERNAL)
     find_dependency(HYPRE CONFIG)
 else ()
     find_dependency(HYPRE CONFIG
             PATHS @CMAKE_INSTALL_PREFIX@)
 endif ()
-if (OPFLOW_VTK_EXTERNAL)
-    find_dependency(VTK CONFIG)
-else ()
-    find_dependency(VTK CONFIG
-            PATHS @CMAKE_INSTALL_PREFIX@)
+
+# Find VTK
+if (OPFLOW_WITH_VTK)
+    if (OPFLOW_VTK_EXTERNAL)
+        find_dependency(VTK CONFIG)
+    else ()
+        find_dependency(VTK CONFIG
+                PATHS @CMAKE_INSTALL_PREFIX@)
+    endif ()
+    target_include_directories(opflow INTERFACE ${VTK_INCLUDE_DIRS})
+    target_link_directories(opflow INTERFACE ${VTK_LIBRARY_DIRS})
+    target_link_libraries(opflow INTERFACE ${VTK_LIBRARIES})
 endif ()
 
 # Find MPI & OpenMP
@@ -51,6 +56,6 @@ if (${OPFLOW_WITH_MPI})
 endif ()
 
 # Find AMGCL
-find_dependency(amgcl HINTS @CMAKE_INSTALL_PREFIX@/amgcl)
+find_dependency(amgcl HINTS @CMAKE_INSTALL_PREFIX@)
 
-include("${CMAKE_CURRENT_LIST_DIR}/${config_targets_file}")
+include("${CMAKE_CURRENT_LIST_DIR}/${OPFLOW_CONFIG_TARGETS_FILE}")

@@ -171,20 +171,41 @@ target_include_directories(opflow INTERFACE
 # ----------------------------------------------------------------------------
 # Use fmt package
 # ----------------------------------------------------------------------------
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/fmt EXCLUDE_FROM_ALL)
-target_link_libraries(opflow INTERFACE $<BUILD_INTERFACE:fmt::fmt>)
+if (OPFLOW_INSTALL)
+    # Build, install & link to the installed libfmt
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FMTConfig.cmake)
+    CONFIG_AND_INSTALL_FMT()
+    find_package(fmt REQUIRED PATHS ${CMAKE_INSTALL_PREFIX})
+else ()
+    # Add the bundled fmt library as a subproject
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/fmt EXCLUDE_FROM_ALL)
+endif ()
+target_link_libraries(opflow INTERFACE fmt::fmt)
 
 # ----------------------------------------------------------------------------
 # Use spdlog package
 # ----------------------------------------------------------------------------
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/spdlog EXCLUDE_FROM_ALL)
-target_link_libraries(opflow INTERFACE $<BUILD_INTERFACE:spdlog::spdlog>)
+if (OPFLOW_INSTALL)
+    # Same as libfmt
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/SPDLOGConfig.cmake)
+    CONFIG_AND_INSTALL_SPDLOG()
+    find_package(spdlog REQUIRED PATHS ${CMAKE_INSTALL_PREFIX})
+else ()
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/spdlog EXCLUDE_FROM_ALL)
+endif ()
+target_link_libraries(opflow INTERFACE spdlog::spdlog)
 
 # ----------------------------------------------------------------------------
 # Use AMGCL
 # ----------------------------------------------------------------------------
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/amgcl EXCLUDE_FROM_ALL)
-target_link_libraries(opflow INTERFACE $<BUILD_INTERFACE:amgcl::amgcl>)
+if (OPFLOW_INSTALL)
+    include(${CMAKE_CURRENT_BINARY_DIR}/cmake/AMGCLConfig.cmake)
+    CONFIG_AND_INSTALL_AMGCL()
+    find_package(amgcl REQUIRED PATHS ${CMAKE_INSTALL_PREFIX})
+else ()
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/amgcl EXCLUDE_FROM_ALL)
+endif ()
+target_link_libraries(opflow INTERFACE amgcl::amgcl)
 
 # ----------------------------------------------------------------------------
 # Find MPI
@@ -210,8 +231,27 @@ endif ()
 # ----------------------------------------------------------------------------
 # Use HYPRE package
 # ----------------------------------------------------------------------------
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/hypre/src EXCLUDE_FROM_ALL)
-target_link_libraries(opflow INTERFACE HYPRE)
+if (OPFLOW_HYPRE_EXTERNAL)
+    # Use external HYPRE
+    find_package(HYPRE REQUIRED)
+    # Here we hard link to the found HYPRE to avoid find again at client
+    target_link_libraries(opflow INTERFACE HYPRE)
+else ()
+    # Use bundled HYPRE
+    if (OPFLOW_INSTALL)
+        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/HYPREConfig.cmake)
+        CONFIG_AND_INSTALL_HYPRE()
+        find_package(HYPRE REQUIRED PATHS ${CMAKE_INSTALL_PREFIX})
+        # HYPRE::HYPRE is only exported on install
+        target_link_libraries(opflow INTERFACE HYPRE::HYPRE)
+    else ()
+        set(HYPRE_BUILD_TYPE Debug)
+        set(HYPRE_WITH_OPENMP ${OPFLOW_WITH_OPENMP})
+        set(HYPRE_ENABLE_SINGLE ${OPFLOW_SINGLE_PRECISION})
+        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/hypre/src EXCLUDE_FROM_ALL)
+        target_link_libraries(opflow INTERFACE HYPRE)
+    endif ()
+endif ()
 
 # ----------------------------------------------------------------------------
 # Use VTK package
@@ -241,13 +281,14 @@ if (OPFLOW_WITH_HDF5)
         set(HDF5_PREFER_PARALLEL TRUE)
     endif ()
     set(HDF5_USE_STATIC_LIBRARIES ON)
+    include(FindHDF5)
     find_package(HDF5 COMPONENTS C REQUIRED)
     if (NOT HDF5_IS_PARALLEL)
         message(FATAL_ERROR "Cannot find parallel HDF5 library")
     endif ()
-    target_include_directories(opflow INTERFACE ${HDF5_INCLUDE_DIRS})
-    target_link_libraries(opflow INTERFACE ${HDF5_LIBRARIES})
-    target_compile_definitions(opflow INTERFACE OPFLOW_WITH_HDF5)
+    target_include_directories(opflow INTERFACE ${HDF5_C_INCLUDE_DIRS})
+    target_link_libraries(opflow INTERFACE ${HDF5_C_LIBRARIES})
+    target_compile_definitions(opflow INTERFACE OPFLOW_WITH_HDF5 ${HDF5_C_DEFINITIONS})
     if (OPFLOW_WITH_MPI)
         target_compile_definitions(opflow INTERFACE H5_HAVE_PARALLEL)
     endif ()
@@ -404,28 +445,10 @@ if (OPFLOW_INSTALL)
             ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-    if (NOT OPFLOW_FMT_EXTERNAL AND NOT OPFLOW_FMT_EXTERNAL_HO)
-        install(DIRECTORY external/fmt/include/fmt/
-                DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/fmt")
-    endif ()
-    if (NOT OPFLOW_SPDLOG_EXTERNAL AND NOT OPFLOW_SPDLOG_EXTERNAL_HO)
-        install(DIRECTORY external/spdlog/include/spdlog/
-                DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/spdlog")
-    endif ()
-    if (NOT OPFLOW_HYPRE_EXTERNAL)
-        install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/hypre/
-                DESTINATION "${CMAKE_INSTALL_PREFIX}")
-    endif ()
     if (OPFLOW_WITH_VTK AND NOT OPFLOW_VTK_EXTERNAL)
         install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/vtk/
                 DESTINATION "${CMAKE_INSTALL_PREFIX}")
     endif ()
-    # Build & install AMGCL
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AMGCLConfig.cmake.in
-            ${CMAKE_CURRENT_BINARY_DIR}/cmake/AMGCLConfig.cmake)
-    install(CODE "
-    include(${CMAKE_CURRENT_BINARY_DIR}/cmake/AMGCLConfig.cmake)
-    CONFIG_AND_INSTALL_AMGCL()")
 
     # ----------------------------------------------------------------------------
     # Install CMake config files
