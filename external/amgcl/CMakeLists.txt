@@ -72,9 +72,9 @@ endif ()
 #----------------------------------------------------------------------------
 target_compile_options(amgcl INTERFACE
     # Compiler is GNU (g++):
-    $<$<CXX_COMPILER_ID:GNU>:$<BUILD_INTERFACE:-Wall;-Wextra;-Wpedantic>>
+    $<$<CXX_COMPILER_ID:GNU>:$<BUILD_INTERFACE:>>
     # Compiler is Clang:
-    $<$<CXX_COMPILER_ID:Clang>:$<BUILD_INTERFACE:-Wall;-Wextra;-Wpedantic;-Wno-c99-extensions>>
+        $<$<CXX_COMPILER_ID:Clang>:$<BUILD_INTERFACE:>>
     # Compiler is MSVC:
     $<$<CXX_COMPILER_ID:MSVC>:/bigobj>
     $<$<CXX_COMPILER_ID:MSVC>:/wd4715>
