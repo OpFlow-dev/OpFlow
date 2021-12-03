@@ -19,3 +19,5 @@ add_bench(AMRFieldAssign AMRFieldAssign.cpp)
 add_bench(AMRMeshBuild AMRMeshBuild.cpp)
 
 add_bench(AMRFieldInit AMRFieldInit.cpp)
+
+add_bench(LaplaceOp LaplaceOp.cpp)
