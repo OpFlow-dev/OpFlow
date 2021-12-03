@@ -105,10 +105,6 @@ IF (NOT CMAKE_COMPILER_IS_GNUCC)
     ENDIF ()
 ENDIF () # NOT CMAKE_COMPILER_IS_GNUCC
 
-IF (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-    MESSAGE(WARNING "Code coverage results with an optimized (non-Debug) build may be misleading")
-ENDIF () # NOT CMAKE_BUILD_TYPE STREQUAL "Debug"
-
 
 # Param _targetname     The name of new the custom make target
 # Param _testrunner     The name of the target which runs the tests.
@@ -119,6 +115,10 @@ ENDIF () # NOT CMAKE_BUILD_TYPE STREQUAL "Debug"
 # Optional fourth parameter is passed as arguments to _testrunner
 #   Pass them in list form, e.g.: "-j;2" for -j 2
 FUNCTION(SETUP_TARGET_FOR_COVERAGE _targetname _testrunner _outputname)
+
+    IF (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+        MESSAGE(WARNING "Code coverage results with an optimized (non-Debug) build may be misleading")
+    ENDIF () # NOT CMAKE_BUILD_TYPE STREQUAL "Debug"
 
     IF (NOT LCOV_PATH)
         MESSAGE(FATAL_ERROR "lcov not found! Aborting...")
