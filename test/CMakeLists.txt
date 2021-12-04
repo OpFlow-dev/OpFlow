@@ -42,6 +42,38 @@ function(add_gmock testname testfile)
     endif ()
 endfunction()
 
+if (OPFLOW_WITH_MPI)
+    if (NOT MPI_FOUND)
+        # Find MPI
+        include(FindMPI)
+        find_package(MPI REQUIRED)
+    endif ()
+endif ()
+
+function(add_gmock_mpi testname proccount testfile)
+    add_executable(${testname} EXCLUDE_FROM_ALL ${testfile} ${ARGN} ${TEST_MAIN_CPP})
+    target_link_libraries(${testname} gmock opflow::opflow gcov)
+    target_compile_options(${testname} PRIVATE $<$<CXX_COMPILER_ID:GNU>:--coverage>
+            PRIVATE $<$<CXX_COMPILER_ID:GNU>:-fconcepts-diagnostics-depth=5>
+            PRIVATE $<$<CXX_COMPILER_ID:Clang>:-fprofile-instr-generate -fcoverage-mapping>)
+    target_compile_definitions(${testname} PUBLIC OPFLOW_DISTRIBUTE_MODEL_MPI)
+    set_property(GLOBAL APPEND PROPERTY all_test_srcs ${testfile} ${ARGN})
+    add_dependencies(AllTests ${testname})
+    if (proccount GREATER_EQUAL MPIEXEC_MAX_NUMPROCS)
+        message(WARNING "Given #Proc = ${proccount} > #MaxProc = ${MPIEXEC_MAX_NUMPROCS}. Reset to ${MPIEXEC_MAX_NUMPROCS}")
+        set(proccount ${MPIEXEC_MAX_NUMPROCS})
+    else ()
+        message(STATUS "${proccount} ${MPIEXEC_MAX_NUMPROCS}")
+    endif ()
+    if (NOT ${testname} STREQUAL "UniTests")
+        add_test(NAME ${testname} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${proccount}
+                ${MPIEXEC_PREFLAGS} ${CMAKE_CURRENT_BINARY_DIR}/${testname} ${MPIEXEC_POSTFLAGS})
+    endif ()
+    if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+        SETUP_TARGET_FOR_COVERAGE(${testname}_coverage ${testname} ${testname}_coverage)
+    endif ()
+endfunction()
+
 if (OPFLOW_USE_BUNDLED_GTEST)
     # Use bundled googletest framework (v1.11.0)
     set(OPFLOW_GTEST_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../external/googletest)
