@@ -20,6 +20,7 @@ add_gmock(CartesianMeshTest ${CMAKE_CURRENT_LIST_DIR}/Mesh/CartesianMeshTest.cpp
 
 # Fields
 add_gmock(CartesianFieldTest ${CMAKE_CURRENT_LIST_DIR}/Field/CartesianFieldTest.cpp)
+add_gmock_mpi(CartesianFieldMPITest 4 ${CMAKE_CURRENT_LIST_DIR}/Field/CartesianFieldMPITest.cpp)
 
 # BCs
 add_gmock(DircBCTest ${CMAKE_CURRENT_LIST_DIR}/BC/DircBCTest.cpp)
@@ -37,7 +38,7 @@ add_gmock(RangeReduceTest ${CMAKE_CURRENT_LIST_DIR}/Loops/RangeReduceTest.cpp)
 
 # Parallel
 add_gmock(EvenSplitStrategyTest ${CMAKE_CURRENT_LIST_DIR}/Parallel/EvenSplitStrategyTest.cpp)
-add_gmock_mpi(MPITest 160 ${CMAKE_CURRENT_LIST_DIR}/Parallel/MPITest.cpp)
+add_gmock_mpi(MPITest 16 ${CMAKE_CURRENT_LIST_DIR}/Parallel/MPITest.cpp)
 
 # Equation
 add_gmock(DircEqnTest ${CMAKE_CURRENT_LIST_DIR}/Equation/DircEqnTest.cpp)

@@ -123,12 +123,12 @@ namespace OpFlow {
 
         template <std::size_t d>
         static auto split_impl(const DS::Range<d>& range, const ParallelPlan& plan) {
-            if (plan.singleNodeMode()) return range;
+            // assume the input range is nodal range, convert to central range
+            auto _range = range;
+            for (std::size_t i = 0; i < d; ++i) _range.end[i]--;
+            if (plan.singleNodeMode()) return _range;
             else {
                 auto split_plan = gen_split_plan(range, plan);
-                // assume the input range is nodal range, convert to central range
-                auto _range = range;
-                for (std::size_t i = 0; i < d; ++i) _range.end[i]--;
 
 #ifdef OPFLOW_WITH_MPI
                 int proc_rank;
@@ -155,12 +155,12 @@ namespace OpFlow {
 
         template <std::size_t d>
         static auto splitMap_impl(const DS::Range<d>& range, const ParallelPlan& plan) {
-            if (plan.serialMode()) return std::vector<DS::Range<d>> {range};
+            // assume the input range is nodal range, convert to central range
+            auto _range = range;
+            for (std::size_t i = 0; i < d; ++i) _range.end[i]--;
+            if (plan.serialMode()) return std::vector<DS::Range<d>> {_range};
             else {
                 auto split_plan = gen_split_plan(range, plan);
-                // assume the input range is nodal range, convert to central range
-                auto _range = range;
-                for (std::size_t i = 0; i < d; ++i) _range.end[i]--;
 
 #ifdef OPFLOW_WITH_MPI
                 int worker_count = plan.distributed_workers_count;
