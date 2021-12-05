@@ -17,6 +17,7 @@
 
 // Serializer
 #include "Utils/Serializer/STDContainers.hpp"
+#include "Utils/Serializer/EnumTypes.hpp"
 
 // Writers
 #include "Utils/Writers/StreamTrait.hpp"
