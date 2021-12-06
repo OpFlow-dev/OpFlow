@@ -165,6 +165,13 @@ namespace OpFlow::DS {
         }
 
         void setEmpty() { *this = EmptyRange(); }
+
+        auto first() const { return base_index_type {start}; }
+        auto last() const {
+            auto ret = base_index_type {end};
+            for (int i = 0; i < d; ++i) ret[i]--;
+            return ret;
+        }
     };
 
     template <typename T>
