@@ -18,7 +18,14 @@ using namespace testing;
 
 class EqnSolveHandlerTest : public Test {
 protected:
+    ParallelPlan ori_plan;
     void SetUp() override {
+        ori_plan = getGlobalParallelPlan();
+        auto info = makeParallelInfo();
+        info.threadInfo.thread_count = std::min(info.threadInfo.thread_count, 4);
+        setGlobalParallelInfo(info);
+        setGlobalParallelPlan(makeParallelPlan(getGlobalParallelInfo(), ParallelIdentifier::SharedMem));
+
         m = MeshBuilder<Mesh>().newMesh(65, 65).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
         p = ExprBuilder<Field>()
                     .setMesh(m)
@@ -52,6 +59,8 @@ protected:
         b.name = "b";
         p_true.initBy([&](auto&& x) { return x[0] * (1. - x[0]) * x[1] * (1. - x[1]); });
     }
+
+    void TearDown() override { setGlobalParallelPlan(ori_plan); }
 
     void reset_case(double xc, double yc) {
         r.initBy([&](auto&& x) {
