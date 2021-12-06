@@ -88,7 +88,6 @@ namespace OpFlow {
             col.resize(local_range.count() * stencil_size);
             val.resize(local_range.count() * stencil_size);
             rhs.resize(local_range.count());
-            val.assign(val.size(), 0.);
             auto local_mapper = DS::MDRangeMapper<dim> {local_range};
             // first pass: generate the local block of matrix
             rangeFor(local_range, [&](auto&& k) {
@@ -110,13 +109,17 @@ namespace OpFlow {
                                                        col.begin() + stencil_size * _local_rank + _iter);
                     if (local_max + stencil_size - _iter <= mapper(target->assignableRange.last())) {
                         // use virtual indexes upper side
-                        for (; _iter < stencil_size; ++_iter)
+                        for (; _iter < stencil_size; ++_iter) {
                             col[stencil_size * _local_rank + _iter] = ++local_max;
+                            val[stencil_size * _local_rank + _iter] = 0;
+                        }
                     } else if (local_min - (stencil_size - _iter)
                                >= mapper(target->assignableRange.first())) {
                         // use virtual indexes lower side
-                        for (; _iter < stencil_size; ++_iter)
+                        for (; _iter < stencil_size; ++_iter) {
                             col[stencil_size * _local_rank + _iter] = --local_min;
+                            val[stencil_size * _local_rank + _iter] = 0;
+                        }
                     } else {
                         // the case may be tiny
                         OP_CRITICAL("AMGCL: Cannot find proper filling. Abort.");
@@ -169,7 +172,7 @@ namespace OpFlow {
         void returnValues() {
             auto local_range = DS::commonRange(target->assignableRange, target->localRange);
             auto local_mapper = DS::MDRangeMapper<dim> {local_range};
-            rangeFor_s(local_range, [&](auto&& k) { target->operator[](k) = x[local_mapper(k)]; });
+            rangeFor(local_range, [&](auto&& k) { target->operator[](k) = x[local_mapper(k)]; });
             target->updatePadding();
         }
 
