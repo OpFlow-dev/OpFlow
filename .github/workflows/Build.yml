@@ -91,4 +91,4 @@ jobs:
       - name: Test
         working-directory: ./build
         run: |
-          ctest --parallel ${{ matrix.config.cores }} -C ${{ matrix.config.config }}
+          ctest --parallel ${{ matrix.config.cores }} -C ${{ matrix.config.config }} -VV
