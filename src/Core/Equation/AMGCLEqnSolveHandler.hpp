@@ -13,10 +13,14 @@
 #ifndef OPFLOW_AMGCLEQNSOLVEHANDLER_HPP
 #define OPFLOW_AMGCLEQNSOLVEHANDLER_HPP
 
+#include "Core/Equation/Equation.hpp"
 #include "Core/Field/MeshBased/SemiStructured/CartAMRFieldTrait.hpp"
+#include "Core/Field/MeshBased/StencilField.hpp"
+#include "Core/Field/MeshBased/StencilFieldTrait.hpp"
 #include "Core/Field/MeshBased/Structured/CartesianFieldTrait.hpp"
 #include "Core/Macros.hpp"
 #include "Core/Meta.hpp"
+#include "DataStructures/Index/LinearMapper/MDRangeMapper.hpp"
 #include <cstddef>
 #include <fstream>
 #include <vector>
@@ -57,6 +61,17 @@ namespace OpFlow {
             auto t = equation->lhs - equation->rhs;
             t.prepare();
             uniEqn = std::make_unique<EqExpr>(std::move(t));
+            initStencil();
+        }
+
+        void initStencil() {
+            // assume the middle stencil is complete
+            DS::MDIndex<dim> middle;
+            for (auto i = 0; i < dim; ++i) {
+                middle[i] = (target->assignableRange.start[i] + target->assignableRange.end[i]) / 2;
+            }
+            // here we only need the size of the common stencil
+            commStencil = uniEqn->evalAt(middle);
         }
 
         void generateAb() {
@@ -64,19 +79,50 @@ namespace OpFlow {
             col.clear();
             val.clear();
             rhs.clear();
+            auto local_range = DS::commonRange(target->assignableRange, target->localRange);
+            // prepare: evaluate the common stencil & pre-fill the arrays
+            int stencil_size = commStencil.pad.size();
+            row.resize(local_range.count() + 1);
+#pragma omp parallel for default(shared)
+            for (int i = 0; i < row.size(); ++i) { row[i] = i * stencil_size; }
+            col.resize(local_range.count() * stencil_size);
+            val.resize(local_range.count() * stencil_size);
+            rhs.resize(local_range.count());
+            val.assign(val.size(), 0.);
+            auto local_mapper = DS::MDRangeMapper<dim> {local_range};
             // first pass: generate the local block of matrix
-            int count = 0;
-            row.push_back(count);
-            rangeFor_s(DS::commonRange(target->assignableRange, target->localRange), [&](auto&& k) {
+            rangeFor(local_range, [&](auto&& k) {
                 auto currentStencil = uniEqn->evalAt(k);
+                int _local_rank = local_mapper(k);
+                int _iter = 0;
                 for (const auto& [key, v] : currentStencil.pad) {
                     auto idx = mapper(key);
-                    col.push_back(idx);
-                    val.push_back(v);
-                    count++;
+                    col[stencil_size * _local_rank + _iter] = idx;
+                    val[stencil_size * _local_rank + _iter] = v;
+                    _iter++;
                 }
-                rhs.push_back(-currentStencil.bias);
-                row.push_back(count);
+                rhs[_local_rank] = -currentStencil.bias;
+                if (_iter < stencil_size) {
+                    // boundary case. find the neighbor ranks and assign 0 to them
+                    auto local_max = *std::max_element(col.begin() + stencil_size * _local_rank,
+                                                       col.begin() + stencil_size * _local_rank + _iter);
+                    auto local_min = *std::min_element(col.begin() + stencil_size * _local_rank,
+                                                       col.begin() + stencil_size * _local_rank + _iter);
+                    if (local_max + stencil_size - _iter <= mapper(target->assignableRange.last())) {
+                        // use virtual indexes upper side
+                        for (; _iter < stencil_size; ++_iter)
+                            col[stencil_size * _local_rank + _iter] = ++local_max;
+                    } else if (local_min - (stencil_size - _iter)
+                               >= mapper(target->assignableRange.first())) {
+                        // use virtual indexes lower side
+                        for (; _iter < stencil_size; ++_iter)
+                            col[stencil_size * _local_rank + _iter] = --local_min;
+                    } else {
+                        // the case may be tiny
+                        OP_CRITICAL("AMGCL: Cannot find proper filling. Abort.");
+                        OP_ABORT;
+                    }
+                }
             });
             if (pinValue) {
                 if (DS::inRange(target->localRange, DS::MDIndex<dim>(target->assignableRange.start))) {
@@ -104,23 +150,26 @@ namespace OpFlow {
         }
 
         void generateb() {
-            rhs.clear();
-            rangeFor_s(DS::commonRange(target->assignableRange, target->localRange), [&](auto&& k) {
+            auto local_range = DS::commonRange(target->assignableRange, target->localRange);
+            auto local_mapper = DS::MDRangeMapper<dim> {local_range};
+            rhs.resize(local_range.count());
+            rangeFor(local_range, [&](auto&& k) {
                 auto currentStencil = uniEqn->evalAt(k);
-                rhs.push_back(-currentStencil.bias);
+                rhs[local_mapper(k)] = (-currentStencil.bias);
             });
         }
 
         void initx() {
-            x.clear();
-            rangeFor_s(DS::commonRange(target->assignableRange, target->localRange),
-                       [&](auto&& k) { x.push_back(target->evalAt(k)); });
+            auto local_range = DS::commonRange(target->assignableRange, target->localRange);
+            auto local_mapper = DS::MDRangeMapper<dim> {local_range};
+            x.resize(local_range.count());
+            rangeFor(local_range, [&](auto&& k) { x[local_mapper(k)] = (target->evalAt(k)); });
         }
 
         void returnValues() {
-            auto iter = x.begin();
-            rangeFor_s(DS::commonRange(target->assignableRange, target->localRange),
-                       [&](auto&& k) { target->operator[](k) = *iter++; });
+            auto local_range = DS::commonRange(target->assignableRange, target->localRange);
+            auto local_mapper = DS::MDRangeMapper<dim> {local_range};
+            rangeFor_s(local_range, [&](auto&& k) { target->operator[](k) = x[local_mapper(k)]; });
             target->updatePadding();
         }
 
