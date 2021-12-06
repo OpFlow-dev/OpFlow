@@ -136,6 +136,7 @@ TEST_F(AMGCLTest, GeneralCSR) {
     x.resize(9);
     rhs.resize(9);
     val.assign(45, 0.);
+    // on macOS the non-trimmed version will cause segfault
     auto trim = [](int i) { return std::min(std::max(0, i), 8); };
 
     for (int j = 0; j < 3; ++j) {
@@ -144,10 +145,10 @@ TEST_F(AMGCLTest, GeneralCSR) {
             OP_INFO("{} {}", i, j);
             row[rank] = 5 * rank;
             col[5 * rank] = rank;
-            col[5 * rank + 1] = rank - 1;
-            col[5 * rank + 2] = rank + 1;
-            col[5 * rank + 3] = rank - 3;
-            col[5 * rank + 4] = rank + 3;
+            col[5 * rank + 1] = trim(rank - 1);
+            col[5 * rank + 2] = trim(rank + 1);
+            col[5 * rank + 3] = trim(rank - 3);
+            col[5 * rank + 4] = trim(rank + 3);
             val[5 * rank] = 4.;
             if (i != 0) val[5 * rank + 1] = -1.;
             if (i != 2) val[5 * rank + 2] = -1.;
