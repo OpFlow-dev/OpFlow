@@ -38,6 +38,7 @@ add_gmock(RangeForTest ${CMAKE_CURRENT_LIST_DIR}/Loops/RangeForTest.cpp)
 add_gmock(EvenSplitStrategyTest ${CMAKE_CURRENT_LIST_DIR}/Parallel/EvenSplitStrategyTest.cpp)
 
 # Equation
-add_gmock(EqnSolveHandlerTest ${CMAKE_CURRENT_LIST_DIR}/Equation/EqnSolveHandlerTest.cpp)
+add_gmock(DircEqnTest ${CMAKE_CURRENT_LIST_DIR}/Equation/DircEqnTest.cpp)
+add_gmock(NeumEqnTest ${CMAKE_CURRENT_LIST_DIR}/Equation/NeumEqnTest.cpp)
 add_gmock(PeriodicEqnTest ${CMAKE_CURRENT_LIST_DIR}/Equation/PeriodicEqnTest.cpp)
 add_gmock(AMGCLTest ${CMAKE_CURRENT_LIST_DIR}/Equation/AMGCLTest.cpp)
