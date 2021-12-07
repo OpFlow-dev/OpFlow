@@ -67,7 +67,7 @@ namespace OpFlow {
                 for (auto i = range.start[0]; i < range.end[0]; ++i) { func(typename R::base_index_type(i)); }
             } else if constexpr (dim == 2) {
                 constexpr static int block_x = 8, block_y = 8;
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(dynamic)
 #pragma omp tile sizes(block_y, block_x)
                 for (int j = range.start[1]; j < range.end[1]; ++j)
                     for (int i = range.start[0]; i < range.end[0]; ++i) {
@@ -78,7 +78,7 @@ namespace OpFlow {
                     }
             } else if constexpr (dim == 3) {
                 constexpr static int block_x = 8, block_y = 4, block_z = 4;
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic)
 #pragma omp tile sizes(block_z, block_y, block_x)
                 for (int k = range.start[2]; k < range.end[2]; ++k)
                     for (int j = range.start[1]; j < range.end[1]; ++j)

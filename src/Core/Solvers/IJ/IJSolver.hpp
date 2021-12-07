@@ -50,6 +50,7 @@
 #include <amgcl/solver/preonly.hpp>
 #include <amgcl/solver/skyline_lu.hpp>
 
+#include <amgcl/adapter/zero_copy.hpp>
 #include <amgcl/io/binary.hpp>
 #include <amgcl/profiler.hpp>
 
@@ -90,6 +91,19 @@ namespace OpFlow {
 #else
             auto A = std::tie(rows, ptr, col, val);
             solver = std::make_unique<Solver>(A, params.p, params.bp);
+#endif
+        }
+
+        template <typename T>
+        void init(std::ptrdiff_t rows, ptrdiff_t* ptr, std::ptrdiff_t* col, T* val) {
+#if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
+            amgcl::mpi::communicator world(MPI_COMM_WORLD);
+            A_shared = std::make_shared<amgcl::mpi::distributed_matrix<typename Solver::backend_type>>(
+                    world, *amgcl::adapter::zero_copy(rows, ptr, col, val));
+            solver = std::make_unique<Solver>(world, A_shared, params.p, params.bp);
+#else
+            auto A = amgcl::adapter::zero_copy(rows, ptr, col, val);
+            solver = std::make_unique<Solver>(*A, params.p, params.bp);
 #endif
         }
 

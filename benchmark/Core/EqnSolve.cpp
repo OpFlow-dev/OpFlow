@@ -53,7 +53,7 @@ static void EqnSolve_2d(benchmark::State& state) {
         state.PauseTiming();
         u = 0.;
         state.ResumeTiming();
-        handler.solve();
+        handler->solve();
     }
 }
 

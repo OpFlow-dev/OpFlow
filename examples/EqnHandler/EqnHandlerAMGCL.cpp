@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
             [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; }, u,
             DS::MDRangeMapper<2> {u.assignableRange});
     OP_INFO("Built solver handler.");
-    handler.solve();
+    handler->solve();
     OP_INFO("Solver finished.");
 
     Utils::TecplotASCIIStream uf("u.tec");

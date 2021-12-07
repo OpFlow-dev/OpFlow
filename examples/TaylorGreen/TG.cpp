@@ -104,12 +104,12 @@ int main(int argc, char* argv[]) {
     // main algorithm
     auto t0 = std::chrono::system_clock::now();
     for (auto i = 0; i < 0.1 / dt; ++i) {
-        u_handler.solve();
-        v_handler.solve();
+        u_handler->solve();
+        v_handler->solve();
         du = du - 0.5 * dt * conv_xy(u, dv);
         u = u + du;
         v = v + dv;
-        p_handler.solve();
+        p_handler->solve();
         u = u - dt * dx<D1FirstOrderCenteredDownwind>(dp);
         v = v - dt * dy<D1FirstOrderCenteredDownwind>(dp);
         p = p + dp;
