@@ -125,9 +125,7 @@ namespace OpFlow {
                     // rather than this->assignableRange.start; This is because
                     // for periodic case the assignableRange of this will be changed
                     // to logicalRange for HYPRE solver to get exact offset.
-                    if (pinned && index == index_type(base->assignableRange.start))
-                        [[unlikely]] ret.pad[index] = 0.;
-                    else
+                    if (!(pinned && index == index_type(base->assignableRange.start)))
                         [[likely]] ret.pad[index] = 1.0;
                     return ret;
                 }

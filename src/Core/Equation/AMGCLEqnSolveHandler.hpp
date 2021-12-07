@@ -104,18 +104,21 @@ namespace OpFlow {
             int stencil_size = commStencil.pad.size();
 
             auto local_mapper = DS::MDRangeMapper<dim> {local_range};
+            int local_offset = pinValue && mapper(local_range.first()) == 0 ? 1 : 0;
             // first pass: generate the local block of matrix
             rangeFor(local_range, [&](auto&& k) {
+                // delete the pinned equation
+                if (pinValue && mapper(k) == 0) return;
                 auto currentStencil = uniEqn->evalAt(k);
                 int _local_rank = local_mapper(k);
                 int _iter = 0;
                 for (const auto& [key, v] : currentStencil.pad) {
-                    auto idx = mapper(key);
+                    auto idx = pinValue ? mapper(key) - 1 : mapper(key);
                     col[stencil_size * _local_rank + _iter] = idx;
                     val[stencil_size * _local_rank + _iter] = v;
                     _iter++;
                 }
-                rhs[_local_rank] = -currentStencil.bias;
+                rhs[_local_rank - local_offset] = -currentStencil.bias;
                 if (_iter < stencil_size) {
                     // boundary case. find the neighbor ranks and assign 0 to them
                     auto local_max = *std::max_element(col + stencil_size * _local_rank,
@@ -129,7 +132,7 @@ namespace OpFlow {
                             val[stencil_size * _local_rank + _iter] = 0;
                         }
                     } else if (local_min - (stencil_size - _iter)
-                               >= mapper(target->assignableRange.first())) {
+                               >= mapper(target->assignableRange.first()) + 1) {
                         // use virtual indexes lower side
                         for (; _iter < stencil_size; ++_iter) {
                             col[stencil_size * _local_rank + _iter] = --local_min;
@@ -142,15 +145,6 @@ namespace OpFlow {
                     }
                 }
             });
-            if (pinValue) {
-                if (DS::inRange(target->localRange, DS::MDIndex<dim>(target->assignableRange.start))) {
-                    for (auto i = 0; i < row[1]; ++i) {
-                        val[i] = 0.;
-                        if (col[i] == 0) val[i] = 1.;
-                    }
-                    rhs[0] = 0.;
-                }
-            }
 
             if (solver.getParams().dumpPath) {
                 std::fstream of;
@@ -170,22 +164,45 @@ namespace OpFlow {
         void generateb() {
             auto local_range = DS::commonRange(target->assignableRange, target->localRange);
             auto local_mapper = DS::MDRangeMapper<dim> {local_range};
-            rangeFor(local_range, [&](auto&& k) {
-                auto currentStencil = uniEqn->evalAt(k);
-                rhs[local_mapper(k)] = (-currentStencil.bias);
-            });
+            int local_offset = mapper(local_range.first()) == 0 ? 1 : 0;
+            if (pinValue)
+                rangeFor(local_range, [&](auto&& k) {
+                    if (mapper(k) == 0) return;
+                    auto currentStencil = uniEqn->evalAt(k);
+                    rhs[local_mapper(k) - local_offset] = -currentStencil.bias;
+                });
+            else
+                rangeFor(local_range, [&](auto&& k) {
+                    auto currentStencil = uniEqn->evalAt(k);
+                    rhs[local_mapper(k)] = (-currentStencil.bias);
+                });
         }
 
         void initx() {
             auto local_range = DS::commonRange(target->assignableRange, target->localRange);
             auto local_mapper = DS::MDRangeMapper<dim> {local_range};
-            rangeFor(local_range, [&](auto&& k) { x[local_mapper(k)] = (target->evalAt(k)); });
+            int local_offset = mapper(local_range.first()) == 0 ? 1 : 0;
+
+            if (pinValue)
+                rangeFor(local_range, [&](auto&& k) {
+                    if (mapper(k) == 0) return;
+                    x[local_mapper(k) - local_offset] = (target->evalAt(k));
+                });
+            else
+                rangeFor(local_range, [&](auto&& k) { x[local_mapper(k)] = (target->evalAt(k)); });
         }
 
         void returnValues() {
             auto local_range = DS::commonRange(target->assignableRange, target->localRange);
             auto local_mapper = DS::MDRangeMapper<dim> {local_range};
-            rangeFor(local_range, [&](auto&& k) { target->operator[](k) = x[local_mapper(k)]; });
+            int local_offset = mapper(local_range.first()) == 0 ? 1 : 0;
+
+            if (pinValue)
+                rangeFor(local_range, [&](auto&& k) {
+                    target->operator[](k) = mapper(k) == 0 ? 0 : x[local_mapper(k) - local_offset];
+                });
+            else
+                rangeFor(local_range, [&](auto&& k) { target->operator[](k) = x[local_mapper(k)]; });
             target->updatePadding();
         }
 
@@ -193,7 +210,11 @@ namespace OpFlow {
             if (firstRun) {
                 generateAb();
                 initx();
-                solver.init(x.size() - 1, row, col, val);
+                if (pinValue)
+                    solver.init(x.size() - 2, row, col + commStencil.pad.size(),
+                                val + commStencil.pad.size());
+                else
+                    solver.init(x.size() - 1, row, col, val);
                 solver.solve(rhs, x);
                 firstRun = false;
             } else {
@@ -201,7 +222,11 @@ namespace OpFlow {
                 else
                     generateAb();
                 initx();
-                solver.init(x.size() - 1, row, col, val);
+                if (pinValue)
+                    solver.init(x.size() - 2, row, col + commStencil.pad.size(),
+                                val + commStencil.pad.size());
+                else
+                    solver.init(x.size() - 1, row, col, val);
                 solver.solve(rhs, x);
             }
             if (solver.getParams().verbose && getWorkerId() == 0) fmt::print("AMGCL: {}\n", solver.logInfo());

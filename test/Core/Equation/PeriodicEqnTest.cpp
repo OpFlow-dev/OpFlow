@@ -18,7 +18,14 @@ using namespace testing;
 
 class PeriodicEqnTest : public Test {
 protected:
+    ParallelPlan ori_plan;
     void SetUp() override {
+        ori_plan = getGlobalParallelPlan();
+        auto info = makeParallelInfo();
+        info.threadInfo.thread_count = std::min(info.threadInfo.thread_count, 4);
+        setGlobalParallelInfo(info);
+        setGlobalParallelPlan(makeParallelPlan(getGlobalParallelInfo(), ParallelIdentifier::SharedMem));
+
         m = MeshBuilder<Mesh>()
                     .newMesh(33, 33)
                     .setMeshOfDim(0, 0., 2 * PI)
@@ -50,6 +57,8 @@ protected:
         b.name = "b";
         p_true.initBy([&](auto&& x) { return std::sin(x[0]) * std::cos(x[1]); });
     }
+
+    void TearDown() override { setGlobalParallelPlan(ori_plan); }
 
     void reset_case(double xc, double yc) {
         r.initBy([&](auto&& x) {
