@@ -131,7 +131,7 @@ TEST_F(EqnSolveHandlerTest, DefaultHandlerSolve) {
     this->reset_case(0.5, 0.5);
     auto solver = PrecondStructSolver<StructSolverType::GMRES, StructSolverType::PFMG> {};
     auto handler = makeEqnSolveHandler(poisson_eqn(), p, solver);
-    handler.solve();
+    handler->solve();
     ASSERT_TRUE(check_solution(1e-5));
 }
 
@@ -142,7 +142,7 @@ TEST_F(EqnSolveHandlerTest, ManualHandlerSolve) {
     StructSolverParams<OpFlow::StructSolverType ::PFMG> p_params;
     auto solver = PrecondStructSolver<StructSolverType::GMRES, StructSolverType::PFMG> {params, p_params};
     auto handler = makeEqnSolveHandler(poisson_eqn(), p, solver);
-    handler.solve();
+    handler->solve();
     ASSERT_TRUE(check_solution(1e-10));
 }
 
@@ -164,10 +164,10 @@ TEST_F(EqnSolveHandlerTest, HandlerSolveTwice) {
     StructSolverParams<OpFlow::StructSolverType ::PFMG> p_params;
     auto solver = PrecondStructSolver<StructSolverType::GMRES, StructSolverType::PFMG> {params, p_params};
     auto handler = makeEqnSolveHandler(poisson_eqn(), p, solver);
-    handler.solve();
+    handler->solve();
     ASSERT_TRUE(check_solution(1e-10));
     this->reset_case(0.3, 0.6);
-    handler.solve();
+    handler->solve();
     ASSERT_TRUE(check_solution(1e-10));
 }
 
@@ -182,7 +182,7 @@ TEST_F(EqnSolveHandlerTest, HandlerSolveRepeat) {
     auto handler = makeEqnSolveHandler(poisson_eqn(), p, solver);
     for (auto i = 0; i < 10; ++i) {
         this->reset_case(0.3, 0.6);
-        handler.solve();
+        handler->solve();
         ASSERT_TRUE(check_solution(1e-10));
     }
 }
@@ -304,4 +304,28 @@ TEST_F(EqnSolveHandlerTest, AMGCLUnifiedSolveGMRES) {
             amgcl::solver::gmres<amgcl::backend::builtin<double>>>;
     Solve<Solver>(poisson_eqn(), p, DS::MDRangeMapper<2> {p.assignableRange});
     ASSERT_TRUE(check_solution(2e-8));
+}
+
+TEST_F(EqnSolveHandlerTest, AMGCLHandlerSolve) {
+    this->reset_case(0.5, 0.5);
+    using Solver = amgcl::make_solver<
+            amgcl::amg<amgcl::backend::builtin<double>, amgcl::coarsening::smoothed_aggregation,
+                       amgcl::relaxation::spai0>,
+            amgcl::solver::bicgstab<amgcl::backend::builtin<double>>>;
+    auto handler = makeEqnSolveHandler<Solver>(poisson_eqn(), p, DS::MDRangeMapper<2> {p.assignableRange});
+    handler->solve();
+    ASSERT_TRUE(check_solution(1e-8));
+}
+
+TEST_F(EqnSolveHandlerTest, AMGCLHandlerSolveRepeat) {
+    using Solver = amgcl::make_solver<
+            amgcl::amg<amgcl::backend::builtin<double>, amgcl::coarsening::smoothed_aggregation,
+                       amgcl::relaxation::spai0>,
+            amgcl::solver::bicgstab<amgcl::backend::builtin<double>>>;
+    auto handler = makeEqnSolveHandler<Solver>(poisson_eqn(), p, DS::MDRangeMapper<2> {p.assignableRange});
+    for (int i = 0; i < 10; ++i) {
+        this->reset_case(0.5, 0.5);
+        handler->solve();
+        ASSERT_TRUE(check_solution(1e-8));
+    }
 }

@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
                 },
                 u, DS::BlockedMDRangeMapper<2> {ass_splitMap}, p);
         OP_MPI_MASTER_INFO("Built solver handler.");
-        handler.solve();
+        handler->solve();
         OP_MPI_MASTER_INFO("Solver finished.");
     }
 

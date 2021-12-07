@@ -59,7 +59,7 @@ The default solver for general equations in OpFlow is GMRES. We can construct a 
     // params & precParams are parameters for the solver and preconditioner
     auto solver = PrecondStructSolver<type, pType>(params, precParams);
     // bind the solver, target and equation to an equation handler
-    auto handler = EqnSolveHandler(eqn, p, solver);
+    auto handler = HYPREEqnSolveHandler(eqn, p, solver);
     // call the solve method to solve the system
     handler.solve();
 

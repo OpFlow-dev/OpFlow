@@ -122,7 +122,7 @@ TEST_F(PeriodicEqnTest, ManualHandlerSolve) {
     StructSolverParams<OpFlow::StructSolverType ::PFMG> p_params;
     auto solver = PrecondStructSolver<StructSolverType::GMRES, StructSolverType::PFMG> {params, p_params};
     auto handler = makeEqnSolveHandler(poisson_eqn(), p, solver);
-    handler.solve();
+    handler->solve();
     auto ave_p = rangeReduce(
             p.assignableRange, [](auto&& a, auto&& b) { return a + b; }, [&](auto&& idx) { return p[idx]; });
     p -= ave_p / p.assignableRange.count();
@@ -139,13 +139,13 @@ TEST_F(PeriodicEqnTest, HandlerSolveTwice) {
     StructSolverParams<OpFlow::StructSolverType ::PFMG> p_params;
     auto solver = PrecondStructSolver<StructSolverType::GMRES, StructSolverType::PFMG> {params, p_params};
     auto handler = makeEqnSolveHandler(poisson_eqn(), p, solver);
-    handler.solve();
+    handler->solve();
     auto ave_p = rangeReduce(
             p.assignableRange, [](auto&& a, auto&& b) { return a + b; }, [&](auto&& idx) { return p[idx]; });
     p -= ave_p / p.assignableRange.count();
     ASSERT_TRUE(check_solution(1e-8));
     this->reset_case(0.3, 0.6);
-    handler.solve();
+    handler->solve();
     ave_p = rangeReduce(
             p.assignableRange, [](auto&& a, auto&& b) { return a + b; }, [&](auto&& idx) { return p[idx]; });
     p -= ave_p / p.assignableRange.count();
@@ -164,7 +164,7 @@ TEST_F(PeriodicEqnTest, HandlerSolveRepeat) {
     auto handler = makeEqnSolveHandler(poisson_eqn(), p, solver);
     for (auto i = 0; i < 10; ++i) {
         this->reset_case(0.3, 0.6);
-        handler.solve();
+        handler->solve();
         auto ave_p = rangeReduce(
                 p.assignableRange, [](auto&& a, auto&& b) { return a + b; },
                 [&](auto&& idx) { return p[idx]; });

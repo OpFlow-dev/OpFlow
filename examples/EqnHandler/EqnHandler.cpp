@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
             [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; }, u,
             solver);
     OP_INFO("Built solver handler.");
-    handler.solve();
+    handler->solve();
     OP_INFO("Solver finished.");
 
     MPI_Finalize();

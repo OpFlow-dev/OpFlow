@@ -13,8 +13,8 @@
 #ifndef OPFLOW_UNIFIEDSOLVE_HPP
 #define OPFLOW_UNIFIEDSOLVE_HPP
 
-#include "Core/Equation/EqnSolveHandler.hpp"
 #include "Core/Equation/Equation.hpp"
+#include "Core/Equation/HYPREEqnSolveHandler.hpp"
 #include "Core/Solvers/IJ/IJSolver.hpp"
 #include "Core/Solvers/SemiStruct/SemiStructSolver.hpp"
 #include "Core/Solvers/SemiStruct/SemiStructSolverFAC.hpp"
@@ -38,7 +38,7 @@ namespace OpFlow {
                StructSolverParams<pType> precParams = StructSolverParams<pType> {}) {
         auto solver = PrecondStructSolver<type, pType>(params, precParams);
         auto handler = makeEqnSolveHandler(func, target, solver);
-        handler.solve();
+        handler->solve();
     }
 
     template <SemiStructSolverType type = SemiStructSolverType::FAC,
@@ -50,10 +50,10 @@ namespace OpFlow {
         if constexpr (pType != SemiStructSolverType::None) {
             auto solver = PrecondSemiStructSolver<type, pType>(params, precParams);
             auto handler = makeEqnSolveHandler(func, target, solver);
-            handler.solve();
+            handler->solve();
         } else {
             auto solver = SemiStructSolver<type>(params);
-            auto handler = EqnSolveHandler<Meta::RealType<F>, Meta::RealType<T>, SemiStructSolver<type>>(
+            auto handler = HYPREEqnSolveHandler<Meta::RealType<F>, Meta::RealType<T>, SemiStructSolver<type>>(
                     func, target, solver);
             handler.solve();
         }
@@ -62,7 +62,7 @@ namespace OpFlow {
     template <typename S, typename F, FieldExprType T>
     void Solve(F&& func, T&& target, auto&& indexer, IJSolverParams<S> params = IJSolverParams<S> {}) {
         auto handler = makeEqnSolveHandler(func, target, indexer, params);
-        handler.solve();
+        handler->solve();
     }
 
 }// namespace OpFlow

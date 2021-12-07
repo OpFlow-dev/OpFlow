@@ -13,6 +13,7 @@
 #ifndef OPFLOW_AMGCLEQNSOLVEHANDLER_HPP
 #define OPFLOW_AMGCLEQNSOLVEHANDLER_HPP
 
+#include "Core/Equation/EqnSolveHandler.hpp"
 #include "Core/Equation/Equation.hpp"
 #include "Core/Field/MeshBased/SemiStructured/CartAMRFieldTrait.hpp"
 #include "Core/Field/MeshBased/StencilField.hpp"
@@ -22,6 +23,7 @@
 #include "Core/Meta.hpp"
 #include "DataStructures/Index/LinearMapper/MDRangeMapper.hpp"
 #include <cstddef>
+#include <cstdlib>
 #include <fstream>
 #include <vector>
 
@@ -36,20 +38,27 @@ namespace OpFlow {
     struct AMGCLEqnSolveHandler;
 
     template <typename S, typename F, typename T, typename M>
-    auto makeEqnSolveHandler(F&& f, T&& t, M&& m, IJSolverParams<S> params = IJSolverParams<S> {}) {
-        return AMGCLEqnSolveHandler<F, Meta::RealType<T>, Meta::RealType<M>, Meta::RealType<S>>(
+    std::unique_ptr<EqnSolveHandler> makeEqnSolveHandler(F&& f, T&& t, M&& m,
+                                                         IJSolverParams<S> params = IJSolverParams<S> {}) {
+        return std::make_unique<
+                AMGCLEqnSolveHandler<F, Meta::RealType<T>, Meta::RealType<M>, Meta::RealType<S>>>(
                 OP_PERFECT_FOWD(f), OP_PERFECT_FOWD(t), OP_PERFECT_FOWD(m), params);
     }
 
     template <typename F, CartesianFieldType T, typename M, typename S>
-    struct AMGCLEqnSolveHandler<F, T, M, S> {
+    struct AMGCLEqnSolveHandler<F, T, M, S> : virtual public EqnSolveHandler {
         AMGCLEqnSolveHandler() = default;
         AMGCLEqnSolveHandler(const F& getter, T& target, const M& mapper, IJSolverParams<S> p)
             : eqn_getter {getter}, target(&target), mapper(mapper), solver(p) {
-            init();
+            this->init();
+        }
+        ~AMGCLEqnSolveHandler() {
+            delete[] row;
+            delete[] col;
+            delete[] val;
         }
 
-        void init() {
+        void init() override {
             staticMat = solver.getParams().staticMat;
             pinValue = solver.getParams().pinValue;
             auto stField = target->getStencilField();
@@ -62,6 +71,7 @@ namespace OpFlow {
             t.prepare();
             uniEqn = std::make_unique<EqExpr>(std::move(t));
             initStencil();
+            allocArrays();
         }
 
         void initStencil() {
@@ -74,20 +84,25 @@ namespace OpFlow {
             commStencil = uniEqn->evalAt(middle);
         }
 
+        void allocArrays() {
+            auto local_range = DS::commonRange(target->assignableRange, target->localRange);
+            int stencil_size = commStencil.pad.size();
+            prev_mat_size = local_range.count() + 1;
+            row = reinterpret_cast<decltype(row)>(malloc(sizeof(*row) * prev_mat_size));
+#pragma omp parallel for default(shared)
+            for (int i = 0; i < prev_mat_size; ++i) { row[i] = i * stencil_size; }
+            rhs.resize(prev_mat_size);
+            x.resize(prev_mat_size);
+            prev_nnz = prev_mat_size * stencil_size;
+            col = reinterpret_cast<decltype(col)>(malloc(sizeof(*col) * prev_nnz));
+            val = reinterpret_cast<decltype(val)>(malloc(sizeof(*val) * prev_nnz));
+        }
+
         void generateAb() {
-            row.clear();
-            col.clear();
-            val.clear();
-            rhs.clear();
             auto local_range = DS::commonRange(target->assignableRange, target->localRange);
             // prepare: evaluate the common stencil & pre-fill the arrays
             int stencil_size = commStencil.pad.size();
-            row.resize(local_range.count() + 1);
-#pragma omp parallel for default(shared)
-            for (int i = 0; i < row.size(); ++i) { row[i] = i * stencil_size; }
-            col.resize(local_range.count() * stencil_size);
-            val.resize(local_range.count() * stencil_size);
-            rhs.resize(local_range.count());
+
             auto local_mapper = DS::MDRangeMapper<dim> {local_range};
             // first pass: generate the local block of matrix
             rangeFor(local_range, [&](auto&& k) {
@@ -103,10 +118,10 @@ namespace OpFlow {
                 rhs[_local_rank] = -currentStencil.bias;
                 if (_iter < stencil_size) {
                     // boundary case. find the neighbor ranks and assign 0 to them
-                    auto local_max = *std::max_element(col.begin() + stencil_size * _local_rank,
-                                                       col.begin() + stencil_size * _local_rank + _iter);
-                    auto local_min = *std::min_element(col.begin() + stencil_size * _local_rank,
-                                                       col.begin() + stencil_size * _local_rank + _iter);
+                    auto local_max = *std::max_element(col + stencil_size * _local_rank,
+                                                       col + stencil_size * _local_rank + _iter);
+                    auto local_min = *std::min_element(col + stencil_size * _local_rank,
+                                                       col + stencil_size * _local_rank + _iter);
                     if (local_max + stencil_size - _iter <= mapper(target->assignableRange.last())) {
                         // use virtual indexes upper side
                         for (; _iter < stencil_size; ++_iter) {
@@ -141,13 +156,13 @@ namespace OpFlow {
                 std::fstream of;
                 of.open(fmt::format("{}A_{}.mat", solver.getParams().dumpPath.value(), getWorkerId()),
                         std::ofstream::out | std::ofstream::ate);
-                for (const auto& p : row) of << fmt::format("{} ", p);
+                for (int i = 0; i < local_range.count() + 1; ++i) of << fmt::format("{} ", row[i]);
                 of << std::endl;
-                for (const auto& c : col) of << fmt::format("{} ", c);
+                for (int i = 0; i < local_range.count() * stencil_size; ++i) of << fmt::format("{} ", col[i]);
                 of << std::endl;
-                for (const auto& v : val) of << fmt::format("{} ", v);
+                for (int i = 0; i < local_range.count() * stencil_size; ++i) of << fmt::format("{} ", val[i]);
                 of << std::endl;
-                for (const auto& r : rhs) of << fmt::format("{} ", r);
+                for (int i = 0; i < local_range.count(); ++i) of << fmt::format("{} ", rhs[i]);
                 of.flush();
             }
         }
@@ -155,7 +170,6 @@ namespace OpFlow {
         void generateb() {
             auto local_range = DS::commonRange(target->assignableRange, target->localRange);
             auto local_mapper = DS::MDRangeMapper<dim> {local_range};
-            rhs.resize(local_range.count());
             rangeFor(local_range, [&](auto&& k) {
                 auto currentStencil = uniEqn->evalAt(k);
                 rhs[local_mapper(k)] = (-currentStencil.bias);
@@ -165,7 +179,6 @@ namespace OpFlow {
         void initx() {
             auto local_range = DS::commonRange(target->assignableRange, target->localRange);
             auto local_mapper = DS::MDRangeMapper<dim> {local_range};
-            x.resize(local_range.count());
             rangeFor(local_range, [&](auto&& k) { x[local_mapper(k)] = (target->evalAt(k)); });
         }
 
@@ -176,11 +189,11 @@ namespace OpFlow {
             target->updatePadding();
         }
 
-        void solve() {
+        void solve() override {
             if (firstRun) {
                 generateAb();
                 initx();
-                solver.init(x.size(), row, col, val);
+                solver.init(x.size() - 1, row, col, val);
                 solver.solve(rhs, x);
                 firstRun = false;
             } else {
@@ -188,7 +201,7 @@ namespace OpFlow {
                 else
                     generateAb();
                 initx();
-                solver.init(x.size(), row, col, val);
+                solver.init(x.size() - 1, row, col, val);
                 solver.solve(rhs, x);
             }
             if (solver.getParams().verbose && getWorkerId() == 0) fmt::print("AMGCL: {}\n", solver.logInfo());
@@ -200,8 +213,10 @@ namespace OpFlow {
         std::add_pointer_t<T> target;
         M mapper;
         IJSolver<S> solver;
-        std::vector<std::ptrdiff_t> row, col;
-        std::vector<typename internal::ExprTrait<T>::elem_type> val, rhs, x;
+        int prev_mat_size = -1, prev_nnz = -1;
+        std::ptrdiff_t *row = nullptr, *col = nullptr;
+        typename internal::ExprTrait<T>::elem_type* val = nullptr;
+        std::vector<typename internal::ExprTrait<T>::elem_type> rhs, x;
         using Stencil = DS::StencilPad<typename internal::CartesianFieldExprTrait<T>::index_type>;
         using Eqn = Meta::RealType<decltype(std::declval<F>()(std::declval<StencilField<T>&>()))>;
         std::unique_ptr<Eqn> equation;

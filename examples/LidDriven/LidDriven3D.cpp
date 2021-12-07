@@ -144,15 +144,15 @@ int main(int argc, char* argv[]) {
     // main algorithm
     auto t0 = std::chrono::system_clock::now();
     for (auto i = 0; i < 100; ++i) {
-        u_handler.solve();
-        v_handler.solve();
-        w_handler.solve();
+        u_handler->solve();
+        v_handler->solve();
+        w_handler->solve();
         dv = dv - 0.5 * dt * conv_yz(v, dw);
         du = du - 0.5 * dt * conv_xy(u, dv) - 0.5 * dt * conv_xz(u, dw);
         u = u + du;
         v = v + dv;
         w = w + dw;
-        p_handler.solve();
+        p_handler->solve();
         u = u - dt * dx<D1FirstOrderCenteredDownwind>(dp);
         v = v - dt * dy<D1FirstOrderCenteredDownwind>(dp);
         w = w - dt * dz<D1FirstOrderCenteredDownwind>(dp);
