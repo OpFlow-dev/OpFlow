@@ -16,7 +16,7 @@
 using namespace OpFlow;
 using namespace testing;
 
-class EqnSolveHandlerTest : public Test {
+class DircEqnTest : public Test {
 protected:
     ParallelPlan ori_plan;
     void SetUp() override {
@@ -111,13 +111,13 @@ protected:
     Field p, r, b, p_true;
 };
 
-TEST_F(EqnSolveHandlerTest, DefaultUnifiedSolve) {
+TEST_F(DircEqnTest, DefaultUnifiedSolve) {
     this->reset_case(0.5, 0.5);
     Solve(poisson_eqn(), p);
     ASSERT_TRUE(check_solution(1e-5));
 }
 
-TEST_F(EqnSolveHandlerTest, ManualUnifiedSolve) {
+TEST_F(DircEqnTest, ManualUnifiedSolve) {
     this->reset_case(0.5, 0.5);
     StructSolverParams<OpFlow::StructSolverType::GMRES> params;
     params.tol = 1e-10;
@@ -127,7 +127,7 @@ TEST_F(EqnSolveHandlerTest, ManualUnifiedSolve) {
     ASSERT_TRUE(check_solution(1e-10));
 }
 
-TEST_F(EqnSolveHandlerTest, DefaultHandlerSolve) {
+TEST_F(DircEqnTest, DefaultHandlerSolve) {
     this->reset_case(0.5, 0.5);
     auto solver = PrecondStructSolver<StructSolverType::GMRES, StructSolverType::PFMG> {};
     auto handler = makeEqnSolveHandler(poisson_eqn(), p, solver);
@@ -135,7 +135,7 @@ TEST_F(EqnSolveHandlerTest, DefaultHandlerSolve) {
     ASSERT_TRUE(check_solution(1e-5));
 }
 
-TEST_F(EqnSolveHandlerTest, ManualHandlerSolve) {
+TEST_F(DircEqnTest, ManualHandlerSolve) {
     this->reset_case(0.5, 0.5);
     StructSolverParams<OpFlow::StructSolverType::GMRES> params;
     params.tol = 1e-10;
@@ -146,7 +146,7 @@ TEST_F(EqnSolveHandlerTest, ManualHandlerSolve) {
     ASSERT_TRUE(check_solution(1e-10));
 }
 
-TEST_F(EqnSolveHandlerTest, DefaultUnifiedSolveTwice) {
+TEST_F(DircEqnTest, DefaultUnifiedSolveTwice) {
     this->reset_case(0.5, 0.5);
     Solve(poisson_eqn(), p);
     ASSERT_TRUE(check_solution(1e-5));
@@ -155,7 +155,7 @@ TEST_F(EqnSolveHandlerTest, DefaultUnifiedSolveTwice) {
     ASSERT_TRUE(check_solution(1e-5));
 }
 
-TEST_F(EqnSolveHandlerTest, HandlerSolveTwice) {
+TEST_F(DircEqnTest, HandlerSolveTwice) {
     this->reset_case(0.5, 0.5);
     StructSolverParams<OpFlow::StructSolverType::GMRES> params;
     params.tol = 1e-10;
@@ -172,7 +172,7 @@ TEST_F(EqnSolveHandlerTest, HandlerSolveTwice) {
 }
 
 // used for memory leak detection
-TEST_F(EqnSolveHandlerTest, HandlerSolveRepeat) {
+TEST_F(DircEqnTest, HandlerSolveRepeat) {
     StructSolverParams<OpFlow::StructSolverType::GMRES> params;
     params.tol = 1e-10;
     params.printLevel = 2;
@@ -188,7 +188,7 @@ TEST_F(EqnSolveHandlerTest, HandlerSolveRepeat) {
 }
 
 // other types of solvers test
-TEST_F(EqnSolveHandlerTest, BiCGSTABPFMG) {
+TEST_F(DircEqnTest, BiCGSTABPFMG) {
     this->reset_case(0.5, 0.5);
     StructSolverParams<OpFlow::StructSolverType::BICGSTAB> params;
     params.tol = 1e-10;
@@ -199,7 +199,7 @@ TEST_F(EqnSolveHandlerTest, BiCGSTABPFMG) {
     ASSERT_TRUE(check_solution(1e-10));
 }
 
-TEST_F(EqnSolveHandlerTest, PCGPFMG) {
+TEST_F(DircEqnTest, PCGPFMG) {
     this->reset_case(0.5, 0.5);
     StructSolverParams<OpFlow::StructSolverType::PCG> params;
     params.tol = 1e-10;
@@ -210,7 +210,7 @@ TEST_F(EqnSolveHandlerTest, PCGPFMG) {
     ASSERT_TRUE(check_solution(1e-10));
 }
 
-TEST_F(EqnSolveHandlerTest, PCG) {
+TEST_F(DircEqnTest, PCG) {
     this->reset_case(0.5, 0.5);
     StructSolverParams<OpFlow::StructSolverType::PCG> params;
     params.tol = 1e-10;
@@ -221,7 +221,7 @@ TEST_F(EqnSolveHandlerTest, PCG) {
     ASSERT_TRUE(check_solution(1e-5));
 }
 
-TEST_F(EqnSolveHandlerTest, BiCGSTAB) {
+TEST_F(DircEqnTest, BiCGSTAB) {
     this->reset_case(0.5, 0.5);
     StructSolverParams<OpFlow::StructSolverType::BICGSTAB> params;
     params.tol = 1e-10;
@@ -232,7 +232,7 @@ TEST_F(EqnSolveHandlerTest, BiCGSTAB) {
     ASSERT_TRUE(check_solution(1e-5));
 }
 
-TEST_F(EqnSolveHandlerTest, GMRES) {
+TEST_F(DircEqnTest, GMRES) {
     this->reset_case(0.5, 0.5);
     StructSolverParams<OpFlow::StructSolverType::GMRES> params;
     params.tol = 1e-10;
@@ -244,7 +244,7 @@ TEST_F(EqnSolveHandlerTest, GMRES) {
     ASSERT_TRUE(check_solution(1e-2));
 }
 
-TEST_F(EqnSolveHandlerTest, GMRESJACOBI) {
+TEST_F(DircEqnTest, GMRESJACOBI) {
     this->reset_case(0.5, 0.5);
     StructSolverParams<OpFlow::StructSolverType::GMRES> params;
     params.tol = 1e-10;
@@ -255,7 +255,7 @@ TEST_F(EqnSolveHandlerTest, GMRESJACOBI) {
     ASSERT_TRUE(check_solution(1e-10));
 }
 
-TEST_F(EqnSolveHandlerTest, GMRESSMG) {
+TEST_F(DircEqnTest, GMRESSMG) {
     this->reset_case(0.5, 0.5);
     StructSolverParams<OpFlow::StructSolverType::GMRES> params;
     params.tol = 1e-10;
@@ -266,7 +266,7 @@ TEST_F(EqnSolveHandlerTest, GMRESSMG) {
     ASSERT_TRUE(check_solution(1e-10));
 }
 
-TEST_F(EqnSolveHandlerTest, AMGCLUnifiedSolve) {
+TEST_F(DircEqnTest, AMGCLUnifiedSolve) {
     this->reset_case(0.5, 0.5);
     using Solver = amgcl::make_solver<
             amgcl::amg<amgcl::backend::builtin<double>, amgcl::coarsening::smoothed_aggregation,
@@ -276,7 +276,7 @@ TEST_F(EqnSolveHandlerTest, AMGCLUnifiedSolve) {
     ASSERT_TRUE(check_solution(1e-8));
 }
 
-TEST_F(EqnSolveHandlerTest, AMGCLUnifiedSolveMixedPercision) {
+TEST_F(DircEqnTest, AMGCLUnifiedSolveMixedPercision) {
     this->reset_case(0.5, 0.5);
     using Solver = amgcl::make_solver<
             amgcl::amg<amgcl::backend::builtin<float>, amgcl::coarsening::smoothed_aggregation,
@@ -286,7 +286,7 @@ TEST_F(EqnSolveHandlerTest, AMGCLUnifiedSolveMixedPercision) {
     ASSERT_TRUE(check_solution(5e-7));
 }
 
-TEST_F(EqnSolveHandlerTest, AMGCLUnifiedSolveCG) {
+TEST_F(DircEqnTest, AMGCLUnifiedSolveCG) {
     this->reset_case(0.5, 0.5);
     using Solver = amgcl::make_solver<
             amgcl::amg<amgcl::backend::builtin<double>, amgcl::coarsening::smoothed_aggregation,
@@ -296,7 +296,7 @@ TEST_F(EqnSolveHandlerTest, AMGCLUnifiedSolveCG) {
     ASSERT_TRUE(check_solution(2e-8));
 }
 
-TEST_F(EqnSolveHandlerTest, AMGCLUnifiedSolveGMRES) {
+TEST_F(DircEqnTest, AMGCLUnifiedSolveGMRES) {
     this->reset_case(0.5, 0.5);
     using Solver = amgcl::make_solver<
             amgcl::amg<amgcl::backend::builtin<double>, amgcl::coarsening::smoothed_aggregation,
@@ -306,7 +306,7 @@ TEST_F(EqnSolveHandlerTest, AMGCLUnifiedSolveGMRES) {
     ASSERT_TRUE(check_solution(2e-8));
 }
 
-TEST_F(EqnSolveHandlerTest, AMGCLHandlerSolve) {
+TEST_F(DircEqnTest, AMGCLHandlerSolve) {
     this->reset_case(0.5, 0.5);
     using Solver = amgcl::make_solver<
             amgcl::amg<amgcl::backend::builtin<double>, amgcl::coarsening::smoothed_aggregation,
@@ -317,7 +317,7 @@ TEST_F(EqnSolveHandlerTest, AMGCLHandlerSolve) {
     ASSERT_TRUE(check_solution(1e-8));
 }
 
-TEST_F(EqnSolveHandlerTest, AMGCLHandlerSolveRepeat) {
+TEST_F(DircEqnTest, AMGCLHandlerSolveRepeat) {
     using Solver = amgcl::make_solver<
             amgcl::amg<amgcl::backend::builtin<double>, amgcl::coarsening::smoothed_aggregation,
                        amgcl::relaxation::spai0>,
