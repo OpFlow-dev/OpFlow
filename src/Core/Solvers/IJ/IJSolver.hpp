@@ -89,8 +89,8 @@ namespace OpFlow {
                     world, std::tie(rows, ptr, col, val));
             solver = std::make_unique<Solver>(world, A_shared, params.p, params.bp);
 #else
-            auto A = std::tie(rows, ptr, col, val);
-            solver = std::make_unique<Solver>(A, params.p, params.bp);
+            auto A_tie = std::tie(rows, ptr, col, val);
+            solver = std::make_unique<Solver>(A_tie, params.p, params.bp);
 #endif
         }
 
@@ -102,7 +102,7 @@ namespace OpFlow {
                     world, *amgcl::adapter::zero_copy(rows, ptr, col, val));
             solver = std::make_unique<Solver>(world, A_shared, params.p, params.bp);
 #else
-            auto A = amgcl::adapter::zero_copy(rows, ptr, col, val);
+            A = amgcl::adapter::zero_copy(rows, ptr, col, val);
             solver = std::make_unique<Solver>(*A, params.p, params.bp);
 #endif
         }
@@ -114,6 +114,7 @@ namespace OpFlow {
 #else
             std::tie(iters, error) = (*solver)(rhs, x);
 #endif
+            if (params.verbose) OP_INFO("AMGCL iters = {}, err = {}", iters, error);
         }
 
         const auto& getParams() const { return params; }
@@ -125,6 +126,7 @@ namespace OpFlow {
         }
 
     private:
+        std::shared_ptr<amgcl::backend::crs<Real>> A;
         IJSolverParams<Solver> params;
         std::unique_ptr<Solver> solver = nullptr;
         std::shared_ptr<amgcl::mpi::distributed_matrix<typename Solver::backend_type>> A_shared = nullptr;

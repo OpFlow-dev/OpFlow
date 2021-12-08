@@ -125,7 +125,7 @@ namespace OpFlow {
                                                        col + stencil_size * _local_rank + _iter);
                     auto local_min = *std::min_element(col + stencil_size * _local_rank,
                                                        col + stencil_size * _local_rank + _iter);
-                    if (local_max + stencil_size - _iter <= mapper(target->assignableRange.last())) {
+                    if (local_max + stencil_size - _iter < mapper(target->assignableRange.last())) {
                         // use virtual indexes upper side
                         for (; _iter < stencil_size; ++_iter) {
                             col[stencil_size * _local_rank + _iter] = ++local_max;

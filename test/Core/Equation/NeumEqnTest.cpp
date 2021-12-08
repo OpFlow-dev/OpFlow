@@ -10,9 +10,8 @@
 //
 //  ----------------------------------------------------------------------------
 
-#include <gmock/gmock.h>
 #include <OpFlow>
-
+#include <gmock/gmock.h>
 
 using namespace OpFlow;
 using namespace testing;
@@ -28,7 +27,7 @@ protected:
         setGlobalParallelPlan(makeParallelPlan(getGlobalParallelInfo(), ParallelIdentifier::SharedMem));
 
         m = MeshBuilder<Mesh>()
-                    .newMesh(2049, 2049)
+                    .newMesh(33, 33)
                     .setMeshOfDim(0, 0., 2 * PI)
                     .setMeshOfDim(1, 0., 2 * PI)
                     .build();
@@ -58,7 +57,8 @@ protected:
         b.name = "b";
         p_true.initBy([&](auto&& x) { return std::cos(x[0]) * std::cos(x[1]); });
         auto ave_p = rangeReduce(
-                p.assignableRange, [](auto&& a, auto&& b) { return a + b; }, [&](auto&& idx) { return p_true[idx]; });
+                p.assignableRange, [](auto&& a, auto&& b) { return a + b; },
+                [&](auto&& idx) { return p_true[idx]; });
         p_true -= ave_p / p.assignableRange.count();
     }
 
@@ -339,6 +339,25 @@ TEST_F(NeumEqnTest, AMGCLUnifiedSolveCG) {
     param.pinValue = true;
     param.p.solver.tol = 1e-11;
     Solve<Solver>(poisson_eqn(), p, DS::MDRangeMapper<2> {p.assignableRange}, param);
+    auto ave_p = rangeReduce(
+            p.assignableRange, [](auto&& a, auto&& b) { return a + b; }, [&](auto&& idx) { return p[idx]; });
+    p -= ave_p / p.assignableRange.count();
+    ASSERT_TRUE(check_solution(1e-10));
+}
+
+TEST_F(NeumEqnTest, AMGCLUnifiedSolveCGRepeat) {
+    this->reset_case(0.5, 0.5);
+    using Solver = amgcl::make_solver<
+            amgcl::amg<amgcl::backend::builtin<double>, amgcl::coarsening::smoothed_aggregation,
+                       amgcl::relaxation::spai0>,
+            amgcl::solver::cg<amgcl::backend::builtin<double>>>;
+    IJSolverParams<Solver> param;
+    param.pinValue = true;
+    param.p.solver.tol = 1e-11;
+    param.staticMat = false;
+    auto handler
+            = makeEqnSolveHandler<Solver>(poisson_eqn(), p, DS::MDRangeMapper<2> {p.assignableRange}, param);
+    for (int i = 0; i < 10; ++i) handler->solve();
     auto ave_p = rangeReduce(
             p.assignableRange, [](auto&& a, auto&& b) { return a + b; }, [&](auto&& idx) { return p[idx]; });
     p -= ave_p / p.assignableRange.count();
