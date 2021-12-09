@@ -53,7 +53,9 @@ namespace OpFlow {
             this->init();
         }
         ~AMGCLEqnSolveHandler() override {
-            free(row); free(col); free(val);
+            free(row);
+            free(col);
+            free(val);
         }
 
         void init() override {
