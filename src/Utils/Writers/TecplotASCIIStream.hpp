@@ -84,6 +84,7 @@ namespace OpFlow::Utils {
             }
             rangeFor_s(f.localRange, [&](auto&& i) { of << f.evalAt(i) << "\n"; });
 
+            of.flush();
             writeMesh = _alwaysWriteMesh;
             return *this;
         }
