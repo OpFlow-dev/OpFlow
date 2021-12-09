@@ -52,10 +52,8 @@ namespace OpFlow {
             : eqn_getter {getter}, target(&target), mapper(mapper), solver(p) {
             this->init();
         }
-        ~AMGCLEqnSolveHandler() {
-            delete[] row;
-            delete[] col;
-            delete[] val;
+        ~AMGCLEqnSolveHandler() override {
+            free(row); free(col); free(val);
         }
 
         void init() override {

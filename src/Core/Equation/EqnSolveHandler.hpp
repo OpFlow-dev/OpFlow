@@ -16,6 +16,7 @@
 namespace OpFlow {
     // abstract interface for all equation solve handler
     struct EqnSolveHandler {
+        virtual ~EqnSolveHandler() = default;
         virtual void init() = 0;
         virtual void solve() = 0;
     };
