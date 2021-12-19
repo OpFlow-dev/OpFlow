@@ -19,8 +19,11 @@
 #include "Math/Interpolator/Interpolator.hpp"
 
 namespace OpFlow {
+    template <std::size_t d, IntpDirection dir>
+    struct D1QUICKUpwind;
+
     template <std::size_t d>
-    struct D1QUICKIntpCenterToCornerUpwind {
+    struct D1QUICKUpwind<d, IntpDirection::Cen2Cor> {
         constexpr static auto bc_width = 2;
 
         template <CartesianFieldExprType T>
@@ -40,9 +43,9 @@ namespace OpFlow {
         }
 
         template <CartesianFieldExprType T>
-        static void prepare(Expression<D1QUICKIntpCenterToCornerUpwind, T>& expr) {
+        static void prepare(Expression<D1QUICKUpwind, T>& expr) {
             expr.initPropsFrom(expr.arg1);
-            expr.name = fmt::format("D1QUICKIntpCenterToCornerUpwind<{}>({})", d, expr.arg1.name);
+            expr.name = fmt::format("D1Intp<D1QUICK, {}, Cen2Cor>({})", d, expr.arg1.name);
             expr.loc[d] = LocOnMesh::Corner;
             expr.accessibleRange.start[d]++;
             expr.accessibleRange.end[d] -= 2;
@@ -55,24 +58,27 @@ namespace OpFlow {
     };
 
     template <std::size_t d, CartesianFieldExprType T>
-    struct ResultType<D1QUICKIntpCenterToCornerUpwind<d>, T> {
+    struct ResultType<D1QUICKUpwind<d, IntpDirection::Cen2Cor>, T> {
         using type = typename internal::CartesianFieldExprTrait<T>::template twin_type<
-                Expression<D1QUICKIntpCenterToCornerUpwind<d>, T>>;
+                Expression<D1QUICKUpwind<d, IntpDirection::Cen2Cor>, T>>;
     };
 
     namespace internal {
         template <std::size_t d, CartesianFieldExprType T>
-        struct ExprTrait<Expression<D1QUICKIntpCenterToCornerUpwind<d>, T>> : ExprTrait<T> {
-            static constexpr int bc_width
-                    = D1QUICKIntpCenterToCornerUpwind<d>::bc_width + CartesianFieldExprTrait<T>::bc_width;
+        struct ExprTrait<Expression<D1QUICKUpwind<d, IntpDirection::Cen2Cor>, T>> : ExprTrait<T> {
+            static constexpr int bc_width = D1QUICKUpwind<d, IntpDirection::Cen2Cor>::bc_width
+                                            + CartesianFieldExprTrait<T>::bc_width;
             static constexpr int access_flag = 0;
             using mesh_type
                     = decltype(std::declval<typename CartesianFieldExprTrait<T>::mesh_type&>().getView());
         };
     }// namespace internal
 
+    template <std::size_t d, IntpDirection dir>
+    struct D1QUICKDownwind;
+
     template <std::size_t d>
-    struct D1QUICKIntpCenterToCornerDownwind {
+    struct D1QUICKDownwind<d, IntpDirection::Cen2Cor> {
         constexpr static auto bc_width = 2;
 
         template <CartesianFieldExprType T>
@@ -92,9 +98,9 @@ namespace OpFlow {
         }
 
         template <CartesianFieldExprType T>
-        static void prepare(Expression<D1QUICKIntpCenterToCornerDownwind, T>& expr) {
+        static void prepare(Expression<D1QUICKDownwind, T>& expr) {
             expr.initPropsFrom(expr.arg1);
-            expr.name = fmt::format("D1QUICKIntpCenterToCornerDownwind<{}>({})", d, expr.arg1.name);
+            expr.name = fmt::format("D1Intp<D1QUICK, {}, Cen2Cor>({})", d, expr.arg1.name);
             expr.loc[d] = LocOnMesh::Corner;
             expr.accessibleRange.start[d] += 2;
             expr.accessibleRange.end[d] -= 1;
@@ -107,28 +113,73 @@ namespace OpFlow {
     };
 
     template <std::size_t d, CartesianFieldExprType T>
-    struct ResultType<D1QUICKIntpCenterToCornerDownwind<d>, T> {
+    struct ResultType<D1QUICKDownwind<d, IntpDirection::Cen2Cor>, T> {
         using type = typename internal::CartesianFieldExprTrait<T>::template twin_type<
-                Expression<D1QUICKIntpCenterToCornerDownwind<d>, T>>;
+                Expression<D1QUICKDownwind<d, IntpDirection::Cen2Cor>, T>>;
     };
 
     namespace internal {
         template <std::size_t d, CartesianFieldExprType T>
-        struct ExprTrait<Expression<D1QUICKIntpCenterToCornerDownwind<d>, T>> : ExprTrait<T> {
-            static constexpr int bc_width
-                    = D1QUICKIntpCenterToCornerDownwind<d>::bc_width + CartesianFieldExprTrait<T>::bc_width;
+        struct ExprTrait<Expression<D1QUICKDownwind<d, IntpDirection::Cen2Cor>, T>> : ExprTrait<T> {
+            static constexpr int bc_width = D1QUICKDownwind<d, IntpDirection::Cen2Cor>::bc_width
+                                            + CartesianFieldExprTrait<T>::bc_width;
             static constexpr int access_flag = 0;
             using mesh_type
                     = decltype(std::declval<typename CartesianFieldExprTrait<T>::mesh_type&>().getView());
         };
     }// namespace internal
 
+    template <std::size_t d, IntpDirection dir>
+    struct D1QUICK;
+
+    template <std::size_t d>
+    struct D1QUICK<d, IntpDirection::Cen2Cor> {
+        constexpr static int bc_width = 2;
+
+        template <CartesianFieldExprType T, ExprType U>
+        OPFLOW_STRONG_INLINE static auto couldSafeEval(const U& u, const T& e, auto&& i) {
+            return D1QUICKUpwind<d, IntpDirection::Cen2Cor>::couldSafeEval(e, i)
+                   && D1QUICKDownwind<d, IntpDirection::Cen2Cor>::couldSafeEval(e, i) && u.couldEvalAt(i);
+        }
+
+        template <CartesianFieldExprType T, ExprType U>
+        OPFLOW_STRONG_INLINE static auto eval(const U& u, const T& e, auto&& i) {
+            return u.evalAt(i) > 0. ? D1QUICKDownwind<d, IntpDirection::Cen2Cor>::eval(e, i)
+                                    : D1QUICKUpwind<d, IntpDirection::Cen2Cor>::eval(e, i);
+        }
+
+        template <CartesianFieldExprType T, ExprType U>
+        static void prepare(Expression<D1QUICK, U, T>& expr) {
+            expr.initPropsFrom(expr.arg2);
+            expr.name = fmt::format("D1Intp<D1QUICK, {}, Cen2Cor>({})", d, expr.arg2.name);
+            expr.loc[d] = LocOnMesh::Corner;
+            expr.accessibleRange.start[d] += 2;
+            expr.accessibleRange.end[d] -= 2;
+            expr.localRange.start[d] += 2;
+            expr.localRange.end[d] -= 2;
+            expr.logicalRange.start[d] += 2;
+            expr.logicalRange.end[d] -= 2;
+            expr.assignableRange.setEmpty();
+        }
+    };
+
     template <std::size_t d, CartesianFieldExprType T, ExprType U>
-    auto d1QUICKIntpCenterToCorner(U&& wind, T&& expr) {
-        return conditional(wind > 0.,
-                           makeExpression<D1QUICKIntpCenterToCornerDownwind<d>>(OP_PERFECT_FOWD(expr)),
-                           makeExpression<D1QUICKIntpCenterToCornerUpwind<d>>(OP_PERFECT_FOWD(expr)));
-    }
+    struct ResultType<D1QUICK<d, IntpDirection::Cen2Cor>, U, T> {
+        using type = typename internal::CartesianFieldExprTrait<T>::template twin_type<
+                Expression<D1QUICK<d, IntpDirection::Cen2Cor>, U, T>>;
+    };
+
+    namespace internal {
+        template <std::size_t d, CartesianFieldExprType T, ExprType U>
+        struct ExprTrait<Expression<D1QUICK<d, IntpDirection::Cen2Cor>, U, T>> : ExprTrait<T> {
+            static constexpr int bc_width
+                    = D1QUICK<d, IntpDirection::Cen2Cor>::bc_width + CartesianFieldExprTrait<T>::bc_width;
+            static constexpr int access_flag = 0;
+            using mesh_type
+                    = decltype(std::declval<typename CartesianFieldExprTrait<T>::mesh_type&>().getView());
+        };
+    }// namespace internal
+
 }// namespace OpFlow
 
 #endif//OPFLOW_D1QUICKINTPCENTERTOCORNER_HPP
