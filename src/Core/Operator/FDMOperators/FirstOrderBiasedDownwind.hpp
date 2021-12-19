@@ -15,7 +15,6 @@
 
 #include "Core/Field/MeshBased/SemiStructured/CartAMRFieldExprTrait.hpp"
 #include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
-#include "Core/Operator/Interpolator/IndexShift.hpp"
 #include "DataStructures/Range/Ranges.hpp"
 
 namespace OpFlow {
