@@ -40,6 +40,7 @@ namespace OpFlow::DS {
         constexpr const auto& get() const { return idx; }
         constexpr auto c_arr() const { return idx.data(); }
         constexpr auto c_arr() { return idx.data(); }
+        constexpr explicit operator MDIndex<d>() const { return MDIndex<d> {idx}; }
 
         constexpr auto& operator[](int i) { return this->idx[i]; }
 
@@ -136,6 +137,124 @@ namespace OpFlow::DS {
             ret += "}";
             return ret;
         }
+    };
+
+    template <std::size_t d>
+    struct ColoredIndex<LevelMDIndex<d>> {
+        std::array<int, d> idx;
+        int l = 0, p = 0, color = 0;
+
+        constexpr ColoredIndex() = default;
+        constexpr ColoredIndex(const ColoredIndex&) = default;
+
+        constexpr explicit ColoredIndex(const LevelMDIndex<d>& index, int color = 0)
+            : idx(index.get()), l(index.l), p(index.p), color(color) {}
+
+        constexpr const auto& operator[](int i) const { return idx[i]; }
+        constexpr const auto& get() const { return idx; }
+        constexpr auto c_arr() { return idx.data(); }
+        constexpr auto c_arr() const { return idx.data(); }
+        constexpr auto& operator[](int i) { return idx[i]; }
+        constexpr void set(const std::array<int, d>& o) { idx = o; }
+        constexpr bool operator==(const LevelMDIndex<d>& index) const {
+            return idx == index.idx && l == index.l && p == index.p;
+        }
+        constexpr bool operator==(const ColoredIndex&) const = default;
+        constexpr auto operator+(const LevelMDIndex<d>& index) const {
+            auto ret = *this;
+            ret += index;
+            return ret;
+        }
+        constexpr auto operator-(const LevelMDIndex<d>& index) const {
+            auto ret = *this;
+            ret -= index;
+            return ret;
+        }
+        constexpr auto operator+(const ColoredIndex& index) const {
+            auto ret = *this;
+            ret += index;
+            return ret;
+        }
+        constexpr auto operator-(const ColoredIndex& index) const {
+            auto ret = *this;
+            ret -= index;
+            return ret;
+        }
+
+        constexpr auto& operator+=(const LevelMDIndex<d>& index) {
+            // note: we don't check l & p here because +=/-= is usually append to offset whose l&p is not used
+            for (auto i = 0; i < d; ++i) idx[i] += index[i];
+            return *this;
+        }
+        constexpr auto& operator-=(const LevelMDIndex<d>& index) {
+            for (auto i = 0; i < d; ++i) idx[i] -= index[i];
+            return *this;
+        }
+        constexpr auto& operator+=(const ColoredIndex& index) {
+            OP_ASSERT_MSG(color == index.color, "Indexes' colors mismatch: {} != {}", color, index.color);
+            // note: we don't check l & p here because +=/-= is usually append to offset whose l&p is not used
+            for (auto i = 0; i < d; ++i) idx[i] += index[i];
+            return *this;
+        }
+        constexpr auto& operator-=(const ColoredIndex& index) {
+            OP_ASSERT_MSG(color == index.color, "Indexes' colors mismatch: {} != {}", color, index.color);
+            for (auto i = 0; i < d; ++i) idx[i] -= index[i];
+            return *this;
+        }
+
+        template <std::size_t dim>
+        constexpr auto next(int steps = 1) const {
+            auto c = *this;
+            c.idx[dim] += steps;
+            return c;
+        }
+        template <std::size_t dim>
+        constexpr auto prev(int steps = 1) const {
+            auto c = *this;
+            c.idx[dim] -= steps;
+            return c;
+        }
+
+        auto toLevel(int k, int r) const {
+            auto ret = *this;
+            for (auto i = 0; i < d; ++i) {
+                if (l > k) ret.idx[i] /= Math::int_pow(r, l - k);
+                else
+                    ret.idx[i] *= Math::int_pow(r, k - l);
+            }
+            ret.l = k;
+            return ret;
+        }
+
+        auto toString() const {
+            std::string ret = "{" + fmt::format("{}, {}", l, p);
+            if constexpr (d > 0) ret += fmt::format(", {}", this->idx[0]);
+            for (auto i = 1; i < d; ++i) ret += fmt::format(", {}", this->idx[i]);
+            ret += "}";
+            return ret;
+        }
+
+        bool operator<(const LevelMDIndex<d>& other) const {
+            if (l < other.l) return true;
+            else if (l > other.l)
+                return false;
+            else {
+                for (auto i = d - 1; i >= 0; --i) {
+                    if (idx[i] < other[i]) return true;
+                    else if (idx[i] > other[i])
+                        return false;
+                }
+            }
+            return false;
+        }
+
+        bool operator<(const ColoredIndex& other) const { return this->operator<(LevelMDIndex<d> {other}); }
+
+        bool operator>(const LevelMDIndex<d>& other) const { return other < LevelMDIndex<d>(*this); }
+        bool operator>(const ColoredIndex& other) const { return this->operator>(LevelMDIndex<d> {other}); }
+
+        explicit operator MDIndex<d>() const { return MDIndex<d>(get()); }
+        explicit operator LevelMDIndex<d>() const { return LevelMDIndex<d> {get(), l, p}; }
     };
 }// namespace OpFlow::DS
 

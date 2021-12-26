@@ -358,7 +358,7 @@ namespace OpFlow {
 
     private:
         std::vector<std::vector<typename internal::ExprTrait<typename internal::ExprTrait<
-                T>::template other_type<DS::StencilPad<index_type>>>::container_type>>
+                T>::template other_type<DS::StencilPad<DS::ColoredIndex<index_type>>>>::container_type>>
                 data;
         std::vector<std::vector<typename internal::ExprTrait<
                 typename internal::ExprTrait<T>::template other_type<bool>>::container_type>>
@@ -416,7 +416,7 @@ namespace OpFlow {
                 for (auto p = 0; p < this->localRanges[l].size(); ++p) {
                     rangeFor(this->localRanges[l][p], [&](auto&& i) {
                         auto& st = this->operator[](i);
-                        st.pad[i] = 1.0;
+                        st.pad[DS::ColoredIndex<index_type> {i}] = 1.0;
                         st.bias = 0;
                         this->blocked(i) = false;
                     });
