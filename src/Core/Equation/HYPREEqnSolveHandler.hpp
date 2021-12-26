@@ -261,7 +261,7 @@ namespace OpFlow {
             }
             HYPRE_SStructGridAssemble(grid);
             // stencil & graph
-            DS::LevelMDIndex<dim> middle;
+            DS::ColoredIndex<DS::LevelMDIndex<dim>> middle;
             for (auto i = 0; i < dim; ++i)
                 middle[i] = (target->assignableRanges[0][0].start[i] + target->assignableRanges[0][0].end[i])
                             / 2;

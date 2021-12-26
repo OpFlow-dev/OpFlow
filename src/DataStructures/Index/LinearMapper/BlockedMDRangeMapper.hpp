@@ -47,6 +47,11 @@ namespace OpFlow::DS {
             return ret;
         }
 
+        int operator()(const ColoredIndex<MDIndex<d>>& idx) const {
+            // todo: color is ignored here. check this out
+            return this->operator()(MDIndex<d> {idx});
+        }
+
     private:
         void calculateMultiplier() {
             _offset.resize(_ranges.size());
