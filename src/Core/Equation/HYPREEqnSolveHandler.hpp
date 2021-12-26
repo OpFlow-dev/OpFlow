@@ -142,8 +142,9 @@ namespace OpFlow {
 
             if (solver.params.pinValue) {
                 // pin the first unknown to 0
-                auto identical = DS::StencilPad<DS::MDIndex<dim>>();
-                auto first = DS::MDIndex<dim>(target->assignableRange.start);
+                auto identical = DS::StencilPad<DS::ColoredIndex<DS::MDIndex<dim>>>();
+                auto first = DS::ColoredIndex<DS::MDIndex<dim>> {
+                        DS::MDIndex<dim> {target->assignableRange.start}};
                 if (DS::inRange(target->localRange, first)) {
                     identical.pad[first] = 1.0;
                     identical.bias = 0.;
@@ -207,7 +208,8 @@ namespace OpFlow {
 
         F eqn_getter;
         std::add_pointer_t<T> target;
-        using Stencil = DS::StencilPad<typename internal::CartesianFieldExprTrait<T>::index_type>;
+        using Stencil
+                = DS::StencilPad<DS::ColoredIndex<typename internal::CartesianFieldExprTrait<T>::index_type>>;
         using Eqn = Meta::RealType<decltype(std::declval<F>()(std::declval<StencilField<T>&>()))>;
         std::unique_ptr<Eqn> equation;
         using EqExpr = Meta::RealType<decltype(equation->lhs - equation->rhs)>;
@@ -264,7 +266,7 @@ namespace OpFlow {
                 middle[i] = (target->assignableRanges[0][0].start[i] + target->assignableRanges[0][0].end[i])
                             / 2;
             //commStencil = getOffsetStencil(uniEqn->evalAt(middle), middle);
-            DS::StencilPad<index_type> _st;
+            DS::StencilPad<DS::ColoredIndex<index_type>> _st;
             _st.pad[middle] = 0;
             _st.pad[middle.template next<0>()] = 0;
             _st.pad[middle.template prev<0>()] = 0;
@@ -461,7 +463,8 @@ namespace OpFlow {
 
         F getter;
         std::add_pointer_t<T> target;
-        using Stencil = DS::StencilPad<typename internal::CartAMRFieldExprTrait<T>::index_type>;
+        using Stencil
+                = DS::StencilPad<DS::ColoredIndex<typename internal::CartAMRFieldExprTrait<T>::index_type>>;
         using Eqn = Meta::RealType<decltype(std::declval<F>()(std::declval<StencilField<T>&>()))>;
         std::unique_ptr<Eqn> equation;
         using EqExpr = Meta::RealType<decltype(equation->lhs - equation->rhs)>;

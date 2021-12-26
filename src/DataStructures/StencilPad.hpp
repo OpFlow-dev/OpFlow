@@ -234,10 +234,9 @@ namespace OpFlow::DS {
         return a * (1. / b);
     }
 
-    template <typename Idx>
-    auto getOffsetStencil(const StencilPad<Idx>& a, const Idx& base) {
-        using Offset = decltype(base - base);
-        StencilPad<Offset> ret;
+    template <typename IdxA, typename IdxB>
+    auto getOffsetStencil(const StencilPad<IdxA>& a, const IdxB& base) {
+        StencilPad<IdxA> ret;
         for (const auto& [idx, val] : a.pad) { ret.pad[idx - base] = val; }
         ret.bias = a.bias;
         return ret;

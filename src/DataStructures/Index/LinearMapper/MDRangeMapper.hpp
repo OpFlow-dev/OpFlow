@@ -36,6 +36,12 @@ namespace OpFlow::DS {
             return ret;
         }
 
+        int operator()(const ColoredIndex<MDIndex<d>>& idx) const {
+            int ret = 0;
+            for (std::size_t i = 0; i < d; ++i) ret += (idx[i] - _range.start[i]) * _fac[i];
+            return ret;
+        }
+
     private:
         void calculateMultiplier() {
             _fac[0] = 1;

@@ -242,7 +242,8 @@ namespace OpFlow {
         std::ptrdiff_t *row = nullptr, *col = nullptr;
         typename internal::ExprTrait<T>::elem_type* val = nullptr;
         std::vector<typename internal::ExprTrait<T>::elem_type> rhs, x;
-        using Stencil = DS::StencilPad<typename internal::CartesianFieldExprTrait<T>::index_type>;
+        using Stencil
+                = DS::StencilPad<DS::ColoredIndex<typename internal::CartesianFieldExprTrait<T>::index_type>>;
         using Eqn = Meta::RealType<decltype(std::declval<F>()(std::declval<StencilField<T>&>()))>;
         std::unique_ptr<Eqn> equation;
         using EqExpr = Meta::RealType<decltype(equation->lhs - equation->rhs)>;
