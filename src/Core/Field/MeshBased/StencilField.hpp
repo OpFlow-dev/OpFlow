@@ -31,11 +31,12 @@ namespace OpFlow {
     struct StencilField<T> : internal::StructuredFieldExprTrait<T>::template twin_type<StencilField<T>> {
         std::array<DS::Pair<std::unique_ptr<BCBase<StencilField>>>, internal::ExprTrait<StencilField>::dim>
                 bc;
+        int color = 0;
 
         StencilField() = default;
         StencilField(const StencilField& other)
             : internal::StructuredFieldExprTrait<T>::template twin_type<StencilField<T>>(other),
-              base(other.base), pinned(other.pinned) {
+              base(other.base), pinned(other.pinned), color(other.color) {
             for (auto i = 0; i < internal::ExprTrait<StencilField>::dim; ++i) {
                 bc[i].start = other.bc[i].start ? other.bc[i].start->getCopy() : nullptr;
                 if (isLogicalBC(bc[i].start->getBCType()))
@@ -46,7 +47,7 @@ namespace OpFlow {
             }
         }
         StencilField(StencilField&&) noexcept = default;
-        explicit StencilField(const T& base) : base(&base) {
+        explicit StencilField(const T& base, int color = 0) : base(&base), color(color) {
             this->name = fmt::format("StencilField({})", base.name);
             if constexpr (StructuredFieldExprType<T>) this->loc = base.loc;
             this->mesh = base.mesh.getView();
@@ -102,6 +103,7 @@ namespace OpFlow {
         }
 
         using index_type = typename internal::MeshBasedFieldExprTrait<T>::index_type;
+        using colored_index_type = DS::ColoredIndex<index_type>;
 
         void pin(bool p) { pinned = p; }
 
@@ -120,18 +122,18 @@ namespace OpFlow {
         auto evalAt(const index_type& index) const {
             OP_ASSERT_MSG(base, "base ptr of stencil field is nullptr");
             if (DS::inRange(this->assignableRange, index)) [[likely]] {
-                    auto ret = DS::StencilPad<index_type>(0);
+                    auto ret = typename internal::ExprTrait<StencilField>::elem_type {0};
                     // note: here solution is pinned at base->assignableRange.start
                     // rather than this->assignableRange.start; This is because
                     // for periodic case the assignableRange of this will be changed
                     // to logicalRange for HYPRE solver to get exact offset.
                     if (!(pinned && index == index_type(base->assignableRange.start)))
-                        [[likely]] ret.pad[index] = 1.0;
+                        [[likely]] ret.pad[colored_index_type {index, color}] = 1.0;
                     return ret;
                 }
             else if (DS::inRange(this->accessibleRange, index)) {
                 // index lay on dirc bc
-                return DS::StencilPad<index_type> {base->evalAt(index)};
+                return typename internal::ExprTrait<StencilField>::elem_type {base->evalAt(index)};
             } else if (!DS::inRange(this->logicalRange, index)) {
                 OP_ERROR("Index {} out of range {}", index.toString(), this->logicalRange.toString());
                 OP_ABORT;

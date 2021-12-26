@@ -10,39 +10,29 @@
 //
 // ----------------------------------------------------------------------------
 
-#ifndef OPFLOW_MDINDEX_HPP
-#define OPFLOW_MDINDEX_HPP
+#ifndef OPFLOW_COLOREDINDEX_HPP
+#define OPFLOW_COLOREDINDEX_HPP
 
 #include "Core/Interfaces/Serializable.hpp"
-#include "Core/Macros.hpp"
-#include "Utils/xxHash.hpp"
+#include "DataStructures/Index/LevelMDIndex.hpp"
+#include "DataStructures/Index/MDIndex.hpp"
 #include "fmt/format.h"
-#include <array>
-#include <cassert>
-#include <compare>
-#include <concepts>
-#include <initializer_list>
-#include <memory>
-#include <vector>
+#include <string>
 
 namespace OpFlow::DS {
+    template <typename T>
+    struct ColoredIndex;
 
     template <std::size_t d>
-    struct MDIndex : SerializableObj<MDIndex<d>> {
+    struct ColoredIndex<MDIndex<d>> {
     protected:
         std::array<int, d> idx;
+        int color = 0;
 
     public:
         static constexpr auto dim = d;
-        constexpr MDIndex() { idx.fill(0); };
-        constexpr explicit MDIndex(int i) { idx.fill(i); }
-        constexpr MDIndex(const MDIndex<d>&) noexcept = default;
-
-        template <Meta::WeakIntegral... T>
-        constexpr explicit MDIndex(T&&... indexes) noexcept
-            : MDIndex(std::array {std::forward<T>(indexes)...}) {}
-
-        constexpr explicit MDIndex(const std::array<int, d>& array) noexcept : idx(array) {}
+        constexpr ColoredIndex() { idx.fill(0); };
+        constexpr explicit ColoredIndex(const MDIndex<d>& i, int c = 0) : idx(i.get()), color(c) {};
 
         constexpr const auto& operator[](int i) const { return idx[i]; }
 
@@ -59,7 +49,7 @@ namespace OpFlow::DS {
             for (auto i = 0; i < d; ++i) this->idx[i] = o[i];
         }
 
-        constexpr bool operator<(const MDIndex& other) const {
+        constexpr bool operator<(const MDIndex<d>& other) const {
             for (auto i = d - 1; i >= 0; --i) {
                 if (idx[i] < other.idx[i]) return true;
                 else if (idx[i] > other.idx[i])
@@ -68,7 +58,7 @@ namespace OpFlow::DS {
             return false;
         }
 
-        constexpr bool operator>(const MDIndex& other) const { return other < *this; }
+        constexpr bool operator>(const MDIndex<d>& other) const { return other < *this; }
 
         constexpr bool operator==(const Meta::BracketIndexable auto& index) const {
             auto ret = true;
@@ -76,24 +66,36 @@ namespace OpFlow::DS {
             return ret;
         }
 
-        constexpr auto operator+(const MDIndex& index) const {
-            MDIndex ret;
-            for (auto i = 0; i < d; ++i) ret[i] = this->idx[i] + index[i];
+        constexpr auto operator+(const MDIndex<d>& index) const {
+            auto ret = *this;
+            ret += index;
             return ret;
         }
 
-        constexpr auto operator-(const MDIndex& index) const {
-            MDIndex ret;
-            for (auto i = 0; i < d; ++i) ret[i] = this->idx[i] - index[i];
+        constexpr auto operator-(const MDIndex<d>& index) const {
+            auto ret = *this;
+            ret -= index;
             return ret;
         }
 
-        constexpr auto& operator+=(const MDIndex& index) {
+        constexpr auto& operator+=(const MDIndex<d>& index) {
             for (auto i = 0; i < d; ++i) this->idx[i] += index[i];
             return *this;
         }
 
-        constexpr auto& operator-=(const MDIndex& index) {
+        constexpr auto& operator+=(const ColoredIndex& index) {
+            OP_ASSERT_MSG(color == index.color, "Indexes' colors mismatch: {} != {}", color, index.color);
+            for (auto i = 0; i < d; ++i) this->idx[i] += index[i];
+            return *this;
+        }
+
+        constexpr auto& operator-=(const MDIndex<d>& index) {
+            for (auto i = 0; i < d; ++i) this->idx[i] -= index[i];
+            return *this;
+        }
+
+        constexpr auto& operator-=(const ColoredIndex& index) {
+            OP_ASSERT_MSG(color == index.color, "Indexes' colors mismatch: {} != {}", color, index.color);
             for (auto i = 0; i < d; ++i) this->idx[i] -= index[i];
             return *this;
         }
@@ -130,20 +132,11 @@ namespace OpFlow::DS {
             std::string ret = "{";
             if constexpr (d > 0) ret += fmt::format("{}", idx[0]);
             for (auto i = 1; i < d; ++i) ret += fmt::format(", {}", idx[i]);
+            ret += fmt::format(", c = {}", color);
             ret += "}";
             return ret;
         }
     };
 }// namespace OpFlow::DS
 
-namespace std {
-
-    template <int d>
-    struct hash<OpFlow::DS::MDIndex<d>> {
-        std::size_t operator()(OpFlow::DS::MDIndex<d> const& i) const noexcept {
-            auto idx = i.get();
-            return XXHash64::hash(idx.data(), idx.size() * sizeof(int), 0);
-        }
-    };
-}// namespace std
-#endif//OPFLOW_MDINDEX_HPP
+#endif//OPFLOW_COLOREDINDEX_HPP

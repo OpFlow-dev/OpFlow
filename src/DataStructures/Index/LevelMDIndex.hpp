@@ -6,7 +6,7 @@
 #include <array>
 
 namespace OpFlow::DS {
-    template <int d>
+    template <std::size_t d>
     struct LevelMDIndex {
         std::array<int, d> idx;
         int l = 0, p = 0;

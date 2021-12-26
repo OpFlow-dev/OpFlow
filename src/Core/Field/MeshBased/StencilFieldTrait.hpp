@@ -16,6 +16,7 @@
 #include "Core/Field/MeshBased/MeshBasedFieldExprTrait.hpp"
 #include "Core/Field/MeshBased/SemiStructured/SemiStructuredFieldExprTrait.hpp"
 #include "Core/Field/MeshBased/Structured/StructuredFieldExprTrait.hpp"
+#include "DataStructures/Index/ColoredIndex.hpp"
 #include "DataStructures/StencilPad.hpp"
 
 namespace OpFlow {
@@ -26,7 +27,7 @@ namespace OpFlow {
         template <StructuredFieldExprType T>
         struct ExprTrait<StencilField<T>>
             : ExprTrait<typename StructuredFieldExprTrait<T>::template other_type<
-                      DS::StencilPad<typename StructuredFieldExprTrait<T>::index_type>>> {
+                      DS::StencilPad<DS::ColoredIndex<typename StructuredFieldExprTrait<T>::index_type>>>> {
             static constexpr auto access_flag = 0;
             using type = StencilField<typename StructuredFieldExprTrait<T>::type>;
             using mesh_type
@@ -35,8 +36,8 @@ namespace OpFlow {
 
         template <SemiStructuredFieldExprType T>
         struct ExprTrait<StencilField<T>>
-            : ExprTrait<typename SemiStructuredFieldExprTrait<T>::template other_type<
-                      DS::StencilPad<typename SemiStructuredFieldExprTrait<T>::index_type>>> {
+            : ExprTrait<typename SemiStructuredFieldExprTrait<T>::template other_type<DS::StencilPad<
+                      DS::ColoredIndex<typename SemiStructuredFieldExprTrait<T>::index_type>>>> {
             static constexpr auto access_flag = 0;
             using type = StencilField<typename SemiStructuredFieldExprTrait<T>::type>;
         };
