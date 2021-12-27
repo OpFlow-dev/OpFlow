@@ -90,5 +90,137 @@ struct EqnHolder<{}, {}> {{
         f.write("}\n\n#endif")
 
 
+def gen_expression_hpp(n=20):
+    with open("./Expression.hpp", 'w') as f:
+        f.write(common_header)
+        f.write('''
+#ifndef OPFLOW_EXPRESSION_HPP
+#define OPFLOW_EXPRESSION_HPP
+
+#include "Core/Expr/Expr.hpp"
+#include "Core/Expr/ExprTrait.hpp"
+#include "Core/Operator/Operator.hpp"
+
+namespace OpFlow {
+    template <typename Op, ExprType... Args>
+    struct Expression;
+
+    template <typename Op>
+    requires(!ExprType<Op>) struct Expression<Op> : ResultType<Op>::type {
+        friend Expr<Expression<Op>>;
+        Expression() = default;
+
+    protected:
+        OPFLOW_STRONG_INLINE auto evalAtImpl_final(auto&& i) const {
+            OP_STACK_PUSH("Eval {} at {}", this->getName(), i.toString());
+            auto ret = Op::eval(OP_PERFECT_FOWD(i));
+            OP_STACK_POP;
+            return ret;
+        }
+        OPFLOW_STRONG_INLINE auto evalSafeAtImpl_final(auto&& i) const {
+            OP_STACK_PUSH("Eval {} at {}", this->getName(), i.toString());
+            auto ret = Op::eval_safe(std::forward<decltype(i)>(i));
+            OP_STACK_POP;
+            return ret;
+        }
+        void prepareImpl_final() { Op::prepare(*this); }
+        bool containsImpl_final(auto&&...) const { return false; }
+    };
+
+#define DEFINE_EVAL_OPS(...)                                                                                 \
+    OPFLOW_STRONG_INLINE auto evalAtImpl_final(auto&& i) const {                                             \
+        OP_STACK_PUSH("Eval {} at {}", this->getName(), i.toString());                                       \
+        auto ret = Op::eval(__VA_ARGS__, OP_PERFECT_FOWD(i));                                                \
+        OP_STACK_POP;                                                                                        \
+        return ret;                                                                                          \
+    }                                                                                                        \
+    OPFLOW_STRONG_INLINE auto evalSafeAtImpl_final(auto&& i) const {                                         \
+        OP_STACK_PUSH("Eval {} at {}", this->getName(), i.toString());                                       \
+        auto ret = Op::eval_safe(__VA_ARGS__, std::forward<decltype(i)>(i));                                 \
+        OP_STACK_POP;                                                                                        \
+        return ret;                                                                                          \
+    }
+    
+    template <typename Op, ExprType Arg>
+    struct Expression<Op, Arg> : ResultType<Op, Arg>::type {
+        friend Expr<Expression<Op, Arg>>;
+        explicit Expression(Arg&& arg1) : arg1(OP_PERFECT_FOWD(arg1)) {}
+        explicit Expression(Arg& arg1) : arg1(arg1) {}
+        Expression(const Expression& e) : ResultType<Op, Arg>::type(e), arg1(e.arg1) {}
+        Expression(Expression&& e) noexcept : ResultType<Op, Arg>::type(std::move(e)), arg1(e.arg1) {}
+
+    protected:
+        void prepareImpl_final() {
+            arg1.prepare();
+            Op::prepare(*this);
+        }
+
+        bool containsImpl_final(const auto& t) const { return arg1.contains(t); }
+
+        DEFINE_EVAL_OPS(arg1)
+    public:
+        typename internal::ExprProxy<Arg>::type arg1;
+    };
+        ''')
+        # generate template with 1...n arguments
+        for i in range(2, n + 1):
+            f.write('''template <typename Op, {}>
+struct Expression<Op, {}> : ResultType<Op, {}>::type {{
+    friend Expr<Expression<Op, {}>>;
+    explicit Expression({}) : {} {{}}
+    Expression(const Expression& e) : ResultType<Op, {}>::type(e), {} {{}}
+    Expression(Expression&& e) noexcept : ResultType<Op, {}>::type(std::move(e)), {} {{}}
+    
+    protected:
+        void prepareImpl_final() {{
+            {}
+            Op::prepare(*this);
+        }}
+        
+        bool containsImpl_final(const auto& t) const {{
+            return {};
+        }}
+        
+        DEFINE_EVAL_OPS({})
+    public:
+        {}
+    }};
+    
+            '''.format(
+                concat_repeat(lambda j: "typename Arg{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "Arg{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "Arg{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "Arg{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "auto&& arg{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "arg{}(OP_PERFECT_FOWD(arg{}))".format(j, j), ",", 1, i),
+                concat_repeat(lambda j: "Arg{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "arg{}(e.arg{})".format(j, j), ",", 1, i),
+                concat_repeat(lambda j: "Arg{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "arg{}(e.arg{})".format(j, j), ",", 1, i),
+                concat_repeat(lambda j: "arg{}.prepare();".format(j), "\n", 1, i),
+                concat_repeat(lambda j: "arg{}.contains(t)".format(j), "||", 1, i),
+                concat_repeat(lambda j: "arg{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "typename internal::ExprProxy<Arg{}>::type arg{};".format(j, j), "\n", 1, i)
+            ))
+
+        f.write('''// general exprs
+    template <typename Op, typename... Args>
+    requires(sizeof...(Args) > 0) auto makeExpression(Args&&... args) {
+        return Expression<Op, Meta::RealType<Args>...>(std::forward<Args>(args)...);
+    }
+
+    // nullary op exprs
+    template <typename Op>
+    auto makeExpression() {
+        return Expression<Op>();
+    }
+
+#undef DEFINE_EVAL_OPS
+}
+#endif
+        ''')
+
+
 if __name__ == "__main__":
     gen_equation_holder_hpp()
+    gen_expression_hpp()
