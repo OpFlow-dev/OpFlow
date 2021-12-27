@@ -19,9 +19,7 @@
 #include "Core/Expr/ScalarExpr.hpp"
 #include "Core/Field/FieldExprTrait.hpp"
 #include "DataStructures/Range/Ranges.hpp"
-#include "DataStructures/StencilPad.hpp"
-#include <HYPRE.h>
-#include <HYPRE_struct_ls.h>
+#include <tuple>
 
 namespace OpFlow {
     template <ExprType Lhs, ExprType Rhs>
@@ -58,5 +56,11 @@ namespace OpFlow {
     auto operator!=(const Lhs& lhs, const Rhs& rhs) {
         return !isIdentical(lhs, rhs);
     }
+
+    template <typename ... Eqns>
+    struct EquationSet {
+        explicit EquationSet(const Eqns& ... e) : eqns(std::make_tuple(OP_PERFECT_FOWD(e)...)) {}
+        std::tuple<Eqns...> eqns;
+    };
 }// namespace OpFlow
 #endif//OPFLOW_EQUATION_HPP
