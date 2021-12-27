@@ -57,9 +57,9 @@ namespace OpFlow {
         return !isIdentical(lhs, rhs);
     }
 
-    template <typename ... Eqns>
+    template <typename... Eqns>
     struct EquationSet {
-        explicit EquationSet(const Eqns& ... e) : eqns(std::make_tuple(OP_PERFECT_FOWD(e)...)) {}
+        explicit EquationSet(const Eqns&... e) : eqns(std::make_tuple(OP_PERFECT_FOWD(e)...)) {}
         std::tuple<Eqns...> eqns;
     };
 }// namespace OpFlow

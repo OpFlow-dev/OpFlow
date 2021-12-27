@@ -58,8 +58,16 @@ struct EqnHolder<{}, {}> {{
     {}
     {}
     {}
+    {}
     
-    EqnHolder({}, {}) : {}, {} {{}}
+    EqnHolder({}, {}) : {}, {} {{
+        {}
+    }}
+    
+    template <int i>
+    auto getEqnExpr() const {{
+        {}
+    }}
 }};
     
     auto makeEqnHolder({}, {}) {{
@@ -74,11 +82,14 @@ struct EqnHolder<{}, {}> {{
                 concat_repeat(lambda j: "T{}* target{};".format(j, j), "\n", 1, i),
                 concat_repeat(lambda j: "using st_field_type{} = Meta::RealType<decltype(target{}->getStencilField())>;".format(j, j), "\n", 1, i),
                 concat_repeat(lambda j: "using getter_type{} = std::function<E{}({})>;".format(j, j, concat_repeat(lambda k: "st_field_type{}&".format(k), ",", 1, i)), "\n", 1, i),
+                concat_repeat(lambda j: "std::unique_ptr<st_field_type{}> stField{};".format(j, j), "\n", 1, i),
                 concat_repeat(lambda j: "getter_type{} getter{};".format(j, j), "\n", 1, i),
                 concat_repeat(lambda j: "getter_type{} getter{}".format(j, j), ",", 1, i),
                 concat_repeat(lambda j : "T{}& target{}".format(j, j), ",", 1, i),
                 concat_repeat(lambda j: "getter{}(getter{})".format(j, j), ",", 1, i),
                 concat_repeat(lambda j: "target{}(&target{})".format(j, j), ",", 1, i),
+                concat_repeat(lambda j: "stField{} = std::make_unique<st_field_type{}>(this->target{}->getStencilField({}));".format(j, j, j, j), "\n", 1, i),
+                concat_repeat(lambda j: "if constexpr(i == {}) {{ auto eqn = getter{}({}); return eqn.lhs - eqn.rhs; }}".format(j, j, concat_repeat(lambda k: "*target{}".format(k), ",", 1, i)), "\n", 1, i),
                 concat_repeat(lambda j: "auto&& func{}".format(j), ",", 1, i),
                 concat_repeat(lambda j: "auto&& target{}".format(j), ",", 1, i),
                 concat_repeat(lambda j: "Meta::RealType<decltype(func{}({}))>".format(j, concat_repeat(lambda k: "target{}.getStencilField()".format(k), ",", 1, i)), ",", 1, i),
