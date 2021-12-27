@@ -102,6 +102,7 @@
 #include "Core/Equation/HYPREEqnSolveHandler.hpp"
 #include "Core/Equation/AMGCLEqnSolveHandler.hpp"
 #include "Core/Equation/Equation.hpp"
+#include "Core/Equation/EquationHolder.hpp"
 #include "Core/Equation/EqnSolveHandler.hpp"
 #include "Core/Equation/UnifiedSolve.hpp"
 
