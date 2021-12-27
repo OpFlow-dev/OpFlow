@@ -33,7 +33,7 @@ namespace OpFlow {
 
         [[maybe_unused]] const auto& getMesh() const { return mesh; }
         void setMesh(const MeshType& m) { mesh = m; }
-        auto getStencilField() const { return StencilField<Derived>(this->derived()); }
+        auto getStencilField(int color = 0) const { return StencilField<Derived>(this->derived(), color); }
 
     protected:
         template <MeshBasedFieldExprType Other>

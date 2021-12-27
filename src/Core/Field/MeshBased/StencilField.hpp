@@ -364,6 +364,7 @@ namespace OpFlow {
                 typename internal::ExprTrait<T>::template other_type<bool>>::container_type>>
                 block_mark;
         std::vector<std::vector<index_type>> offset;
+        int color = 0;
 
     public:
         StencilField() = default;
@@ -373,7 +374,7 @@ namespace OpFlow {
         StencilField(StencilField&& other) noexcept
             : CartAMRFieldExpr<StencilField<T>>(std::move(other)), data(std::move(other.data)),
               block_mark(std::move(other.block_mark)), offset(std::move(other.offset)) {}
-        explicit StencilField(const T& base) {
+        explicit StencilField(const T& base, int color) : color(color) {
             this->name = fmt::format("StencilField({})", base.name);
             this->loc = base.loc;
             this->mesh = base.mesh;

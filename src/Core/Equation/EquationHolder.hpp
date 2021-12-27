@@ -28,9 +28,20 @@ namespace OpFlow {
         T1* target1;
         using st_field_type1 = Meta::RealType<decltype(target1->getStencilField())>;
         using getter_type1 = std::function<E1(st_field_type1&)>;
+        std::unique_ptr<st_field_type1> stField1;
         getter_type1 getter1;
 
-        EqnHolder(getter_type1 getter1, T1& target1) : getter1(getter1), target1(&target1) {}
+        EqnHolder(getter_type1 getter1, T1& target1) : getter1(getter1), target1(&target1) {
+            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
+        }
+
+        template <int i>
+        auto getEqnExpr() const {
+            if constexpr (i == 1) {
+                auto eqn = getter1(*target1);
+                return eqn.lhs - eqn.rhs;
+            }
+        }
     };
 
     auto makeEqnHolder(auto&& func1, auto&& target1) {
@@ -46,11 +57,28 @@ namespace OpFlow {
         using st_field_type2 = Meta::RealType<decltype(target2->getStencilField())>;
         using getter_type1 = std::function<E1(st_field_type1&, st_field_type2&)>;
         using getter_type2 = std::function<E2(st_field_type1&, st_field_type2&)>;
+        std::unique_ptr<st_field_type1> stField1;
+        std::unique_ptr<st_field_type2> stField2;
         getter_type1 getter1;
         getter_type2 getter2;
 
         EqnHolder(getter_type1 getter1, getter_type2 getter2, T1& target1, T2& target2)
-            : getter1(getter1), getter2(getter2), target1(&target1), target2(&target2) {}
+            : getter1(getter1), getter2(getter2), target1(&target1), target2(&target2) {
+            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
+            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
+        }
+
+        template <int i>
+        auto getEqnExpr() const {
+            if constexpr (i == 1) {
+                auto eqn = getter1(*target1, *target2);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 2) {
+                auto eqn = getter2(*target1, *target2);
+                return eqn.lhs - eqn.rhs;
+            }
+        }
     };
 
     auto makeEqnHolder(auto&& func1, auto&& func2, auto&& target1, auto&& target2) {
@@ -72,6 +100,9 @@ namespace OpFlow {
         using getter_type1 = std::function<E1(st_field_type1&, st_field_type2&, st_field_type3&)>;
         using getter_type2 = std::function<E2(st_field_type1&, st_field_type2&, st_field_type3&)>;
         using getter_type3 = std::function<E3(st_field_type1&, st_field_type2&, st_field_type3&)>;
+        std::unique_ptr<st_field_type1> stField1;
+        std::unique_ptr<st_field_type2> stField2;
+        std::unique_ptr<st_field_type3> stField3;
         getter_type1 getter1;
         getter_type2 getter2;
         getter_type3 getter3;
@@ -79,7 +110,27 @@ namespace OpFlow {
         EqnHolder(getter_type1 getter1, getter_type2 getter2, getter_type3 getter3, T1& target1, T2& target2,
                   T3& target3)
             : getter1(getter1), getter2(getter2), getter3(getter3), target1(&target1), target2(&target2),
-              target3(&target3) {}
+              target3(&target3) {
+            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
+            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
+            stField3 = std::make_unique<st_field_type3>(this->target3->getStencilField(3));
+        }
+
+        template <int i>
+        auto getEqnExpr() const {
+            if constexpr (i == 1) {
+                auto eqn = getter1(*target1, *target2, *target3);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 2) {
+                auto eqn = getter2(*target1, *target2, *target3);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 3) {
+                auto eqn = getter3(*target1, *target2, *target3);
+                return eqn.lhs - eqn.rhs;
+            }
+        }
     };
 
     auto makeEqnHolder(auto&& func1, auto&& func2, auto&& func3, auto&& target1, auto&& target2,
@@ -113,6 +164,10 @@ namespace OpFlow {
                 = std::function<E3(st_field_type1&, st_field_type2&, st_field_type3&, st_field_type4&)>;
         using getter_type4
                 = std::function<E4(st_field_type1&, st_field_type2&, st_field_type3&, st_field_type4&)>;
+        std::unique_ptr<st_field_type1> stField1;
+        std::unique_ptr<st_field_type2> stField2;
+        std::unique_ptr<st_field_type3> stField3;
+        std::unique_ptr<st_field_type4> stField4;
         getter_type1 getter1;
         getter_type2 getter2;
         getter_type3 getter3;
@@ -121,7 +176,32 @@ namespace OpFlow {
         EqnHolder(getter_type1 getter1, getter_type2 getter2, getter_type3 getter3, getter_type4 getter4,
                   T1& target1, T2& target2, T3& target3, T4& target4)
             : getter1(getter1), getter2(getter2), getter3(getter3), getter4(getter4), target1(&target1),
-              target2(&target2), target3(&target3), target4(&target4) {}
+              target2(&target2), target3(&target3), target4(&target4) {
+            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
+            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
+            stField3 = std::make_unique<st_field_type3>(this->target3->getStencilField(3));
+            stField4 = std::make_unique<st_field_type4>(this->target4->getStencilField(4));
+        }
+
+        template <int i>
+        auto getEqnExpr() const {
+            if constexpr (i == 1) {
+                auto eqn = getter1(*target1, *target2, *target3, *target4);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 2) {
+                auto eqn = getter2(*target1, *target2, *target3, *target4);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 3) {
+                auto eqn = getter3(*target1, *target2, *target3, *target4);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 4) {
+                auto eqn = getter4(*target1, *target2, *target3, *target4);
+                return eqn.lhs - eqn.rhs;
+            }
+        }
     };
 
     auto makeEqnHolder(auto&& func1, auto&& func2, auto&& func3, auto&& func4, auto&& target1, auto&& target2,
@@ -163,6 +243,11 @@ namespace OpFlow {
                                               st_field_type4&, st_field_type5&)>;
         using getter_type5 = std::function<E5(st_field_type1&, st_field_type2&, st_field_type3&,
                                               st_field_type4&, st_field_type5&)>;
+        std::unique_ptr<st_field_type1> stField1;
+        std::unique_ptr<st_field_type2> stField2;
+        std::unique_ptr<st_field_type3> stField3;
+        std::unique_ptr<st_field_type4> stField4;
+        std::unique_ptr<st_field_type5> stField5;
         getter_type1 getter1;
         getter_type2 getter2;
         getter_type3 getter3;
@@ -172,7 +257,37 @@ namespace OpFlow {
         EqnHolder(getter_type1 getter1, getter_type2 getter2, getter_type3 getter3, getter_type4 getter4,
                   getter_type5 getter5, T1& target1, T2& target2, T3& target3, T4& target4, T5& target5)
             : getter1(getter1), getter2(getter2), getter3(getter3), getter4(getter4), getter5(getter5),
-              target1(&target1), target2(&target2), target3(&target3), target4(&target4), target5(&target5) {}
+              target1(&target1), target2(&target2), target3(&target3), target4(&target4), target5(&target5) {
+            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
+            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
+            stField3 = std::make_unique<st_field_type3>(this->target3->getStencilField(3));
+            stField4 = std::make_unique<st_field_type4>(this->target4->getStencilField(4));
+            stField5 = std::make_unique<st_field_type5>(this->target5->getStencilField(5));
+        }
+
+        template <int i>
+        auto getEqnExpr() const {
+            if constexpr (i == 1) {
+                auto eqn = getter1(*target1, *target2, *target3, *target4, *target5);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 2) {
+                auto eqn = getter2(*target1, *target2, *target3, *target4, *target5);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 3) {
+                auto eqn = getter3(*target1, *target2, *target3, *target4, *target5);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 4) {
+                auto eqn = getter4(*target1, *target2, *target3, *target4, *target5);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 5) {
+                auto eqn = getter5(*target1, *target2, *target3, *target4, *target5);
+                return eqn.lhs - eqn.rhs;
+            }
+        }
     };
 
     auto makeEqnHolder(auto&& func1, auto&& func2, auto&& func3, auto&& func4, auto&& func5, auto&& target1,
@@ -225,6 +340,12 @@ namespace OpFlow {
                                               st_field_type4&, st_field_type5&, st_field_type6&)>;
         using getter_type6 = std::function<E6(st_field_type1&, st_field_type2&, st_field_type3&,
                                               st_field_type4&, st_field_type5&, st_field_type6&)>;
+        std::unique_ptr<st_field_type1> stField1;
+        std::unique_ptr<st_field_type2> stField2;
+        std::unique_ptr<st_field_type3> stField3;
+        std::unique_ptr<st_field_type4> stField4;
+        std::unique_ptr<st_field_type5> stField5;
+        std::unique_ptr<st_field_type6> stField6;
         getter_type1 getter1;
         getter_type2 getter2;
         getter_type3 getter3;
@@ -237,7 +358,42 @@ namespace OpFlow {
                   T4& target4, T5& target5, T6& target6)
             : getter1(getter1), getter2(getter2), getter3(getter3), getter4(getter4), getter5(getter5),
               getter6(getter6), target1(&target1), target2(&target2), target3(&target3), target4(&target4),
-              target5(&target5), target6(&target6) {}
+              target5(&target5), target6(&target6) {
+            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
+            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
+            stField3 = std::make_unique<st_field_type3>(this->target3->getStencilField(3));
+            stField4 = std::make_unique<st_field_type4>(this->target4->getStencilField(4));
+            stField5 = std::make_unique<st_field_type5>(this->target5->getStencilField(5));
+            stField6 = std::make_unique<st_field_type6>(this->target6->getStencilField(6));
+        }
+
+        template <int i>
+        auto getEqnExpr() const {
+            if constexpr (i == 1) {
+                auto eqn = getter1(*target1, *target2, *target3, *target4, *target5, *target6);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 2) {
+                auto eqn = getter2(*target1, *target2, *target3, *target4, *target5, *target6);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 3) {
+                auto eqn = getter3(*target1, *target2, *target3, *target4, *target5, *target6);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 4) {
+                auto eqn = getter4(*target1, *target2, *target3, *target4, *target5, *target6);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 5) {
+                auto eqn = getter5(*target1, *target2, *target3, *target4, *target5, *target6);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 6) {
+                auto eqn = getter6(*target1, *target2, *target3, *target4, *target5, *target6);
+                return eqn.lhs - eqn.rhs;
+            }
+        }
     };
 
     auto makeEqnHolder(auto&& func1, auto&& func2, auto&& func3, auto&& func4, auto&& func5, auto&& func6,
@@ -307,6 +463,13 @@ namespace OpFlow {
         using getter_type7
                 = std::function<E7(st_field_type1&, st_field_type2&, st_field_type3&, st_field_type4&,
                                    st_field_type5&, st_field_type6&, st_field_type7&)>;
+        std::unique_ptr<st_field_type1> stField1;
+        std::unique_ptr<st_field_type2> stField2;
+        std::unique_ptr<st_field_type3> stField3;
+        std::unique_ptr<st_field_type4> stField4;
+        std::unique_ptr<st_field_type5> stField5;
+        std::unique_ptr<st_field_type6> stField6;
+        std::unique_ptr<st_field_type7> stField7;
         getter_type1 getter1;
         getter_type2 getter2;
         getter_type3 getter3;
@@ -320,7 +483,47 @@ namespace OpFlow {
                   T3& target3, T4& target4, T5& target5, T6& target6, T7& target7)
             : getter1(getter1), getter2(getter2), getter3(getter3), getter4(getter4), getter5(getter5),
               getter6(getter6), getter7(getter7), target1(&target1), target2(&target2), target3(&target3),
-              target4(&target4), target5(&target5), target6(&target6), target7(&target7) {}
+              target4(&target4), target5(&target5), target6(&target6), target7(&target7) {
+            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
+            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
+            stField3 = std::make_unique<st_field_type3>(this->target3->getStencilField(3));
+            stField4 = std::make_unique<st_field_type4>(this->target4->getStencilField(4));
+            stField5 = std::make_unique<st_field_type5>(this->target5->getStencilField(5));
+            stField6 = std::make_unique<st_field_type6>(this->target6->getStencilField(6));
+            stField7 = std::make_unique<st_field_type7>(this->target7->getStencilField(7));
+        }
+
+        template <int i>
+        auto getEqnExpr() const {
+            if constexpr (i == 1) {
+                auto eqn = getter1(*target1, *target2, *target3, *target4, *target5, *target6, *target7);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 2) {
+                auto eqn = getter2(*target1, *target2, *target3, *target4, *target5, *target6, *target7);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 3) {
+                auto eqn = getter3(*target1, *target2, *target3, *target4, *target5, *target6, *target7);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 4) {
+                auto eqn = getter4(*target1, *target2, *target3, *target4, *target5, *target6, *target7);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 5) {
+                auto eqn = getter5(*target1, *target2, *target3, *target4, *target5, *target6, *target7);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 6) {
+                auto eqn = getter6(*target1, *target2, *target3, *target4, *target5, *target6, *target7);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 7) {
+                auto eqn = getter7(*target1, *target2, *target3, *target4, *target5, *target6, *target7);
+                return eqn.lhs - eqn.rhs;
+            }
+        }
     };
 
     auto makeEqnHolder(auto&& func1, auto&& func2, auto&& func3, auto&& func4, auto&& func5, auto&& func6,
@@ -406,6 +609,14 @@ namespace OpFlow {
         using getter_type8
                 = std::function<E8(st_field_type1&, st_field_type2&, st_field_type3&, st_field_type4&,
                                    st_field_type5&, st_field_type6&, st_field_type7&, st_field_type8&)>;
+        std::unique_ptr<st_field_type1> stField1;
+        std::unique_ptr<st_field_type2> stField2;
+        std::unique_ptr<st_field_type3> stField3;
+        std::unique_ptr<st_field_type4> stField4;
+        std::unique_ptr<st_field_type5> stField5;
+        std::unique_ptr<st_field_type6> stField6;
+        std::unique_ptr<st_field_type7> stField7;
+        std::unique_ptr<st_field_type8> stField8;
         getter_type1 getter1;
         getter_type2 getter2;
         getter_type3 getter3;
@@ -422,7 +633,60 @@ namespace OpFlow {
             : getter1(getter1), getter2(getter2), getter3(getter3), getter4(getter4), getter5(getter5),
               getter6(getter6), getter7(getter7), getter8(getter8), target1(&target1), target2(&target2),
               target3(&target3), target4(&target4), target5(&target5), target6(&target6), target7(&target7),
-              target8(&target8) {}
+              target8(&target8) {
+            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
+            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
+            stField3 = std::make_unique<st_field_type3>(this->target3->getStencilField(3));
+            stField4 = std::make_unique<st_field_type4>(this->target4->getStencilField(4));
+            stField5 = std::make_unique<st_field_type5>(this->target5->getStencilField(5));
+            stField6 = std::make_unique<st_field_type6>(this->target6->getStencilField(6));
+            stField7 = std::make_unique<st_field_type7>(this->target7->getStencilField(7));
+            stField8 = std::make_unique<st_field_type8>(this->target8->getStencilField(8));
+        }
+
+        template <int i>
+        auto getEqnExpr() const {
+            if constexpr (i == 1) {
+                auto eqn = getter1(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 2) {
+                auto eqn = getter2(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 3) {
+                auto eqn = getter3(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 4) {
+                auto eqn = getter4(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 5) {
+                auto eqn = getter5(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 6) {
+                auto eqn = getter6(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 7) {
+                auto eqn = getter7(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 8) {
+                auto eqn = getter8(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8);
+                return eqn.lhs - eqn.rhs;
+            }
+        }
     };
 
     auto makeEqnHolder(auto&& func1, auto&& func2, auto&& func3, auto&& func4, auto&& func5, auto&& func6,
@@ -518,6 +782,15 @@ namespace OpFlow {
         using getter_type9 = std::function<E9(st_field_type1&, st_field_type2&, st_field_type3&,
                                               st_field_type4&, st_field_type5&, st_field_type6&,
                                               st_field_type7&, st_field_type8&, st_field_type9&)>;
+        std::unique_ptr<st_field_type1> stField1;
+        std::unique_ptr<st_field_type2> stField2;
+        std::unique_ptr<st_field_type3> stField3;
+        std::unique_ptr<st_field_type4> stField4;
+        std::unique_ptr<st_field_type5> stField5;
+        std::unique_ptr<st_field_type6> stField6;
+        std::unique_ptr<st_field_type7> stField7;
+        std::unique_ptr<st_field_type8> stField8;
+        std::unique_ptr<st_field_type9> stField9;
         getter_type1 getter1;
         getter_type2 getter2;
         getter_type3 getter3;
@@ -535,7 +808,66 @@ namespace OpFlow {
             : getter1(getter1), getter2(getter2), getter3(getter3), getter4(getter4), getter5(getter5),
               getter6(getter6), getter7(getter7), getter8(getter8), getter9(getter9), target1(&target1),
               target2(&target2), target3(&target3), target4(&target4), target5(&target5), target6(&target6),
-              target7(&target7), target8(&target8), target9(&target9) {}
+              target7(&target7), target8(&target8), target9(&target9) {
+            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
+            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
+            stField3 = std::make_unique<st_field_type3>(this->target3->getStencilField(3));
+            stField4 = std::make_unique<st_field_type4>(this->target4->getStencilField(4));
+            stField5 = std::make_unique<st_field_type5>(this->target5->getStencilField(5));
+            stField6 = std::make_unique<st_field_type6>(this->target6->getStencilField(6));
+            stField7 = std::make_unique<st_field_type7>(this->target7->getStencilField(7));
+            stField8 = std::make_unique<st_field_type8>(this->target8->getStencilField(8));
+            stField9 = std::make_unique<st_field_type9>(this->target9->getStencilField(9));
+        }
+
+        template <int i>
+        auto getEqnExpr() const {
+            if constexpr (i == 1) {
+                auto eqn = getter1(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 2) {
+                auto eqn = getter2(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 3) {
+                auto eqn = getter3(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 4) {
+                auto eqn = getter4(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 5) {
+                auto eqn = getter5(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 6) {
+                auto eqn = getter6(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 7) {
+                auto eqn = getter7(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 8) {
+                auto eqn = getter8(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 9) {
+                auto eqn = getter9(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9);
+                return eqn.lhs - eqn.rhs;
+            }
+        }
     };
 
     auto makeEqnHolder(auto&& func1, auto&& func2, auto&& func3, auto&& func4, auto&& func5, auto&& func6,
@@ -642,6 +974,16 @@ namespace OpFlow {
         using getter_type10 = std::function<E10(
                 st_field_type1&, st_field_type2&, st_field_type3&, st_field_type4&, st_field_type5&,
                 st_field_type6&, st_field_type7&, st_field_type8&, st_field_type9&, st_field_type10&)>;
+        std::unique_ptr<st_field_type1> stField1;
+        std::unique_ptr<st_field_type2> stField2;
+        std::unique_ptr<st_field_type3> stField3;
+        std::unique_ptr<st_field_type4> stField4;
+        std::unique_ptr<st_field_type5> stField5;
+        std::unique_ptr<st_field_type6> stField6;
+        std::unique_ptr<st_field_type7> stField7;
+        std::unique_ptr<st_field_type8> stField8;
+        std::unique_ptr<st_field_type9> stField9;
+        std::unique_ptr<st_field_type10> stField10;
         getter_type1 getter1;
         getter_type2 getter2;
         getter_type3 getter3;
@@ -661,7 +1003,72 @@ namespace OpFlow {
               getter6(getter6), getter7(getter7), getter8(getter8), getter9(getter9), getter10(getter10),
               target1(&target1), target2(&target2), target3(&target3), target4(&target4), target5(&target5),
               target6(&target6), target7(&target7), target8(&target8), target9(&target9),
-              target10(&target10) {}
+              target10(&target10) {
+            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
+            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
+            stField3 = std::make_unique<st_field_type3>(this->target3->getStencilField(3));
+            stField4 = std::make_unique<st_field_type4>(this->target4->getStencilField(4));
+            stField5 = std::make_unique<st_field_type5>(this->target5->getStencilField(5));
+            stField6 = std::make_unique<st_field_type6>(this->target6->getStencilField(6));
+            stField7 = std::make_unique<st_field_type7>(this->target7->getStencilField(7));
+            stField8 = std::make_unique<st_field_type8>(this->target8->getStencilField(8));
+            stField9 = std::make_unique<st_field_type9>(this->target9->getStencilField(9));
+            stField10 = std::make_unique<st_field_type10>(this->target10->getStencilField(10));
+        }
+
+        template <int i>
+        auto getEqnExpr() const {
+            if constexpr (i == 1) {
+                auto eqn = getter1(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9, *target10);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 2) {
+                auto eqn = getter2(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9, *target10);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 3) {
+                auto eqn = getter3(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9, *target10);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 4) {
+                auto eqn = getter4(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9, *target10);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 5) {
+                auto eqn = getter5(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9, *target10);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 6) {
+                auto eqn = getter6(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9, *target10);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 7) {
+                auto eqn = getter7(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9, *target10);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 8) {
+                auto eqn = getter8(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9, *target10);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 9) {
+                auto eqn = getter9(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                   *target8, *target9, *target10);
+                return eqn.lhs - eqn.rhs;
+            }
+            if constexpr (i == 10) {
+                auto eqn = getter10(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
+                                    *target8, *target9, *target10);
+                return eqn.lhs - eqn.rhs;
+            }
+        }
     };
 
     auto makeEqnHolder(auto&& func1, auto&& func2, auto&& func3, auto&& func4, auto&& func5, auto&& func6,
