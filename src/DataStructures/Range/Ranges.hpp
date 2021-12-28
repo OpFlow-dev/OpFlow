@@ -205,6 +205,11 @@ namespace OpFlow::DS {
         }
 
         static constexpr bool is_splittable_in_proportion = true;
+        auto center() const {
+            auto ret = base_index_type {start};
+            for (int i = 0; i < d; ++i) ret[i] = (ret[i] + end[i]) / 2;
+            return ret;
+        }
     };
 
     template <typename T>
