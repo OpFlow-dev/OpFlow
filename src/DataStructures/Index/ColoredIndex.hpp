@@ -27,9 +27,9 @@ namespace OpFlow::DS {
     struct ColoredIndex<MDIndex<d>> {
     protected:
         std::array<int, d> idx;
-        int color = 0;
 
     public:
+        int color = 0;
         static constexpr auto dim = d;
         constexpr ColoredIndex() { idx.fill(0); };
         constexpr explicit ColoredIndex(const MDIndex<d>& i, int c = 0) : idx(i.get()), color(c) {};
