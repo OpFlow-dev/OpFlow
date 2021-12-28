@@ -28,7 +28,7 @@
 namespace OpFlow::DS {
 
     template <std::size_t d>
-    struct MDIndex : SerializableObj<MDIndex<d>> {
+    struct MDIndex : SerializableObj {
     protected:
         std::array<int, d> idx;
 
@@ -126,19 +126,29 @@ namespace OpFlow::DS {
             return c;
         }
 
-        auto toString() const {
+        std::string toString() const override {
             std::string ret = "{";
             if constexpr (d > 0) ret += fmt::format("{}", idx[0]);
             for (auto i = 1; i < d; ++i) ret += fmt::format(", {}", idx[i]);
             ret += "}";
             return ret;
         }
+
+        std::string toString(int n, const std::string& prefix) const override {
+            std::string ret;
+            while (n-- > 0) ret += prefix;
+            ret += toString();
+            return ret;
+        }
+
+        std::ostream& operator<<(std::ostream& os) const override {
+            return os << toString();
+        }
     };
 }// namespace OpFlow::DS
 
 namespace std {
-
-    template <int d>
+    template <std::size_t d>
     struct hash<OpFlow::DS::MDIndex<d>> {
         std::size_t operator()(OpFlow::DS::MDIndex<d> const& i) const noexcept {
             auto idx = i.get();

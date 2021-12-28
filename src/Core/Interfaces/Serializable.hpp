@@ -20,30 +20,24 @@
 
 namespace OpFlow {
 
-    template <typename Derived>
     struct SerializableObj {
-        [[nodiscard]] std::string toString() const { return this->derived().toString(); }
+        [[nodiscard]] virtual std::string toString() const = 0;
+        [[nodiscard]] virtual std::string toString(int n, const std::string& prefix) const = 0;
 
-        std::ostream& operator<<(std::ostream& os) const { return this->derived().operator<<(os); }
-
-    private:
-        DEFINE_CRTP_HELPERS(Derived)
+        virtual std::ostream& operator<<(std::ostream& os) const = 0;
     };
 
-    template <typename Derived>
     struct LevelSerializableObj {
-        [[nodiscard]] std::string toString(int level) const { return this->derived().toString(level); }
+        [[nodiscard]] virtual std::string toString() const = 0;
+        [[nodiscard]] virtual std::string toString(int n, const std::string& prefix) const = 0;
 
-        std::ostream& operator<<(std::ostream& os) const { return this->derived().operator<<(os); }
-
-    private:
-        DEFINE_CRTP_HELPERS(Derived)
+        virtual std::ostream& operator<<(std::ostream& os) const = 0;
     };
 
     template <typename T>
-    concept Serializable = std::is_base_of_v<SerializableObj<T>, T>;
+    concept Serializable = std::is_base_of_v<SerializableObj, T>;
 
     template <typename T>
-    concept LevelSerializable = std::is_base_of_v<LevelSerializableObj<T>, T>;
+    concept LevelSerializable = std::is_base_of_v<LevelSerializableObj, T>;
 }// namespace OpFlow
 #endif//OPFLOW_SERIALIZABLE_HPP
