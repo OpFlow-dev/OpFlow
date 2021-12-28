@@ -120,12 +120,6 @@ namespace OpFlow {
             }
         }
 
-        auto evalAtImpl_final(const colored_index_type& index) const {
-            OP_ASSERT_MSG(index.color == color, "StencilField::evalAt error: color mismatch at {}",
-                          index.toString());
-            return evalAtImpl_final(static_cast<index_type>(index));
-        }
-
         auto evalAtImpl_final(const index_type& index) const {
             OP_ASSERT_MSG(base, "base ptr of stencil field is nullptr");
             if (DS::inRange(this->assignableRange, index)) [[likely]] {
@@ -525,10 +519,6 @@ namespace OpFlow {
             return data[i.l][i.p][i - offset[i.l][i.p]];
         }
         auto& evalAtImpl_final(const index_type& i) { return data[i.l][i.p][i - offset[i.l][i.p]]; }
-        const auto& evalAtImpl_final(const colored_index_type& i) const {
-            return data[i.l][i.p][i - offset[i.l][i.p]];
-        }
-        auto& evalAtImpl_final(const colored_index_type& i) { return data[i.l][i.p][i - offset[i.l][i.p]]; }
         auto& blocked(const index_type& i) { return block_mark[i.l][i.p][i - offset[i.l][i.p]]; }
         const auto& blocked(const index_type& i) const { return block_mark[i.l][i.p][i - offset[i.l][i.p]]; }
 
