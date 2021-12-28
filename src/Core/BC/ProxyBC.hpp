@@ -20,8 +20,8 @@
 namespace OpFlow {
 
     template <FieldExprType From, FieldExprType To>
-    requires std::convertible_to<typename internal::FieldExprTrait<From>::elem_type,
-                                 typename internal::FieldExprTrait<To>::elem_type>&&
+    requires std::constructible_from<typename internal::FieldExprTrait<To>::elem_type,
+                                 typename internal::FieldExprTrait<From>::elem_type>&&
             std::convertible_to<typename internal::FieldExprTrait<To>::index_type,
                                 typename internal::FieldExprTrait<From>::index_type> struct ProxyBC
         : BCBase<To> {
@@ -37,7 +37,7 @@ namespace OpFlow {
 
         typename internal::FieldExprTrait<To>::elem_type
         evalAt(const typename internal::FieldExprTrait<To>::index_type& index) const override {
-            return _src->evalAt(index);
+            return typename internal::FieldExprTrait<To>::elem_type{_src->evalAt(index)};
         }
 
         std::unique_ptr<BCBase<To>> getCopy() const override { return std::make_unique<ProxyBC>(*_src); }
