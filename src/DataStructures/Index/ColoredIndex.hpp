@@ -269,7 +269,8 @@ namespace std {
 
     template <std::size_t d>
     struct hash<OpFlow::DS::ColoredIndex<OpFlow::DS::LevelMDIndex<d>>> {
-        std::size_t operator()(const OpFlow::DS::ColoredIndex<OpFlow::DS::LevelMDIndex<d>>& i) const noexcept {
+        std::size_t operator()(const OpFlow::DS::ColoredIndex<OpFlow::DS::LevelMDIndex<d>>& i) const
+                noexcept {
             auto idx = i.get();
             return XXHash64::hash(idx.data(), idx.size() * sizeof(int), 0);
         }

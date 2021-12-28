@@ -17,7 +17,9 @@
 #define OPFLOW_EQUATIONHOLDER_HPP
 
 #include "Core/Meta.hpp"
+#include "DataStructures/StencilPad.hpp"
 #include <functional>
+#include <unordered_map>
 
 namespace OpFlow {
     template <typename... E>
@@ -26,13 +28,14 @@ namespace OpFlow {
     template <typename E1, typename T1>
     struct EqnHolder<E1, T1> {
         T1* target1;
-        using st_field_type1 = Meta::RealType<decltype(target1->getStencilField())>;
+        using st_field_type1 = Meta::RealType<decltype(target1->template getStencilField<DS::fake_map>())>;
         using getter_type1 = std::function<E1(st_field_type1&)>;
         std::unique_ptr<st_field_type1> stField1;
         getter_type1 getter1;
 
         EqnHolder(getter_type1 getter1, T1& target1) : getter1(getter1), target1(&target1) {
-            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
+            stField1 = std::make_unique<st_field_type1>(
+                    this->target1->template getStencilField<DS::fake_map>(1));
         }
 
         template <int i>
@@ -45,7 +48,7 @@ namespace OpFlow {
     };
 
     auto makeEqnHolder(auto&& func1, auto&& target1) {
-        return EqnHolder<Meta::RealType<decltype(func1(target1.getStencilField()))>,
+        return EqnHolder<Meta::RealType<decltype(func1(target1.template getStencilField<DS::fake_map>()))>,
                          Meta::RealType<decltype(target1)>>(func1, target1);
     }
 
@@ -53,8 +56,10 @@ namespace OpFlow {
     struct EqnHolder<E1, E2, T1, T2> {
         T1* target1;
         T2* target2;
-        using st_field_type1 = Meta::RealType<decltype(target1->getStencilField())>;
-        using st_field_type2 = Meta::RealType<decltype(target2->getStencilField())>;
+        using st_field_type1
+                = Meta::RealType<decltype(target1->template getStencilField<std::unordered_map>())>;
+        using st_field_type2
+                = Meta::RealType<decltype(target2->template getStencilField<std::unordered_map>())>;
         using getter_type1 = std::function<E1(st_field_type1&, st_field_type2&)>;
         using getter_type2 = std::function<E2(st_field_type1&, st_field_type2&)>;
         std::unique_ptr<st_field_type1> stField1;
@@ -64,8 +69,10 @@ namespace OpFlow {
 
         EqnHolder(getter_type1 getter1, getter_type2 getter2, T1& target1, T2& target2)
             : getter1(getter1), getter2(getter2), target1(&target1), target2(&target2) {
-            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
-            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
+            stField1 = std::make_unique<st_field_type1>(
+                    this->target1->template getStencilField<std::unordered_map>(1));
+            stField2 = std::make_unique<st_field_type2>(
+                    this->target2->template getStencilField<std::unordered_map>(2));
         }
 
         template <int i>
@@ -83,8 +90,10 @@ namespace OpFlow {
 
     auto makeEqnHolder(auto&& func1, auto&& func2, auto&& target1, auto&& target2) {
         return EqnHolder<
-                Meta::RealType<decltype(func1(target1.getStencilField(), target2.getStencilField()))>,
-                Meta::RealType<decltype(func2(target1.getStencilField(), target2.getStencilField()))>,
+                Meta::RealType<decltype(func1(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func2(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>()))>,
                 Meta::RealType<decltype(target1)>, Meta::RealType<decltype(target2)>>(func1, func2, target1,
                                                                                       target2);
     }
@@ -94,9 +103,12 @@ namespace OpFlow {
         T1* target1;
         T2* target2;
         T3* target3;
-        using st_field_type1 = Meta::RealType<decltype(target1->getStencilField())>;
-        using st_field_type2 = Meta::RealType<decltype(target2->getStencilField())>;
-        using st_field_type3 = Meta::RealType<decltype(target3->getStencilField())>;
+        using st_field_type1
+                = Meta::RealType<decltype(target1->template getStencilField<std::unordered_map>())>;
+        using st_field_type2
+                = Meta::RealType<decltype(target2->template getStencilField<std::unordered_map>())>;
+        using st_field_type3
+                = Meta::RealType<decltype(target3->template getStencilField<std::unordered_map>())>;
         using getter_type1 = std::function<E1(st_field_type1&, st_field_type2&, st_field_type3&)>;
         using getter_type2 = std::function<E2(st_field_type1&, st_field_type2&, st_field_type3&)>;
         using getter_type3 = std::function<E3(st_field_type1&, st_field_type2&, st_field_type3&)>;
@@ -111,9 +123,12 @@ namespace OpFlow {
                   T3& target3)
             : getter1(getter1), getter2(getter2), getter3(getter3), target1(&target1), target2(&target2),
               target3(&target3) {
-            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
-            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
-            stField3 = std::make_unique<st_field_type3>(this->target3->getStencilField(3));
+            stField1 = std::make_unique<st_field_type1>(
+                    this->target1->template getStencilField<std::unordered_map>(1));
+            stField2 = std::make_unique<st_field_type2>(
+                    this->target2->template getStencilField<std::unordered_map>(2));
+            stField3 = std::make_unique<st_field_type3>(
+                    this->target3->template getStencilField<std::unordered_map>(3));
         }
 
         template <int i>
@@ -135,14 +150,18 @@ namespace OpFlow {
 
     auto makeEqnHolder(auto&& func1, auto&& func2, auto&& func3, auto&& target1, auto&& target2,
                        auto&& target3) {
-        return EqnHolder<Meta::RealType<decltype(func1(target1.getStencilField(), target2.getStencilField(),
-                                                       target3.getStencilField()))>,
-                         Meta::RealType<decltype(func2(target1.getStencilField(), target2.getStencilField(),
-                                                       target3.getStencilField()))>,
-                         Meta::RealType<decltype(func3(target1.getStencilField(), target2.getStencilField(),
-                                                       target3.getStencilField()))>,
-                         Meta::RealType<decltype(target1)>, Meta::RealType<decltype(target2)>,
-                         Meta::RealType<decltype(target3)>>(func1, func2, func3, target1, target2, target3);
+        return EqnHolder<
+                Meta::RealType<decltype(func1(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func2(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func3(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(target1)>, Meta::RealType<decltype(target2)>,
+                Meta::RealType<decltype(target3)>>(func1, func2, func3, target1, target2, target3);
     }
 
     template <typename E1, typename E2, typename E3, typename E4, typename T1, typename T2, typename T3,
@@ -152,10 +171,14 @@ namespace OpFlow {
         T2* target2;
         T3* target3;
         T4* target4;
-        using st_field_type1 = Meta::RealType<decltype(target1->getStencilField())>;
-        using st_field_type2 = Meta::RealType<decltype(target2->getStencilField())>;
-        using st_field_type3 = Meta::RealType<decltype(target3->getStencilField())>;
-        using st_field_type4 = Meta::RealType<decltype(target4->getStencilField())>;
+        using st_field_type1
+                = Meta::RealType<decltype(target1->template getStencilField<std::unordered_map>())>;
+        using st_field_type2
+                = Meta::RealType<decltype(target2->template getStencilField<std::unordered_map>())>;
+        using st_field_type3
+                = Meta::RealType<decltype(target3->template getStencilField<std::unordered_map>())>;
+        using st_field_type4
+                = Meta::RealType<decltype(target4->template getStencilField<std::unordered_map>())>;
         using getter_type1
                 = std::function<E1(st_field_type1&, st_field_type2&, st_field_type3&, st_field_type4&)>;
         using getter_type2
@@ -177,10 +200,14 @@ namespace OpFlow {
                   T1& target1, T2& target2, T3& target3, T4& target4)
             : getter1(getter1), getter2(getter2), getter3(getter3), getter4(getter4), target1(&target1),
               target2(&target2), target3(&target3), target4(&target4) {
-            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
-            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
-            stField3 = std::make_unique<st_field_type3>(this->target3->getStencilField(3));
-            stField4 = std::make_unique<st_field_type4>(this->target4->getStencilField(4));
+            stField1 = std::make_unique<st_field_type1>(
+                    this->target1->template getStencilField<std::unordered_map>(1));
+            stField2 = std::make_unique<st_field_type2>(
+                    this->target2->template getStencilField<std::unordered_map>(2));
+            stField3 = std::make_unique<st_field_type3>(
+                    this->target3->template getStencilField<std::unordered_map>(3));
+            stField4 = std::make_unique<st_field_type4>(
+                    this->target4->template getStencilField<std::unordered_map>(4));
         }
 
         template <int i>
@@ -207,14 +234,22 @@ namespace OpFlow {
     auto makeEqnHolder(auto&& func1, auto&& func2, auto&& func3, auto&& func4, auto&& target1, auto&& target2,
                        auto&& target3, auto&& target4) {
         return EqnHolder<
-                Meta::RealType<decltype(func1(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField()))>,
-                Meta::RealType<decltype(func2(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField()))>,
-                Meta::RealType<decltype(func3(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField()))>,
-                Meta::RealType<decltype(func4(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField()))>,
+                Meta::RealType<decltype(func1(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func2(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func3(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func4(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>()))>,
                 Meta::RealType<decltype(target1)>, Meta::RealType<decltype(target2)>,
                 Meta::RealType<decltype(target3)>, Meta::RealType<decltype(target4)>>(
                 func1, func2, func3, func4, target1, target2, target3, target4);
@@ -228,11 +263,16 @@ namespace OpFlow {
         T3* target3;
         T4* target4;
         T5* target5;
-        using st_field_type1 = Meta::RealType<decltype(target1->getStencilField())>;
-        using st_field_type2 = Meta::RealType<decltype(target2->getStencilField())>;
-        using st_field_type3 = Meta::RealType<decltype(target3->getStencilField())>;
-        using st_field_type4 = Meta::RealType<decltype(target4->getStencilField())>;
-        using st_field_type5 = Meta::RealType<decltype(target5->getStencilField())>;
+        using st_field_type1
+                = Meta::RealType<decltype(target1->template getStencilField<std::unordered_map>())>;
+        using st_field_type2
+                = Meta::RealType<decltype(target2->template getStencilField<std::unordered_map>())>;
+        using st_field_type3
+                = Meta::RealType<decltype(target3->template getStencilField<std::unordered_map>())>;
+        using st_field_type4
+                = Meta::RealType<decltype(target4->template getStencilField<std::unordered_map>())>;
+        using st_field_type5
+                = Meta::RealType<decltype(target5->template getStencilField<std::unordered_map>())>;
         using getter_type1 = std::function<E1(st_field_type1&, st_field_type2&, st_field_type3&,
                                               st_field_type4&, st_field_type5&)>;
         using getter_type2 = std::function<E2(st_field_type1&, st_field_type2&, st_field_type3&,
@@ -258,11 +298,16 @@ namespace OpFlow {
                   getter_type5 getter5, T1& target1, T2& target2, T3& target3, T4& target4, T5& target5)
             : getter1(getter1), getter2(getter2), getter3(getter3), getter4(getter4), getter5(getter5),
               target1(&target1), target2(&target2), target3(&target3), target4(&target4), target5(&target5) {
-            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
-            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
-            stField3 = std::make_unique<st_field_type3>(this->target3->getStencilField(3));
-            stField4 = std::make_unique<st_field_type4>(this->target4->getStencilField(4));
-            stField5 = std::make_unique<st_field_type5>(this->target5->getStencilField(5));
+            stField1 = std::make_unique<st_field_type1>(
+                    this->target1->template getStencilField<std::unordered_map>(1));
+            stField2 = std::make_unique<st_field_type2>(
+                    this->target2->template getStencilField<std::unordered_map>(2));
+            stField3 = std::make_unique<st_field_type3>(
+                    this->target3->template getStencilField<std::unordered_map>(3));
+            stField4 = std::make_unique<st_field_type4>(
+                    this->target4->template getStencilField<std::unordered_map>(4));
+            stField5 = std::make_unique<st_field_type5>(
+                    this->target5->template getStencilField<std::unordered_map>(5));
         }
 
         template <int i>
@@ -292,25 +337,36 @@ namespace OpFlow {
 
     auto makeEqnHolder(auto&& func1, auto&& func2, auto&& func3, auto&& func4, auto&& func5, auto&& target1,
                        auto&& target2, auto&& target3, auto&& target4, auto&& target5) {
-        return EqnHolder<Meta::RealType<decltype(func1(target1.getStencilField(), target2.getStencilField(),
-                                                       target3.getStencilField(), target4.getStencilField(),
-                                                       target5.getStencilField()))>,
-                         Meta::RealType<decltype(func2(target1.getStencilField(), target2.getStencilField(),
-                                                       target3.getStencilField(), target4.getStencilField(),
-                                                       target5.getStencilField()))>,
-                         Meta::RealType<decltype(func3(target1.getStencilField(), target2.getStencilField(),
-                                                       target3.getStencilField(), target4.getStencilField(),
-                                                       target5.getStencilField()))>,
-                         Meta::RealType<decltype(func4(target1.getStencilField(), target2.getStencilField(),
-                                                       target3.getStencilField(), target4.getStencilField(),
-                                                       target5.getStencilField()))>,
-                         Meta::RealType<decltype(func5(target1.getStencilField(), target2.getStencilField(),
-                                                       target3.getStencilField(), target4.getStencilField(),
-                                                       target5.getStencilField()))>,
-                         Meta::RealType<decltype(target1)>, Meta::RealType<decltype(target2)>,
-                         Meta::RealType<decltype(target3)>, Meta::RealType<decltype(target4)>,
-                         Meta::RealType<decltype(target5)>>(func1, func2, func3, func4, func5, target1,
-                                                            target2, target3, target4, target5);
+        return EqnHolder<
+                Meta::RealType<decltype(func1(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func2(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func3(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func4(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func5(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(target1)>, Meta::RealType<decltype(target2)>,
+                Meta::RealType<decltype(target3)>, Meta::RealType<decltype(target4)>,
+                Meta::RealType<decltype(target5)>>(func1, func2, func3, func4, func5, target1, target2,
+                                                   target3, target4, target5);
     }
 
     template <typename E1, typename E2, typename E3, typename E4, typename E5, typename E6, typename T1,
@@ -322,12 +378,18 @@ namespace OpFlow {
         T4* target4;
         T5* target5;
         T6* target6;
-        using st_field_type1 = Meta::RealType<decltype(target1->getStencilField())>;
-        using st_field_type2 = Meta::RealType<decltype(target2->getStencilField())>;
-        using st_field_type3 = Meta::RealType<decltype(target3->getStencilField())>;
-        using st_field_type4 = Meta::RealType<decltype(target4->getStencilField())>;
-        using st_field_type5 = Meta::RealType<decltype(target5->getStencilField())>;
-        using st_field_type6 = Meta::RealType<decltype(target6->getStencilField())>;
+        using st_field_type1
+                = Meta::RealType<decltype(target1->template getStencilField<std::unordered_map>())>;
+        using st_field_type2
+                = Meta::RealType<decltype(target2->template getStencilField<std::unordered_map>())>;
+        using st_field_type3
+                = Meta::RealType<decltype(target3->template getStencilField<std::unordered_map>())>;
+        using st_field_type4
+                = Meta::RealType<decltype(target4->template getStencilField<std::unordered_map>())>;
+        using st_field_type5
+                = Meta::RealType<decltype(target5->template getStencilField<std::unordered_map>())>;
+        using st_field_type6
+                = Meta::RealType<decltype(target6->template getStencilField<std::unordered_map>())>;
         using getter_type1 = std::function<E1(st_field_type1&, st_field_type2&, st_field_type3&,
                                               st_field_type4&, st_field_type5&, st_field_type6&)>;
         using getter_type2 = std::function<E2(st_field_type1&, st_field_type2&, st_field_type3&,
@@ -359,12 +421,18 @@ namespace OpFlow {
             : getter1(getter1), getter2(getter2), getter3(getter3), getter4(getter4), getter5(getter5),
               getter6(getter6), target1(&target1), target2(&target2), target3(&target3), target4(&target4),
               target5(&target5), target6(&target6) {
-            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
-            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
-            stField3 = std::make_unique<st_field_type3>(this->target3->getStencilField(3));
-            stField4 = std::make_unique<st_field_type4>(this->target4->getStencilField(4));
-            stField5 = std::make_unique<st_field_type5>(this->target5->getStencilField(5));
-            stField6 = std::make_unique<st_field_type6>(this->target6->getStencilField(6));
+            stField1 = std::make_unique<st_field_type1>(
+                    this->target1->template getStencilField<std::unordered_map>(1));
+            stField2 = std::make_unique<st_field_type2>(
+                    this->target2->template getStencilField<std::unordered_map>(2));
+            stField3 = std::make_unique<st_field_type3>(
+                    this->target3->template getStencilField<std::unordered_map>(3));
+            stField4 = std::make_unique<st_field_type4>(
+                    this->target4->template getStencilField<std::unordered_map>(4));
+            stField5 = std::make_unique<st_field_type5>(
+                    this->target5->template getStencilField<std::unordered_map>(5));
+            stField6 = std::make_unique<st_field_type6>(
+                    this->target6->template getStencilField<std::unordered_map>(6));
         }
 
         template <int i>
@@ -400,24 +468,42 @@ namespace OpFlow {
                        auto&& target1, auto&& target2, auto&& target3, auto&& target4, auto&& target5,
                        auto&& target6) {
         return EqnHolder<
-                Meta::RealType<decltype(func1(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField()))>,
-                Meta::RealType<decltype(func2(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField()))>,
-                Meta::RealType<decltype(func3(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField()))>,
-                Meta::RealType<decltype(func4(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField()))>,
-                Meta::RealType<decltype(func5(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField()))>,
-                Meta::RealType<decltype(func6(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField()))>,
+                Meta::RealType<decltype(func1(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func2(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func3(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func4(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func5(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func6(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>()))>,
                 Meta::RealType<decltype(target1)>, Meta::RealType<decltype(target2)>,
                 Meta::RealType<decltype(target3)>, Meta::RealType<decltype(target4)>,
                 Meta::RealType<decltype(target5)>, Meta::RealType<decltype(target6)>>(
@@ -435,13 +521,20 @@ namespace OpFlow {
         T5* target5;
         T6* target6;
         T7* target7;
-        using st_field_type1 = Meta::RealType<decltype(target1->getStencilField())>;
-        using st_field_type2 = Meta::RealType<decltype(target2->getStencilField())>;
-        using st_field_type3 = Meta::RealType<decltype(target3->getStencilField())>;
-        using st_field_type4 = Meta::RealType<decltype(target4->getStencilField())>;
-        using st_field_type5 = Meta::RealType<decltype(target5->getStencilField())>;
-        using st_field_type6 = Meta::RealType<decltype(target6->getStencilField())>;
-        using st_field_type7 = Meta::RealType<decltype(target7->getStencilField())>;
+        using st_field_type1
+                = Meta::RealType<decltype(target1->template getStencilField<std::unordered_map>())>;
+        using st_field_type2
+                = Meta::RealType<decltype(target2->template getStencilField<std::unordered_map>())>;
+        using st_field_type3
+                = Meta::RealType<decltype(target3->template getStencilField<std::unordered_map>())>;
+        using st_field_type4
+                = Meta::RealType<decltype(target4->template getStencilField<std::unordered_map>())>;
+        using st_field_type5
+                = Meta::RealType<decltype(target5->template getStencilField<std::unordered_map>())>;
+        using st_field_type6
+                = Meta::RealType<decltype(target6->template getStencilField<std::unordered_map>())>;
+        using st_field_type7
+                = Meta::RealType<decltype(target7->template getStencilField<std::unordered_map>())>;
         using getter_type1
                 = std::function<E1(st_field_type1&, st_field_type2&, st_field_type3&, st_field_type4&,
                                    st_field_type5&, st_field_type6&, st_field_type7&)>;
@@ -484,13 +577,20 @@ namespace OpFlow {
             : getter1(getter1), getter2(getter2), getter3(getter3), getter4(getter4), getter5(getter5),
               getter6(getter6), getter7(getter7), target1(&target1), target2(&target2), target3(&target3),
               target4(&target4), target5(&target5), target6(&target6), target7(&target7) {
-            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
-            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
-            stField3 = std::make_unique<st_field_type3>(this->target3->getStencilField(3));
-            stField4 = std::make_unique<st_field_type4>(this->target4->getStencilField(4));
-            stField5 = std::make_unique<st_field_type5>(this->target5->getStencilField(5));
-            stField6 = std::make_unique<st_field_type6>(this->target6->getStencilField(6));
-            stField7 = std::make_unique<st_field_type7>(this->target7->getStencilField(7));
+            stField1 = std::make_unique<st_field_type1>(
+                    this->target1->template getStencilField<std::unordered_map>(1));
+            stField2 = std::make_unique<st_field_type2>(
+                    this->target2->template getStencilField<std::unordered_map>(2));
+            stField3 = std::make_unique<st_field_type3>(
+                    this->target3->template getStencilField<std::unordered_map>(3));
+            stField4 = std::make_unique<st_field_type4>(
+                    this->target4->template getStencilField<std::unordered_map>(4));
+            stField5 = std::make_unique<st_field_type5>(
+                    this->target5->template getStencilField<std::unordered_map>(5));
+            stField6 = std::make_unique<st_field_type6>(
+                    this->target6->template getStencilField<std::unordered_map>(6));
+            stField7 = std::make_unique<st_field_type7>(
+                    this->target7->template getStencilField<std::unordered_map>(7));
         }
 
         template <int i>
@@ -529,40 +629,61 @@ namespace OpFlow {
     auto makeEqnHolder(auto&& func1, auto&& func2, auto&& func3, auto&& func4, auto&& func5, auto&& func6,
                        auto&& func7, auto&& target1, auto&& target2, auto&& target3, auto&& target4,
                        auto&& target5, auto&& target6, auto&& target7) {
-        return EqnHolder<Meta::RealType<decltype(func1(target1.getStencilField(), target2.getStencilField(),
-                                                       target3.getStencilField(), target4.getStencilField(),
-                                                       target5.getStencilField(), target6.getStencilField(),
-                                                       target7.getStencilField()))>,
-                         Meta::RealType<decltype(func2(target1.getStencilField(), target2.getStencilField(),
-                                                       target3.getStencilField(), target4.getStencilField(),
-                                                       target5.getStencilField(), target6.getStencilField(),
-                                                       target7.getStencilField()))>,
-                         Meta::RealType<decltype(func3(target1.getStencilField(), target2.getStencilField(),
-                                                       target3.getStencilField(), target4.getStencilField(),
-                                                       target5.getStencilField(), target6.getStencilField(),
-                                                       target7.getStencilField()))>,
-                         Meta::RealType<decltype(func4(target1.getStencilField(), target2.getStencilField(),
-                                                       target3.getStencilField(), target4.getStencilField(),
-                                                       target5.getStencilField(), target6.getStencilField(),
-                                                       target7.getStencilField()))>,
-                         Meta::RealType<decltype(func5(target1.getStencilField(), target2.getStencilField(),
-                                                       target3.getStencilField(), target4.getStencilField(),
-                                                       target5.getStencilField(), target6.getStencilField(),
-                                                       target7.getStencilField()))>,
-                         Meta::RealType<decltype(func6(target1.getStencilField(), target2.getStencilField(),
-                                                       target3.getStencilField(), target4.getStencilField(),
-                                                       target5.getStencilField(), target6.getStencilField(),
-                                                       target7.getStencilField()))>,
-                         Meta::RealType<decltype(func7(target1.getStencilField(), target2.getStencilField(),
-                                                       target3.getStencilField(), target4.getStencilField(),
-                                                       target5.getStencilField(), target6.getStencilField(),
-                                                       target7.getStencilField()))>,
-                         Meta::RealType<decltype(target1)>, Meta::RealType<decltype(target2)>,
-                         Meta::RealType<decltype(target3)>, Meta::RealType<decltype(target4)>,
-                         Meta::RealType<decltype(target5)>, Meta::RealType<decltype(target6)>,
-                         Meta::RealType<decltype(target7)>>(func1, func2, func3, func4, func5, func6, func7,
-                                                            target1, target2, target3, target4, target5,
-                                                            target6, target7);
+        return EqnHolder<
+                Meta::RealType<decltype(func1(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func2(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func3(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func4(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func5(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func6(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func7(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(target1)>, Meta::RealType<decltype(target2)>,
+                Meta::RealType<decltype(target3)>, Meta::RealType<decltype(target4)>,
+                Meta::RealType<decltype(target5)>, Meta::RealType<decltype(target6)>,
+                Meta::RealType<decltype(target7)>>(func1, func2, func3, func4, func5, func6, func7, target1,
+                                                   target2, target3, target4, target5, target6, target7);
     }
 
     template <typename E1, typename E2, typename E3, typename E4, typename E5, typename E6, typename E7,
@@ -577,14 +698,22 @@ namespace OpFlow {
         T6* target6;
         T7* target7;
         T8* target8;
-        using st_field_type1 = Meta::RealType<decltype(target1->getStencilField())>;
-        using st_field_type2 = Meta::RealType<decltype(target2->getStencilField())>;
-        using st_field_type3 = Meta::RealType<decltype(target3->getStencilField())>;
-        using st_field_type4 = Meta::RealType<decltype(target4->getStencilField())>;
-        using st_field_type5 = Meta::RealType<decltype(target5->getStencilField())>;
-        using st_field_type6 = Meta::RealType<decltype(target6->getStencilField())>;
-        using st_field_type7 = Meta::RealType<decltype(target7->getStencilField())>;
-        using st_field_type8 = Meta::RealType<decltype(target8->getStencilField())>;
+        using st_field_type1
+                = Meta::RealType<decltype(target1->template getStencilField<std::unordered_map>())>;
+        using st_field_type2
+                = Meta::RealType<decltype(target2->template getStencilField<std::unordered_map>())>;
+        using st_field_type3
+                = Meta::RealType<decltype(target3->template getStencilField<std::unordered_map>())>;
+        using st_field_type4
+                = Meta::RealType<decltype(target4->template getStencilField<std::unordered_map>())>;
+        using st_field_type5
+                = Meta::RealType<decltype(target5->template getStencilField<std::unordered_map>())>;
+        using st_field_type6
+                = Meta::RealType<decltype(target6->template getStencilField<std::unordered_map>())>;
+        using st_field_type7
+                = Meta::RealType<decltype(target7->template getStencilField<std::unordered_map>())>;
+        using st_field_type8
+                = Meta::RealType<decltype(target8->template getStencilField<std::unordered_map>())>;
         using getter_type1
                 = std::function<E1(st_field_type1&, st_field_type2&, st_field_type3&, st_field_type4&,
                                    st_field_type5&, st_field_type6&, st_field_type7&, st_field_type8&)>;
@@ -634,14 +763,22 @@ namespace OpFlow {
               getter6(getter6), getter7(getter7), getter8(getter8), target1(&target1), target2(&target2),
               target3(&target3), target4(&target4), target5(&target5), target6(&target6), target7(&target7),
               target8(&target8) {
-            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
-            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
-            stField3 = std::make_unique<st_field_type3>(this->target3->getStencilField(3));
-            stField4 = std::make_unique<st_field_type4>(this->target4->getStencilField(4));
-            stField5 = std::make_unique<st_field_type5>(this->target5->getStencilField(5));
-            stField6 = std::make_unique<st_field_type6>(this->target6->getStencilField(6));
-            stField7 = std::make_unique<st_field_type7>(this->target7->getStencilField(7));
-            stField8 = std::make_unique<st_field_type8>(this->target8->getStencilField(8));
+            stField1 = std::make_unique<st_field_type1>(
+                    this->target1->template getStencilField<std::unordered_map>(1));
+            stField2 = std::make_unique<st_field_type2>(
+                    this->target2->template getStencilField<std::unordered_map>(2));
+            stField3 = std::make_unique<st_field_type3>(
+                    this->target3->template getStencilField<std::unordered_map>(3));
+            stField4 = std::make_unique<st_field_type4>(
+                    this->target4->template getStencilField<std::unordered_map>(4));
+            stField5 = std::make_unique<st_field_type5>(
+                    this->target5->template getStencilField<std::unordered_map>(5));
+            stField6 = std::make_unique<st_field_type6>(
+                    this->target6->template getStencilField<std::unordered_map>(6));
+            stField7 = std::make_unique<st_field_type7>(
+                    this->target7->template getStencilField<std::unordered_map>(7));
+            stField8 = std::make_unique<st_field_type8>(
+                    this->target8->template getStencilField<std::unordered_map>(8));
         }
 
         template <int i>
@@ -693,38 +830,70 @@ namespace OpFlow {
                        auto&& func7, auto&& func8, auto&& target1, auto&& target2, auto&& target3,
                        auto&& target4, auto&& target5, auto&& target6, auto&& target7, auto&& target8) {
         return EqnHolder<
-                Meta::RealType<decltype(func1(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField(),
-                                              target7.getStencilField(), target8.getStencilField()))>,
-                Meta::RealType<decltype(func2(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField(),
-                                              target7.getStencilField(), target8.getStencilField()))>,
-                Meta::RealType<decltype(func3(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField(),
-                                              target7.getStencilField(), target8.getStencilField()))>,
-                Meta::RealType<decltype(func4(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField(),
-                                              target7.getStencilField(), target8.getStencilField()))>,
-                Meta::RealType<decltype(func5(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField(),
-                                              target7.getStencilField(), target8.getStencilField()))>,
-                Meta::RealType<decltype(func6(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField(),
-                                              target7.getStencilField(), target8.getStencilField()))>,
-                Meta::RealType<decltype(func7(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField(),
-                                              target7.getStencilField(), target8.getStencilField()))>,
-                Meta::RealType<decltype(func8(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField(),
-                                              target7.getStencilField(), target8.getStencilField()))>,
+                Meta::RealType<decltype(func1(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func2(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func3(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func4(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func5(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func6(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func7(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func8(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>()))>,
                 Meta::RealType<decltype(target1)>, Meta::RealType<decltype(target2)>,
                 Meta::RealType<decltype(target3)>, Meta::RealType<decltype(target4)>,
                 Meta::RealType<decltype(target5)>, Meta::RealType<decltype(target6)>,
@@ -746,15 +915,24 @@ namespace OpFlow {
         T7* target7;
         T8* target8;
         T9* target9;
-        using st_field_type1 = Meta::RealType<decltype(target1->getStencilField())>;
-        using st_field_type2 = Meta::RealType<decltype(target2->getStencilField())>;
-        using st_field_type3 = Meta::RealType<decltype(target3->getStencilField())>;
-        using st_field_type4 = Meta::RealType<decltype(target4->getStencilField())>;
-        using st_field_type5 = Meta::RealType<decltype(target5->getStencilField())>;
-        using st_field_type6 = Meta::RealType<decltype(target6->getStencilField())>;
-        using st_field_type7 = Meta::RealType<decltype(target7->getStencilField())>;
-        using st_field_type8 = Meta::RealType<decltype(target8->getStencilField())>;
-        using st_field_type9 = Meta::RealType<decltype(target9->getStencilField())>;
+        using st_field_type1
+                = Meta::RealType<decltype(target1->template getStencilField<std::unordered_map>())>;
+        using st_field_type2
+                = Meta::RealType<decltype(target2->template getStencilField<std::unordered_map>())>;
+        using st_field_type3
+                = Meta::RealType<decltype(target3->template getStencilField<std::unordered_map>())>;
+        using st_field_type4
+                = Meta::RealType<decltype(target4->template getStencilField<std::unordered_map>())>;
+        using st_field_type5
+                = Meta::RealType<decltype(target5->template getStencilField<std::unordered_map>())>;
+        using st_field_type6
+                = Meta::RealType<decltype(target6->template getStencilField<std::unordered_map>())>;
+        using st_field_type7
+                = Meta::RealType<decltype(target7->template getStencilField<std::unordered_map>())>;
+        using st_field_type8
+                = Meta::RealType<decltype(target8->template getStencilField<std::unordered_map>())>;
+        using st_field_type9
+                = Meta::RealType<decltype(target9->template getStencilField<std::unordered_map>())>;
         using getter_type1 = std::function<E1(st_field_type1&, st_field_type2&, st_field_type3&,
                                               st_field_type4&, st_field_type5&, st_field_type6&,
                                               st_field_type7&, st_field_type8&, st_field_type9&)>;
@@ -809,15 +987,24 @@ namespace OpFlow {
               getter6(getter6), getter7(getter7), getter8(getter8), getter9(getter9), target1(&target1),
               target2(&target2), target3(&target3), target4(&target4), target5(&target5), target6(&target6),
               target7(&target7), target8(&target8), target9(&target9) {
-            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
-            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
-            stField3 = std::make_unique<st_field_type3>(this->target3->getStencilField(3));
-            stField4 = std::make_unique<st_field_type4>(this->target4->getStencilField(4));
-            stField5 = std::make_unique<st_field_type5>(this->target5->getStencilField(5));
-            stField6 = std::make_unique<st_field_type6>(this->target6->getStencilField(6));
-            stField7 = std::make_unique<st_field_type7>(this->target7->getStencilField(7));
-            stField8 = std::make_unique<st_field_type8>(this->target8->getStencilField(8));
-            stField9 = std::make_unique<st_field_type9>(this->target9->getStencilField(9));
+            stField1 = std::make_unique<st_field_type1>(
+                    this->target1->template getStencilField<std::unordered_map>(1));
+            stField2 = std::make_unique<st_field_type2>(
+                    this->target2->template getStencilField<std::unordered_map>(2));
+            stField3 = std::make_unique<st_field_type3>(
+                    this->target3->template getStencilField<std::unordered_map>(3));
+            stField4 = std::make_unique<st_field_type4>(
+                    this->target4->template getStencilField<std::unordered_map>(4));
+            stField5 = std::make_unique<st_field_type5>(
+                    this->target5->template getStencilField<std::unordered_map>(5));
+            stField6 = std::make_unique<st_field_type6>(
+                    this->target6->template getStencilField<std::unordered_map>(6));
+            stField7 = std::make_unique<st_field_type7>(
+                    this->target7->template getStencilField<std::unordered_map>(7));
+            stField8 = std::make_unique<st_field_type8>(
+                    this->target8->template getStencilField<std::unordered_map>(8));
+            stField9 = std::make_unique<st_field_type9>(
+                    this->target9->template getStencilField<std::unordered_map>(9));
         }
 
         template <int i>
@@ -875,42 +1062,87 @@ namespace OpFlow {
                        auto&& target3, auto&& target4, auto&& target5, auto&& target6, auto&& target7,
                        auto&& target8, auto&& target9) {
         return EqnHolder<
-                Meta::RealType<decltype(func1(
-                        target1.getStencilField(), target2.getStencilField(), target3.getStencilField(),
-                        target4.getStencilField(), target5.getStencilField(), target6.getStencilField(),
-                        target7.getStencilField(), target8.getStencilField(), target9.getStencilField()))>,
-                Meta::RealType<decltype(func2(
-                        target1.getStencilField(), target2.getStencilField(), target3.getStencilField(),
-                        target4.getStencilField(), target5.getStencilField(), target6.getStencilField(),
-                        target7.getStencilField(), target8.getStencilField(), target9.getStencilField()))>,
-                Meta::RealType<decltype(func3(
-                        target1.getStencilField(), target2.getStencilField(), target3.getStencilField(),
-                        target4.getStencilField(), target5.getStencilField(), target6.getStencilField(),
-                        target7.getStencilField(), target8.getStencilField(), target9.getStencilField()))>,
-                Meta::RealType<decltype(func4(
-                        target1.getStencilField(), target2.getStencilField(), target3.getStencilField(),
-                        target4.getStencilField(), target5.getStencilField(), target6.getStencilField(),
-                        target7.getStencilField(), target8.getStencilField(), target9.getStencilField()))>,
-                Meta::RealType<decltype(func5(
-                        target1.getStencilField(), target2.getStencilField(), target3.getStencilField(),
-                        target4.getStencilField(), target5.getStencilField(), target6.getStencilField(),
-                        target7.getStencilField(), target8.getStencilField(), target9.getStencilField()))>,
-                Meta::RealType<decltype(func6(
-                        target1.getStencilField(), target2.getStencilField(), target3.getStencilField(),
-                        target4.getStencilField(), target5.getStencilField(), target6.getStencilField(),
-                        target7.getStencilField(), target8.getStencilField(), target9.getStencilField()))>,
-                Meta::RealType<decltype(func7(
-                        target1.getStencilField(), target2.getStencilField(), target3.getStencilField(),
-                        target4.getStencilField(), target5.getStencilField(), target6.getStencilField(),
-                        target7.getStencilField(), target8.getStencilField(), target9.getStencilField()))>,
-                Meta::RealType<decltype(func8(
-                        target1.getStencilField(), target2.getStencilField(), target3.getStencilField(),
-                        target4.getStencilField(), target5.getStencilField(), target6.getStencilField(),
-                        target7.getStencilField(), target8.getStencilField(), target9.getStencilField()))>,
-                Meta::RealType<decltype(func9(
-                        target1.getStencilField(), target2.getStencilField(), target3.getStencilField(),
-                        target4.getStencilField(), target5.getStencilField(), target6.getStencilField(),
-                        target7.getStencilField(), target8.getStencilField(), target9.getStencilField()))>,
+                Meta::RealType<decltype(func1(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func2(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func3(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func4(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func5(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func6(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func7(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func8(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func9(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>()))>,
                 Meta::RealType<decltype(target1)>, Meta::RealType<decltype(target2)>,
                 Meta::RealType<decltype(target3)>, Meta::RealType<decltype(target4)>,
                 Meta::RealType<decltype(target5)>, Meta::RealType<decltype(target6)>,
@@ -934,16 +1166,26 @@ namespace OpFlow {
         T8* target8;
         T9* target9;
         T10* target10;
-        using st_field_type1 = Meta::RealType<decltype(target1->getStencilField())>;
-        using st_field_type2 = Meta::RealType<decltype(target2->getStencilField())>;
-        using st_field_type3 = Meta::RealType<decltype(target3->getStencilField())>;
-        using st_field_type4 = Meta::RealType<decltype(target4->getStencilField())>;
-        using st_field_type5 = Meta::RealType<decltype(target5->getStencilField())>;
-        using st_field_type6 = Meta::RealType<decltype(target6->getStencilField())>;
-        using st_field_type7 = Meta::RealType<decltype(target7->getStencilField())>;
-        using st_field_type8 = Meta::RealType<decltype(target8->getStencilField())>;
-        using st_field_type9 = Meta::RealType<decltype(target9->getStencilField())>;
-        using st_field_type10 = Meta::RealType<decltype(target10->getStencilField())>;
+        using st_field_type1
+                = Meta::RealType<decltype(target1->template getStencilField<std::unordered_map>())>;
+        using st_field_type2
+                = Meta::RealType<decltype(target2->template getStencilField<std::unordered_map>())>;
+        using st_field_type3
+                = Meta::RealType<decltype(target3->template getStencilField<std::unordered_map>())>;
+        using st_field_type4
+                = Meta::RealType<decltype(target4->template getStencilField<std::unordered_map>())>;
+        using st_field_type5
+                = Meta::RealType<decltype(target5->template getStencilField<std::unordered_map>())>;
+        using st_field_type6
+                = Meta::RealType<decltype(target6->template getStencilField<std::unordered_map>())>;
+        using st_field_type7
+                = Meta::RealType<decltype(target7->template getStencilField<std::unordered_map>())>;
+        using st_field_type8
+                = Meta::RealType<decltype(target8->template getStencilField<std::unordered_map>())>;
+        using st_field_type9
+                = Meta::RealType<decltype(target9->template getStencilField<std::unordered_map>())>;
+        using st_field_type10
+                = Meta::RealType<decltype(target10->template getStencilField<std::unordered_map>())>;
         using getter_type1 = std::function<E1(
                 st_field_type1&, st_field_type2&, st_field_type3&, st_field_type4&, st_field_type5&,
                 st_field_type6&, st_field_type7&, st_field_type8&, st_field_type9&, st_field_type10&)>;
@@ -1004,16 +1246,26 @@ namespace OpFlow {
               target1(&target1), target2(&target2), target3(&target3), target4(&target4), target5(&target5),
               target6(&target6), target7(&target7), target8(&target8), target9(&target9),
               target10(&target10) {
-            stField1 = std::make_unique<st_field_type1>(this->target1->getStencilField(1));
-            stField2 = std::make_unique<st_field_type2>(this->target2->getStencilField(2));
-            stField3 = std::make_unique<st_field_type3>(this->target3->getStencilField(3));
-            stField4 = std::make_unique<st_field_type4>(this->target4->getStencilField(4));
-            stField5 = std::make_unique<st_field_type5>(this->target5->getStencilField(5));
-            stField6 = std::make_unique<st_field_type6>(this->target6->getStencilField(6));
-            stField7 = std::make_unique<st_field_type7>(this->target7->getStencilField(7));
-            stField8 = std::make_unique<st_field_type8>(this->target8->getStencilField(8));
-            stField9 = std::make_unique<st_field_type9>(this->target9->getStencilField(9));
-            stField10 = std::make_unique<st_field_type10>(this->target10->getStencilField(10));
+            stField1 = std::make_unique<st_field_type1>(
+                    this->target1->template getStencilField<std::unordered_map>(1));
+            stField2 = std::make_unique<st_field_type2>(
+                    this->target2->template getStencilField<std::unordered_map>(2));
+            stField3 = std::make_unique<st_field_type3>(
+                    this->target3->template getStencilField<std::unordered_map>(3));
+            stField4 = std::make_unique<st_field_type4>(
+                    this->target4->template getStencilField<std::unordered_map>(4));
+            stField5 = std::make_unique<st_field_type5>(
+                    this->target5->template getStencilField<std::unordered_map>(5));
+            stField6 = std::make_unique<st_field_type6>(
+                    this->target6->template getStencilField<std::unordered_map>(6));
+            stField7 = std::make_unique<st_field_type7>(
+                    this->target7->template getStencilField<std::unordered_map>(7));
+            stField8 = std::make_unique<st_field_type8>(
+                    this->target8->template getStencilField<std::unordered_map>(8));
+            stField9 = std::make_unique<st_field_type9>(
+                    this->target9->template getStencilField<std::unordered_map>(9));
+            stField10 = std::make_unique<st_field_type10>(
+                    this->target10->template getStencilField<std::unordered_map>(10));
         }
 
         template <int i>
@@ -1076,56 +1328,106 @@ namespace OpFlow {
                        auto&& target2, auto&& target3, auto&& target4, auto&& target5, auto&& target6,
                        auto&& target7, auto&& target8, auto&& target9, auto&& target10) {
         return EqnHolder<
-                Meta::RealType<decltype(func1(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField(),
-                                              target7.getStencilField(), target8.getStencilField(),
-                                              target9.getStencilField(), target10.getStencilField()))>,
-                Meta::RealType<decltype(func2(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField(),
-                                              target7.getStencilField(), target8.getStencilField(),
-                                              target9.getStencilField(), target10.getStencilField()))>,
-                Meta::RealType<decltype(func3(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField(),
-                                              target7.getStencilField(), target8.getStencilField(),
-                                              target9.getStencilField(), target10.getStencilField()))>,
-                Meta::RealType<decltype(func4(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField(),
-                                              target7.getStencilField(), target8.getStencilField(),
-                                              target9.getStencilField(), target10.getStencilField()))>,
-                Meta::RealType<decltype(func5(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField(),
-                                              target7.getStencilField(), target8.getStencilField(),
-                                              target9.getStencilField(), target10.getStencilField()))>,
-                Meta::RealType<decltype(func6(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField(),
-                                              target7.getStencilField(), target8.getStencilField(),
-                                              target9.getStencilField(), target10.getStencilField()))>,
-                Meta::RealType<decltype(func7(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField(),
-                                              target7.getStencilField(), target8.getStencilField(),
-                                              target9.getStencilField(), target10.getStencilField()))>,
-                Meta::RealType<decltype(func8(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField(),
-                                              target7.getStencilField(), target8.getStencilField(),
-                                              target9.getStencilField(), target10.getStencilField()))>,
-                Meta::RealType<decltype(func9(target1.getStencilField(), target2.getStencilField(),
-                                              target3.getStencilField(), target4.getStencilField(),
-                                              target5.getStencilField(), target6.getStencilField(),
-                                              target7.getStencilField(), target8.getStencilField(),
-                                              target9.getStencilField(), target10.getStencilField()))>,
-                Meta::RealType<decltype(func10(target1.getStencilField(), target2.getStencilField(),
-                                               target3.getStencilField(), target4.getStencilField(),
-                                               target5.getStencilField(), target6.getStencilField(),
-                                               target7.getStencilField(), target8.getStencilField(),
-                                               target9.getStencilField(), target10.getStencilField()))>,
+                Meta::RealType<decltype(func1(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>(),
+                                              target10.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func2(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>(),
+                                              target10.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func3(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>(),
+                                              target10.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func4(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>(),
+                                              target10.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func5(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>(),
+                                              target10.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func6(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>(),
+                                              target10.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func7(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>(),
+                                              target10.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func8(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>(),
+                                              target10.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func9(target1.template getStencilField<std::unordered_map>(),
+                                              target2.template getStencilField<std::unordered_map>(),
+                                              target3.template getStencilField<std::unordered_map>(),
+                                              target4.template getStencilField<std::unordered_map>(),
+                                              target5.template getStencilField<std::unordered_map>(),
+                                              target6.template getStencilField<std::unordered_map>(),
+                                              target7.template getStencilField<std::unordered_map>(),
+                                              target8.template getStencilField<std::unordered_map>(),
+                                              target9.template getStencilField<std::unordered_map>(),
+                                              target10.template getStencilField<std::unordered_map>()))>,
+                Meta::RealType<decltype(func10(target1.template getStencilField<std::unordered_map>(),
+                                               target2.template getStencilField<std::unordered_map>(),
+                                               target3.template getStencilField<std::unordered_map>(),
+                                               target4.template getStencilField<std::unordered_map>(),
+                                               target5.template getStencilField<std::unordered_map>(),
+                                               target6.template getStencilField<std::unordered_map>(),
+                                               target7.template getStencilField<std::unordered_map>(),
+                                               target8.template getStencilField<std::unordered_map>(),
+                                               target9.template getStencilField<std::unordered_map>(),
+                                               target10.template getStencilField<std::unordered_map>()))>,
                 Meta::RealType<decltype(target1)>, Meta::RealType<decltype(target2)>,
                 Meta::RealType<decltype(target3)>, Meta::RealType<decltype(target4)>,
                 Meta::RealType<decltype(target5)>, Meta::RealType<decltype(target6)>,

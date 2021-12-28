@@ -27,15 +27,16 @@
 
 namespace OpFlow {
 
-    template <StructuredFieldExprType T>
-    struct StencilField<T> : internal::StructuredFieldExprTrait<T>::template twin_type<StencilField<T>> {
+    template <StructuredFieldExprType T, template <typename, typename> typename map_impl>
+    struct StencilField<T, map_impl>
+        : internal::StructuredFieldExprTrait<T>::template twin_type<StencilField<T, map_impl>> {
         std::array<DS::Pair<std::unique_ptr<BCBase<StencilField>>>, internal::ExprTrait<StencilField>::dim>
                 bc;
         int color = 0;
 
         StencilField() = default;
         StencilField(const StencilField& other)
-            : internal::StructuredFieldExprTrait<T>::template twin_type<StencilField<T>>(other),
+            : internal::StructuredFieldExprTrait<T>::template twin_type<StencilField>(other),
               base(other.base), pinned(other.pinned), color(other.color) {
             for (auto i = 0; i < internal::ExprTrait<StencilField>::dim; ++i) {
                 bc[i].start = other.bc[i].start ? other.bc[i].start->getCopy() : nullptr;
@@ -352,13 +353,14 @@ namespace OpFlow {
         constexpr static auto dim = internal::MeshBasedFieldExprTrait<T>::dim;
     };
 
-    template <CartAMRFieldType T>
-    struct StencilField<T> : CartAMRFieldExpr<StencilField<T>> {
+    template <CartAMRFieldType T, template <typename, typename> typename map_impl>
+    struct StencilField<T, map_impl> : CartAMRFieldExpr<StencilField<T, map_impl>> {
         using index_type = typename internal::ExprTrait<T>::index_type;
 
     private:
-        std::vector<std::vector<typename internal::ExprTrait<typename internal::ExprTrait<
-                T>::template other_type<DS::StencilPad<DS::ColoredIndex<index_type>>>>::container_type>>
+        std::vector<
+                std::vector<typename internal::ExprTrait<typename internal::ExprTrait<T>::template other_type<
+                        DS::StencilPad<DS::ColoredIndex<index_type>, map_impl>>>::container_type>>
                 data;
         std::vector<std::vector<typename internal::ExprTrait<
                 typename internal::ExprTrait<T>::template other_type<bool>>::container_type>>
@@ -369,10 +371,10 @@ namespace OpFlow {
     public:
         StencilField() = default;
         StencilField(const StencilField& other)
-            : CartAMRFieldExpr<StencilField<T>>(other), data(other.data), block_mark(other.block_mark),
+            : CartAMRFieldExpr<StencilField>(other), data(other.data), block_mark(other.block_mark),
               offset(other.offset) {}
         StencilField(StencilField&& other) noexcept
-            : CartAMRFieldExpr<StencilField<T>>(std::move(other)), data(std::move(other.data)),
+            : CartAMRFieldExpr<StencilField>(std::move(other)), data(std::move(other.data)),
               block_mark(std::move(other.block_mark)), offset(std::move(other.offset)) {}
         explicit StencilField(const T& base, int color) : color(color) {
             this->name = fmt::format("StencilField({})", base.name);
