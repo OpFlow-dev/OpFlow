@@ -22,7 +22,7 @@ namespace OpFlow::DS {
     template <typename K, typename V>
     struct fake_map {
     private:
-        std::array<std::pair<K, V>, 21> val;
+        std::array<std::pair<K, V>, 30> val;
 
         int _size = 0;
 
@@ -32,8 +32,29 @@ namespace OpFlow::DS {
         bool operator==(const fake_map& other) const {
             bool ret = _size == other._size;
             if (!ret) return false;
-            for (auto i = 0; i < _size; ++i) ret &= val[i] == other.val[i];
+            for (auto i = 0; i < _size; ++i) {
+                auto iter = other.find(val[i].first);
+                ret &= iter != other.end() && val[i].second == iter->second;
+            }
             return ret;
+        }
+
+        auto& at(const K& key) {
+            auto iter = find(key);
+            if (iter != end()) return iter->second;
+            else {
+                OP_CRITICAL("fake map error: Key {} out of range", key.toString());
+                OP_ABORT;
+            }
+        }
+
+        const auto& at(const K& key) const {
+            auto iter = find(key);
+            if (iter != end()) return iter->second;
+            else {
+                OP_CRITICAL("fake map error: Key {} out of range", key.toString());
+                OP_ABORT;
+            }
         }
 
         auto& operator[](const K& key) {
@@ -54,6 +75,7 @@ namespace OpFlow::DS {
         }
 
         auto size() const { return _size; }
+        void clear() { _size = 0; }
 
         auto find(const K& k) {
             for (auto iter = val.begin(); iter != end(); ++iter) {
@@ -178,6 +200,10 @@ namespace OpFlow::DS {
         }
 
         void sort() { pad.sort(); }
+        void reset() {
+            pad.clear();
+            bias = 0.;
+        }
     };
 
     template <typename Idx, template <typename, typename> typename map_impl>

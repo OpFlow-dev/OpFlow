@@ -38,7 +38,7 @@ namespace OpFlow {
         struct ExprTrait<StencilField<T, map_impl>>
             : ExprTrait<typename SemiStructuredFieldExprTrait<T>::template other_type<DS::StencilPad<
                       DS::ColoredIndex<typename SemiStructuredFieldExprTrait<T>::index_type>, map_impl>>> {
-            static constexpr auto access_flag = 0;
+            static constexpr auto access_flag = HasDirectAccess | HasWriteAccess;
             using type = StencilField<typename SemiStructuredFieldExprTrait<T>::type, map_impl>;
         };
     }// namespace internal

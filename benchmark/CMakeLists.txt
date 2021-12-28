@@ -26,3 +26,4 @@ function(add_bench name)
 endfunction()
 
 add_subdirectory(Core)
+add_subdirectory(DataStructure)
