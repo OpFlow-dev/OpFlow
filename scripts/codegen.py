@@ -87,20 +87,38 @@ struct EqnHolder<{}, {}> {{
                 concat_repeat(lambda j: "E{}".format(j), ",", 1, i),
                 concat_repeat(lambda j: "T{}".format(j), ",", 1, i),
                 concat_repeat(lambda j: "T{}* target{};".format(j, j), "\n", 1, i),
-                concat_repeat(lambda j: "using st_field_type{} = Meta::RealType<decltype(target{}->template getStencilField<{}>())>;".format(j, j, "std::unordered_map" if i > 1 else "DS::fake_map"), "\n", 1, i),
-                concat_repeat(lambda j: "using getter_type{} = std::function<E{}({})>;".format(j, j, concat_repeat(lambda k: "st_field_type{}&".format(k), ",", 1, i)), "\n", 1, i),
+                concat_repeat(lambda
+                                  j: "using st_field_type{} = Meta::RealType<decltype(target{}->template getStencilField<{}>())>;".format(
+                    j, j, "std::unordered_map" if i > 1 else "DS::fake_map"), "\n", 1, i),
+                concat_repeat(lambda j: "using getter_type{} = std::function<E{}({})>;".format(j, j, concat_repeat(
+                    lambda k: "st_field_type{}&".format(k), ",", 1, i)), "\n", 1, i),
                 concat_repeat(lambda j: "std::unique_ptr<st_field_type{}> stField{};".format(j, j), "\n", 1, i),
                 concat_repeat(lambda j: "getter_type{} getter{};".format(j, j), "\n", 1, i),
                 concat_repeat(lambda j: "getter_type{} getter{}".format(j, j), ",", 1, i),
-                concat_repeat(lambda j : "T{}& target{}".format(j, j), ",", 1, i),
+                concat_repeat(lambda j: "T{}& target{}".format(j, j), ",", 1, i),
                 concat_repeat(lambda j: "getter{}(getter{})".format(j, j), ",", 1, i),
                 concat_repeat(lambda j: "target{}(&target{})".format(j, j), ",", 1, i),
-                concat_repeat(lambda j: "stField{} = std::make_unique<st_field_type{}>(this->target{}->template getStencilField<{}>({}));".format(j, j, j, "std::unordered_map" if i > 1 else "DS::fake_map", j), "\n", 1, i),
-                concat_repeat(lambda j: "if constexpr(i == {}) {{ auto eqn = getter{}({}); return eqn.lhs - eqn.rhs; }}".format(j, j, concat_repeat(lambda k: "*target{}".format(k), ",", 1, i)), "\n", 1, i),
+                concat_repeat(lambda
+                                  j: "stField{} = std::make_unique<st_field_type{}>(this->target{}->template getStencilField<{}>({}));".format(
+                    j, j, j, "std::unordered_map" if i > 1 else "DS::fake_map", j), "\n", 1, i),
+                concat_repeat(
+                    lambda j: "if constexpr(i == {}) {{ auto eqn = getter{}({}); return eqn.lhs - eqn.rhs; }}".format(j,
+                                                                                                                      j,
+                                                                                                                      concat_repeat(
+                                                                                                                          lambda
+                                                                                                                              k: "*target{}".format(
+                                                                                                                              k),
+                                                                                                                          ",",
+                                                                                                                          1,
+                                                                                                                          i)),
+                    "\n", 1, i),
                 concat_repeat(lambda j: "if constexpr(i == {}) return target{};".format(j, j), "\n", 1, i),
                 concat_repeat(lambda j: "auto&& func{}".format(j), ",", 1, i),
                 concat_repeat(lambda j: "auto&& target{}".format(j), ",", 1, i),
-                concat_repeat(lambda j: "Meta::RealType<decltype(func{}({}))>".format(j, concat_repeat(lambda k: "target{}.template getStencilField<{}>()".format(k, "std::unordered_map" if i > 1 else "DS::fake_map"), ",", 1, i)), ",", 1, i),
+                concat_repeat(lambda j: "Meta::RealType<decltype(func{}({}))>".format(j, concat_repeat(
+                    lambda k: "target{}.template getStencilField<{}>()".format(k,
+                                                                               "std::unordered_map" if i > 1 else "DS::fake_map"),
+                    ",", 1, i)), ",", 1, i),
                 concat_repeat(lambda j: "Meta::RealType<decltype(target{})>".format(j), ",", 1, i),
                 concat_repeat(lambda j: "func{}".format(j), ",", 1, i),
                 concat_repeat(lambda j: "target{}".format(j), ",", 1, i)
@@ -240,6 +258,68 @@ struct Expression<Op, {}> : ResultType<Op, {}>::type {{
         ''')
 
 
+def gen_stencil_holder_hpp(n=10):
+    with open("./StencilHolder.hpp", "w") as f:
+        f.write(common_header)
+        f.write('''
+#ifndef OPFLOW_STENCILHOLDER_HPP
+#define OPFLOW_STENCILHOLDER_HPP
+
+#include "Core/Equation/EquationHolder.hpp"
+#include "DataStructures/StencilPad.hpp"
+#include "Core/Macros.hpp"
+
+namespace OpFlow {
+    template <typename ... E>
+    struct StencilHolder;
+    
+        ''')
+        # generate template with 1...n equations
+        for i in range(1, n + 1):
+            f.write('''template <{}, {}>
+struct StencilHolder<{}, {}> {{
+    {}
+    {}
+    using stencil_type = typename internal::ExprTrait<E1>::elem_type;
+    std::array<stencil_type, {}> comm_stencils;
+    
+    StencilHolder({}, {}) : {}, {} {{ init_comm_stencils(); }}
+    
+    void init_comm_stencils() {{
+        {}
+    }}
+    
+    template <int i>
+    auto& getEqnExpr() {{
+        {}
+    }}
+    
+    template <int i>
+    auto getTarget() {{
+        {}
+    }}
+    }};
+    
+    '''.format(
+                concat_repeat(lambda j: "typename E{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "typename T{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "E{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "T{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "T{}* target{};".format(j, j), "\n", 1, i),
+                concat_repeat(lambda j: "E{} eqn_expr{};".format(j, j), "\n", 1, i),
+                i,
+                concat_repeat(lambda j: "E{}&& e{}".format(j, j), ",", 1, i),
+                concat_repeat(lambda j: "T{}* t{}".format(j, j), ",", 1, i),
+                concat_repeat(lambda j: "eqn_expr{}(std::move(e{}))".format(j, j), ",", 1, i),
+                concat_repeat(lambda j: "target{}(t{})".format(j, j), ",", 1, i),
+                concat_repeat(lambda j: "comm_stencils[{}] = eqn_expr{}[target{}->assignableRange.center()];".format(j-1, j, j), "\n", 1, i),
+                concat_repeat(lambda j: "if constexpr(i == {}) return eqn_expr{};".format(j, j), "\n", 1, i),
+                concat_repeat(lambda j: "if constexpr(i == {}) return target{};".format(j, j), "\n", 1, i)
+            ))
+        f.write("}\n#endif")
+
+
 if __name__ == "__main__":
     gen_equation_holder_hpp()
     gen_expression_hpp()
+    gen_stencil_holder_hpp()
