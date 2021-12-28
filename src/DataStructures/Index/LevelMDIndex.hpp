@@ -3,6 +3,7 @@
 
 #include "DataStructures/Index/MDIndex.hpp"
 #include "Math/Function/Numeric.hpp"
+#include "Utils/xxHash.hpp"
 #include <array>
 
 namespace OpFlow::DS {
@@ -92,4 +93,14 @@ namespace OpFlow::DS {
         explicit operator MDIndex<d>() const { return MDIndex<d>(get()); }
     };
 }// namespace OpFlow::DS
+
+namespace std {
+    template <std::size_t d>
+    struct hash<OpFlow::DS::LevelMDIndex<d>> {
+        std::size_t operator()(const OpFlow::DS::LevelMDIndex<d>& i) const noexcept {
+            auto idx = i.get();
+            return XXHash64::hash(idx.data(), idx.size() * sizeof(int), 0);
+        }
+    };
+}
 #endif//OPFLOW_LEVELMDINDEX_HPP

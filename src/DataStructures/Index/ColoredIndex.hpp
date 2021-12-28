@@ -258,4 +258,22 @@ namespace OpFlow::DS {
     };
 }// namespace OpFlow::DS
 
+namespace std {
+    template <std::size_t d>
+    struct hash<OpFlow::DS::ColoredIndex<OpFlow::DS::MDIndex<d>>> {
+        std::size_t operator()(OpFlow::DS::ColoredIndex<OpFlow::DS::MDIndex<d>> const& i) const noexcept {
+            auto idx = i.get();
+            return XXHash64::hash(idx.data(), idx.size() * sizeof(int), 0);
+        }
+    };
+
+    template <std::size_t d>
+    struct hash<OpFlow::DS::ColoredIndex<OpFlow::DS::LevelMDIndex<d>>> {
+        std::size_t operator()(const OpFlow::DS::ColoredIndex<OpFlow::DS::LevelMDIndex<d>>& i) const noexcept {
+            auto idx = i.get();
+            return XXHash64::hash(idx.data(), idx.size() * sizeof(int), 0);
+        }
+    };
+}// namespace std
+
 #endif//OPFLOW_COLOREDINDEX_HPP
