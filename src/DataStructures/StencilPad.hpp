@@ -20,11 +20,7 @@
 
 namespace OpFlow::DS {
     template <typename K, typename V>
-    struct
-#if defined(_MSC_VER)
-            alignas(32)
-#endif
-                    fake_map {
+    struct fake_map {
     private:
         std::array<std::pair<K, V>, 21> val;
 
@@ -103,11 +99,7 @@ namespace OpFlow::DS {
         auto sort() {
             std::sort(val.begin(), val.end(), [](auto&& a, auto&& b) { return a.first < b.first; });
         }
-    }
-#if defined(__GNUC__)
-    __attribute__((aligned(32)))
-#endif
-    ;
+    };
 
     template <typename Idx, template <typename K, typename V> typename map_impl = fake_map>
     struct StencilPad {
