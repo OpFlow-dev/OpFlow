@@ -61,9 +61,9 @@ namespace OpFlow::DS {
 
         constexpr bool operator>(const MDIndex<d>& other) const { return other < *this; }
 
-        constexpr bool operator==(const Meta::BracketIndexable auto& index) const {
-            auto ret = true;
-            for (auto i = 0; i < d; ++i) ret &= this->idx[i] == index[i];
+        constexpr bool operator==(const ColoredIndex& other) const {
+            auto ret = color == other.color;
+            ret &= this->idx == other.idx;
             return ret;
         }
 
