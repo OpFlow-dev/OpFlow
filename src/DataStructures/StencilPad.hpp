@@ -109,14 +109,13 @@ namespace OpFlow::DS {
 #endif
     ;
 
-    template <typename Idx>
+    template <typename Idx, template <typename K, typename V> typename map_impl = fake_map>
     struct StencilPad {
-        //todo: fix 1 size error
-        fake_map<Idx, Real> pad {};
+        map_impl<Idx, Real> pad {};
         Real bias = 0.;
 
         StencilPad() = default;
-        StencilPad(Real b) : bias(b) {}
+        explicit StencilPad(Real b) : bias(b) {}
 
         auto toString(int level = 1) const {
             std::string prefix;
