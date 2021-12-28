@@ -70,8 +70,7 @@ BENCHMARK_DEFINE_F(StencilPadBench, FakeMap_5P)(benchmark::State& st) {
     auto su = u.template getStencilField<DS::fake_map>();
 
     for (auto _ : st) {
-        rangeFor_s(u.assignableRange, [&](auto&& idx) {
-            DS::ColoredIndex<Meta::RealType<decltype(idx)>> i {idx, 0};
+        rangeFor_s(u.assignableRange, [&](auto&& i) {
             benchmark::DoNotOptimize(su[i] * 4 - su[i.template prev<0>()] - su[i.template next<0>()]
                                      - su[i.template prev<1>()] - su[i.template next<1>()]);
         });
@@ -82,8 +81,7 @@ BENCHMARK_DEFINE_F(StencilPadBench, FakeMap_9P)(benchmark::State& st) {
     auto su = u.template getStencilField<DS::fake_map>();
 
     for (auto _ : st) {
-        rangeFor_s(u.assignableRange, [&](auto&& idx) {
-            DS::ColoredIndex<Meta::RealType<decltype(idx)>> i {idx, 0};
+        rangeFor_s(u.assignableRange, [&](auto&& i) {
             benchmark::DoNotOptimize(su[i] * 8 - su[i.template prev<0>()] - su[i.template next<0>()]
                                      - su[i.template prev<1>()] - su[i.template next<1>()]
                                      - su[i.template prev<0>().template prev<1>()]
@@ -98,8 +96,7 @@ BENCHMARK_DEFINE_F(StencilPadBench, FakeMap_7P)(benchmark::State& st) {
     auto su = u3.template getStencilField<DS::fake_map>();
 
     for (auto _ : st) {
-        rangeFor_s(u3.assignableRange, [&](auto&& idx) {
-            DS::ColoredIndex<Meta::RealType<decltype(idx)>> i {idx, 0};
+        rangeFor_s(u3.assignableRange, [&](auto&& i) {
             benchmark::DoNotOptimize(su[i] * 6 - su[i.template prev<0>()] - su[i.template next<0>()]
                                      - su[i.template prev<1>()] - su[i.template next<1>()]
                                      - su[i.template prev<2>()] - su[i.template next<2>()]);
@@ -111,8 +108,7 @@ BENCHMARK_DEFINE_F(StencilPadBench, FakeMap_27P)(benchmark::State& st) {
     auto su = u3.template getStencilField<DS::fake_map>();
 
     for (auto _ : st) {
-        rangeFor_s(u3.assignableRange, [&](auto&& idx) {
-            DS::ColoredIndex<Meta::RealType<decltype(idx)>> i {idx, 0};
+        rangeFor_s(u3.assignableRange, [&](auto&& i) {
             benchmark::DoNotOptimize(
                     su[i] * 26 - su[i.template prev<0>()] - su[i.template next<0>()]
                     - su[i.template prev<1>()] - su[i.template next<1>()] - su[i.template prev<2>()]
@@ -131,8 +127,7 @@ BENCHMARK_DEFINE_F(StencilPadBench, STDMap_5P)(benchmark::State& st) {
     auto su = u.template getStencilField<std::unordered_map>();
 
     for (auto _ : st) {
-        rangeFor_s(u.assignableRange, [&](auto&& idx) {
-            DS::ColoredIndex<Meta::RealType<decltype(idx)>> i {idx, 0};
+        rangeFor_s(u.assignableRange, [&](auto&& i) {
             benchmark::DoNotOptimize(su[i] * 4 - su[i.template prev<0>()] - su[i.template next<0>()]
                                      - su[i.template prev<1>()] - su[i.template next<1>()]);
         });
@@ -143,8 +138,7 @@ BENCHMARK_DEFINE_F(StencilPadBench, STDMap_9P)(benchmark::State& st) {
     auto su = u.template getStencilField<std::unordered_map>();
 
     for (auto _ : st) {
-        rangeFor_s(u.assignableRange, [&](auto&& idx) {
-            DS::ColoredIndex<Meta::RealType<decltype(idx)>> i {idx, 0};
+        rangeFor_s(u.assignableRange, [&](auto&& i) {
             benchmark::DoNotOptimize(su[i] * 8 - su[i.template prev<0>()] - su[i.template next<0>()]
                                      - su[i.template prev<1>()] - su[i.template next<1>()]
                                      - su[i.template prev<0>().template prev<1>()]
@@ -159,8 +153,7 @@ BENCHMARK_DEFINE_F(StencilPadBench, STDMap_7P)(benchmark::State& st) {
     auto su = u3.template getStencilField<std::unordered_map>();
 
     for (auto _ : st) {
-        rangeFor_s(u3.assignableRange, [&](auto&& idx) {
-            DS::ColoredIndex<Meta::RealType<decltype(idx)>> i {idx, 0};
+        rangeFor_s(u3.assignableRange, [&](auto&& i) {
             benchmark::DoNotOptimize(su[i] * 6 - su[i.template prev<0>()] - su[i.template next<0>()]
                                      - su[i.template prev<1>()] - su[i.template next<1>()]
                                      - su[i.template prev<2>()] - su[i.template next<2>()]);
@@ -172,8 +165,7 @@ BENCHMARK_DEFINE_F(StencilPadBench, STDMap_27P)(benchmark::State& st) {
     auto su = u3.template getStencilField<std::unordered_map>();
 
     for (auto _ : st) {
-        rangeFor_s(u3.assignableRange, [&](auto&& idx) {
-            DS::ColoredIndex<Meta::RealType<decltype(idx)>> i {idx, 0};
+        rangeFor_s(u3.assignableRange, [&](auto&& i) {
             benchmark::DoNotOptimize(
                     su[i] * 26 - su[i.template prev<0>()] - su[i.template next<0>()]
                     - su[i.template prev<1>()] - su[i.template next<1>()] - su[i.template prev<2>()]
