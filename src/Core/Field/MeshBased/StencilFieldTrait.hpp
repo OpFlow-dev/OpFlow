@@ -20,26 +20,26 @@
 #include "DataStructures/StencilPad.hpp"
 
 namespace OpFlow {
-    template <typename T>
+    template <typename T, template <typename, typename> typename map_impl = DS::fake_map>
     struct StencilField;
 
     namespace internal {
-        template <StructuredFieldExprType T>
-        struct ExprTrait<StencilField<T>>
-            : ExprTrait<typename StructuredFieldExprTrait<T>::template other_type<
-                      DS::StencilPad<DS::ColoredIndex<typename StructuredFieldExprTrait<T>::index_type>>>> {
+        template <StructuredFieldExprType T, template <typename, typename> typename map_impl>
+        struct ExprTrait<StencilField<T, map_impl>>
+            : ExprTrait<typename StructuredFieldExprTrait<T>::template other_type<DS::StencilPad<
+                      DS::ColoredIndex<typename StructuredFieldExprTrait<T>::index_type>, map_impl>>> {
             static constexpr auto access_flag = 0;
-            using type = StencilField<typename StructuredFieldExprTrait<T>::type>;
+            using type = StencilField<typename StructuredFieldExprTrait<T>::type, map_impl>;
             using mesh_type
                     = decltype(std::declval<typename StructuredFieldExprTrait<T>::mesh_type&>().getView());
         };
 
-        template <SemiStructuredFieldExprType T>
-        struct ExprTrait<StencilField<T>>
+        template <SemiStructuredFieldExprType T, template <typename, typename> typename map_impl>
+        struct ExprTrait<StencilField<T, map_impl>>
             : ExprTrait<typename SemiStructuredFieldExprTrait<T>::template other_type<DS::StencilPad<
-                      DS::ColoredIndex<typename SemiStructuredFieldExprTrait<T>::index_type>>>> {
+                      DS::ColoredIndex<typename SemiStructuredFieldExprTrait<T>::index_type>, map_impl>>> {
             static constexpr auto access_flag = 0;
-            using type = StencilField<typename SemiStructuredFieldExprTrait<T>::type>;
+            using type = StencilField<typename SemiStructuredFieldExprTrait<T>::type, map_impl>;
         };
     }// namespace internal
 }// namespace OpFlow

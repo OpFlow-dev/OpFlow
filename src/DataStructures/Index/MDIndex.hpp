@@ -141,9 +141,7 @@ namespace OpFlow::DS {
             return ret;
         }
 
-        std::ostream& operator<<(std::ostream& os) const override {
-            return os << toString();
-        }
+        std::ostream& operator<<(std::ostream& os) const override { return os << toString(); }
     };
 }// namespace OpFlow::DS
 

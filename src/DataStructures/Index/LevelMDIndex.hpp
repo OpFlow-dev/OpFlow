@@ -102,5 +102,5 @@ namespace std {
             return XXHash64::hash(idx.data(), idx.size() * sizeof(int), 0);
         }
     };
-}
+}// namespace std
 #endif//OPFLOW_LEVELMDINDEX_HPP
