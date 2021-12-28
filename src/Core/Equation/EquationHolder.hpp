@@ -45,6 +45,11 @@ namespace OpFlow {
                 return eqn.lhs - eqn.rhs;
             }
         }
+
+        template <int i>
+        auto getTarget() const {
+            if constexpr (i == 1) return target1;
+        }
     };
 
     auto makeEqnHolder(auto&& func1, auto&& target1) {
@@ -85,6 +90,12 @@ namespace OpFlow {
                 auto eqn = getter2(*target1, *target2);
                 return eqn.lhs - eqn.rhs;
             }
+        }
+
+        template <int i>
+        auto getTarget() const {
+            if constexpr (i == 1) return target1;
+            if constexpr (i == 2) return target2;
         }
     };
 
@@ -145,6 +156,13 @@ namespace OpFlow {
                 auto eqn = getter3(*target1, *target2, *target3);
                 return eqn.lhs - eqn.rhs;
             }
+        }
+
+        template <int i>
+        auto getTarget() const {
+            if constexpr (i == 1) return target1;
+            if constexpr (i == 2) return target2;
+            if constexpr (i == 3) return target3;
         }
     };
 
@@ -228,6 +246,14 @@ namespace OpFlow {
                 auto eqn = getter4(*target1, *target2, *target3, *target4);
                 return eqn.lhs - eqn.rhs;
             }
+        }
+
+        template <int i>
+        auto getTarget() const {
+            if constexpr (i == 1) return target1;
+            if constexpr (i == 2) return target2;
+            if constexpr (i == 3) return target3;
+            if constexpr (i == 4) return target4;
         }
     };
 
@@ -332,6 +358,15 @@ namespace OpFlow {
                 auto eqn = getter5(*target1, *target2, *target3, *target4, *target5);
                 return eqn.lhs - eqn.rhs;
             }
+        }
+
+        template <int i>
+        auto getTarget() const {
+            if constexpr (i == 1) return target1;
+            if constexpr (i == 2) return target2;
+            if constexpr (i == 3) return target3;
+            if constexpr (i == 4) return target4;
+            if constexpr (i == 5) return target5;
         }
     };
 
@@ -461,6 +496,16 @@ namespace OpFlow {
                 auto eqn = getter6(*target1, *target2, *target3, *target4, *target5, *target6);
                 return eqn.lhs - eqn.rhs;
             }
+        }
+
+        template <int i>
+        auto getTarget() const {
+            if constexpr (i == 1) return target1;
+            if constexpr (i == 2) return target2;
+            if constexpr (i == 3) return target3;
+            if constexpr (i == 4) return target4;
+            if constexpr (i == 5) return target5;
+            if constexpr (i == 6) return target6;
         }
     };
 
@@ -623,6 +668,17 @@ namespace OpFlow {
                 auto eqn = getter7(*target1, *target2, *target3, *target4, *target5, *target6, *target7);
                 return eqn.lhs - eqn.rhs;
             }
+        }
+
+        template <int i>
+        auto getTarget() const {
+            if constexpr (i == 1) return target1;
+            if constexpr (i == 2) return target2;
+            if constexpr (i == 3) return target3;
+            if constexpr (i == 4) return target4;
+            if constexpr (i == 5) return target5;
+            if constexpr (i == 6) return target6;
+            if constexpr (i == 7) return target7;
         }
     };
 
@@ -823,6 +879,18 @@ namespace OpFlow {
                                    *target8);
                 return eqn.lhs - eqn.rhs;
             }
+        }
+
+        template <int i>
+        auto getTarget() const {
+            if constexpr (i == 1) return target1;
+            if constexpr (i == 2) return target2;
+            if constexpr (i == 3) return target3;
+            if constexpr (i == 4) return target4;
+            if constexpr (i == 5) return target5;
+            if constexpr (i == 6) return target6;
+            if constexpr (i == 7) return target7;
+            if constexpr (i == 8) return target8;
         }
     };
 
@@ -1054,6 +1122,19 @@ namespace OpFlow {
                                    *target8, *target9);
                 return eqn.lhs - eqn.rhs;
             }
+        }
+
+        template <int i>
+        auto getTarget() const {
+            if constexpr (i == 1) return target1;
+            if constexpr (i == 2) return target2;
+            if constexpr (i == 3) return target3;
+            if constexpr (i == 4) return target4;
+            if constexpr (i == 5) return target5;
+            if constexpr (i == 6) return target6;
+            if constexpr (i == 7) return target7;
+            if constexpr (i == 8) return target8;
+            if constexpr (i == 9) return target9;
         }
     };
 
@@ -1320,6 +1401,20 @@ namespace OpFlow {
                                     *target8, *target9, *target10);
                 return eqn.lhs - eqn.rhs;
             }
+        }
+
+        template <int i>
+        auto getTarget() const {
+            if constexpr (i == 1) return target1;
+            if constexpr (i == 2) return target2;
+            if constexpr (i == 3) return target3;
+            if constexpr (i == 4) return target4;
+            if constexpr (i == 5) return target5;
+            if constexpr (i == 6) return target6;
+            if constexpr (i == 7) return target7;
+            if constexpr (i == 8) return target8;
+            if constexpr (i == 9) return target9;
+            if constexpr (i == 10) return target10;
         }
     };
 
