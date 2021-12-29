@@ -96,5 +96,15 @@ namespace OpFlow::Meta {
 
     template <typename...>
     struct TypeName;
+
+    template <typename F, std::size_t... Is>
+    void static_for(F&& func, std::index_sequence<Is...>) {
+        (func(int_<Is> {}), ...);
+    }
+
+    template <std::size_t N, typename F>
+    void static_for(F&& func) {
+        static_for(std::forward<F>(func), std::make_index_sequence<N>());
+    }
 }// namespace OpFlow::Meta
 #endif//OPFLOW_META_HPP
