@@ -104,6 +104,7 @@
 #include "Core/Equation/Equation.hpp"
 #include "Core/Equation/EquationHolder.hpp"
 #include "Core/Equation/StencilHolder.hpp"
+#include "Core/Equation/CSRMatrixGenerator.hpp"
 #include "Core/Equation/EqnSolveHandler.hpp"
 #include "Core/Equation/UnifiedSolve.hpp"
 
