@@ -22,12 +22,12 @@
 #endif
 
 // Test for counting semaphore
+#include "../../src/tbb/semaphore.h"
+#include "common/spin_barrier.h"
 #include "common/test.h"
 #include "common/utils.h"
-#include "common/spin_barrier.h"
 #include "tbb/blocked_range.h"
 #include "tbb/tick_count.h"
-#include "../../src/tbb/semaphore.h"
 #include <atomic>
 #include <vector>
 
@@ -45,18 +45,16 @@ class Body : utils::NoAssign {
     std::vector<int>& ourCounts;
     std::vector<double>& tottime;
 
-    static constexpr int tickCounts = 1; // millisecond
+    static constexpr int tickCounts = 1;// millisecond
     static constexpr int innerWait = 5; // millisecond
 public:
-    Body( int nThread, int nIter, semaphore& sem,
-          std::vector<int>& our_counts, std::vector<double>& tot_time )
-        : nIters(nIter), mySem(sem), ourCounts(our_counts), tottime(tot_time)
-    {
+    Body(int nThread, int nIter, semaphore& sem, std::vector<int>& our_counts, std::vector<double>& tot_time)
+        : nIters(nIter), mySem(sem), ourCounts(our_counts), tottime(tot_time) {
         sBarrier.initialize(nThread);
         pCount = 0;
     }
 
-    void operator()( const int tid ) const {
+    void operator()(const int tid) const {
         sBarrier.wait();
 
         for (int i = 0; i < nIters; ++i) {
@@ -67,18 +65,16 @@ public:
             tottime[tid] += (t1 - t0).seconds();
 
             int curval = ++pCount;
-            if (curval > ourCounts[tid]) {
-                ourCounts[tid] = curval;
-            }
+            if (curval > ourCounts[tid]) { ourCounts[tid] = curval; }
             utils::Sleep(innerWait);
             --pCount;
             REQUIRE(int(pCount) >= 0);
             mySem.V();
         }
     }
-}; // class Body
+};// class Body
 
-void test_semaphore( int sem_init_cnt, int extra_threads ) {
+void test_semaphore(int sem_init_cnt, int extra_threads) {
     semaphore my_sem(sem_init_cnt);
     int n_threads = sem_init_cnt + extra_threads;
 
@@ -93,17 +89,13 @@ void test_semaphore( int sem_init_cnt, int extra_threads ) {
 
     if (extra_threads == 0) {
         double allPWaits = 0;
-        for (auto item : tot_times) {
-            allPWaits += item;
-        }
+        for (auto item : tot_times) { allPWaits += item; }
         allPWaits /= static_cast<double>(n_threads * n_iters);
     }
     REQUIRE_MESSAGE(!pCount, "not all threads decremented pCount");
 
     int max_count = -1;
-    for (auto item : max_vals) {
-        max_count = utils::max(max_count, item);
-    }
+    for (auto item : max_vals) { max_count = utils::max(max_count, item); }
     REQUIRE_MESSAGE(max_count <= sem_init_cnt, "Too many threads in semaphore-protected increment");
 }
 
@@ -119,7 +111,7 @@ struct Counter {
     std::atomic<long> value;
     S my_sem;
     Counter() : value(0) {}
-}; // struct Counter
+};// struct Counter
 
 // Function object for use with parallel_for.h
 template <typename C>
@@ -127,7 +119,7 @@ struct AddOne : utils::NoAssign {
     C& my_counter;
 
     // Increments counter once for each iteration in the iteration space
-    void operator()( int ) const {
+    void operator()(int) const {
         for (std::size_t i = 0; i < N_TIMES; ++i) {
             my_counter.my_sem.P();
             ++my_counter.value;
@@ -135,12 +127,10 @@ struct AddOne : utils::NoAssign {
         }
     }
 
-    AddOne( C& c ) : my_counter(c) {
-        my_counter.my_sem.V();
-    }
-}; // struct AddOne
+    AddOne(C& c) : my_counter(c) { my_counter.my_sem.V(); }
+};// struct AddOne
 
-void test_binary_semaphore( int n_threads ) {
+void test_binary_semaphore(int n_threads) {
     Counter<tbb::detail::r1::binary_semaphore> counter;
     AddOne<decltype(counter)> AddOneBody(counter);
     utils::NativeParallelFor(n_threads, AddOneBody);
@@ -154,7 +144,7 @@ enum FilterType { imaProducer, imaConsumer };
 class FilterBase : utils::NoAssign {
 protected:
     FilterType ima;
-    unsigned totTokens; // total number of tokens to be emitted, only used by producer
+    unsigned totTokens;// total number of tokens to be emitted, only used by producer
     std::atomic<unsigned>& myTokens;
     std::atomic<unsigned>& otherTokens;
 
@@ -165,54 +155,44 @@ protected:
     unsigned* myBuffer;
     unsigned* nextBuffer;
     unsigned curToken;
+
 public:
-    FilterBase( FilterType filter,
-                unsigned tot_tokens,
-                std::atomic<unsigned>& my_tokens,
-                std::atomic<unsigned>& other_tokens,
-                unsigned my_wait,
-                semaphore& m_sem,
-                semaphore& n_sem,
-                unsigned* buf,
-                unsigned* n_buf )
-        : ima(filter), totTokens(tot_tokens), myTokens(my_tokens),
-          otherTokens(other_tokens), myWait(my_wait), my_sem(m_sem),
-          next_sem(n_sem), myBuffer(buf), nextBuffer(n_buf)
-    {
+    FilterBase(FilterType filter, unsigned tot_tokens, std::atomic<unsigned>& my_tokens,
+               std::atomic<unsigned>& other_tokens, unsigned my_wait, semaphore& m_sem, semaphore& n_sem,
+               unsigned* buf, unsigned* n_buf)
+        : ima(filter), totTokens(tot_tokens), myTokens(my_tokens), otherTokens(other_tokens), myWait(my_wait),
+          my_sem(m_sem), next_sem(n_sem), myBuffer(buf), nextBuffer(n_buf) {
         curToken = 0;
     }
 
-    void Produce( const int );
-    void Consume( const int );
-    void operator()( const int tid ) {
+    void Produce(const int);
+    void Consume(const int);
+    void operator()(const int tid) {
         if (ima == imaConsumer) {
             Consume(tid);
         } else {
             Produce(tid);
         }
     }
-}; // class FilterBase
+};// class FilterBase
 
 class ProduceConsumeBody {
     FilterBase** my_filters;
-public:
-    ProduceConsumeBody( FilterBase** filters ) : my_filters(filters) {}
 
-    void operator()( const int tid ) const {
-        my_filters[tid]->operator()(tid);
-    }
-}; // class ProduceConsumeBody
+public:
+    ProduceConsumeBody(FilterBase** filters) : my_filters(filters) {}
+
+    void operator()(const int tid) const { my_filters[tid]->operator()(tid); }
+};// class ProduceConsumeBody
 
 // send a bunch of non-null "tokens" to consumer, then a NULL
-void FilterBase::Produce( const int ) {
-    nextBuffer[0] = 0; // just in case we provide no tokens
+void FilterBase::Produce(const int) {
+    nextBuffer[0] = 0;// just in case we provide no tokens
     sBarrier.wait();
-    while(totTokens) {
-        while(!myTokens) {
-            my_sem.P();
-        }
+    while (totTokens) {
+        while (!myTokens) { my_sem.P(); }
         // we have a slot available
-        --myTokens; // moving this down reduces spurious wakeups
+        --myTokens;// moving this down reduces spurious wakeups
         --totTokens;
         if (totTokens) {
             nextBuffer[curToken & (MAX_TOKENS - 1)] = curToken * 3 + 1;
@@ -223,20 +203,16 @@ void FilterBase::Produce( const int ) {
 
         utils::Sleep(myWait);
         unsigned temp = ++otherTokens;
-        if (temp == 1) {
-            next_sem.V();
-        }
+        if (temp == 1) { next_sem.V(); }
     }
-    next_sem.V(); // final wakeup
+    next_sem.V();// final wakeup
 }
 
-void FilterBase::Consume( const int ) {
+void FilterBase::Consume(const int) {
     unsigned myToken;
     sBarrier.wait();
     do {
-        while( !myTokens ) {
-            my_sem.P();
-        }
+        while (!myTokens) { my_sem.P(); }
         // we have a slot available
         --myTokens;
         myToken = myBuffer[curToken & (MAX_TOKENS - 1)];
@@ -245,11 +221,9 @@ void FilterBase::Consume( const int ) {
             ++curToken;
             utils::Sleep(myWait);
             unsigned temp = ++otherTokens;
-            if (temp == 1) {
-                next_sem.V();
-            }
+            if (temp == 1) { next_sem.V(); }
         }
-    } while(myToken);
+    } while (myToken);
     // end of processing
     REQUIRE_MESSAGE(curToken + 1 == totTokens, "Didn't receive enough tokens");
 }
@@ -258,19 +232,21 @@ void FilterBase::Consume( const int ) {
 // nTokens are total number of tokens through the pipe
 // pWait is the wait time for the producer
 // cWait is the wait time for the consumer
-void test_producer_consumer( unsigned totTokens, unsigned nTokens, unsigned pWait, unsigned cWait ) {
+void test_producer_consumer(unsigned totTokens, unsigned nTokens, unsigned pWait, unsigned cWait) {
     semaphore p_sem;
     semaphore c_sem;
     std::atomic<unsigned> p_tokens;
     std::atomic<unsigned> c_tokens(0);
 
     unsigned c_buffer[MAX_TOKENS];
-    FilterBase* my_filters[2]; // one producer, one concumer
+    FilterBase* my_filters[2];// one producer, one concumer
 
     REQUIRE_MESSAGE(nTokens <= MAX_TOKENS, "Not enough slots for tokens");
 
-    my_filters[0] = new FilterBase(imaProducer, totTokens, p_tokens, c_tokens, pWait, c_sem, p_sem, nullptr, &(c_buffer[0]));
-    my_filters[1] = new FilterBase(imaConsumer, totTokens, c_tokens, p_tokens, cWait, p_sem, c_sem, c_buffer, nullptr);
+    my_filters[0] = new FilterBase(imaProducer, totTokens, p_tokens, c_tokens, pWait, c_sem, p_sem, nullptr,
+                                   &(c_buffer[0]));
+    my_filters[1] = new FilterBase(imaConsumer, totTokens, c_tokens, p_tokens, cWait, p_sem, c_sem, c_buffer,
+                                   nullptr);
 
     p_tokens = nTokens;
     ProduceConsumeBody body(my_filters);
@@ -281,9 +257,7 @@ void test_producer_consumer( unsigned totTokens, unsigned nTokens, unsigned pWai
 }
 
 //! \brief \ref error_guessing
-TEST_CASE("test binary semaphore") {
-    test_binary_semaphore(utils::MaxThread);
-}
+TEST_CASE("test binary semaphore") { test_binary_semaphore(utils::MaxThread); }
 
 //! \brief \ref error_guessing
 TEST_CASE("test semaphore") {

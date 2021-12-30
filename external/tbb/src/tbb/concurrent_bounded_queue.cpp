@@ -14,71 +14,71 @@
     limitations under the License.
 */
 
-#include "oneapi/tbb/detail/_utils.h"
-#include "oneapi/tbb/concurrent_queue.h"
-#include "oneapi/tbb/cache_aligned_allocator.h"
 #include "concurrent_monitor.h"
+#include "oneapi/tbb/cache_aligned_allocator.h"
+#include "oneapi/tbb/concurrent_queue.h"
+#include "oneapi/tbb/detail/_utils.h"
 
 namespace tbb {
-namespace detail {
-namespace r1 {
+    namespace detail {
+        namespace r1 {
 
-static constexpr std::size_t monitors_number = 2;
+            static constexpr std::size_t monitors_number = 2;
 
-std::uint8_t* __TBB_EXPORTED_FUNC allocate_bounded_queue_rep( std::size_t queue_rep_size )
-{
-    std::size_t monitors_mem_size = sizeof(concurrent_monitor) * monitors_number;
-    std::uint8_t* mem = static_cast<std::uint8_t*>(cache_aligned_allocate(queue_rep_size + monitors_mem_size));
+            std::uint8_t* __TBB_EXPORTED_FUNC allocate_bounded_queue_rep(std::size_t queue_rep_size) {
+                std::size_t monitors_mem_size = sizeof(concurrent_monitor) * monitors_number;
+                std::uint8_t* mem = static_cast<std::uint8_t*>(
+                        cache_aligned_allocate(queue_rep_size + monitors_mem_size));
 
-    concurrent_monitor* monitors = reinterpret_cast<concurrent_monitor*>(mem + queue_rep_size);
-    for (std::size_t i = 0; i < monitors_number; ++i) {
-        new (monitors + i) concurrent_monitor();
-    }
+                concurrent_monitor* monitors = reinterpret_cast<concurrent_monitor*>(mem + queue_rep_size);
+                for (std::size_t i = 0; i < monitors_number; ++i) { new (monitors + i) concurrent_monitor(); }
 
-    return mem;
-}
+                return mem;
+            }
 
-void __TBB_EXPORTED_FUNC deallocate_bounded_queue_rep( std::uint8_t* mem, std::size_t queue_rep_size )
-{
-    concurrent_monitor* monitors = reinterpret_cast<concurrent_monitor*>(mem + queue_rep_size);
-    for (std::size_t i = 0; i < monitors_number; ++i) {
-        monitors[i].~concurrent_monitor();
-    }
+            void __TBB_EXPORTED_FUNC deallocate_bounded_queue_rep(std::uint8_t* mem,
+                                                                  std::size_t queue_rep_size) {
+                concurrent_monitor* monitors = reinterpret_cast<concurrent_monitor*>(mem + queue_rep_size);
+                for (std::size_t i = 0; i < monitors_number; ++i) { monitors[i].~concurrent_monitor(); }
 
-    cache_aligned_deallocate(mem);
-}
+                cache_aligned_deallocate(mem);
+            }
 
-void __TBB_EXPORTED_FUNC wait_bounded_queue_monitor( concurrent_monitor* monitors, std::size_t monitor_tag,
-                                                        std::ptrdiff_t target, d1::delegate_base& predicate )
-{
-    __TBB_ASSERT(monitor_tag < monitors_number, nullptr);
-    concurrent_monitor& monitor = monitors[monitor_tag];
+            void __TBB_EXPORTED_FUNC wait_bounded_queue_monitor(concurrent_monitor* monitors,
+                                                                std::size_t monitor_tag,
+                                                                std::ptrdiff_t target,
+                                                                d1::delegate_base& predicate) {
+                __TBB_ASSERT(monitor_tag < monitors_number, nullptr);
+                concurrent_monitor& monitor = monitors[monitor_tag];
 
-    monitor.wait<concurrent_monitor::thread_context>([&] { return !predicate(); }, std::uintptr_t(target));
-}
+                monitor.wait<concurrent_monitor::thread_context>([&] { return !predicate(); },
+                                                                 std::uintptr_t(target));
+            }
 
-void __TBB_EXPORTED_FUNC abort_bounded_queue_monitors( concurrent_monitor* monitors ) {
-    concurrent_monitor& items_avail = monitors[d2::cbq_items_avail_tag];
-    concurrent_monitor& slots_avail = monitors[d2::cbq_slots_avail_tag];
+            void __TBB_EXPORTED_FUNC abort_bounded_queue_monitors(concurrent_monitor* monitors) {
+                concurrent_monitor& items_avail = monitors[d2::cbq_items_avail_tag];
+                concurrent_monitor& slots_avail = monitors[d2::cbq_slots_avail_tag];
 
-    items_avail.abort_all();
-    slots_avail.abort_all();
-}
+                items_avail.abort_all();
+                slots_avail.abort_all();
+            }
 
-struct predicate_leq {
-    std::size_t my_ticket;
-    predicate_leq( std::size_t ticket ) : my_ticket(ticket) {}
-    bool operator() ( std::uintptr_t ticket ) const { return static_cast<std::size_t>(ticket) <= my_ticket; }
-};
+            struct predicate_leq {
+                std::size_t my_ticket;
+                predicate_leq(std::size_t ticket) : my_ticket(ticket) {}
+                bool operator()(std::uintptr_t ticket) const {
+                    return static_cast<std::size_t>(ticket) <= my_ticket;
+                }
+            };
 
-void __TBB_EXPORTED_FUNC notify_bounded_queue_monitor( concurrent_monitor* monitors,
-                                                               std::size_t monitor_tag, std::size_t ticket)
-{
-    __TBB_ASSERT(monitor_tag < monitors_number, nullptr);
-    concurrent_monitor& monitor = monitors[monitor_tag];
-    monitor.notify(predicate_leq(ticket));
-}
+            void __TBB_EXPORTED_FUNC notify_bounded_queue_monitor(concurrent_monitor* monitors,
+                                                                  std::size_t monitor_tag,
+                                                                  std::size_t ticket) {
+                __TBB_ASSERT(monitor_tag < monitors_number, nullptr);
+                concurrent_monitor& monitor = monitors[monitor_tag];
+                monitor.notify(predicate_leq(ticket));
+            }
 
-} // namespace r1
-} // namespace detail
-} // namespace tbb
+        }// namespace r1
+    }    // namespace detail
+}// namespace tbb

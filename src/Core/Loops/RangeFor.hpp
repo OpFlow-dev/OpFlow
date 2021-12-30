@@ -13,12 +13,16 @@
 #ifndef OPFLOW_RANGEFOR_HPP
 #define OPFLOW_RANGEFOR_HPP
 
+#include "Core/Environment.hpp"
 #include "Core/Expr/Expr.hpp"
 #include "Core/Macros.hpp"
 #include "Core/Meta.hpp"
 #include "DataStructures/Index/RangedIndex.hpp"
 #include "DataStructures/Range/Ranges.hpp"
 #include <omp.h>
+#include <oneapi/tbb.h>
+#define TBB_PREVIEW_BLOCKED_RANGE_ND 1
+#include <oneapi/tbb/blocked_rangeNd.h>
 
 namespace OpFlow {
     /// \brief Serial version of range for
@@ -91,38 +95,11 @@ namespace OpFlow {
                         }
             } else {
 #ifdef OPFLOW_WITH_OPENMP
-                auto numCore = omp_get_max_threads();
+                tbb::task_arena arena(getGlobalParallelPlan().shared_memory_workers_count);
 #else
-                auto numCore = 1;
+                tbb::task_arena arena(1);
 #endif
-                auto workSize = total_count / numCore / line_size * line_size;
-#pragma omp parallel
-                {
-                    auto thread_id = omp_get_thread_num();
-                    typename R::index_type idx(range);
-                    idx += workSize * thread_id;
-                    auto idx0 = idx;
-                    for (auto i = 0; i < workSize; i += line_size) {
-                        for (auto j = 0; j < line_size; ++j) {
-                            idx[0] = idx0[0] + j;
-                            func(static_cast<typename R::base_index_type&>(idx));
-                        }
-                        idx++;
-                    }
-                };
-                if (total_count > workSize * numCore) {
-                    typename R::index_type idx(range);
-                    idx += workSize * numCore;
-                    auto rest = total_count - workSize * numCore;
-                    auto idx0 = idx;
-                    for (auto i = 0; i < rest; i += line_size) {
-                        for (auto j = 0; j < line_size; ++j) {
-                            idx[0] = idx0[0] + j;
-                            func((static_cast<typename R::base_index_type&>(idx)));
-                        }
-                        idx++;
-                    }
-                }
+                oneapi::tbb::parallel_for(range, [&](const R& r) { rangeFor_s(r, OP_PERFECT_FOWD(func)); });
             }
         } else {
             OP_NOT_IMPLEMENTED;

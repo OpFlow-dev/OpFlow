@@ -15,7 +15,7 @@
 */
 
 #if __INTEL_COMPILER && _MSC_VER
-#pragma warning(disable : 2586) // decorated name length exceeded, name was truncated
+#pragma warning(disable : 2586)// decorated name length exceeded, name was truncated
 #endif
 
 #include "conformance_flowgraph.h"
@@ -23,24 +23,26 @@
 //! \file conformance_broadcast_node.cpp
 //! \brief Test for [flow_graph.broadcast_node] specification
 
-using input_msg = conformance::message</*default_ctor*/false, /*copy_ctor*/true/*enable for queue_node successor*/, /*copy_assign*/true/*enable for queue_node successor*/>;
+using input_msg
+        = conformance::message</*default_ctor*/ false, /*copy_ctor*/ true /*enable for queue_node successor*/,
+                               /*copy_assign*/ true /*enable for queue_node successor*/>;
 
 //! Test function_node broadcast
 //! \brief \ref requirement
-TEST_CASE("broadcast_node broadcasts"){
+TEST_CASE("broadcast_node broadcasts") {
     conformance::test_forwarding<oneapi::tbb::flow::broadcast_node<int>, int>(1);
     conformance::test_forwarding<oneapi::tbb::flow::broadcast_node<input_msg>, input_msg>(1);
 }
 
 //! Test broadcast_node buffering
 //! \brief \ref requirement
-TEST_CASE("broadcast_node buffering"){
+TEST_CASE("broadcast_node buffering") {
     conformance::test_buffering<oneapi::tbb::flow::broadcast_node<int>, int>();
 }
 
 //! Test inheritance relations
 //! \brief \ref interface
-TEST_CASE("broadcast_node superclasses"){
+TEST_CASE("broadcast_node superclasses") {
     conformance::test_inheritance<oneapi::tbb::flow::broadcast_node<int>, int, int>();
     conformance::test_inheritance<oneapi::tbb::flow::broadcast_node<float>, float, float>();
     conformance::test_inheritance<oneapi::tbb::flow::broadcast_node<input_msg>, input_msg, input_msg>();
@@ -49,7 +51,7 @@ TEST_CASE("broadcast_node superclasses"){
 //! The node that is constructed has a reference to the same graph object as src.
 //! The predecessors and successors of src are not copied.
 //! \brief \ref interface
-TEST_CASE("broadcast_node copy constructor"){
+TEST_CASE("broadcast_node copy constructor") {
     using namespace oneapi::tbb::flow;
     graph g;
 
@@ -68,10 +70,12 @@ TEST_CASE("broadcast_node copy constructor"){
     node_copy.try_put(1);
     g.wait_for_all();
 
-    CHECK_MESSAGE((conformance::get_values(node2).size() == 0 && conformance::get_values(node3).size() == 1), "Copied node doesn`t copy successor");
+    CHECK_MESSAGE((conformance::get_values(node2).size() == 0 && conformance::get_values(node3).size() == 1),
+                  "Copied node doesn`t copy successor");
 
     node0.try_put(1);
     g.wait_for_all();
 
-    CHECK_MESSAGE((conformance::get_values(node2).size() == 1 && conformance::get_values(node3).size() == 0), "Copied node doesn`t copy predecessor");
+    CHECK_MESSAGE((conformance::get_values(node2).size() == 1 && conformance::get_values(node3).size() == 0),
+                  "Copied node doesn`t copy predecessor");
 }

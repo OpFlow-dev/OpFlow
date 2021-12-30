@@ -30,12 +30,14 @@ TEST_CASE("Test construction") {
         utils::suppress_unused_warning(ctx);
     }
     {
-        oneapi::tbb::task_group_context ctx{ oneapi::tbb::task_group_context::bound };
+        oneapi::tbb::task_group_context ctx {oneapi::tbb::task_group_context::bound};
         utils::suppress_unused_warning(ctx);
     }
     {
-        oneapi::tbb::task_group_context ctx{ oneapi::tbb::task_group_context::isolated
-            , oneapi::tbb::task_group_context::default_traits | oneapi::tbb::task_group_context::fp_settings | oneapi::tbb::task_group_context::concurrent_wait };
+        oneapi::tbb::task_group_context ctx {oneapi::tbb::task_group_context::isolated,
+                                             oneapi::tbb::task_group_context::default_traits
+                                                     | oneapi::tbb::task_group_context::fp_settings
+                                                     | oneapi::tbb::task_group_context::concurrent_wait};
         utils::suppress_unused_warning(ctx);
     }
 }
@@ -43,7 +45,8 @@ TEST_CASE("Test construction") {
 //! Test methods
 //! \brief \ref interface \ref requirement
 TEST_CASE("Test methods") {
-    oneapi::tbb::task_group_context ctx{ oneapi::tbb::task_group_context::bound, oneapi::tbb::task_group_context::default_traits };
+    oneapi::tbb::task_group_context ctx {oneapi::tbb::task_group_context::bound,
+                                         oneapi::tbb::task_group_context::default_traits};
     ctx.capture_fp_settings();
     CHECK_FALSE(ctx.is_group_execution_cancelled());
     CHECK(ctx.cancel_group_execution());

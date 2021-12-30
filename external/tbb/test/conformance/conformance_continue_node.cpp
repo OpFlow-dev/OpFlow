@@ -15,7 +15,7 @@
 */
 
 #if __INTEL_COMPILER && _MSC_VER
-#pragma warning(disable : 2586) // decorated name length exceeded, name was truncated
+#pragma warning(disable : 2586)// decorated name length exceeded, name was truncated
 #endif
 
 #define CONFORMANCE_CONTINUE_NODE
@@ -25,7 +25,8 @@
 //! \file conformance_continue_node.cpp
 //! \brief Test for [flow_graph.continue_node] specification
 
-using output_msg = conformance::message</*default_ctor*/false, /*copy_ctor*/true, /*copy_assign*/true/*enable for queue_node successor*/>;
+using output_msg = conformance::message</*default_ctor*/ false, /*copy_ctor*/ true,
+                                        /*copy_assign*/ true /*enable for queue_node successor*/>;
 
 #if __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
 
@@ -84,7 +85,7 @@ void test_deduction_guides_common(Body body) {
 
     continue_node c16(follows(b), 5, body, lightweight(), node_priority_t(5));
     static_assert(std::is_same_v<decltype(c16), continue_node<ExpectedType, lightweight>>);
-#endif // __TBB_PREVIEW_FLOW_GRAPH_NODE_SET
+#endif// __TBB_PREVIEW_FLOW_GRAPH_NODE_SET
 
     continue_node c17(c1);
     static_assert(std::is_same_v<decltype(c17), continue_node<ExpectedType>>);
@@ -95,43 +96,49 @@ void continue_void_body_f(const tbb::flow::continue_msg&) {}
 
 void test_deduction_guides() {
     using tbb::flow::continue_msg;
-    test_deduction_guides_common<int>([](const continue_msg&)->int { return 1; } );
+    test_deduction_guides_common<int>([](const continue_msg&) -> int { return 1; });
     test_deduction_guides_common<continue_msg>([](const continue_msg&) {});
 
-    test_deduction_guides_common<int>([](const continue_msg&) mutable ->int { return 1; });
+    test_deduction_guides_common<int>([](const continue_msg&) mutable -> int { return 1; });
     test_deduction_guides_common<continue_msg>([](const continue_msg&) mutable {});
 
     test_deduction_guides_common<int>(continue_body_f);
     test_deduction_guides_common<continue_msg>(continue_void_body_f);
 }
 
-#endif // __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
+#endif// __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
 
 //! Test execution of node body
 //! Test node can do try_put call
 //! \brief \ref interface \ref requirement
 TEST_CASE("continue body") {
-    conformance::test_body_exec<oneapi::tbb::flow::continue_node<output_msg>, oneapi::tbb::flow::continue_msg, output_msg>();
+    conformance::test_body_exec<oneapi::tbb::flow::continue_node<output_msg>, oneapi::tbb::flow::continue_msg,
+                                output_msg>();
 }
 
 //! Test continue_node is a graph_node, receiver<continue_msg>, and sender<Output>
 //! \brief \ref interface
-TEST_CASE("continue_node superclasses"){
-    conformance::test_inheritance<oneapi::tbb::flow::continue_node<int>, oneapi::tbb::flow::continue_msg, int>();
-    conformance::test_inheritance<oneapi::tbb::flow::continue_node<void*>, oneapi::tbb::flow::continue_msg, void*>();
-    conformance::test_inheritance<oneapi::tbb::flow::continue_node<output_msg>, oneapi::tbb::flow::continue_msg, output_msg>();
+TEST_CASE("continue_node superclasses") {
+    conformance::test_inheritance<oneapi::tbb::flow::continue_node<int>, oneapi::tbb::flow::continue_msg,
+                                  int>();
+    conformance::test_inheritance<oneapi::tbb::flow::continue_node<void*>, oneapi::tbb::flow::continue_msg,
+                                  void*>();
+    conformance::test_inheritance<oneapi::tbb::flow::continue_node<output_msg>,
+                                  oneapi::tbb::flow::continue_msg, output_msg>();
 }
 
 //! Test body copying and copy_body logic
 //! Test the body object passed to a node is copied
 //! \brief \ref interface
-TEST_CASE("continue_node and body copying"){
-    conformance::test_copy_body_function<oneapi::tbb::flow::continue_node<int>, conformance::copy_counting_object<int, oneapi::tbb::flow::continue_msg>>();
+TEST_CASE("continue_node and body copying") {
+    conformance::test_copy_body_function<
+            oneapi::tbb::flow::continue_node<int>,
+            conformance::copy_counting_object<int, oneapi::tbb::flow::continue_msg>>();
 }
 
 //! Test deduction guides
 //! \brief \ref interface \ref requirement
-TEST_CASE("Deduction guides"){
+TEST_CASE("Deduction guides") {
 #if __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
     test_deduction_guides();
 #endif
@@ -139,21 +146,22 @@ TEST_CASE("Deduction guides"){
 
 //! Test node broadcast messages to successors
 //! \brief \ref requirement
-TEST_CASE("continue_node broadcast"){
+TEST_CASE("continue_node broadcast") {
     conformance::counting_functor<int> fun(conformance::expected);
-    conformance::test_forwarding<oneapi::tbb::flow::continue_node<int>, oneapi::tbb::flow::continue_msg, int>(1, fun);
+    conformance::test_forwarding<oneapi::tbb::flow::continue_node<int>, oneapi::tbb::flow::continue_msg, int>(
+            1, fun);
 }
 
 //! Test node not buffered unsuccessful message, and try_get after rejection should not succeed.
 //! \brief \ref requirement
-TEST_CASE("continue_node buffering"){
+TEST_CASE("continue_node buffering") {
     conformance::dummy_functor<int> fun;
     conformance::test_buffering<oneapi::tbb::flow::continue_node<int>, oneapi::tbb::flow::continue_msg>(fun);
 }
 
 //! Test all node costructors
 //! \brief \ref requirement
-TEST_CASE("continue_node constructors"){
+TEST_CASE("continue_node constructors") {
     using namespace oneapi::tbb::flow;
     graph g;
 
@@ -174,7 +182,7 @@ TEST_CASE("continue_node constructors"){
 //! has a copy of the initial body used by src, and only has a non-zero threshold if src is constructed with a non-zero threshold..
 //! The predecessors and successors of src are not copied.
 //! \brief \ref interface
-TEST_CASE("continue_node copy constructor"){
+TEST_CASE("continue_node copy constructor") {
     using namespace oneapi::tbb::flow;
     graph g;
 
@@ -201,19 +209,22 @@ TEST_CASE("continue_node copy constructor"){
     node_copy.try_put(oneapi::tbb::flow::continue_msg());
     g.wait_for_all();
 
-    CHECK_MESSAGE((conformance::get_values(node2).size() == 0 && conformance::get_values(node3).size() == 0), "Copied node doesn`t copy successor, but copy number of predecessors");
+    CHECK_MESSAGE((conformance::get_values(node2).size() == 0 && conformance::get_values(node3).size() == 0),
+                  "Copied node doesn`t copy successor, but copy number of predecessors");
 
     node_copy.try_put(oneapi::tbb::flow::continue_msg());
     g.wait_for_all();
 
-    CHECK_MESSAGE((conformance::get_values(node2).size() == 0 && conformance::get_values(node3).size() == 1), "Copied node doesn`t copy successor, but copy number of predecessors");
+    CHECK_MESSAGE((conformance::get_values(node2).size() == 0 && conformance::get_values(node3).size() == 1),
+                  "Copied node doesn`t copy successor, but copy number of predecessors");
 
     node1.try_put(oneapi::tbb::flow::continue_msg());
     node1.try_put(oneapi::tbb::flow::continue_msg());
     node0.try_put(oneapi::tbb::flow::continue_msg());
     g.wait_for_all();
 
-    CHECK_MESSAGE((conformance::get_values(node2).size() == 1 && conformance::get_values(node3).size() == 0), "Copied node doesn`t copy predecessor, but copy number of predecessors");
+    CHECK_MESSAGE((conformance::get_values(node2).size() == 1 && conformance::get_values(node3).size() == 0),
+                  "Copied node doesn`t copy predecessor, but copy number of predecessors");
 }
 
 //! Test continue_node wait for their predecessors to complete before executing, but no explicit data is passed across the incoming edges.
@@ -226,7 +237,7 @@ TEST_CASE("continue_node number_of_predecessors") {
     oneapi::tbb::flow::continue_node<oneapi::tbb::flow::continue_msg> node1(g, fun);
     oneapi::tbb::flow::continue_node<oneapi::tbb::flow::continue_msg> node2(g, 1, fun);
     oneapi::tbb::flow::continue_node<oneapi::tbb::flow::continue_msg> node3(g, 1, fun);
-    oneapi::tbb::flow::continue_node<int> node4(g, fun); 
+    oneapi::tbb::flow::continue_node<int> node4(g, fun);
 
     oneapi::tbb::flow::make_edge(node1, node2);
     oneapi::tbb::flow::make_edge(node2, node4);
@@ -244,14 +255,17 @@ TEST_CASE("continue_node number_of_predecessors") {
 
 //! Test nodes for execution with priority in single-threaded configuration
 //! \brief \ref requirement
-TEST_CASE("continue_node priority support"){
-    conformance::test_priority<oneapi::tbb::flow::continue_node<oneapi::tbb::flow::continue_msg, int>, oneapi::tbb::flow::continue_msg>();
+TEST_CASE("continue_node priority support") {
+    conformance::test_priority<oneapi::tbb::flow::continue_node<oneapi::tbb::flow::continue_msg, int>,
+                               oneapi::tbb::flow::continue_msg>();
 }
 
 //! Test node Output class meet the CopyConstructible requirements.
 //! \brief \ref requirement
 TEST_CASE("continue_node Output class") {
-    conformance::test_output_class<oneapi::tbb::flow::continue_node<conformance::copy_counting_object<int, oneapi::tbb::flow::continue_msg>>, conformance::copy_counting_object<int, oneapi::tbb::flow::continue_msg>>();
+    conformance::test_output_class<oneapi::tbb::flow::continue_node<conformance::copy_counting_object<
+                                           int, oneapi::tbb::flow::continue_msg>>,
+                                   conformance::copy_counting_object<int, oneapi::tbb::flow::continue_msg>>();
 }
 
 //! Test body `try_put' statement not wait for the execution of the body to complete

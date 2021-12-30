@@ -31,10 +31,10 @@
 // __TBB_malloc_safer_msize() returns 0 for unknown objects,
 // thus we can detect ownership
 #if _USRDLL
-#if _WIN32||_WIN64
+#if _WIN32 || _WIN64
 extern __declspec(dllexport)
 #endif
-bool dll_isMallocOverloaded()
+        bool dll_isMallocOverloaded()
 #else
 bool exe_isMallocOverloaded()
 #endif
@@ -66,19 +66,13 @@ void __libc_free(void *ptr);
 void *__libc_realloc(void *ptr, size_t size);
 
 // check that such kind of free/realloc overload works correctly
-void free(void *ptr)
-{
-    __libc_free(ptr);
-}
+void free(void *ptr) { __libc_free(ptr); }
 
-void *realloc(void *ptr, size_t size)
-{
-    return __libc_realloc(ptr, size);
-}
-} // extern "C"
-#endif // __unix__ && !__ANDROID__
+void *realloc(void *ptr, size_t size) { return __libc_realloc(ptr, size); }
+}// extern "C"
+#endif// __unix__ && !__ANDROID__
 
-#endif // MALLOC_UNIXLIKE_OVERLOAD_ENABLED || MALLOC_ZONE_OVERLOAD_ENABLED
+#endif// MALLOC_UNIXLIKE_OVERLOAD_ENABLED || MALLOC_ZONE_OVERLOAD_ENABLED
 
 // Even when the test is skipped, dll source must not be empty to generate .lib to link with.
 
@@ -89,8 +83,7 @@ void dummyFunction() {}
 #if (MALLOC_UNIXLIKE_OVERLOAD_ENABLED || MALLOC_ZONE_OVERLOAD_ENABLED) && !__ANDROID__
 typedef void *(malloc_type)(size_t);
 
-static void SigSegv(int)
-{
+static void SigSegv(int) {
     REPORT("Known issue: SIGSEGV during work with memory allocated by replaced allocator.\n"
            "skip\n");
     exit(0);
@@ -98,53 +91,49 @@ static void SigSegv(int)
 
 // TODO: Using of SIGSEGV can be eliminated via parsing /proc/self/maps
 // and series of system malloc calls.
-void TestReplacedAllocFunc()
-{
+void TestReplacedAllocFunc() {
     struct sigaction sa, sa_default;
-    malloc_type *orig_malloc = (malloc_type*)dlsym(RTLD_NEXT, "malloc");
+    malloc_type *orig_malloc = (malloc_type *) dlsym(RTLD_NEXT, "malloc");
     void *p = (*orig_malloc)(16);
 
     // protect potentially unsafe actions
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;
     sa.sa_handler = SigSegv;
-    if (sigaction(SIGSEGV, &sa, &sa_default))
-        ASSERT(0, "sigaction failed");
+    if (sigaction(SIGSEGV, &sa, &sa_default)) ASSERT(0, "sigaction failed");
 
     ASSERT(malloc_usable_size(p) >= 16, NULL);
     free(p);
     // no more unsafe actions, restore SIGSEGV
-    if (sigaction(SIGSEGV, &sa_default, NULL))
-        ASSERT(0, "sigaction failed");
+    if (sigaction(SIGSEGV, &sa_default, NULL)) ASSERT(0, "sigaction failed");
 }
 #else
-void TestReplacedAllocFunc() { }
+void TestReplacedAllocFunc() {}
 #endif
 
 class Foo {
 public:
     Foo() {
         // add a lot of exit handlers to cause memory allocation
-        for (int i=0; i<1024; i++)
-            atexit(dummyFunction);
+        for (int i = 0; i < 1024; i++) atexit(dummyFunction);
         TestReplacedAllocFunc();
     }
 };
 
 static Foo f;
-#endif // !defined(_PGO_INSTRUMENT) && !__TBB_USE_ADDRESS_SANITIZER
+#endif// !defined(_PGO_INSTRUMENT) && !__TBB_USE_ADDRESS_SANITIZER
 
 int main() {}
 
-#else // _USRDLL
+#else// _USRDLL
 #include "common/test.h"
 
-#if _WIN32||_WIN64
+#if _WIN32 || _WIN64
 #include "tbb/tbbmalloc_proxy.h"
 
 extern __declspec(dllimport)
 #endif
-bool dll_isMallocOverloaded();
+        bool dll_isMallocOverloaded();
 
 #ifdef _PGO_INSTRUMENT
 //! \brief \ref error_guessing
@@ -157,11 +146,11 @@ TEST_CASE("Known issue: test_malloc_atexit is not applicable under ASAN\n" * doc
 #if !HARNESS_SKIP_TEST
 //! \brief \ref error_guessing
 TEST_CASE("test malloc atexit") {
-    REQUIRE_MESSAGE( dll_isMallocOverloaded(), "malloc was not replaced" );
-    REQUIRE_MESSAGE( exe_isMallocOverloaded(), "malloc was not replaced" );
+    REQUIRE_MESSAGE(dll_isMallocOverloaded(), "malloc was not replaced");
+    REQUIRE_MESSAGE(exe_isMallocOverloaded(), "malloc was not replaced");
 }
-#endif // HARNESS_SKIP_TEST
+#endif// HARNESS_SKIP_TEST
 
-#endif // _PGO_INSTRUMENT
+#endif// _PGO_INSTRUMENT
 
-#endif // _USRDLL
+#endif// _USRDLL
