@@ -22,13 +22,13 @@
 //! Test input access iterator support
 //! \brief \ref requirement \ref interface
 TEST_CASE("Input iterator support") {
-    for ( auto concurrency_level : utils::concurrency_range() ) {
-        oneapi::tbb::global_control control(oneapi::tbb::global_control::max_allowed_parallelism, concurrency_level);
+    for (auto concurrency_level : utils::concurrency_range()) {
+        oneapi::tbb::global_control control(oneapi::tbb::global_control::max_allowed_parallelism,
+                                            concurrency_level);
 
-        for( size_t depth = 0; depth <= depths_nubmer; ++depth ) {
+        for (size_t depth = 0; depth <= depths_nubmer; ++depth) {
             g_tasks_expected = 0;
-            for ( size_t i=0; i < depth; ++i )
-                g_tasks_expected += FindNumOfTasks(g_depths[i].value());
+            for (size_t i = 0; i < depth; ++i) g_tasks_expected += FindNumOfTasks(g_depths[i].value());
             TestIterator_Const<utils::InputIterator<value_t>>(depth);
             TestIterator_Move<utils::InputIterator<value_t>>(depth);
 #if __TBB_CPP14_GENERIC_LAMBDAS_PRESENT
@@ -41,14 +41,14 @@ TEST_CASE("Input iterator support") {
 //! Test container based overload
 //! \brief \ref requirement \ref interface
 TEST_CASE("Container based overload - input iterator based container") {
-    container_based_overload_test_case<utils::InputIterator, incremental_functor_const>(/*expected_value*/0);
+    container_based_overload_test_case<utils::InputIterator, incremental_functor_const>(/*expected_value*/ 0);
 }
 
 const size_t elements = 10000;
 const size_t init_sum = 0;
 std::atomic<size_t> element_counter;
 
-template<size_t K>
+template <size_t K>
 struct set_to {
     void operator()(size_t& x) const {
         x = K;
@@ -57,13 +57,14 @@ struct set_to {
 };
 
 #include "common/range_based_for_support.h"
-#include <functional>
 #include <deque>
+#include <functional>
 
-template<typename... Context>
+template <typename... Context>
 void WorkProducingTest(Context&... context) {
-    for ( auto concurrency_level : utils::concurrency_range() ) {
-        oneapi::tbb::global_control control(oneapi::tbb::global_control::max_allowed_parallelism, concurrency_level);
+    for (auto concurrency_level : utils::concurrency_range()) {
+        oneapi::tbb::global_control control(oneapi::tbb::global_control::max_allowed_parallelism,
+                                            concurrency_level);
 
         using namespace range_based_for_support_tests;
         std::deque<size_t> v(elements, 0);
@@ -71,23 +72,25 @@ void WorkProducingTest(Context&... context) {
         element_counter = 0;
         oneapi::tbb::parallel_for_each(v.begin(), v.end(), set_to<0>(), context...);
         REQUIRE_MESSAGE((element_counter == v.size() && element_counter == elements),
-            "not all elements were set");
+                        "not all elements were set");
         REQUIRE_MESSAGE(range_based_for_accumulate(v, std::plus<size_t>(), init_sum) == init_sum,
-            "elements of v not all ones");
+                        "elements of v not all ones");
 
         element_counter = 0;
         oneapi::tbb::parallel_for_each(v, set_to<1>(), context...);
         REQUIRE_MESSAGE((element_counter == v.size() && element_counter == elements),
-            "not all elements were set");
+                        "not all elements were set");
         REQUIRE_MESSAGE(range_based_for_accumulate(v, std::plus<size_t>(), init_sum) == v.size(),
-            "elements of v not all ones");
+                        "elements of v not all ones");
 
         element_counter = 0;
-        oneapi::tbb::parallel_for_each(oneapi::tbb::blocked_range<std::deque<size_t>::iterator>(v.begin(), v.end()), set_to<0>(), context...);
+        oneapi::tbb::parallel_for_each(
+                oneapi::tbb::blocked_range<std::deque<size_t>::iterator>(v.begin(), v.end()), set_to<0>(),
+                context...);
         REQUIRE_MESSAGE((element_counter == v.size() && element_counter == elements),
-            "not all elements were set");
+                        "not all elements were set");
         REQUIRE_MESSAGE(range_based_for_accumulate(v, std::plus<size_t>(), init_sum) == init_sum,
-            "elements of v not all zeros");
+                        "elements of v not all zeros");
     }
 }
 

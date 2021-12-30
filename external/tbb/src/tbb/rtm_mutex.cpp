@@ -14,109 +14,103 @@
     limitations under the License.
 */
 
+#include "governor.h"
+#include "itt_notify.h"
+#include "misc.h"
 #include "oneapi/tbb/detail/_assert.h"
 #include "oneapi/tbb/detail/_rtm_mutex.h"
-#include "itt_notify.h"
-#include "governor.h"
-#include "misc.h"
 
 #include <atomic>
 
 namespace tbb {
-namespace detail {
-namespace r1 {
+    namespace detail {
+        namespace r1 {
 
+            struct rtm_mutex_impl {
+                // maximum number of times to retry
+                // TODO: experiment on retry values.
+                static constexpr int retry_threshold = 10;
+                using transaction_result_type = decltype(begin_transaction());
 
-struct rtm_mutex_impl {
-    // maximum number of times to retry
-    // TODO: experiment on retry values.
-    static constexpr int retry_threshold = 10;
-    using transaction_result_type = decltype(begin_transaction());
-
-    //! Release speculative mutex
-    static void release(d1::rtm_mutex::scoped_lock& s) {
-        switch(s.m_transaction_state) {
-        case d1::rtm_mutex::rtm_state::rtm_transacting:
-            __TBB_ASSERT(is_in_transaction(), "m_transaction_state && not speculating");
-            end_transaction();
-            s.m_mutex = nullptr;
-            break;
-        case d1::rtm_mutex::rtm_state::rtm_real:
-            s.m_mutex->unlock();
-            s.m_mutex = nullptr;
-            break;
-        case d1::rtm_mutex::rtm_state::rtm_none:
-            __TBB_ASSERT(false, "mutex is not locked, but in release");
-            break;
-        default:
-            __TBB_ASSERT(false, "invalid m_transaction_state");
-        }
-        s.m_transaction_state = d1::rtm_mutex::rtm_state::rtm_none;
-    }
-
-    //! Acquire lock on the given mutex.
-    static void acquire(d1::rtm_mutex& m, d1::rtm_mutex::scoped_lock& s, bool only_speculate) {
-        __TBB_ASSERT(s.m_transaction_state == d1::rtm_mutex::rtm_state::rtm_none, "scoped_lock already in transaction");
-        if(governor::speculation_enabled()) {
-            int num_retries = 0;
-            transaction_result_type abort_code = 0;
-            do {
-                if(m.m_flag.load(std::memory_order_acquire)) {
-                    if(only_speculate) return;
-                    spin_wait_while_eq(m.m_flag, true);
-                }
-                // _xbegin returns -1 on success or the abort code, so capture it
-                if((abort_code = begin_transaction()) == transaction_result_type(speculation_successful_begin))
-                {
-                    // started speculation
-                    if(m.m_flag.load(std::memory_order_relaxed)) {
-                        abort_transaction();
+                //! Release speculative mutex
+                static void release(d1::rtm_mutex::scoped_lock& s) {
+                    switch (s.m_transaction_state) {
+                        case d1::rtm_mutex::rtm_state::rtm_transacting:
+                            __TBB_ASSERT(is_in_transaction(), "m_transaction_state && not speculating");
+                            end_transaction();
+                            s.m_mutex = nullptr;
+                            break;
+                        case d1::rtm_mutex::rtm_state::rtm_real:
+                            s.m_mutex->unlock();
+                            s.m_mutex = nullptr;
+                            break;
+                        case d1::rtm_mutex::rtm_state::rtm_none:
+                            __TBB_ASSERT(false, "mutex is not locked, but in release");
+                            break;
+                        default:
+                            __TBB_ASSERT(false, "invalid m_transaction_state");
                     }
-                    s.m_transaction_state = d1::rtm_mutex::rtm_state::rtm_transacting;
-                    // Don not wrap the following assignment to a function,
-                    // because it can abort the transaction in debug. Need mutex for release().
-                    s.m_mutex = &m;
-                    return;  // successfully started speculation
+                    s.m_transaction_state = d1::rtm_mutex::rtm_state::rtm_none;
                 }
-                ++num_retries;
-            } while((abort_code & speculation_retry) != 0 && (num_retries < retry_threshold));
-        }
 
-        if(only_speculate) return;
-        s.m_mutex = &m;
-        s.m_mutex->lock();
-        s.m_transaction_state = d1::rtm_mutex::rtm_state::rtm_real;
-        return;
-    }
+                //! Acquire lock on the given mutex.
+                static void acquire(d1::rtm_mutex& m, d1::rtm_mutex::scoped_lock& s, bool only_speculate) {
+                    __TBB_ASSERT(s.m_transaction_state == d1::rtm_mutex::rtm_state::rtm_none,
+                                 "scoped_lock already in transaction");
+                    if (governor::speculation_enabled()) {
+                        int num_retries = 0;
+                        transaction_result_type abort_code = 0;
+                        do {
+                            if (m.m_flag.load(std::memory_order_acquire)) {
+                                if (only_speculate) return;
+                                spin_wait_while_eq(m.m_flag, true);
+                            }
+                            // _xbegin returns -1 on success or the abort code, so capture it
+                            if ((abort_code = begin_transaction())
+                                == transaction_result_type(speculation_successful_begin)) {
+                                // started speculation
+                                if (m.m_flag.load(std::memory_order_relaxed)) { abort_transaction(); }
+                                s.m_transaction_state = d1::rtm_mutex::rtm_state::rtm_transacting;
+                                // Don not wrap the following assignment to a function,
+                                // because it can abort the transaction in debug. Need mutex for release().
+                                s.m_mutex = &m;
+                                return;// successfully started speculation
+                            }
+                            ++num_retries;
+                        } while ((abort_code & speculation_retry) != 0 && (num_retries < retry_threshold));
+                    }
 
-    //! Try to acquire lock on the given mutex.
-    static bool try_acquire(d1::rtm_mutex& m, d1::rtm_mutex::scoped_lock& s) {
-        acquire(m, s, /*only_speculate=*/true);
-        if (s.m_transaction_state == d1::rtm_mutex::rtm_state::rtm_transacting) {
-            return true;
-        }
-        __TBB_ASSERT(s.m_transaction_state == d1::rtm_mutex::rtm_state::rtm_none, NULL);
-        // transacting acquire failed. try_lock the real mutex
-        if (m.try_lock()) {
-            s.m_mutex = &m;
-            s.m_transaction_state = d1::rtm_mutex::rtm_state::rtm_real;
-            return true;
-        }
-        return false;
-    }
-};
+                    if (only_speculate) return;
+                    s.m_mutex = &m;
+                    s.m_mutex->lock();
+                    s.m_transaction_state = d1::rtm_mutex::rtm_state::rtm_real;
+                    return;
+                }
 
-void __TBB_EXPORTED_FUNC acquire(d1::rtm_mutex& m, d1::rtm_mutex::scoped_lock& s, bool only_speculate) {
-    rtm_mutex_impl::acquire(m, s, only_speculate);
-}
-bool __TBB_EXPORTED_FUNC try_acquire(d1::rtm_mutex& m, d1::rtm_mutex::scoped_lock& s) {
-    return rtm_mutex_impl::try_acquire(m, s);
-}
-void __TBB_EXPORTED_FUNC release(d1::rtm_mutex::scoped_lock& s) {
-    rtm_mutex_impl::release(s);
-}
+                //! Try to acquire lock on the given mutex.
+                static bool try_acquire(d1::rtm_mutex& m, d1::rtm_mutex::scoped_lock& s) {
+                    acquire(m, s, /*only_speculate=*/true);
+                    if (s.m_transaction_state == d1::rtm_mutex::rtm_state::rtm_transacting) { return true; }
+                    __TBB_ASSERT(s.m_transaction_state == d1::rtm_mutex::rtm_state::rtm_none, NULL);
+                    // transacting acquire failed. try_lock the real mutex
+                    if (m.try_lock()) {
+                        s.m_mutex = &m;
+                        s.m_transaction_state = d1::rtm_mutex::rtm_state::rtm_real;
+                        return true;
+                    }
+                    return false;
+                }
+            };
 
-} // namespace r1
-} // namespace detail
-} // namespace tbb
+            void __TBB_EXPORTED_FUNC acquire(d1::rtm_mutex& m, d1::rtm_mutex::scoped_lock& s,
+                                             bool only_speculate) {
+                rtm_mutex_impl::acquire(m, s, only_speculate);
+            }
+            bool __TBB_EXPORTED_FUNC try_acquire(d1::rtm_mutex& m, d1::rtm_mutex::scoped_lock& s) {
+                return rtm_mutex_impl::try_acquire(m, s);
+            }
+            void __TBB_EXPORTED_FUNC release(d1::rtm_mutex::scoped_lock& s) { rtm_mutex_impl::release(s); }
 
+        }// namespace r1
+    }    // namespace detail
+}// namespace tbb

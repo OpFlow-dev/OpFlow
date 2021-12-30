@@ -25,15 +25,15 @@
 #if __TBB_RESUMABLE_TASKS
 
 #include "tbb/global_control.h"
-#include "tbb/task_arena.h"
 #include "tbb/parallel_for.h"
-#include "tbb/task_scheduler_observer.h"
+#include "tbb/task_arena.h"
 #include "tbb/task_group.h"
+#include "tbb/task_scheduler_observer.h"
 
 #include <algorithm>
-#include <thread>
-#include <queue>
 #include <condition_variable>
+#include <queue>
+#include <thread>
 
 const int N = 10;
 
@@ -41,16 +41,14 @@ const int N = 10;
 class AsyncActivity {
 public:
     AsyncActivity(int num_) : m_numAsyncThreads(num_) {
-        for (int i = 0; i < m_numAsyncThreads ; ++i) {
-            m_asyncThreads.push_back( new std::thread(AsyncActivity::asyncLoop, this) );
+        for (int i = 0; i < m_numAsyncThreads; ++i) {
+            m_asyncThreads.push_back(new std::thread(AsyncActivity::asyncLoop, this));
         }
     }
     ~AsyncActivity() {
         {
             std::lock_guard<std::mutex> lock(m_mutex);
-            for (int i = 0; i < m_numAsyncThreads; ++i) {
-                m_tagQueue.push(nullptr);
-            }
+            for (int i = 0; i < m_numAsyncThreads; ++i) { m_tagQueue.push(nullptr); }
             m_condvar.notify_all();
         }
         for (int i = 0; i < m_numAsyncThreads; ++i) {
@@ -71,13 +69,11 @@ private:
         for (;;) {
             {
                 std::unique_lock<std::mutex> lock(async->m_mutex);
-                async->m_condvar.wait(lock, [async] {return !async->m_tagQueue.empty(); });
+                async->m_condvar.wait(lock, [async] { return !async->m_tagQueue.empty(); });
                 tag = async->m_tagQueue.front();
                 async->m_tagQueue.pop();
             }
-            if (!tag) {
-                break;
-            }
+            if (!tag) { break; }
             tbb::task::resume(tag);
         };
     }
@@ -90,11 +86,8 @@ private:
 };
 
 struct SuspendBody {
-    SuspendBody(AsyncActivity& a_) :
-        m_asyncActivity(a_) {}
-    void operator()(tbb::task::suspend_point tag) {
-        m_asyncActivity.submit(tag);
-    }
+    SuspendBody(AsyncActivity& a_) : m_asyncActivity(a_) {}
+    void operator()(tbb::task::suspend_point tag) { m_asyncActivity.submit(tag); }
 
 private:
     AsyncActivity& m_asyncActivity;
@@ -106,15 +99,13 @@ public:
 
     void operator()() {
         InnermostOuterParFor inner_outer_body(m_asyncActivity);
-        tbb::parallel_for(0, N, inner_outer_body );
+        tbb::parallel_for(0, N, inner_outer_body);
     }
 
 private:
     struct InnermostInnerParFor {
         InnermostInnerParFor(AsyncActivity& a_) : m_asyncActivity(a_) {}
-        void operator()(int) const {
-            tbb::task::suspend(SuspendBody(m_asyncActivity));
-        }
+        void operator()(int) const { tbb::task::suspend(SuspendBody(m_asyncActivity)); }
         AsyncActivity& m_asyncActivity;
     };
     struct InnermostOuterParFor {
@@ -133,19 +124,18 @@ private:
 
 class OutermostArenaBody {
 public:
-    OutermostArenaBody(AsyncActivity& a_, tbb::task_arena& o_, tbb::task_arena& i_
-            , tbb::task_arena& id_, tbb::enumerable_thread_specific<int>& ets) :
-        m_asyncActivity(a_), m_outermostArena(o_), m_innermostArena(i_), m_innermostArenaDefault(id_), m_local(ets) {}
+    OutermostArenaBody(AsyncActivity& a_, tbb::task_arena& o_, tbb::task_arena& i_, tbb::task_arena& id_,
+                       tbb::enumerable_thread_specific<int>& ets)
+        : m_asyncActivity(a_), m_outermostArena(o_), m_innermostArena(i_), m_innermostArenaDefault(id_),
+          m_local(ets) {}
 
-    void operator()() {
-        tbb::parallel_for(0, 32, *this);
-    }
+    void operator()() { tbb::parallel_for(0, 32, *this); }
 
     void operator()(int i) const {
         tbb::task::suspend(SuspendBody(m_asyncActivity));
 
-        tbb::task_arena& nested_arena = (i % 3 == 0) ?
-            m_outermostArena : (i % 3 == 1 ? m_innermostArena : m_innermostArenaDefault);
+        tbb::task_arena& nested_arena
+                = (i % 3 == 0) ? m_outermostArena : (i % 3 == 1 ? m_innermostArena : m_innermostArenaDefault);
 
         if (i % 3 != 0) {
             // We can only guarantee recall coorectness for "not-same" nested arenas entry
@@ -154,7 +144,8 @@ public:
         InnermostArenaBody innermost_arena_body(m_asyncActivity);
         nested_arena.execute(innermost_arena_body);
         if (i % 3 != 0) {
-            CHECK_MESSAGE(i == m_local.local(), "Original thread wasn't recalled for innermost nested arena.");
+            CHECK_MESSAGE(i == m_local.local(),
+                          "Original thread wasn't recalled for innermost nested arena.");
         }
     }
 
@@ -170,7 +161,7 @@ void TestNestedArena() {
     AsyncActivity asyncActivity(4);
 
     tbb::task_arena outermost_arena;
-    tbb::task_arena innermost_arena(2,2);
+    tbb::task_arena innermost_arena(2, 2);
     tbb::task_arena innermost_arena_default;
 
     outermost_arena.initialize();
@@ -179,7 +170,8 @@ void TestNestedArena() {
 
     tbb::enumerable_thread_specific<int> ets;
 
-    OutermostArenaBody outer_arena_body(asyncActivity, outermost_arena, innermost_arena, innermost_arena_default, ets);
+    OutermostArenaBody outer_arena_body(asyncActivity, outermost_arena, innermost_arena,
+                                        innermost_arena_default, ets);
     outermost_arena.execute(outer_arena_body);
 }
 
@@ -187,16 +179,14 @@ void TestNestedArena() {
 class EpochAsyncActivity {
 public:
     EpochAsyncActivity(int num_, std::atomic<int>& e_) : m_numAsyncThreads(num_), m_globalEpoch(e_) {
-        for (int i = 0; i < m_numAsyncThreads ; ++i) {
-            m_asyncThreads.push_back( new std::thread(EpochAsyncActivity::asyncLoop, this) );
+        for (int i = 0; i < m_numAsyncThreads; ++i) {
+            m_asyncThreads.push_back(new std::thread(EpochAsyncActivity::asyncLoop, this));
         }
     }
     ~EpochAsyncActivity() {
         {
             std::lock_guard<std::mutex> lock(m_mutex);
-            for (int i = 0; i < m_numAsyncThreads; ++i) {
-                m_tagQueue.push(nullptr);
-            }
+            for (int i = 0; i < m_numAsyncThreads; ++i) { m_tagQueue.push(nullptr); }
             m_condvar.notify_all();
         }
         for (int i = 0; i < m_numAsyncThreads; ++i) {
@@ -217,13 +207,11 @@ private:
         for (;;) {
             {
                 std::unique_lock<std::mutex> lock(async->m_mutex);
-                async->m_condvar.wait(lock, [async] {return !async->m_tagQueue.empty(); });
+                async->m_condvar.wait(lock, [async] { return !async->m_tagQueue.empty(); });
                 tag = async->m_tagQueue.front();
                 async->m_tagQueue.pop();
             }
-            if (!tag) {
-                break;
-            }
+            if (!tag) { break; }
             // Track the global epoch
             async->m_globalEpoch++;
             tbb::task::resume(tag);
@@ -239,8 +227,8 @@ private:
 };
 
 struct EpochSuspendBody {
-    EpochSuspendBody(EpochAsyncActivity& a_, std::atomic<int>& e_, int& le_) :
-        m_asyncActivity(a_), m_globalEpoch(e_), m_localEpoch(le_) {}
+    EpochSuspendBody(EpochAsyncActivity& a_, std::atomic<int>& e_, int& le_)
+        : m_asyncActivity(a_), m_globalEpoch(e_), m_localEpoch(le_) {}
 
     void operator()(tbb::task::suspend_point ctx) {
         m_localEpoch = m_globalEpoch;
@@ -261,7 +249,8 @@ void TestSuspendResume() {
     constexpr int iter_size = 50000;
 #endif
 
-    std::atomic<int> global_epoch; global_epoch = 0;
+    std::atomic<int> global_epoch;
+    global_epoch = 0;
     EpochAsyncActivity async(4, global_epoch);
 
     tbb::enumerable_thread_specific<int, tbb::cache_aligned_allocator<int>, tbb::ets_suspend_aware> ets_fiber;
@@ -292,7 +281,7 @@ void TestSuspendResume() {
         ++outer_par_iters;
     });
     CHECK(outer_par_iters == N);
-    CHECK(inner_par_iters == N*N*iter_size);
+    CHECK(inner_par_iters == N * N * iter_size);
 }
 
 // During cleanup external thread's local task pool may
@@ -312,7 +301,7 @@ void TestCleanupMaster() {
         iter_executed = 0;
 
         utils::NativeParallelFor(N, [&asyncActivity, &tg, &iter_spawned, &iter_executed](int j) {
-            for (int k = 0; k < j*10 + 1; ++k) {
+            for (int k = 0; k < j * 10 + 1; ++k) {
                 tg.run([&asyncActivity, j, &iter_executed] {
                     utils::doDummyWork(j * 10);
                     tbb::task::suspend(SuspendBody(asyncActivity));
@@ -329,6 +318,7 @@ void TestCleanupMaster() {
 class ParForSuspendBody {
     AsyncActivity& asyncActivity;
     int m_numIters;
+
 public:
     ParForSuspendBody(AsyncActivity& a_, int iters) : asyncActivity(a_), m_numIters(iters) {}
     void operator()(int) const {
@@ -342,26 +332,23 @@ void TestNativeThread() {
 
     tbb::task_arena arena;
     tbb::task_group tg;
-    std::atomic<int> iter{};
+    std::atomic<int> iter {};
     utils::NativeParallelFor(arena.max_concurrency() / 2, [&arena, &tg, &asyncActivity, &iter](int) {
         for (int i = 0; i < 10; i++) {
             arena.execute([&tg, &asyncActivity, &iter]() {
-                tg.run([&asyncActivity]() {
-                    tbb::task::suspend(SuspendBody(asyncActivity));
-                });
+                tg.run([&asyncActivity]() { tbb::task::suspend(SuspendBody(asyncActivity)); });
                 iter++;
             });
         }
     });
 
     CHECK(iter == (arena.max_concurrency() / 2 * 10));
-    arena.execute([&tg](){
-        tg.wait();
-    });
+    arena.execute([&tg]() { tg.wait(); });
 }
 
 class ObserverTracker : public tbb::task_scheduler_observer {
     static thread_local bool is_in_arena;
+
 public:
     std::atomic<int> counter;
 
@@ -389,11 +376,12 @@ void TestObservers() {
     ObserverTracker tracker(arena);
     do {
         arena.execute([] {
-            tbb::parallel_for(0, 10, [](int) {
-                tbb::task::suspend([](tbb::task::suspend_point tag) {
-                    tbb::task::resume(tag);
-                });
-            }, tbb::simple_partitioner());
+            tbb::parallel_for(
+                    0, 10,
+                    [](int) {
+                        tbb::task::suspend([](tbb::task::suspend_point tag) { tbb::task::resume(tag); });
+                    },
+                    tbb::simple_partitioner());
         });
     } while (tracker.counter < 100);
     tracker.observe(false);
@@ -403,11 +391,12 @@ class TestCaseGuard {
     static thread_local bool m_local;
     tbb::global_control m_threadLimit;
     tbb::global_control m_stackLimit;
+
 public:
     TestCaseGuard()
-        : m_threadLimit(tbb::global_control::max_allowed_parallelism, std::max(tbb::this_task_arena::max_concurrency(), 16))
-        , m_stackLimit(tbb::global_control::thread_stack_size, 128*1024)
-    {
+        : m_threadLimit(tbb::global_control::max_allowed_parallelism,
+                        std::max(tbb::this_task_arena::max_concurrency(), 16)),
+          m_stackLimit(tbb::global_control::thread_stack_size, 128 * 1024) {
         CHECK(m_local == false);
         m_local = true;
     }
@@ -435,19 +424,13 @@ TEST_CASE("Nested arena") {
 
 //! Test with external threads
 //! \brief \ref error_guessing
-TEST_CASE("External threads") {
-    TestNativeThread();
-}
+TEST_CASE("External threads") { TestNativeThread(); }
 
 //! Stress test with external threads
 //! \brief \ref stress
-TEST_CASE("Stress test with external threads") {
-    TestCleanupMaster();
-}
+TEST_CASE("Stress test with external threads") { TestCleanupMaster(); }
 
 //! Test with an arena observer
 //! \brief \ref error_guessing
-TEST_CASE("Arena observer") {
-    TestObservers();
-}
+TEST_CASE("Arena observer") { TestObservers(); }
 #endif /* __TBB_RESUMABLE_TASKS */

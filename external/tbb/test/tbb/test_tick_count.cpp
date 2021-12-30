@@ -14,10 +14,10 @@
     limitations under the License.
 */
 
+#include "common/spin_barrier.h"
 #include "common/test.h"
 #include "common/utils.h"
 #include "common/utils_concurrency_limit.h"
-#include "common/spin_barrier.h"
 
 #include <tbb/tick_count.h>
 #include <thread>
@@ -50,18 +50,14 @@ TEST_CASE("Test for subtracting calls to tick_count from different threads") {
     utils::SpinBarrier thread_barrier(num_of_threads);
     tbb::tick_count start_time;
 
-    auto diff_func = [&thread_barrier, &start_time] (std::size_t ) {
+    auto diff_func = [&thread_barrier, &start_time](std::size_t) {
         thread_barrier.wait([&start_time] { start_time = tbb::tick_count::now(); });
 
         tbb::tick_count end_time(tbb::tick_count::now());
-        while ((end_time - start_time).seconds() == 0) {
-            end_time = tbb::tick_count::now();
-        }
+        while ((end_time - start_time).seconds() == 0) { end_time = tbb::tick_count::now(); }
 
         CHECK_GT((end_time - start_time).seconds(), 0);
     };
 
-    for (std::size_t i = 0; i < 10; ++i) {
-        utils::NativeParallelFor(num_of_threads, diff_func);
-    }
+    for (std::size_t i = 0; i < 10; ++i) { utils::NativeParallelFor(num_of_threads, diff_func); }
 }

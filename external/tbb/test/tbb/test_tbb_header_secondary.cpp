@@ -18,16 +18,19 @@
 //! \brief Test for [all] specification
 
 #if __INTEL_COMPILER && _MSC_VER
-#pragma warning(disable : 2586) // decorated name length exceeded, name was truncated
+#pragma warning(disable : 2586)// decorated name length exceeded, name was truncated
 #endif
 
 #ifndef NOMINMAX
 #define NOMINMAX
-#endif // NOMINMAX
+#endif// NOMINMAX
 
 #include <exception>
 
-#define CHECK(x) do { if (!(x)) { std::terminate(); } } while (false)
+#define CHECK(x)                                                                                             \
+    do {                                                                                                     \
+        if (!(x)) { std::terminate(); }                                                                      \
+    } while (false)
 #define CHECK_MESSAGE(x, y) CHECK(x);
 
 #define __TBB_TEST_SECONDARY 1

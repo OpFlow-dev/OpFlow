@@ -208,6 +208,20 @@ endif ()
 target_link_libraries(opflow INTERFACE amgcl::amgcl)
 
 # ----------------------------------------------------------------------------
+# Use TBB
+# ----------------------------------------------------------------------------
+if (OPFLOW_INSTALL)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/TBBConfig.cmake)
+    CONFIG_AND_INSTALL_TBB()
+    find_package(tbb REQUIRED PATHS ${CMAKE_INSTALL_PREFIX})
+else ()
+    set(BUILD_SHARED_LIBS ON)
+    set(TBB_TEST OFF)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/tbb EXCLUDE_FROM_ALL)
+endif ()
+target_link_libraries(opflow INTERFACE TBB::tbb)
+
+# ----------------------------------------------------------------------------
 # Find MPI
 # ----------------------------------------------------------------------------
 if (OPFLOW_WITH_MPI)

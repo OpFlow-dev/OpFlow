@@ -26,10 +26,10 @@
 #include "common/utils_env.h"
 #include "src/tbb/environment.h"
 
-#include <string>
 #include <algorithm>
-#include <sstream>
 #include <climits>
+#include <sstream>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -47,9 +47,8 @@ const std::size_t large_length = 1000000;
 #endif
 
 template <typename T>
-void set_and_get_test_variable( T (*environment_variable_getter)( const char* ),
-                                std::pair<std::string, T> test_case )
-{
+void set_and_get_test_variable(T (*environment_variable_getter)(const char*),
+                               std::pair<std::string, T> test_case) {
     utils::SetEnv(environment_variable_name, test_case.first.c_str());
     T result = environment_variable_getter(environment_variable_name);
     REQUIRE_MESSAGE(result == test_case.second, "Wrong Get<Type>EnvironmentVariable return value");
@@ -60,11 +59,11 @@ utils::FastRandom<> rnd(12345);
 
 struct RandomCharacterGenerator {
     char operator()() {
-        return rnd.get() % 128; // 127 - the last ASCII symbol
+        return rnd.get() % 128;// 127 - the last ASCII symbol
     }
-}; // struct RandomCharacterGenerator
+};// struct RandomCharacterGenerator
 
-bool alternative_env_variable_checker( const char* str, bool ) {
+bool alternative_env_variable_checker(const char* str, bool) {
     bool result = false;
     for (unsigned i = 0; str[i]; ++i) {
         if (str[i] == '1') {
@@ -81,28 +80,25 @@ bool alternative_env_variable_checker( const char* str, bool ) {
 
 // Suitable alternative checker for GetLongEnvVariable() was not found
 // So here we use the code from GetLongEnvVariable() realization
-long alternative_env_variable_checker( const char* str, long ) {
+long alternative_env_variable_checker(const char* str, long) {
     char* end;
     errno = 0;
     long result = std::strtol(str, &end, 10);
 
     // We have exceeded the range, value is negative or it is the end of the string
-    if (errno == ERANGE || result < 0 || end == str) {
-        result = -1;
-    }
+    if (errno == ERANGE || result < 0 || end == str) { result = -1; }
 
     for (; *end != '\0'; ++end) {
-        if (!std::isspace(*end))
-            result = -1;
+        if (!std::isspace(*end)) result = -1;
     }
     return result;
 }
 
 template <typename T>
-std::pair<std::string, T> create_random_case( std::size_t length ) {
+std::pair<std::string, T> create_random_case(std::size_t length) {
     REQUIRE_MESSAGE(length != 0, "Requested random string cannot be empty");
     std::string rand_string(length, ' ');
-    std::generate(rand_string.begin(), rand_string.end(), RandomCharacterGenerator{});
+    std::generate(rand_string.begin(), rand_string.end(), RandomCharacterGenerator {});
 
     T expected_result = alternative_env_variable_checker(rand_string.c_str(), T());
 
@@ -110,19 +106,17 @@ std::pair<std::string, T> create_random_case( std::size_t length ) {
 }
 
 template <typename T>
-void prepare_random_cases( std::vector<std::pair<std::string, T>>& cases ) {
+void prepare_random_cases(std::vector<std::pair<std::string, T>>& cases) {
     // Random cases
     std::size_t length = 10000;
 
-    for (std::size_t i = 0; i < 10; ++i) {
-        cases.push_back(create_random_case<T>((rnd.get() % length) + 1));
-    }
+    for (std::size_t i = 0; i < 10; ++i) { cases.push_back(create_random_case<T>((rnd.get() % length) + 1)); }
 
     // Random case with large string
     cases.push_back(create_random_case<T>(large_length));
 }
 
-std::vector<std::pair<std::string, bool>> initialize_cases( bool wrong_result ) {
+std::vector<std::pair<std::string, bool>> initialize_cases(bool wrong_result) {
     std::vector<std::pair<std::string, bool>> cases;
     // Valid cases
     cases.push_back(std::make_pair("1", true));
@@ -156,7 +150,7 @@ std::vector<std::pair<std::string, bool>> initialize_cases( bool wrong_result ) 
     return cases;
 }
 
-std::vector<std::pair<std::string, long>> initialize_cases( long wrong_result ) {
+std::vector<std::pair<std::string, long>> initialize_cases(long wrong_result) {
     std::vector<std::pair<std::string, long>> cases;
     std::stringstream ss;
     // Valid cases
@@ -214,7 +208,7 @@ std::vector<std::pair<std::string, long>> initialize_cases( long wrong_result ) 
 }
 
 template <typename T>
-void test_environment_variable( T (*environment_variables_handler)( const char* ), T wrong_result ) {
+void test_environment_variable(T (*environment_variables_handler)(const char*), T wrong_result) {
     REQUIRE_MESSAGE(environment_variables_handler(environment_variable_name) == wrong_result,
                     "Tested environment variable should not be defined in the beginning");
 
@@ -238,4 +232,4 @@ TEST_CASE("testing GetIntegralEnvironmentVariable") {
     test_environment_variable(tbb::detail::r1::GetIntegralEnvironmentVariable, -1L);
 }
 
-#endif // !__TBB_WIN8UI_SUPPORT
+#endif// !__TBB_WIN8UI_SUPPORT

@@ -19,6 +19,7 @@
 #include <array>
 #include <concepts>
 #include <cstddef>
+#include <oneapi/tbb/detail/_range_common.h>
 #include <vector>
 
 namespace OpFlow::DS {
@@ -172,6 +173,34 @@ namespace OpFlow::DS {
             for (int i = 0; i < d; ++i) ret[i]--;
             return ret;
         }
+
+        bool empty() const { return count() <= 0; }
+
+        bool is_divisible() const {
+            for (int i = 0; i < dim; ++i) {
+                if (end[i] - start[i] > 1) return true;
+            }
+            return false;
+        }
+
+        Range(Range& r, tbb::detail::split split) : Range(r) {
+            this->reValidPace();
+            int max_iter = std::max_element(pace.begin(), pace.end()) - pace.begin();
+            this->end[max_iter] = this->start[max_iter] + this->pace[max_iter] / 2;
+            r.start[max_iter] = this->end[max_iter];
+        }
+
+        Range(Range& r, tbb::detail::proportional_split proportion) : Range(r) {
+            this->reValidPace();
+            int max_iter = std::max_element(pace.begin(), pace.end()) - pace.begin();
+            int right_part = int(float(r.end[max_iter] - r.start[max_iter]) * float(proportion.right())
+                                         / float(proportion.left() + proportion.right())
+                                 + 0.5f);
+            r.end[max_iter] -= right_part;
+            this->start[max_iter] = r.end[max_iter];
+        }
+
+        static constexpr bool is_splittable_in_proportion = true;
     };
 
     template <typename T>

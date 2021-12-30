@@ -113,8 +113,8 @@ int pthread_join(pthread_t th, void **thread_return) {
 void pthread_exit(void *retval) {
     /*  specific to PTHREAD_TO_WINTHREAD  */
 
-    ExitThread((
-        DWORD)((std::size_t)retval)); /* thread becomes signalled so its death can be waited upon */
+    ExitThread((DWORD)(
+        (std::size_t)retval)); /* thread becomes signalled so its death can be waited upon */
     /*NOTREACHED*/
     assert(0);
     return; /* void fnc; can't return an error code */

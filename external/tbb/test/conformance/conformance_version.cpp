@@ -27,21 +27,21 @@
 TEST_CASE("Test specification version") {
     const char* expected = "1.0";
     REQUIRE_MESSAGE(std::strcmp(expected, ONETBB_SPEC_VERSION) == 0,
-        "Expected and actual specification versions do not match.");
+                    "Expected and actual specification versions do not match.");
 }
 
 //! Testing the match of compile-time and runtime interface versions
 //! \brief \ref requirement \ref interface
 TEST_CASE("Test interface version") {
-    REQUIRE_MESSAGE(TBB_runtime_interface_version()==TBB_INTERFACE_VERSION,
-        "Running with the library of different version than the test was compiled against.");
+    REQUIRE_MESSAGE(TBB_runtime_interface_version() == TBB_INTERFACE_VERSION,
+                    "Running with the library of different version than the test was compiled against.");
 }
 
 //! Testing the match of compile-time and runtime version strings
 //! \brief \ref requirement \ref interface
 TEST_CASE("Test version string") {
-    REQUIRE_MESSAGE(std::strcmp( TBB_runtime_version(), TBB_VERSION_STRING )==0,
-        "Running with the library of different version than the test was compiled against.");
+    REQUIRE_MESSAGE(std::strcmp(TBB_runtime_version(), TBB_VERSION_STRING) == 0,
+                    "Running with the library of different version than the test was compiled against.");
 }
 
 //! Testing interface macros

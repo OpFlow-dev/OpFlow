@@ -17,17 +17,17 @@
 #define TBB_PREVIEW_MUTEXES 1
 #include "test_mutex.h"
 
-#include <tbb/spin_mutex.h>
 #include "oneapi/tbb/mutex.h"
-#include <tbb/spin_rw_mutex.h>
 #include "oneapi/tbb/rw_mutex.h"
-#include <tbb/queuing_mutex.h>
-#include <tbb/queuing_rw_mutex.h>
+#include <oneapi/tbb/detail/_machine.h>
+#include <oneapi/tbb/detail/_utils.h>
 #include <tbb/null_mutex.h>
 #include <tbb/null_rw_mutex.h>
 #include <tbb/parallel_for.h>
-#include <oneapi/tbb/detail/_utils.h>
-#include <oneapi/tbb/detail/_machine.h>
+#include <tbb/queuing_mutex.h>
+#include <tbb/queuing_rw_mutex.h>
+#include <tbb/spin_mutex.h>
+#include <tbb/spin_rw_mutex.h>
 
 //! \file test_mutex.cpp
 //! \brief Test for [mutex.spin_mutex mutex.spin_rw_mutex mutex.queuing_mutex mutex.queuing_rw_mutexmutex.speculative_spin_mutex mutex.speculative_spin_rw_mutex] specifications
@@ -37,15 +37,13 @@
 // considered as races by Thread Sanitizer)
 #if __TBB_TSX_INTRINSICS_PRESENT && !__APPLE__ && !__TBB_USE_THREAD_SANITIZER
 
-inline static bool IsInsideTx() {
-    return _xtest() != 0;
-}
+inline static bool IsInsideTx() { return _xtest() != 0; }
 
 bool have_TSX() {
     bool result = false;
     const int rtm_ebx_mask = 1 << 11;
 #if _MSC_VER
-    int info[4] = { 0,0,0,0 };
+    int info[4] = {0, 0, 0, 0};
     const int reg_ebx = 1;
     __cpuidex(info, 7, 0);
     result = (info[reg_ebx] & rtm_ebx_mask) != 0;
@@ -54,15 +52,16 @@ bool have_TSX() {
     int32_t reg_eax = 7;
     int32_t reg_ecx = 0;
     __asm__ __volatile__("movl %%ebx, %%esi\n"
-        "cpuid\n"
-        "movl %%ebx, %0\n"
-        "movl %%esi, %%ebx\n"
-        : "=a"(reg_ebx) : "0" (reg_eax), "c" (reg_ecx) : "esi",
+                         "cpuid\n"
+                         "movl %%ebx, %0\n"
+                         "movl %%esi, %%ebx\n"
+                         : "=a"(reg_ebx)
+                         : "0"(reg_eax), "c"(reg_ecx)
+                         : "esi",
 #if __TBB_x86_64
-        "ebx",
+                           "ebx",
 #endif
-        "edx"
-    );
+                           "edx");
     result = (reg_ebx & rtm_ebx_mask) != 0;
 #endif
     return result;
@@ -70,7 +69,7 @@ bool have_TSX() {
 
 //! Function object for use with parallel_for.h to see if a transaction is actually attempted.
 std::atomic<std::size_t> n_transactions_attempted;
-template<typename C>
+template <typename C>
 struct AddOne_CheckTransaction {
 
     AddOne_CheckTransaction& operator=(const AddOne_CheckTransaction&) = delete;
@@ -95,21 +94,21 @@ struct AddOne_CheckTransaction {
 };
 
 /* TestTransaction() checks if a speculative mutex actually uses transactions. */
-template<typename M>
-void TestTransaction(const char* name)
-{
+template <typename M>
+void TestTransaction(const char* name) {
     utils::Counter<M> counter;
     constexpr int n = 550;
 
     n_transactions_attempted = 0;
     for (int i = 0; i < 5 && n_transactions_attempted.load(std::memory_order_relaxed) == 0; ++i) {
         counter.value = 0;
-        tbb::parallel_for(tbb::blocked_range<std::size_t>(0, n, 2), AddOne_CheckTransaction<utils::Counter<M>>(counter));
+        tbb::parallel_for(tbb::blocked_range<std::size_t>(0, n, 2),
+                          AddOne_CheckTransaction<utils::Counter<M>>(counter));
         REQUIRE(counter.value == n);
     }
-    REQUIRE_MESSAGE(n_transactions_attempted.load(std::memory_order_relaxed), "ERROR for " << name << ": transactions were never attempted");
+    REQUIRE_MESSAGE(n_transactions_attempted.load(std::memory_order_relaxed),
+                    "ERROR for " << name << ": transactions were never attempted");
 }
-
 
 //! \brief \ref error_guessing
 TEST_CASE("Transaction test") {
@@ -121,9 +120,7 @@ TEST_CASE("Transaction test") {
 #endif /* __TBB_TSX_TESTING_ENABLED_FOR_THIS_COMPILER */
 
 //! \brief \ref error_guessing
-TEST_CASE("test upgrade/downgrade with spin_rw_mutex") {
-    test_rwm_upgrade_downgrade<tbb::spin_rw_mutex>();
-}
+TEST_CASE("test upgrade/downgrade with spin_rw_mutex") { test_rwm_upgrade_downgrade<tbb::spin_rw_mutex>(); }
 
 //! \brief \ref error_guessing
 TEST_CASE("test upgrade/downgrade with queueing_rw_mutex") {
@@ -136,14 +133,10 @@ TEST_CASE("test upgrade/downgrade with speculative_spin_rw_mutex") {
 }
 
 //! \brief \ref error_guessing
-TEST_CASE("test spin_mutex with native threads") {
-    test_with_native_threads::test<tbb::spin_mutex>();
-}
+TEST_CASE("test spin_mutex with native threads") { test_with_native_threads::test<tbb::spin_mutex>(); }
 
 //! \brief \ref error_guessing
-TEST_CASE("test queuing_mutex with native threads") {
-    test_with_native_threads::test<tbb::queuing_mutex>();
-}
+TEST_CASE("test queuing_mutex with native threads") { test_with_native_threads::test<tbb::queuing_mutex>(); }
 
 //! \brief \ref error_guessing
 TEST_CASE("test spin_rw_mutex with native threads") {
@@ -177,8 +170,9 @@ concept rw_mutexes = (... && tbb::detail::rw_scoped_lockable<Args>);
 //! \brief \ref error_guessing
 TEST_CASE("internal mutex concepts") {
     static_assert(mutexes<tbb::spin_mutex, tbb::speculative_spin_mutex, tbb::null_mutex, tbb::queuing_mutex,
-                          tbb::spin_rw_mutex, tbb::speculative_spin_rw_mutex, tbb::null_rw_mutex, tbb::queuing_rw_mutex>);
-    static_assert(rw_mutexes<tbb::spin_rw_mutex, tbb::speculative_spin_rw_mutex,
-                             tbb::null_rw_mutex, tbb::queuing_rw_mutex>);
+                          tbb::spin_rw_mutex, tbb::speculative_spin_rw_mutex, tbb::null_rw_mutex,
+                          tbb::queuing_rw_mutex>);
+    static_assert(rw_mutexes<tbb::spin_rw_mutex, tbb::speculative_spin_rw_mutex, tbb::null_rw_mutex,
+                             tbb::queuing_rw_mutex>);
 }
-#endif // __TBB_CPP20_CONCEPTS_PRESENT
+#endif// __TBB_CPP20_CONCEPTS_PRESENT

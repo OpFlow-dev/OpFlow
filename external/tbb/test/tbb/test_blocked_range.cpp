@@ -14,12 +14,12 @@
     limitations under the License.
 */
 
+#include "common/concepts_common.h"
+#include "common/config.h"
+#include "common/range_based_for_support.h"
 #include "common/test.h"
 #include "common/utils.h"
 #include "common/utils_report.h"
-#include "common/range_based_for_support.h"
-#include "common/config.h"
-#include "common/concepts_common.h"
 
 #include "tbb/blocked_range.h"
 #include "tbb/blocked_range2d.h"
@@ -30,8 +30,8 @@
 //! \file test_blocked_range.cpp
 //! \brief Test for [algorithms.blocked_range] specification
 
-#include <utility> //for std::pair
 #include <functional>
+#include <utility>//for std::pair
 #include <vector>
 
 //! Testing blocked_range with range based for
@@ -42,13 +42,12 @@ TEST_CASE("Range based for") {
     const std::size_t sequence_length = 100;
     std::size_t int_array[sequence_length] = {0};
 
-    for (std::size_t i = 0; i < sequence_length; ++i) {
-        int_array[i] = i + 1;
-    }
+    for (std::size_t i = 0; i < sequence_length; ++i) { int_array[i] = i + 1; }
     const tbb::blocked_range<std::size_t*> r(int_array, int_array + sequence_length, 1);
 
     CHECK_MESSAGE(range_based_for_accumulate<std::size_t>(r, std::plus<std::size_t>(), std::size_t(0))
-            == gauss_summ_of_int_sequence(sequence_length), "incorrect accumulated value generated via range based for ?");
+                          == gauss_summ_of_int_sequence(sequence_length),
+                  "incorrect accumulated value generated via range based for ?");
 }
 
 //! Proportional split does not overflow with blocked range
@@ -68,19 +67,21 @@ TEST_CASE("Proportional split overflow") {
     // overflow-free computation
     std::size_t parts = p.left() + p.right();
     std::size_t int_part = size / parts;
-    std::size_t fraction = size - int_part * parts; // fraction < parts
+    std::size_t fraction = size - int_part * parts;// fraction < parts
     std::size_t right_idx = int_part * p.right() + fraction * p.right() / parts + 1;
     std::size_t newRangeBegin = end - right_idx;
 
     // Division in 'right_idx' very likely is inexact also.
     std::size_t tolerance = 1;
-    std::size_t diff = (r2.begin() < newRangeBegin) ? (newRangeBegin - r2.begin()) : (r2.begin() - newRangeBegin);
+    std::size_t diff
+            = (r2.begin() < newRangeBegin) ? (newRangeBegin - r2.begin()) : (r2.begin() - newRangeBegin);
     bool is_split_correct = diff <= tolerance;
-    bool test_passed = (r1.begin() == begin && r1.end() == r2.begin() && is_split_correct &&
-                        r2.end() == end);
+    bool test_passed = (r1.begin() == begin && r1.end() == r2.begin() && is_split_correct && r2.end() == end);
     if (!test_passed) {
         REPORT("Incorrect split of blocked range[%lu, %lu) into r1[%lu, %lu) and r2[%lu, %lu), "
-               "must be r1[%lu, %lu) and r2[%lu, %lu)\n", begin, end, r1.begin(), r1.end(), r2.begin(), r2.end(), begin, newRangeBegin, newRangeBegin, end);
+               "must be r1[%lu, %lu) and r2[%lu, %lu)\n",
+               begin, end, r1.begin(), r1.end(), r2.begin(), r2.end(), begin, newRangeBegin, newRangeBegin,
+               end);
         CHECK(test_passed);
     }
 }
@@ -88,36 +89,51 @@ TEST_CASE("Proportional split overflow") {
 #if __TBB_CPP20_CONCEPTS_PRESENT
 
 template <bool ExpectSatisfies, typename... Types>
-    requires (... && (utils::well_formed_instantiation<tbb::blocked_range, Types> == ExpectSatisfies))
-void test_blocked_range_constraint() {}
+requires(...
+         && (utils::well_formed_instantiation<
+                     tbb::blocked_range, Types> == ExpectSatisfies)) void test_blocked_range_constraint() {}
 
 template <bool ExpectSatisfies, typename... Types>
-    requires (... && (utils::well_formed_instantiation<tbb::blocked_range2d, Types, Types> == ExpectSatisfies))
-void test_blocked_range2d_constraint() {}
+requires(...
+         && (utils::well_formed_instantiation<
+                     tbb::blocked_range2d, Types,
+                     Types> == ExpectSatisfies)) void test_blocked_range2d_constraint() {}
 
 template <typename... Types>
-    requires (... && (utils::well_formed_instantiation<tbb::blocked_range2d, Types, test_concepts::Dummy> == false))
-void test_blocked_range2d_col_invalid_constraint() {}
+requires(...
+         && (utils::well_formed_instantiation<
+                     tbb::blocked_range2d, Types,
+                     test_concepts::Dummy> == false)) void test_blocked_range2d_col_invalid_constraint() {}
 
 template <typename... Types>
-    requires (... && (utils::well_formed_instantiation<tbb::blocked_range2d, test_concepts::Dummy, Types> == false))
-void test_blocked_range2d_row_invalid_constraint() {}
+requires(...
+         && (utils::well_formed_instantiation<
+                     tbb::blocked_range2d, test_concepts::Dummy,
+                     Types> == false)) void test_blocked_range2d_row_invalid_constraint() {}
 
 template <bool ExpectSatisfies, typename... Types>
-    requires (... && (utils::well_formed_instantiation<tbb::blocked_range3d, Types, Types, Types> == ExpectSatisfies))
-void test_blocked_range3d_constraint() {}
+requires(...
+         && (utils::well_formed_instantiation<
+                     tbb::blocked_range3d, Types, Types,
+                     Types> == ExpectSatisfies)) void test_blocked_range3d_constraint() {}
 
 template <typename... Types>
-    requires (... && (utils::well_formed_instantiation<tbb::blocked_range3d, test_concepts::Dummy, Types, Types> == false))
-void test_blocked_range3d_page_invalid_constraint() {}
+requires(...
+         && (utils::well_formed_instantiation<
+                     tbb::blocked_range3d, test_concepts::Dummy, Types,
+                     Types> == false)) void test_blocked_range3d_page_invalid_constraint() {}
 
 template <typename... Types>
-    requires (... && (utils::well_formed_instantiation<tbb::blocked_range3d, Types, test_concepts::Dummy, Types> == false))
-void test_blocked_range3d_row_invalid_constraint() {}
+requires(...
+         && (utils::well_formed_instantiation<
+                     tbb::blocked_range3d, Types, test_concepts::Dummy,
+                     Types> == false)) void test_blocked_range3d_row_invalid_constraint() {}
 
 template <typename... Types>
-    requires (... && (utils::well_formed_instantiation<tbb::blocked_range3d, Types, Types, test_concepts::Dummy> == false))
-void test_blocked_range3d_col_invalid_constraint() {}
+requires(...
+         && (utils::well_formed_instantiation<
+                     tbb::blocked_range3d, Types, Types,
+                     test_concepts::Dummy> == false)) void test_blocked_range3d_col_invalid_constraint() {}
 
 template <typename T>
 concept well_formed_blocked_range_Nd_instantiation_basic = requires {
@@ -125,18 +141,17 @@ concept well_formed_blocked_range_Nd_instantiation_basic = requires {
 };
 
 template <typename... Types>
-concept well_formed_blocked_range_Nd_instantiation = ( ... && well_formed_blocked_range_Nd_instantiation_basic<Types> );
+concept well_formed_blocked_range_Nd_instantiation
+        = (... && well_formed_blocked_range_Nd_instantiation_basic<Types>);
 
 //! \brief \ref error_guessing
 TEST_CASE("constraints for blocked_range value") {
     using namespace test_concepts::blocked_range_value;
     using const_iterator = typename std::vector<int>::const_iterator;
 
-    test_blocked_range_constraint</*Expected = */true,
-                                  Correct, char, int, std::size_t, const_iterator>();
+    test_blocked_range_constraint</*Expected = */ true, Correct, char, int, std::size_t, const_iterator>();
 
-    test_blocked_range_constraint</*Expected = */false,
-                                  NonCopyable, NonCopyAssignable, NonDestructible,
+    test_blocked_range_constraint</*Expected = */ false, NonCopyable, NonCopyAssignable, NonDestructible,
                                   NoOperatorLess, OperatorLessNonConst, WrongReturnOperatorLess,
                                   NoOperatorMinus, OperatorMinusNonConst, WrongReturnOperatorMinus,
                                   NoOperatorPlus, OperatorPlusNonConst, WrongReturnOperatorPlus>();
@@ -147,11 +162,9 @@ TEST_CASE("constraints for blocked_range2d value") {
     using namespace test_concepts::blocked_range_value;
     using const_iterator = typename std::vector<int>::const_iterator;
 
-    test_blocked_range2d_constraint</*Expected = */true,
-                                    Correct, char, int, std::size_t, const_iterator>();
+    test_blocked_range2d_constraint</*Expected = */ true, Correct, char, int, std::size_t, const_iterator>();
 
-    test_blocked_range2d_constraint</*Expected = */false,
-                                    NonCopyable, NonCopyAssignable, NonDestructible,
+    test_blocked_range2d_constraint</*Expected = */ false, NonCopyable, NonCopyAssignable, NonDestructible,
                                     NoOperatorLess, OperatorLessNonConst, WrongReturnOperatorLess,
                                     NoOperatorMinus, OperatorMinusNonConst, WrongReturnOperatorMinus,
                                     NoOperatorPlus, OperatorPlusNonConst, WrongReturnOperatorPlus>();
@@ -165,11 +178,9 @@ TEST_CASE("constraints for blocked_range3d value") {
     using namespace test_concepts::blocked_range_value;
     using const_iterator = typename std::vector<int>::const_iterator;
 
-    test_blocked_range3d_constraint</*Expected = */true,
-                                    Correct, char, int, std::size_t, const_iterator>();
+    test_blocked_range3d_constraint</*Expected = */ true, Correct, char, int, std::size_t, const_iterator>();
 
-    test_blocked_range3d_constraint</*Expected = */false,
-                                    NonCopyable, NonCopyAssignable, NonDestructible,
+    test_blocked_range3d_constraint</*Expected = */ false, NonCopyable, NonCopyAssignable, NonDestructible,
                                     NoOperatorLess, OperatorLessNonConst, WrongReturnOperatorLess,
                                     NoOperatorMinus, OperatorMinusNonConst, WrongReturnOperatorMinus,
                                     NoOperatorPlus, OperatorPlusNonConst, WrongReturnOperatorPlus>();
@@ -184,12 +195,13 @@ TEST_CASE("constraints for blocked_rangeNd value") {
     using namespace test_concepts::blocked_range_value;
     using const_iterator = typename std::vector<int>::const_iterator;
 
-    static_assert(well_formed_blocked_range_Nd_instantiation<Correct, char, int, std::size_t, const_iterator>);
+    static_assert(
+            well_formed_blocked_range_Nd_instantiation<Correct, char, int, std::size_t, const_iterator>);
 
-    static_assert(!well_formed_blocked_range_Nd_instantiation<NonCopyable, NonCopyAssignable, NonDestructible,
-                                                              NoOperatorLess, OperatorLessNonConst, WrongReturnOperatorLess,
-                                                              NoOperatorMinus, OperatorMinusNonConst, WrongReturnOperatorMinus,
-                                                              NoOperatorPlus, OperatorPlusNonConst, WrongReturnOperatorPlus>);
+    static_assert(!well_formed_blocked_range_Nd_instantiation<
+                  NonCopyable, NonCopyAssignable, NonDestructible, NoOperatorLess, OperatorLessNonConst,
+                  WrongReturnOperatorLess, NoOperatorMinus, OperatorMinusNonConst, WrongReturnOperatorMinus,
+                  NoOperatorPlus, OperatorPlusNonConst, WrongReturnOperatorPlus>);
 }
 
-#endif // __TBB_CPP20_CONCEPTS_PRESENT
+#endif// __TBB_CPP20_CONCEPTS_PRESENT

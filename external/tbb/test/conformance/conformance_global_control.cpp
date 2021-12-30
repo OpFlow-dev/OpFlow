@@ -13,9 +13,9 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
-#include "common/test.h"
 #include "common/concurrency_tracker.h"
 #include "common/spin_barrier.h"
+#include "common/test.h"
 #include "common/utils.h"
 #include "common/utils_concurrency_limit.h"
 
@@ -28,17 +28,19 @@
 //! \file conformance_global_control.cpp
 //! \brief Test for [sched.global_control] specification
 
-const std::size_t MB = 1024*1024;
+const std::size_t MB = 1024 * 1024;
 
 void TestStackSizeSimpleControl() {
-    oneapi::tbb::global_control s0(oneapi::tbb::global_control::thread_stack_size, 1*MB);
+    oneapi::tbb::global_control s0(oneapi::tbb::global_control::thread_stack_size, 1 * MB);
 
     {
-        oneapi::tbb::global_control s1(oneapi::tbb::global_control::thread_stack_size, 8*MB);
+        oneapi::tbb::global_control s1(oneapi::tbb::global_control::thread_stack_size, 8 * MB);
 
-        CHECK(8*MB == oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::thread_stack_size));
+        CHECK(8 * MB
+              == oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::thread_stack_size));
     }
-    CHECK(1*MB == oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::thread_stack_size));
+    CHECK(1 * MB
+          == oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::thread_stack_size));
 }
 
 struct StackSizeRun : utils::NoAssign {
@@ -46,14 +48,15 @@ struct StackSizeRun : utils::NoAssign {
     int num_threads;
     utils::SpinBarrier *barr1, *barr2;
 
-    StackSizeRun(int threads, utils::SpinBarrier *b1, utils::SpinBarrier *b2) :
-        num_threads(threads), barr1(b1), barr2(b2) {}
-    void operator()( int id ) const {
-        oneapi::tbb::global_control s1(oneapi::tbb::global_control::thread_stack_size, (1+id)*MB);
+    StackSizeRun(int threads, utils::SpinBarrier* b1, utils::SpinBarrier* b2)
+        : num_threads(threads), barr1(b1), barr2(b2) {}
+    void operator()(int id) const {
+        oneapi::tbb::global_control s1(oneapi::tbb::global_control::thread_stack_size, (1 + id) * MB);
 
         barr1->wait();
 
-        REQUIRE(num_threads*MB == oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::thread_stack_size));
+        REQUIRE(num_threads * MB
+                == oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::thread_stack_size));
         barr2->wait();
     }
 };
@@ -61,55 +64,54 @@ struct StackSizeRun : utils::NoAssign {
 void TestStackSizeThreadsControl() {
     int threads = 4;
     utils::SpinBarrier barr1(threads), barr2(threads);
-    utils::NativeParallelFor( threads, StackSizeRun(threads, &barr1, &barr2) );
+    utils::NativeParallelFor(threads, StackSizeRun(threads, &barr1, &barr2));
 }
 
-void RunWorkersLimited(size_t parallelism, bool wait)
-{
+void RunWorkersLimited(size_t parallelism, bool wait) {
     oneapi::tbb::global_control s(oneapi::tbb::global_control::max_allowed_parallelism, parallelism);
     // try both configuration with already sleeping workers and with not yet sleeping
-    if (wait)
-        utils::Sleep(10);
-    const std::size_t expected_threads = (utils::get_platform_max_threads()==1)? 1 : parallelism;
+    if (wait) utils::Sleep(10);
+    const std::size_t expected_threads = (utils::get_platform_max_threads() == 1) ? 1 : parallelism;
     utils::ExactConcurrencyLevel::check(expected_threads);
 }
 
-void TestWorkersConstraints()
-{
-    const size_t max_parallelism =
-        oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::max_allowed_parallelism);
+void TestWorkersConstraints() {
+    const size_t max_parallelism
+            = oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::max_allowed_parallelism);
     if (max_parallelism > 3) {
-        oneapi::tbb::global_control c(oneapi::tbb::global_control::max_allowed_parallelism, max_parallelism-1);
-        CHECK_MESSAGE(max_parallelism-1 ==
-               oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::max_allowed_parallelism),
-               "Allowed parallelism must be decreasable.");
-        oneapi::tbb::global_control c1(oneapi::tbb::global_control::max_allowed_parallelism, max_parallelism-2);
-        CHECK_MESSAGE(max_parallelism-2 ==
-               oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::max_allowed_parallelism),
-               "Allowed parallelism must be decreasable.");
+        oneapi::tbb::global_control c(oneapi::tbb::global_control::max_allowed_parallelism,
+                                      max_parallelism - 1);
+        CHECK_MESSAGE(max_parallelism - 1
+                              == oneapi::tbb::global_control::active_value(
+                                      oneapi::tbb::global_control::max_allowed_parallelism),
+                      "Allowed parallelism must be decreasable.");
+        oneapi::tbb::global_control c1(oneapi::tbb::global_control::max_allowed_parallelism,
+                                       max_parallelism - 2);
+        CHECK_MESSAGE(max_parallelism - 2
+                              == oneapi::tbb::global_control::active_value(
+                                      oneapi::tbb::global_control::max_allowed_parallelism),
+                      "Allowed parallelism must be decreasable.");
     }
     const size_t limit_par = utils::min(max_parallelism, 4U);
     // check that constrains are really met
-    for (int wait=0; wait<2; wait++) {
-        for (size_t num=2; num<limit_par; num++)
-            RunWorkersLimited(num, wait==1);
-        for (size_t num=limit_par; num>1; num--)
-            RunWorkersLimited(num, wait==1);
+    for (int wait = 0; wait < 2; wait++) {
+        for (size_t num = 2; num < limit_par; num++) RunWorkersLimited(num, wait == 1);
+        for (size_t num = limit_par; num > 1; num--) RunWorkersLimited(num, wait == 1);
     }
 }
 
-struct SetUseRun: utils::NoAssign {
-    utils::SpinBarrier &barr;
+struct SetUseRun : utils::NoAssign {
+    utils::SpinBarrier& barr;
 
     SetUseRun(utils::SpinBarrier& b) : barr(b) {}
-    void operator()( int id ) const {
+    void operator()(int id) const {
         if (id == 0) {
-            for (int i=0; i<10; i++) {
+            for (int i = 0; i < 10; i++) {
                 oneapi::tbb::parallel_for(0, 1000, utils::DummyBody(10), oneapi::tbb::simple_partitioner());
                 barr.wait();
             }
         } else {
-            for (int i=0; i<10; i++) {
+            for (int i = 0; i < 10; i++) {
                 oneapi::tbb::global_control c(oneapi::tbb::global_control::max_allowed_parallelism, 8);
                 barr.wait();
             }
@@ -117,34 +119,35 @@ struct SetUseRun: utils::NoAssign {
     }
 };
 
-void TestConcurrentSetUseConcurrency()
-{
+void TestConcurrentSetUseConcurrency() {
     utils::SpinBarrier barr(2);
-    NativeParallelFor( 2, SetUseRun(barr) );
+    NativeParallelFor(2, SetUseRun(barr));
 }
 
 // check number of workers after autoinitialization
-void TestAutoInit()
-{
-    const size_t max_parallelism =
-        oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::max_allowed_parallelism);
-    const unsigned expected_threads = utils::get_platform_max_threads()==1?
-        1 : (unsigned)max_parallelism;
+void TestAutoInit() {
+    const size_t max_parallelism
+            = oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::max_allowed_parallelism);
+    const unsigned expected_threads = utils::get_platform_max_threads() == 1 ? 1 : (unsigned) max_parallelism;
     utils::ExactConcurrencyLevel::check(expected_threads);
-    CHECK_MESSAGE(oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::max_allowed_parallelism)
-           == max_parallelism, "max_allowed_parallelism must not be changed after auto init");
+    CHECK_MESSAGE(
+            oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::max_allowed_parallelism)
+                    == max_parallelism,
+            "max_allowed_parallelism must not be changed after auto init");
     if (max_parallelism > 2) {
         // after autoinit it's possible to decrease workers number
-        oneapi::tbb::global_control s(oneapi::tbb::global_control::max_allowed_parallelism, max_parallelism-1);
-        utils::ExactConcurrencyLevel::check(max_parallelism-1);
+        oneapi::tbb::global_control s(oneapi::tbb::global_control::max_allowed_parallelism,
+                                      max_parallelism - 1);
+        utils::ExactConcurrencyLevel::check(max_parallelism - 1);
     }
 }
 
 class TestMultipleControlsRun {
-    utils::SpinBarrier &barrier;
+    utils::SpinBarrier& barrier;
+
 public:
     TestMultipleControlsRun(utils::SpinBarrier& b) : barrier(b) {}
-    void operator()( int id ) const {
+    void operator()(int id) const {
         barrier.wait();
         if (id) {
             {
@@ -179,21 +182,22 @@ public:
 
 // test that global controls from different thread with overlapping lifetime
 // still keep parallelism under control
-void TestMultipleControls()
-{
+void TestMultipleControls() {
     utils::SpinBarrier barrier(2);
-    utils::NativeParallelFor( 2, TestMultipleControlsRun(barrier) );
+    utils::NativeParallelFor(2, TestMultipleControlsRun(barrier));
 }
 
 #if !(__TBB_WIN8UI_SUPPORT && (_WIN32_WINNT < 0x0A00))
 //! Testing setting stack size
 //! \brief \ref interface \ref requirement
 TEST_CASE("setting stack size") {
-    std::size_t default_ss = oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::thread_stack_size);
+    std::size_t default_ss
+            = oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::thread_stack_size);
     CHECK(default_ss > 0);
     TestStackSizeSimpleControl();
     TestStackSizeThreadsControl();
-    CHECK(default_ss == oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::thread_stack_size));
+    CHECK(default_ss
+          == oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::thread_stack_size));
 }
 #endif
 
@@ -208,7 +212,8 @@ TEST_CASE("setting max number of threads") {
 //! Test terminate_on_exception default value
 //! \brief \ref interface \ref requirement
 TEST_CASE("terminate_on_exception: default") {
-    std::size_t default_toe = oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::terminate_on_exception);
+    std::size_t default_toe
+            = oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::terminate_on_exception);
     CHECK(default_toe == 0);
 }
 
@@ -218,15 +223,20 @@ TEST_CASE("terminate_on_exception: nested") {
     oneapi::tbb::global_control* c0;
     {
         oneapi::tbb::global_control c1(oneapi::tbb::global_control::terminate_on_exception, 1);
-        CHECK(oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::terminate_on_exception) == 1);
+        CHECK(oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::terminate_on_exception)
+              == 1);
         {
             oneapi::tbb::global_control c2(oneapi::tbb::global_control::terminate_on_exception, 0);
-            CHECK(oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::terminate_on_exception) == 1);
+            CHECK(oneapi::tbb::global_control::active_value(
+                          oneapi::tbb::global_control::terminate_on_exception)
+                  == 1);
         }
-        CHECK(oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::terminate_on_exception) == 1);
+        CHECK(oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::terminate_on_exception)
+              == 1);
         c0 = new oneapi::tbb::global_control(oneapi::tbb::global_control::terminate_on_exception, 0);
     }
-    CHECK(oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::terminate_on_exception) == 0);
+    CHECK(oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::terminate_on_exception)
+          == 0);
     delete c0;
 }
 
@@ -255,7 +265,7 @@ TEST_CASE("terminate_on_exception: enabled") {
         });
 #if _MSC_VER
 #pragma warning(push)
-#pragma warning(disable:4611) // interaction between '_setjmp' and C++ object destruction is non - portable
+#pragma warning(disable : 4611)// interaction between '_setjmp' and C++ object destruction is non - portable
 #endif
         SUBCASE("internal exception") {
             if (setjmp(buffer) == 0) {
@@ -268,9 +278,7 @@ TEST_CASE("terminate_on_exception: enabled") {
             if (setjmp(buffer) == 0) {
                 oneapi::tbb::parallel_for(0, 1, [](int) {
                     volatile bool suppress_unreachable_code_warning = true;
-                    if (suppress_unreachable_code_warning) {
-                        throw std::exception();
-                    }
+                    if (suppress_unreachable_code_warning) { throw std::exception(); }
                 });
                 FAIL("Unreachable code");
             }
@@ -282,9 +290,7 @@ TEST_CASE("terminate_on_exception: enabled") {
         std::set_terminate(prev);
         terminate_handler_called = true;
 #if TBB_USE_EXCEPTIONS
-    } catch (...) {
-        FAIL("The exception is not expected");
-    }
+    } catch (...) { FAIL("The exception is not expected"); }
 #endif
     CHECK(terminate_handler_called);
 }
@@ -295,10 +301,13 @@ TEST_CASE("terminate_on_exception: enabled") {
 TEST_CASE("setting same value") {
     const std::size_t value = 2;
 
-    oneapi::tbb::global_control* ctl1 = new oneapi::tbb::global_control(oneapi::tbb::global_control::max_allowed_parallelism, value);
-    oneapi::tbb::global_control* ctl2 = new oneapi::tbb::global_control(oneapi::tbb::global_control::max_allowed_parallelism, value);
+    oneapi::tbb::global_control* ctl1
+            = new oneapi::tbb::global_control(oneapi::tbb::global_control::max_allowed_parallelism, value);
+    oneapi::tbb::global_control* ctl2
+            = new oneapi::tbb::global_control(oneapi::tbb::global_control::max_allowed_parallelism, value);
 
-    std::size_t active = oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::max_allowed_parallelism);
+    std::size_t active
+            = oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::max_allowed_parallelism);
     REQUIRE(active == value);
     delete ctl2;
 

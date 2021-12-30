@@ -15,52 +15,47 @@
 */
 
 #if __INTEL_COMPILER && _MSC_VER
-#pragma warning(disable : 2586) // decorated name length exceeded, name was truncated
+#pragma warning(disable : 2586)// decorated name length exceeded, name was truncated
 #endif
 
 #define DOCTEST_CONFIG_SUPER_FAST_ASSERTS
 #include "common/test.h"
 
-#include "tbb/spin_mutex.h"
-#include "tbb/spin_rw_mutex.h"
 #include "tbb/queuing_mutex.h"
 #include "tbb/queuing_rw_mutex.h"
+#include "tbb/spin_mutex.h"
+#include "tbb/spin_rw_mutex.h"
 
 //! \file test_profiling.cpp
 //! \brief Test for [internal] functionality
 
 //! Test for mutexes set_name
 //! \brief \ref interface
-TEST_CASE_TEMPLATE("Mutexes set_name", Mutex, tbb::spin_mutex,
-                                              tbb::spin_rw_mutex,
-                                              tbb::speculative_spin_mutex,
-                                              tbb::speculative_spin_rw_mutex,
-                                              tbb::queuing_mutex,
-                                              tbb::queuing_rw_mutex) {
+TEST_CASE_TEMPLATE("Mutexes set_name", Mutex, tbb::spin_mutex, tbb::spin_rw_mutex,
+                   tbb::speculative_spin_mutex, tbb::speculative_spin_rw_mutex, tbb::queuing_mutex,
+                   tbb::queuing_rw_mutex) {
     Mutex mutex;
     tbb::profiling::set_name(mutex, "mutex");
 }
 
-
-#if (_WIN32||_WIN64)
+#if (_WIN32 || _WIN64)
 //! Test for mutexes set_name with wchar
 //! \brief \ref interface
-TEST_CASE_TEMPLATE("Mutexes set_name wchar", Mutex, tbb::spin_mutex,
-                                              tbb::spin_rw_mutex,
-                                              tbb::speculative_spin_mutex,
-                                              tbb::speculative_spin_rw_mutex,
-                                              tbb::queuing_mutex,
-                                              tbb::queuing_rw_mutex) {
+TEST_CASE_TEMPLATE("Mutexes set_name wchar", Mutex, tbb::spin_mutex, tbb::spin_rw_mutex,
+                   tbb::speculative_spin_mutex, tbb::speculative_spin_rw_mutex, tbb::queuing_mutex,
+                   tbb::queuing_rw_mutex) {
     Mutex mutex;
     tbb::profiling::set_name(mutex, L"mutex");
 }
-#endif //WIN
+#endif//WIN
 
 #include "tbb/flow_graph.h"
 
 struct Body {
-    template<typename... Args>
-    int operator()(Args...) { return 0; }
+    template <typename... Args>
+    int operator()(Args...) {
+        return 0;
+    }
 };
 
 //! Test for flow graph set_name
@@ -70,9 +65,8 @@ TEST_CASE("Flow Graph set_name") {
     tbb::profiling::set_name(g, "graph");
 }
 
-struct async_body
-{
-    template<typename T>
+struct async_body {
+    template <typename T>
     void operator()(int, T&) {};
 };
 
@@ -80,7 +74,7 @@ struct async_body
 //! \brief \ref interface
 TEST_CASE("async_node set_name") {
     tbb::flow::graph g;
-    tbb::flow::async_node<int, int> node(g, 1, async_body{});
+    tbb::flow::async_node<int, int> node(g, 1, async_body {});
     tbb::profiling::set_name(node, "async_node");
 }
 
@@ -112,11 +106,8 @@ TEST_CASE("composite_node set_name") {
 //! \brief \ref interface
 TEST_CASE("continue_node set_name") {
     tbb::flow::graph g;
-    tbb::flow::continue_node<tbb::flow::continue_msg> node(g,
-        [](const tbb::flow::continue_msg& val) -> const tbb::flow::continue_msg&
-        {
-            return val;
-        });
+    tbb::flow::continue_node<tbb::flow::continue_msg> node(
+            g, [](const tbb::flow::continue_msg& val) -> const tbb::flow::continue_msg& { return val; });
     tbb::profiling::set_name(node, "continue_node");
 }
 
@@ -124,7 +115,7 @@ TEST_CASE("continue_node set_name") {
 //! \brief \ref interface
 TEST_CASE("function_node set_name") {
     tbb::flow::graph g;
-    tbb::flow::function_node<int, int> node(g, 1, [](const int& val) -> int {return val; });
+    tbb::flow::function_node<int, int> node(g, 1, [](const int& val) -> int { return val; });
     tbb::profiling::set_name(node, "function_node");
 }
 
@@ -158,7 +149,7 @@ TEST_CASE("indexer_node set_name") {
 //! \brief \ref interface
 TEST_CASE("input_node set_name") {
     tbb::flow::graph g;
-    tbb::flow::input_node<int> node(g, [](tbb::flow_control& ) -> int { return 0;});
+    tbb::flow::input_node<int> node(g, [](tbb::flow_control&) -> int { return 0; });
     tbb::profiling::set_name(node, "input_node");
 }
 
@@ -178,9 +169,8 @@ TEST_CASE("limiter_node set_name") {
     tbb::profiling::set_name(node, "limiter_node");
 }
 
-struct mf_body
-{
-    template<typename T>
+struct mf_body {
+    template <typename T>
     void operator()(int, T&) {};
 };
 
@@ -188,7 +178,7 @@ struct mf_body
 //! \brief \ref interface
 TEST_CASE("multifunction_node set_name") {
     tbb::flow::graph g;
-    tbb::flow::multifunction_node<int, std::tuple<int>> node(g, 1, mf_body{});
+    tbb::flow::multifunction_node<int, std::tuple<int>> node(g, 1, mf_body {});
     tbb::profiling::set_name(node, "multifunction_node");
 }
 
@@ -224,7 +214,7 @@ struct seq_inspector {
 //! \brief \ref interface
 TEST_CASE("sequencer_node set_name") {
     tbb::flow::graph g;
-    tbb::flow::sequencer_node<int> node(g, seq_inspector{});
+    tbb::flow::sequencer_node<int> node(g, seq_inspector {});
     tbb::profiling::set_name(node, "sequencer_node");
 }
 
