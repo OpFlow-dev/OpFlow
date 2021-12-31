@@ -13,6 +13,7 @@
 #ifndef OPFLOW_EXPRTRAIT_HPP
 #define OPFLOW_EXPRTRAIT_HPP
 
+#include "Core/Constants.hpp"
 #include "Core/Meta.hpp"
 #include <type_traits>
 

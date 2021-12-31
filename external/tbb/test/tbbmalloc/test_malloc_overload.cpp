@@ -56,8 +56,8 @@
 #if __GLIBC__
 // aligned_alloc available since GLIBC 2.16
 #define __TBB_ALIGNED_ALLOC_PRESENT __GLIBC_PREREQ(2, 16)
-#endif// __GLIBC__
-      // later Android doesn't have valloc or dlmalloc_usable_size
+#endif  // __GLIBC__                                                                                         \
+        // later Android doesn't have valloc or dlmalloc_usable_size
 #define __TBB_VALLOC_PRESENT (__unix__ && __ANDROID_API__ < 21) || __APPLE__
 #define __TBB_DLMALLOC_USABLE_SIZE_PRESENT __ANDROID__ &&__ANDROID_API__ < 21
 
