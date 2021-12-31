@@ -245,7 +245,7 @@ TEST_F(NeumEqnTest, BiCGSTAB) {
     auto ave_p = rangeReduce(
             p.assignableRange, [](auto&& a, auto&& b) { return a + b; }, [&](auto&& idx) { return p[idx]; });
     p -= ave_p / p.assignableRange.count();
-    ASSERT_TRUE(check_solution(1e-2));
+    ASSERT_TRUE(check_solution(1.1e-2));
 }
 
 TEST_F(NeumEqnTest, GMRES) {
