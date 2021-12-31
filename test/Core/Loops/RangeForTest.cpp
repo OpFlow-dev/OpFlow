@@ -10,10 +10,7 @@
 //
 // ----------------------------------------------------------------------------
 
-#include "Core/Loops/RangeFor.hpp"
-#include "Core/Meta.hpp"
-#include "DataStructures/Index/MDIndex.hpp"
-#include "fmt/format.h"
+#include <OpFlow>
 #include <gmock/gmock.h>
 #include <iostream>
 

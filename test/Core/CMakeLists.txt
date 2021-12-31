@@ -31,8 +31,9 @@ add_gmock(InterpolatorTest ${CMAKE_CURRENT_LIST_DIR}/Operator/InterpolatorTest.c
 add_gmock(ConvolutionTest ${CMAKE_CURRENT_LIST_DIR}/Operator/ConvolutionTest.cpp)
 #add_gmock(DecayExprTest ${CMAKE_CURRENT_LIST_DIR}/Operator/DecayExprTest.cpp)
 
-# RangeFor
+# Loops
 add_gmock(RangeForTest ${CMAKE_CURRENT_LIST_DIR}/Loops/RangeForTest.cpp)
+add_gmock(RangeReduceTest ${CMAKE_CURRENT_LIST_DIR}/Loops/RangeReduceTest.cpp)
 
 # Parallel
 add_gmock(EvenSplitStrategyTest ${CMAKE_CURRENT_LIST_DIR}/Parallel/EvenSplitStrategyTest.cpp)
