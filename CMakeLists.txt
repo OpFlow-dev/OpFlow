@@ -18,7 +18,7 @@
 #
 # ----------------------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 
 # ----------------------------------------------------------------------------
 # Start opflow project
@@ -217,6 +217,7 @@ if (OPFLOW_INSTALL)
 else ()
     set(BUILD_SHARED_LIBS ON)
     set(TBB_TEST OFF)
+    set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/tbb EXCLUDE_FROM_ALL)
 endif ()
 target_link_libraries(opflow INTERFACE TBB::tbb)
