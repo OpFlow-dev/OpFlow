@@ -188,6 +188,8 @@ namespace OpFlow::DS {
             int max_iter = std::max_element(pace.begin(), pace.end()) - pace.begin();
             this->end[max_iter] = this->start[max_iter] + this->pace[max_iter] / 2;
             r.start[max_iter] = this->end[max_iter];
+            this->pace[max_iter] /= 2;
+            r.pace[max_iter] = r.end[max_iter] - r.start[max_iter];
         }
 
         Range(Range& r, tbb::detail::proportional_split proportion) : Range(r) {
@@ -198,6 +200,8 @@ namespace OpFlow::DS {
                                  + 0.5f);
             r.end[max_iter] -= right_part;
             this->start[max_iter] = r.end[max_iter];
+            this->pace[max_iter] = this->end[max_iter] - this->start[max_iter];
+            r.pace[max_iter] = r.end[max_iter] - r.start[max_iter];
         }
 
         static constexpr bool is_splittable_in_proportion = true;
