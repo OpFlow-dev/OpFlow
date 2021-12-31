@@ -69,11 +69,11 @@ jobs:
           fetch-depth: 0
       - name: Install dependence
         run: |
-          brew install gcc@11 doxygen
+          brew install gcc@11 doxygen tbb
           if [ "$RUNNER_OS" == "Linux" ]; then
-               sudo apt install -y libtbb-dev libopenmpi-dev libhdf5-mpi-dev libhdf5-dev python3-pip python3-sphinx lcov libboost-all-dev
+               sudo apt install -y libopenmpi-dev libhdf5-mpi-dev libhdf5-dev python3-pip python3-sphinx lcov libboost-all-dev
           elif [ "$RUNNER_OS" == "macOS" ]; then
-               brew install open-mpi hdf5-mpi sphinx lcov boost tbb
+               brew install open-mpi hdf5-mpi sphinx lcov boost
           else
                echo "$RUNNER_OS not supported"
                exit 1
@@ -86,7 +86,8 @@ jobs:
         run: |
           cmake -DCMAKE_BUILD_TYPE=${{ matrix.config.config }} -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 \
                 -DOPFLOW_WITH_HDF5=ON -DBENCHMARK_ENABLE_TESTING=OFF -DOPFLOW_BUILD_ALL=ON -DOPFLOW_INSTALL=OFF \
-                -DOPFLOW_WITH_VTK=OFF -DOPFLOW_TBB_EXTERNAL=ON -DDOXYGEN_DIR=$(brew --prefix doxygen)/bin ..
+                -DOPFLOW_WITH_VTK=OFF -DOPFLOW_TBB_EXTERNAL=ON -DDOXYGEN_DIR=$(brew --prefix doxygen)/bin \
+                -DTBB_DIR=$(brew --prefix tbb)/lib/cmake/TBB ..
           cmake --build . -t AllExamples AllTests AllBenchmarks --parallel ${{ matrix.config.cores }} --config ${{ matrix.config.config }}
       - name: Test
         working-directory: ./build

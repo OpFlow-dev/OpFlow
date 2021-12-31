@@ -22,7 +22,6 @@
 #include <omp.h>
 #include <tbb/tbb.h>
 #define TBB_PREVIEW_BLOCKED_RANGE_ND 1
-#include <mutex>
 #include <oneapi/tbb/blocked_rangeNd.h>
 #include <oneapi/tbb/detail/_range_common.h>
 

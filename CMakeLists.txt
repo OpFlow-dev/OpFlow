@@ -212,7 +212,7 @@ target_link_libraries(opflow INTERFACE amgcl::amgcl)
 # Use TBB
 # ----------------------------------------------------------------------------
 if (OPFLOW_TBB_EXTERNAL)
-    find_package(tbb NAMES tbb TBB REQUIRED)
+    find_package(TBB REQUIRED)
 else ()
     if (OPFLOW_INSTALL)
         include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/TBBConfig.cmake)
