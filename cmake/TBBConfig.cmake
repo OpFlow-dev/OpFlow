@@ -18,12 +18,12 @@ macro(CONFIG_AND_INSTALL_TBB)
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tbb-build)
     execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}"
             -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-            -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+            -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DTBB_TEST=OFF
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} ${CMAKE_CURRENT_SOURCE_DIR}/external/tbb
             RESULT_VARIABLE result
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tbb-build)
     if (result)
-        message(FATAL_ERROR "CMake step for AMGCL failed: ${result}")
+        message(FATAL_ERROR "CMake step for TBB failed: ${result}")
     endif ()
     execute_process(COMMAND ${CMAKE_COMMAND} --build . -j
             RESULT_VARIABLE result

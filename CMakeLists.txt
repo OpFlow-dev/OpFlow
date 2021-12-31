@@ -138,10 +138,11 @@ option(OPFLOW_NO_EXCEPTIONS "Compile with -fno-exceptions" OFF)
 
 # install options
 option(OPFLOW_INSTALL "Generate the install target" ${OPFLOW_MASTER_PROJECT})
-# the default behavior is to use bundled HYPRE & VTK
+# the default behavior is to use bundled HYPRE, VTK & TBB
 option(OPFLOW_WITH_VTK "Build OpFlow with VTK" OFF)
 option(OPFLOW_HYPRE_EXTERNAL "Use external HYPRE library instead of bundled" OFF)
 option(OPFLOW_VTK_EXTERNAL "Use external VTK library instead of bundled" OFF)
+option(OPFLOW_TBB_EXTERNAL "Use external Intel TBB library instead of bundled" OFF)
 
 # clang-tidy
 if (${CMAKE_VERSION} VERSION_GREATER "3.5")
@@ -210,15 +211,19 @@ target_link_libraries(opflow INTERFACE amgcl::amgcl)
 # ----------------------------------------------------------------------------
 # Use TBB
 # ----------------------------------------------------------------------------
-if (OPFLOW_INSTALL)
-    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/TBBConfig.cmake)
-    CONFIG_AND_INSTALL_TBB()
-    find_package(tbb REQUIRED PATHS ${CMAKE_INSTALL_PREFIX})
+if (OPFLOW_TBB_EXTERNAL)
+    find_package(tbb NAMES tbb TBB REQUIRED)
 else ()
-    set(BUILD_SHARED_LIBS ON)
-    set(TBB_TEST OFF)
-    set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/tbb EXCLUDE_FROM_ALL)
+    if (OPFLOW_INSTALL)
+        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/TBBConfig.cmake)
+        CONFIG_AND_INSTALL_TBB()
+        find_package(tbb NAMES tbb TBB REQUIRED PATHS ${CMAKE_INSTALL_PREFIX})
+    else ()
+        set(BUILD_SHARED_LIBS ON)
+        set(TBB_TEST OFF)
+        set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/tbb EXCLUDE_FROM_ALL)
+    endif ()
 endif ()
 target_link_libraries(opflow INTERFACE TBB::tbb)
 
