@@ -1,18 +1,30 @@
-#  ----------------------------------------------------------------------------
+#   ----------------------------------------------------------------------------
 #
-#  Copyright (c) 2019 - 2021  by the OpFlow developers
+#   Copyright (c) 2019 - 2022 by the OpFlow developers
 #
-#  This file is part of OpFlow.
+#   This file is part of OpFlow.
 #
-#  OpFlow is free software and is distributed under the MPL v2.0 license.
-#  The full text of the license can be found in the file LICENSE at the top
-#  level directory of OpFlow.
+#   OpFlow is free software and is distributed under the MPL v2.0 license.
+#   The full text of the license can be found in the file LICENSE at the top
+#   level directory of OpFlow.
 #
-#  ----------------------------------------------------------------------------
+#   ----------------------------------------------------------------------------
+
+#   ----------------------------------------------------------------------------
+#
+#   Copyright (c) 2019 - 2022 by the OpFlow developers
+#
+#   This file is part of OpFlow.
+#
+#   OpFlow is free software and is distributed under the MPL v2.0 license.
+#   The full text of the license can be found in the file LICENSE at the top
+#   level directory of OpFlow.
+#
+#   ----------------------------------------------------------------------------
 
 common_header = '''//  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2021  by the OpFlow developers
+//  Copyright (c) 2019 - 2022  by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -102,15 +114,17 @@ struct EqnHolder<{}, {}> {{
                                   j: "stField{} = std::make_unique<st_field_type{}>(this->target{}->template getStencilField<{}>({}));".format(
                     j, j, j, "std::unordered_map" if i > 1 else "DS::fake_map", j), "\n", 1, i),
                 concat_repeat(
-                    lambda j: "if constexpr(i == {}) {{ auto eqn = getter{}({}); return eqn.lhs - eqn.rhs; }}".format(j,
-                                                                                                                      j,
-                                                                                                                      concat_repeat(
-                                                                                                                          lambda
-                                                                                                                              k: "*target{}".format(
-                                                                                                                              k),
-                                                                                                                          ",",
-                                                                                                                          1,
-                                                                                                                          i)),
+                    lambda
+                        j: "if constexpr(i == {}) {{ auto eqn = getter{}({}); auto t = eqn.lhs - eqn.rhs; t.prepare(); return t; }}".format(
+                        j,
+                        j,
+                        concat_repeat(
+                            lambda
+                                k: "*stField{}".format(
+                                k),
+                            ",",
+                            1,
+                            i)),
                     "\n", 1, i),
                 concat_repeat(lambda j: "if constexpr(i == {}) return target{};".format(j, j), "\n", 1, i),
                 concat_repeat(lambda j: "auto&& func{}".format(j), ",", 1, i),
@@ -300,6 +314,11 @@ struct StencilHolder<{}, {}> {{
     }}
     }};
     
+    template <{}, {}>
+    auto makeStencilHolder(EqnHolder<{}, {}>& eqn) {{
+        return StencilHolder<{}, {}>({}, {});
+    }}
+    
     '''.format(
                 concat_repeat(lambda j: "typename E{}".format(j), ",", 1, i),
                 concat_repeat(lambda j: "typename T{}".format(j), ",", 1, i),
@@ -312,9 +331,19 @@ struct StencilHolder<{}, {}> {{
                 concat_repeat(lambda j: "T{}* t{}".format(j, j), ",", 1, i),
                 concat_repeat(lambda j: "eqn_expr{}(std::move(e{}))".format(j, j), ",", 1, i),
                 concat_repeat(lambda j: "target{}(t{})".format(j, j), ",", 1, i),
-                concat_repeat(lambda j: "comm_stencils[{}] = eqn_expr{}[target{}->assignableRange.center()];".format(j-1, j, j), "\n", 1, i),
+                concat_repeat(
+                    lambda j: "comm_stencils[{}] = eqn_expr{}[target{}->assignableRange.center()];".format(j - 1, j, j),
+                    "\n", 1, i),
                 concat_repeat(lambda j: "if constexpr(i == {}) return eqn_expr{};".format(j, j), "\n", 1, i),
-                concat_repeat(lambda j: "if constexpr(i == {}) return target{};".format(j, j), "\n", 1, i)
+                concat_repeat(lambda j: "if constexpr(i == {}) return target{};".format(j, j), "\n", 1, i),
+                concat_repeat(lambda j: "typename E{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "typename T{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "E{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "T{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "Meta::RealType<decltype(eqn.template getEqnExpr<{}>())>".format(j), ",", 1, i),
+                concat_repeat(lambda j: "T{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "eqn.template getEqnExpr<{}>()".format(j), ",", 1, i),
+                concat_repeat(lambda j: "eqn.template getTarget<{}>()".format(j), ",", 1, i)
             ))
         f.write("}\n#endif")
 

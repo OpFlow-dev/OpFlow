@@ -1,6 +1,18 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2021  by the OpFlow developers
+//  Copyright (c) 2019 - 2022 by the OpFlow developers
+//
+//  This file is part of OpFlow.
+//
+//  OpFlow is free software and is distributed under the MPL v2.0 license.
+//  The full text of the license can be found in the file LICENSE at the top
+//  level directory of OpFlow.
+//
+//  ----------------------------------------------------------------------------
+
+//  ----------------------------------------------------------------------------
+//
+//  Copyright (c) 2019 - 2022  by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -46,6 +58,12 @@ namespace OpFlow {
         }
     };
 
+    template <typename E1, typename T1>
+    auto makeStencilHolder(EqnHolder<E1, T1>& eqn) {
+        return StencilHolder<Meta::RealType<decltype(eqn.template getEqnExpr<1>())>, T1>(
+                eqn.template getEqnExpr<1>(), eqn.template getTarget<1>());
+    }
+
     template <typename E1, typename E2, typename T1, typename T2>
     struct StencilHolder<E1, E2, T1, T2> {
         T1* target1;
@@ -77,6 +95,14 @@ namespace OpFlow {
             if constexpr (i == 2) return target2;
         }
     };
+
+    template <typename E1, typename E2, typename T1, typename T2>
+    auto makeStencilHolder(EqnHolder<E1, E2, T1, T2>& eqn) {
+        return StencilHolder<Meta::RealType<decltype(eqn.template getEqnExpr<1>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<2>())>, T1, T2>(
+                eqn.template getEqnExpr<1>(), eqn.template getEqnExpr<2>(), eqn.template getTarget<1>(),
+                eqn.template getTarget<2>());
+    }
 
     template <typename E1, typename E2, typename E3, typename T1, typename T2, typename T3>
     struct StencilHolder<E1, E2, E3, T1, T2, T3> {
@@ -115,6 +141,15 @@ namespace OpFlow {
             if constexpr (i == 3) return target3;
         }
     };
+
+    template <typename E1, typename E2, typename E3, typename T1, typename T2, typename T3>
+    auto makeStencilHolder(EqnHolder<E1, E2, E3, T1, T2, T3>& eqn) {
+        return StencilHolder<Meta::RealType<decltype(eqn.template getEqnExpr<1>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<2>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<3>())>, T1, T2, T3>(
+                eqn.template getEqnExpr<1>(), eqn.template getEqnExpr<2>(), eqn.template getEqnExpr<3>(),
+                eqn.template getTarget<1>(), eqn.template getTarget<2>(), eqn.template getTarget<3>());
+    }
 
     template <typename E1, typename E2, typename E3, typename E4, typename T1, typename T2, typename T3,
               typename T4>
@@ -159,6 +194,18 @@ namespace OpFlow {
             if constexpr (i == 4) return target4;
         }
     };
+
+    template <typename E1, typename E2, typename E3, typename E4, typename T1, typename T2, typename T3,
+              typename T4>
+    auto makeStencilHolder(EqnHolder<E1, E2, E3, E4, T1, T2, T3, T4>& eqn) {
+        return StencilHolder<Meta::RealType<decltype(eqn.template getEqnExpr<1>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<2>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<3>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<4>())>, T1, T2, T3, T4>(
+                eqn.template getEqnExpr<1>(), eqn.template getEqnExpr<2>(), eqn.template getEqnExpr<3>(),
+                eqn.template getEqnExpr<4>(), eqn.template getTarget<1>(), eqn.template getTarget<2>(),
+                eqn.template getTarget<3>(), eqn.template getTarget<4>());
+    }
 
     template <typename E1, typename E2, typename E3, typename E4, typename E5, typename T1, typename T2,
               typename T3, typename T4, typename T5>
@@ -209,6 +256,20 @@ namespace OpFlow {
             if constexpr (i == 5) return target5;
         }
     };
+
+    template <typename E1, typename E2, typename E3, typename E4, typename E5, typename T1, typename T2,
+              typename T3, typename T4, typename T5>
+    auto makeStencilHolder(EqnHolder<E1, E2, E3, E4, E5, T1, T2, T3, T4, T5>& eqn) {
+        return StencilHolder<Meta::RealType<decltype(eqn.template getEqnExpr<1>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<2>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<3>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<4>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<5>())>, T1, T2, T3, T4, T5>(
+                eqn.template getEqnExpr<1>(), eqn.template getEqnExpr<2>(), eqn.template getEqnExpr<3>(),
+                eqn.template getEqnExpr<4>(), eqn.template getEqnExpr<5>(), eqn.template getTarget<1>(),
+                eqn.template getTarget<2>(), eqn.template getTarget<3>(), eqn.template getTarget<4>(),
+                eqn.template getTarget<5>());
+    }
 
     template <typename E1, typename E2, typename E3, typename E4, typename E5, typename E6, typename T1,
               typename T2, typename T3, typename T4, typename T5, typename T6>
@@ -265,6 +326,21 @@ namespace OpFlow {
             if constexpr (i == 6) return target6;
         }
     };
+
+    template <typename E1, typename E2, typename E3, typename E4, typename E5, typename E6, typename T1,
+              typename T2, typename T3, typename T4, typename T5, typename T6>
+    auto makeStencilHolder(EqnHolder<E1, E2, E3, E4, E5, E6, T1, T2, T3, T4, T5, T6>& eqn) {
+        return StencilHolder<Meta::RealType<decltype(eqn.template getEqnExpr<1>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<2>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<3>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<4>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<5>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<6>())>, T1, T2, T3, T4, T5, T6>(
+                eqn.template getEqnExpr<1>(), eqn.template getEqnExpr<2>(), eqn.template getEqnExpr<3>(),
+                eqn.template getEqnExpr<4>(), eqn.template getEqnExpr<5>(), eqn.template getEqnExpr<6>(),
+                eqn.template getTarget<1>(), eqn.template getTarget<2>(), eqn.template getTarget<3>(),
+                eqn.template getTarget<4>(), eqn.template getTarget<5>(), eqn.template getTarget<6>());
+    }
 
     template <typename E1, typename E2, typename E3, typename E4, typename E5, typename E6, typename E7,
               typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7>
@@ -327,6 +403,24 @@ namespace OpFlow {
             if constexpr (i == 7) return target7;
         }
     };
+
+    template <typename E1, typename E2, typename E3, typename E4, typename E5, typename E6, typename E7,
+              typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7>
+    auto makeStencilHolder(EqnHolder<E1, E2, E3, E4, E5, E6, E7, T1, T2, T3, T4, T5, T6, T7>& eqn) {
+        return StencilHolder<Meta::RealType<decltype(eqn.template getEqnExpr<1>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<2>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<3>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<4>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<5>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<6>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<7>())>, T1, T2, T3, T4, T5, T6,
+                             T7>(
+                eqn.template getEqnExpr<1>(), eqn.template getEqnExpr<2>(), eqn.template getEqnExpr<3>(),
+                eqn.template getEqnExpr<4>(), eqn.template getEqnExpr<5>(), eqn.template getEqnExpr<6>(),
+                eqn.template getEqnExpr<7>(), eqn.template getTarget<1>(), eqn.template getTarget<2>(),
+                eqn.template getTarget<3>(), eqn.template getTarget<4>(), eqn.template getTarget<5>(),
+                eqn.template getTarget<6>(), eqn.template getTarget<7>());
+    }
 
     template <typename E1, typename E2, typename E3, typename E4, typename E5, typename E6, typename E7,
               typename E8, typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
@@ -395,6 +489,27 @@ namespace OpFlow {
             if constexpr (i == 8) return target8;
         }
     };
+
+    template <typename E1, typename E2, typename E3, typename E4, typename E5, typename E6, typename E7,
+              typename E8, typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
+              typename T7, typename T8>
+    auto makeStencilHolder(EqnHolder<E1, E2, E3, E4, E5, E6, E7, E8, T1, T2, T3, T4, T5, T6, T7, T8>& eqn) {
+        return StencilHolder<Meta::RealType<decltype(eqn.template getEqnExpr<1>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<2>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<3>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<4>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<5>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<6>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<7>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<8>())>, T1, T2, T3, T4, T5, T6,
+                             T7, T8>(
+                eqn.template getEqnExpr<1>(), eqn.template getEqnExpr<2>(), eqn.template getEqnExpr<3>(),
+                eqn.template getEqnExpr<4>(), eqn.template getEqnExpr<5>(), eqn.template getEqnExpr<6>(),
+                eqn.template getEqnExpr<7>(), eqn.template getEqnExpr<8>(), eqn.template getTarget<1>(),
+                eqn.template getTarget<2>(), eqn.template getTarget<3>(), eqn.template getTarget<4>(),
+                eqn.template getTarget<5>(), eqn.template getTarget<6>(), eqn.template getTarget<7>(),
+                eqn.template getTarget<8>());
+    }
 
     template <typename E1, typename E2, typename E3, typename E4, typename E5, typename E6, typename E7,
               typename E8, typename E9, typename T1, typename T2, typename T3, typename T4, typename T5,
@@ -469,6 +584,29 @@ namespace OpFlow {
             if constexpr (i == 9) return target9;
         }
     };
+
+    template <typename E1, typename E2, typename E3, typename E4, typename E5, typename E6, typename E7,
+              typename E8, typename E9, typename T1, typename T2, typename T3, typename T4, typename T5,
+              typename T6, typename T7, typename T8, typename T9>
+    auto makeStencilHolder(
+            EqnHolder<E1, E2, E3, E4, E5, E6, E7, E8, E9, T1, T2, T3, T4, T5, T6, T7, T8, T9>& eqn) {
+        return StencilHolder<Meta::RealType<decltype(eqn.template getEqnExpr<1>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<2>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<3>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<4>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<5>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<6>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<7>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<8>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<9>())>, T1, T2, T3, T4, T5, T6,
+                             T7, T8, T9>(
+                eqn.template getEqnExpr<1>(), eqn.template getEqnExpr<2>(), eqn.template getEqnExpr<3>(),
+                eqn.template getEqnExpr<4>(), eqn.template getEqnExpr<5>(), eqn.template getEqnExpr<6>(),
+                eqn.template getEqnExpr<7>(), eqn.template getEqnExpr<8>(), eqn.template getEqnExpr<9>(),
+                eqn.template getTarget<1>(), eqn.template getTarget<2>(), eqn.template getTarget<3>(),
+                eqn.template getTarget<4>(), eqn.template getTarget<5>(), eqn.template getTarget<6>(),
+                eqn.template getTarget<7>(), eqn.template getTarget<8>(), eqn.template getTarget<9>());
+    }
 
     template <typename E1, typename E2, typename E3, typename E4, typename E5, typename E6, typename E7,
               typename E8, typename E9, typename E10, typename T1, typename T2, typename T3, typename T4,
@@ -549,6 +687,31 @@ namespace OpFlow {
             if constexpr (i == 10) return target10;
         }
     };
+
+    template <typename E1, typename E2, typename E3, typename E4, typename E5, typename E6, typename E7,
+              typename E8, typename E9, typename E10, typename T1, typename T2, typename T3, typename T4,
+              typename T5, typename T6, typename T7, typename T8, typename T9, typename T10>
+    auto makeStencilHolder(EqnHolder<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, T1, T2, T3, T4, T5, T6, T7, T8,
+                                     T9, T10>& eqn) {
+        return StencilHolder<Meta::RealType<decltype(eqn.template getEqnExpr<1>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<2>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<3>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<4>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<5>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<6>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<7>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<8>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<9>())>,
+                             Meta::RealType<decltype(eqn.template getEqnExpr<10>())>, T1, T2, T3, T4, T5, T6,
+                             T7, T8, T9, T10>(
+                eqn.template getEqnExpr<1>(), eqn.template getEqnExpr<2>(), eqn.template getEqnExpr<3>(),
+                eqn.template getEqnExpr<4>(), eqn.template getEqnExpr<5>(), eqn.template getEqnExpr<6>(),
+                eqn.template getEqnExpr<7>(), eqn.template getEqnExpr<8>(), eqn.template getEqnExpr<9>(),
+                eqn.template getEqnExpr<10>(), eqn.template getTarget<1>(), eqn.template getTarget<2>(),
+                eqn.template getTarget<3>(), eqn.template getTarget<4>(), eqn.template getTarget<5>(),
+                eqn.template getTarget<6>(), eqn.template getTarget<7>(), eqn.template getTarget<8>(),
+                eqn.template getTarget<9>(), eqn.template getTarget<10>());
+    }
 
 }// namespace OpFlow
 #endif
