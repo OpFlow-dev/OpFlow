@@ -1,6 +1,18 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2021  by the OpFlow developers
+//  Copyright (c) 2019 - 2022 by the OpFlow developers
+//
+//  This file is part of OpFlow.
+//
+//  OpFlow is free software and is distributed under the MPL v2.0 license.
+//  The full text of the license can be found in the file LICENSE at the top
+//  level directory of OpFlow.
+//
+//  ----------------------------------------------------------------------------
+
+//  ----------------------------------------------------------------------------
+//
+//  Copyright (c) 2019 - 2022  by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -41,8 +53,10 @@ namespace OpFlow {
         template <int i>
         auto getEqnExpr() const {
             if constexpr (i == 1) {
-                auto eqn = getter1(*target1);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter1(*stField1);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
         }
 
@@ -83,12 +97,16 @@ namespace OpFlow {
         template <int i>
         auto getEqnExpr() const {
             if constexpr (i == 1) {
-                auto eqn = getter1(*target1, *target2);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter1(*stField1, *stField2);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 2) {
-                auto eqn = getter2(*target1, *target2);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter2(*stField1, *stField2);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
         }
 
@@ -145,16 +163,22 @@ namespace OpFlow {
         template <int i>
         auto getEqnExpr() const {
             if constexpr (i == 1) {
-                auto eqn = getter1(*target1, *target2, *target3);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter1(*stField1, *stField2, *stField3);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 2) {
-                auto eqn = getter2(*target1, *target2, *target3);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter2(*stField1, *stField2, *stField3);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 3) {
-                auto eqn = getter3(*target1, *target2, *target3);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter3(*stField1, *stField2, *stField3);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
         }
 
@@ -231,20 +255,28 @@ namespace OpFlow {
         template <int i>
         auto getEqnExpr() const {
             if constexpr (i == 1) {
-                auto eqn = getter1(*target1, *target2, *target3, *target4);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter1(*stField1, *stField2, *stField3, *stField4);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 2) {
-                auto eqn = getter2(*target1, *target2, *target3, *target4);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter2(*stField1, *stField2, *stField3, *stField4);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 3) {
-                auto eqn = getter3(*target1, *target2, *target3, *target4);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter3(*stField1, *stField2, *stField3, *stField4);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 4) {
-                auto eqn = getter4(*target1, *target2, *target3, *target4);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter4(*stField1, *stField2, *stField3, *stField4);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
         }
 
@@ -339,24 +371,34 @@ namespace OpFlow {
         template <int i>
         auto getEqnExpr() const {
             if constexpr (i == 1) {
-                auto eqn = getter1(*target1, *target2, *target3, *target4, *target5);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter1(*stField1, *stField2, *stField3, *stField4, *stField5);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 2) {
-                auto eqn = getter2(*target1, *target2, *target3, *target4, *target5);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter2(*stField1, *stField2, *stField3, *stField4, *stField5);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 3) {
-                auto eqn = getter3(*target1, *target2, *target3, *target4, *target5);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter3(*stField1, *stField2, *stField3, *stField4, *stField5);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 4) {
-                auto eqn = getter4(*target1, *target2, *target3, *target4, *target5);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter4(*stField1, *stField2, *stField3, *stField4, *stField5);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 5) {
-                auto eqn = getter5(*target1, *target2, *target3, *target4, *target5);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter5(*stField1, *stField2, *stField3, *stField4, *stField5);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
         }
 
@@ -473,28 +515,40 @@ namespace OpFlow {
         template <int i>
         auto getEqnExpr() const {
             if constexpr (i == 1) {
-                auto eqn = getter1(*target1, *target2, *target3, *target4, *target5, *target6);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter1(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 2) {
-                auto eqn = getter2(*target1, *target2, *target3, *target4, *target5, *target6);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter2(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 3) {
-                auto eqn = getter3(*target1, *target2, *target3, *target4, *target5, *target6);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter3(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 4) {
-                auto eqn = getter4(*target1, *target2, *target3, *target4, *target5, *target6);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter4(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 5) {
-                auto eqn = getter5(*target1, *target2, *target3, *target4, *target5, *target6);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter5(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 6) {
-                auto eqn = getter6(*target1, *target2, *target3, *target4, *target5, *target6);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter6(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
         }
 
@@ -641,32 +695,53 @@ namespace OpFlow {
         template <int i>
         auto getEqnExpr() const {
             if constexpr (i == 1) {
-                auto eqn = getter1(*target1, *target2, *target3, *target4, *target5, *target6, *target7);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter1(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 2) {
-                auto eqn = getter2(*target1, *target2, *target3, *target4, *target5, *target6, *target7);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter2(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 3) {
-                auto eqn = getter3(*target1, *target2, *target3, *target4, *target5, *target6, *target7);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter3(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 4) {
-                auto eqn = getter4(*target1, *target2, *target3, *target4, *target5, *target6, *target7);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter4(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 5) {
-                auto eqn = getter5(*target1, *target2, *target3, *target4, *target5, *target6, *target7);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter5(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 6) {
-                auto eqn = getter6(*target1, *target2, *target3, *target4, *target5, *target6, *target7);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter6(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 7) {
-                auto eqn = getter7(*target1, *target2, *target3, *target4, *target5, *target6, *target7);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter7(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
         }
 
@@ -840,44 +915,60 @@ namespace OpFlow {
         template <int i>
         auto getEqnExpr() const {
             if constexpr (i == 1) {
-                auto eqn = getter1(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter1(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 2) {
-                auto eqn = getter2(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter2(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 3) {
-                auto eqn = getter3(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter3(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 4) {
-                auto eqn = getter4(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter4(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 5) {
-                auto eqn = getter5(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter5(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 6) {
-                auto eqn = getter6(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter6(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 7) {
-                auto eqn = getter7(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter7(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 8) {
-                auto eqn = getter8(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter8(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
         }
 
@@ -1078,49 +1169,67 @@ namespace OpFlow {
         template <int i>
         auto getEqnExpr() const {
             if constexpr (i == 1) {
-                auto eqn = getter1(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter1(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 2) {
-                auto eqn = getter2(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter2(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 3) {
-                auto eqn = getter3(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter3(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 4) {
-                auto eqn = getter4(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter4(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 5) {
-                auto eqn = getter5(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter5(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 6) {
-                auto eqn = getter6(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter6(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 7) {
-                auto eqn = getter7(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter7(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 8) {
-                auto eqn = getter8(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter8(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 9) {
-                auto eqn = getter9(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter9(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
         }
 
@@ -1352,54 +1461,74 @@ namespace OpFlow {
         template <int i>
         auto getEqnExpr() const {
             if constexpr (i == 1) {
-                auto eqn = getter1(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9, *target10);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter1(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9, *stField10);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 2) {
-                auto eqn = getter2(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9, *target10);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter2(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9, *stField10);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 3) {
-                auto eqn = getter3(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9, *target10);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter3(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9, *stField10);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 4) {
-                auto eqn = getter4(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9, *target10);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter4(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9, *stField10);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 5) {
-                auto eqn = getter5(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9, *target10);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter5(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9, *stField10);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 6) {
-                auto eqn = getter6(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9, *target10);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter6(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9, *stField10);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 7) {
-                auto eqn = getter7(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9, *target10);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter7(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9, *stField10);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 8) {
-                auto eqn = getter8(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9, *target10);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter8(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9, *stField10);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 9) {
-                auto eqn = getter9(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                   *target8, *target9, *target10);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter9(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                   *stField7, *stField8, *stField9, *stField10);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
             if constexpr (i == 10) {
-                auto eqn = getter10(*target1, *target2, *target3, *target4, *target5, *target6, *target7,
-                                    *target8, *target9, *target10);
-                return eqn.lhs - eqn.rhs;
+                auto eqn = getter10(*stField1, *stField2, *stField3, *stField4, *stField5, *stField6,
+                                    *stField7, *stField8, *stField9, *stField10);
+                auto t = eqn.lhs - eqn.rhs;
+                t.prepare();
+                return t;
             }
         }
 
