@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2021 by the OpFlow developers
+//  Copyright (c) 2019 - 2022 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -82,11 +82,11 @@ protected:
             auto p_ref = p_true.evalAt(i);
             auto rel_res = std::abs(c_res) / std::abs(p_ref);
             if (std::isnan(c_res)) {
-                OP_ERROR("Check fail: res = nan @ {}", i.toString());
+                OP_ERROR("Check fail: res = nan @ {}", i);
                 ret = false;
             }
             if (rel_res > rel) {
-                OP_ERROR("Check fail: res = {} / {} @ {}", c_res, rel_res, i.toString());
+                OP_ERROR("Check fail: res = {} / {} @ {}", c_res, rel_res, i);
                 ret = false;
             }
         });

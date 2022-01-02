@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2021 by the OpFlow developers
+//  Copyright (c) 2019 - 2022 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -24,7 +24,7 @@ namespace OpFlow::DS {
     struct ColoredIndex;
 
     template <std::size_t d>
-    struct ColoredIndex<MDIndex<d>> {
+    struct ColoredIndex<MDIndex<d>> : public SerializableObj {
     protected:
         std::array<int, d> idx;
 
@@ -129,8 +129,10 @@ namespace OpFlow::DS {
             return c;
         }
 
-        auto toString() const {
-            std::string ret = "{";
+        [[nodiscard]] std::string toString(int n, const std::string& prefix) const override {
+            std::string ret;
+            for (auto i = 0; i < n; ++i) ret += prefix;
+            ret += "{";
             if constexpr (d > 0) ret += fmt::format("{}", idx[0]);
             for (auto i = 1; i < d; ++i) ret += fmt::format(", {}", idx[i]);
             ret += fmt::format(", c = {}", color);
@@ -140,7 +142,7 @@ namespace OpFlow::DS {
     };
 
     template <std::size_t d>
-    struct ColoredIndex<LevelMDIndex<d>> {
+    struct ColoredIndex<LevelMDIndex<d>> : public SerializableObj {
         std::array<int, d> idx;
         int l = 0, p = 0, color = 0;
 
@@ -226,8 +228,10 @@ namespace OpFlow::DS {
             return ret;
         }
 
-        auto toString() const {
-            std::string ret = "{" + fmt::format("{}, {}", l, p);
+        [[nodiscard]] std::string toString(int n, const std::string& prefix) const override {
+            std::string ret;
+            for (auto i = 0; i < n; ++i) ret += prefix;
+            ret += "{" + fmt::format("{}, {}", l, p);
             if constexpr (d > 0) ret += fmt::format(", {}", this->idx[0]);
             for (auto i = 1; i < d; ++i) ret += fmt::format(", {}", this->idx[i]);
             ret += "}";

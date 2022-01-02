@@ -1,7 +1,7 @@
 #!/bin/bash
 ## ---------------------------------------------------------------------
 ##
-## Copyright (c) 2019 - 2021 by the OpFlow developers
+## Copyright (c) 2019 - 2022 by the OpFlow developers
 ## All rights reserved.
 ##
 ## This file is part of OpFlow.

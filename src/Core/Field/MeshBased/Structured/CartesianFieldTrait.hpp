@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2021 by the OpFlow developers
+// Copyright (c) 2019 - 2022 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -16,6 +16,7 @@
 #include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
 #include "Core/Meta.hpp"
 #include "DataStructures/Arrays/Tensor/PlainTensor.hpp"
+#include "DataStructures/Index/MDIndex.hpp"
 
 namespace OpFlow {
     template <typename D, typename M, typename C>

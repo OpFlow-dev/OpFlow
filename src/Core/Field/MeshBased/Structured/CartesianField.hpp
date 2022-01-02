@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2021 by the OpFlow developers
+// Copyright (c) 2019 - 2022 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -535,14 +535,14 @@ namespace OpFlow {
             OP_ASSERT_MSG(DS::inRange(DS::commonRange(this->logicalRange,
                                                       this->localRange.getInnerRange(-this->padding)),
                                       i),
-                          "CartesianField cannot eval at {}: out of range", i.toString());
+                          "CartesianField cannot eval at {}: out of range", i);
             return data[i - this->offset];
         }
         auto& evalAtImpl_final(const index_type& i) {
             OP_ASSERT_MSG(DS::inRange(DS::commonRange(this->logicalRange,
                                                       this->localRange.getInnerRange(-this->padding)),
                                       i),
-                          "CartesianField cannot eval at {}: out of range", i.toString());
+                          "CartesianField cannot eval at {}: out of range", i);
             return data[i - this->offset];
         }
 

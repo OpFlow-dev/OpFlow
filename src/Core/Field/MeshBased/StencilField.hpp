@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2021 by the OpFlow developers
+// Copyright (c) 2019 - 2022 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -136,7 +136,7 @@ namespace OpFlow {
                 // index lay on dirc bc
                 return typename internal::ExprTrait<StencilField>::elem_type {base->evalAt(index)};
             } else if (!DS::inRange(this->logicalRange, index)) {
-                OP_ERROR("Index {} out of range {}", index.toString(), this->logicalRange.toString());
+                OP_ERROR("Index {} out of range {}", index, this->logicalRange.toString());
                 OP_ABORT;
             } else {
                 // index has to be extended by bc
@@ -333,7 +333,7 @@ namespace OpFlow {
                     }
                 }
                 // should not reach here
-                OP_ERROR("Could not handle current case: i = {}", index.toString());
+                OP_ERROR("Could not handle current case: i = {}", index);
                 OP_ABORT;
             }
         }

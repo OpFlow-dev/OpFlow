@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2021 by the OpFlow developers
+//  Copyright (c) 2019 - 2022 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -31,14 +31,16 @@ namespace OpFlow {
 
     protected:
         OPFLOW_STRONG_INLINE auto evalAtImpl_final(auto&& i) const {
-            OP_STACK_PUSH("Eval {} at {}", this->getName(), i.toString());
+            OP_STACK_PUSH("Eval {} at {}", this->getName(), i);
             auto ret = Op::eval(OP_PERFECT_FOWD(i));
+            OP_STACK_APPEND(" = {}", ret);
             OP_STACK_POP;
             return ret;
         }
         OPFLOW_STRONG_INLINE auto evalSafeAtImpl_final(auto&& i) const {
-            OP_STACK_PUSH("Eval {} at {}", this->getName(), i.toString());
+            OP_STACK_PUSH("Eval {} at {}", this->getName(), i);
             auto ret = Op::eval_safe(std::forward<decltype(i)>(i));
+            OP_STACK_APPEND(" = {}", ret);
             OP_STACK_POP;
             return ret;
         }
@@ -48,14 +50,16 @@ namespace OpFlow {
 
 #define DEFINE_EVAL_OPS(...)                                                                                 \
     OPFLOW_STRONG_INLINE auto evalAtImpl_final(auto&& i) const {                                             \
-        OP_STACK_PUSH("Eval {} at {}", this->getName(), i.toString());                                       \
+        OP_STACK_PUSH("Eval {} at {}", this->getName(), i);                                                  \
         auto ret = Op::eval(__VA_ARGS__, OP_PERFECT_FOWD(i));                                                \
+        OP_STACK_APPEND(" = {}", ret);                                                                       \
         OP_STACK_POP;                                                                                        \
         return ret;                                                                                          \
     }                                                                                                        \
     OPFLOW_STRONG_INLINE auto evalSafeAtImpl_final(auto&& i) const {                                         \
-        OP_STACK_PUSH("Eval {} at {}", this->getName(), i.toString());                                       \
+        OP_STACK_PUSH("Eval {} at {}", this->getName(), i);                                                  \
         auto ret = Op::eval_safe(__VA_ARGS__, std::forward<decltype(i)>(i));                                 \
+        OP_STACK_APPEND(" = {}", ret);                                                                       \
         OP_STACK_POP;                                                                                        \
         return ret;                                                                                          \
     }
