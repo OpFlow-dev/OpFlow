@@ -24,7 +24,7 @@
 
 common_header = '''//  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2022  by the OpFlow developers
+//  Copyright (c) 2019 - 2022 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -68,6 +68,7 @@ namespace OpFlow {
         for i in range(1, n + 1):
             f.write('''template <{}, {}>
 struct EqnHolder<{}, {}> {{
+    constexpr static int size = {};
     {}
     {}
     {}
@@ -98,6 +99,7 @@ struct EqnHolder<{}, {}> {{
                 concat_repeat(lambda j: "typename T{}".format(j), ",", 1, i),
                 concat_repeat(lambda j: "E{}".format(j), ",", 1, i),
                 concat_repeat(lambda j: "T{}".format(j), ",", 1, i),
+                i,
                 concat_repeat(lambda j: "T{}* target{};".format(j, j), "\n", 1, i),
                 concat_repeat(lambda
                                   j: "using st_field_type{} = Meta::RealType<decltype(target{}->template getStencilField<{}>())>;".format(
@@ -296,6 +298,7 @@ struct StencilHolder<{}, {}> {{
     {}
     using stencil_type = typename internal::ExprTrait<E1>::elem_type;
     std::array<stencil_type, {}> comm_stencils;
+    constexpr static int size = {};
     
     StencilHolder({}, {}) : {}, {} {{ init_comm_stencils(); }}
     
@@ -326,7 +329,7 @@ struct StencilHolder<{}, {}> {{
                 concat_repeat(lambda j: "T{}".format(j), ",", 1, i),
                 concat_repeat(lambda j: "T{}* target{};".format(j, j), "\n", 1, i),
                 concat_repeat(lambda j: "E{} eqn_expr{};".format(j, j), "\n", 1, i),
-                i,
+                i, i,
                 concat_repeat(lambda j: "E{}&& e{}".format(j, j), ",", 1, i),
                 concat_repeat(lambda j: "T{}* t{}".format(j, j), ",", 1, i),
                 concat_repeat(lambda j: "eqn_expr{}(std::move(e{}))".format(j, j), ",", 1, i),

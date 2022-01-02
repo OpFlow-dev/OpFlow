@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 -  by the OpFlow developers
+//  Copyright (c) 2019 - 2022 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -30,6 +30,7 @@ namespace OpFlow {
         E1 eqn_expr1;
         using stencil_type = typename internal::ExprTrait<E1>::elem_type;
         std::array<stencil_type, 1> comm_stencils;
+        constexpr static int size = 1;
 
         StencilHolder(E1&& e1, T1* t1) : eqn_expr1(std::move(e1)), target1(t1) { init_comm_stencils(); }
 
@@ -60,6 +61,7 @@ namespace OpFlow {
         E2 eqn_expr2;
         using stencil_type = typename internal::ExprTrait<E1>::elem_type;
         std::array<stencil_type, 2> comm_stencils;
+        constexpr static int size = 2;
 
         StencilHolder(E1&& e1, E2&& e2, T1* t1, T2* t2)
             : eqn_expr1(std::move(e1)), eqn_expr2(std::move(e2)), target1(t1), target2(t2) {
@@ -102,6 +104,7 @@ namespace OpFlow {
         E3 eqn_expr3;
         using stencil_type = typename internal::ExprTrait<E1>::elem_type;
         std::array<stencil_type, 3> comm_stencils;
+        constexpr static int size = 3;
 
         StencilHolder(E1&& e1, E2&& e2, E3&& e3, T1* t1, T2* t2, T3* t3)
             : eqn_expr1(std::move(e1)), eqn_expr2(std::move(e2)), eqn_expr3(std::move(e3)), target1(t1),
@@ -152,6 +155,7 @@ namespace OpFlow {
         E4 eqn_expr4;
         using stencil_type = typename internal::ExprTrait<E1>::elem_type;
         std::array<stencil_type, 4> comm_stencils;
+        constexpr static int size = 4;
 
         StencilHolder(E1&& e1, E2&& e2, E3&& e3, E4&& e4, T1* t1, T2* t2, T3* t3, T4* t4)
             : eqn_expr1(std::move(e1)), eqn_expr2(std::move(e2)), eqn_expr3(std::move(e3)),
@@ -210,6 +214,7 @@ namespace OpFlow {
         E5 eqn_expr5;
         using stencil_type = typename internal::ExprTrait<E1>::elem_type;
         std::array<stencil_type, 5> comm_stencils;
+        constexpr static int size = 5;
 
         StencilHolder(E1&& e1, E2&& e2, E3&& e3, E4&& e4, E5&& e5, T1* t1, T2* t2, T3* t3, T4* t4, T5* t5)
             : eqn_expr1(std::move(e1)), eqn_expr2(std::move(e2)), eqn_expr3(std::move(e3)),
@@ -276,6 +281,7 @@ namespace OpFlow {
         E6 eqn_expr6;
         using stencil_type = typename internal::ExprTrait<E1>::elem_type;
         std::array<stencil_type, 6> comm_stencils;
+        constexpr static int size = 6;
 
         StencilHolder(E1&& e1, E2&& e2, E3&& e3, E4&& e4, E5&& e5, E6&& e6, T1* t1, T2* t2, T3* t3, T4* t4,
                       T5* t5, T6* t6)
@@ -349,6 +355,7 @@ namespace OpFlow {
         E7 eqn_expr7;
         using stencil_type = typename internal::ExprTrait<E1>::elem_type;
         std::array<stencil_type, 7> comm_stencils;
+        constexpr static int size = 7;
 
         StencilHolder(E1&& e1, E2&& e2, E3&& e3, E4&& e4, E5&& e5, E6&& e6, E7&& e7, T1* t1, T2* t2, T3* t3,
                       T4* t4, T5* t5, T6* t6, T7* t7)
@@ -432,6 +439,7 @@ namespace OpFlow {
         E8 eqn_expr8;
         using stencil_type = typename internal::ExprTrait<E1>::elem_type;
         std::array<stencil_type, 8> comm_stencils;
+        constexpr static int size = 8;
 
         StencilHolder(E1&& e1, E2&& e2, E3&& e3, E4&& e4, E5&& e5, E6&& e6, E7&& e7, E8&& e8, T1* t1, T2* t2,
                       T3* t3, T4* t4, T5* t5, T6* t6, T7* t7, T8* t8)
@@ -523,6 +531,7 @@ namespace OpFlow {
         E9 eqn_expr9;
         using stencil_type = typename internal::ExprTrait<E1>::elem_type;
         std::array<stencil_type, 9> comm_stencils;
+        constexpr static int size = 9;
 
         StencilHolder(E1&& e1, E2&& e2, E3&& e3, E4&& e4, E5&& e5, E6&& e6, E7&& e7, E8&& e8, E9&& e9, T1* t1,
                       T2* t2, T3* t3, T4* t4, T5* t5, T6* t6, T7* t7, T8* t8, T9* t9)
@@ -622,6 +631,7 @@ namespace OpFlow {
         E10 eqn_expr10;
         using stencil_type = typename internal::ExprTrait<E1>::elem_type;
         std::array<stencil_type, 10> comm_stencils;
+        constexpr static int size = 10;
 
         StencilHolder(E1&& e1, E2&& e2, E3&& e3, E4&& e4, E5&& e5, E6&& e6, E7&& e7, E8&& e8, E9&& e9,
                       E10&& e10, T1* t1, T2* t2, T3* t3, T4* t4, T5* t5, T6* t6, T7* t7, T8* t8, T9* t9,
