@@ -23,10 +23,10 @@ fi
 FILES="
   CMakeLists.txt
   $(find -L ./include ./src   | grep -E '\.(hpp|cpp|txt)$')
-  $(find -L ./tests | grep -E '\.(hpp|cpp|txt)$')
+  $(find -L ./test | grep -E '\.(hpp|cpp|txt)$')
   $(find -L ./doc ./scripts   | grep -E '\.(hpp|cpp|txt|sh)$')
 "
-FILES=$(echo $FILES | xargs realpath | sort -u)
+FILES=$(echo "$FILES" | xargs realpath | sort -u)
 
 for FILE in $FILES ; do
   # get the last year this file was modified from the git log.
@@ -40,19 +40,19 @@ for FILE in $FILES ; do
   # ideally no two successive commits should have updated the
   # copyright year. let's err on the safe side and take the last
   # 3 commits.)
-  last_year=`git log -n 3 --date=short --format="format:%cd %s" $FILE | \
-             egrep -i -v "update.*copyright|copyright.*update" | \
+  last_year=$(git log -n 3 --date=short --format="format:%cd %s" "$FILE" | \
+             grep -E -i -v "update.*copyright|copyright.*update" | \
              head -n 1 | \
-             perl -p -e 's/^(\d\d\d\d)-.*/\1/g;'`
+             perl -p -e 's/^(\d\d\d\d)-.*/\1/g;')
 
   # get the first year this file was modified from the actual
   # file. this may predate the git log if the file was copied
   # from elsewhere
-  first_year=`cat $FILE | egrep 'Copyright \(C\) [0-9]{4}' | \
-              perl -p -e "s/.*Copyright \(C\) (\d{4}).*/\1/g;"`
+  first_year=$(cat "$FILE" | grep -E 'Copyright \(c\) [0-9]{4}' | \
+              perl -p -e "s/.*Copyright \(c\) (\d{4}).*/\1/g;")
 
   echo "Processing $FILE: ${first_year} - ${last_year}"
   if test ! "${first_year}" = "${last_year}" ; then
-    perl -pi -e "s/(Copyright \(c\) \d{4})( - \d{4})?(, \d{4}( - \d{4})?)*.*by the OpFlow developers/\1 - ${last_year} by the OpFlow developers/g;" $FILE
+    perl -pi -e "s/(Copyright \(c\) \d{4})( - \d{4})?(, \d{4}( - \d{4})?)*.*by the OpFlow developers/\1 - ${last_year} by the OpFlow developers/g;" "$FILE"
   fi
 done
