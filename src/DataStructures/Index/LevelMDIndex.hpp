@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2021 by the OpFlow developers
+//  Copyright (c) 2019 - 2022 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -13,6 +13,7 @@
 #ifndef OPFLOW_LEVELMDINDEX_HPP
 #define OPFLOW_LEVELMDINDEX_HPP
 
+#include "Core/Interfaces/Serializable.hpp"
 #include "DataStructures/Index/MDIndex.hpp"
 #include "Math/Function/Numeric.hpp"
 #include "Utils/xxHash.hpp"
@@ -20,7 +21,7 @@
 
 namespace OpFlow::DS {
     template <std::size_t d>
-    struct LevelMDIndex {
+    struct LevelMDIndex : public SerializableObj {
         std::array<int, d> idx;
         int l = 0, p = 0;
 
@@ -78,8 +79,10 @@ namespace OpFlow::DS {
             return ret;
         }
 
-        auto toString() const {
-            std::string ret = "{" + fmt::format("{}, {}", l, p);
+        [[nodiscard]] std::string toString(int n, const std::string& prefix) const override {
+            std::string ret;
+            for (int i = 0; i < n; ++i) ret += prefix;
+            ret += "{" + fmt::format("{}, {}", l, p);
             if constexpr (d > 0) ret += fmt::format(", {}", this->idx[0]);
             for (auto i = 1; i < d; ++i) ret += fmt::format(", {}", this->idx[i]);
             ret += "}";

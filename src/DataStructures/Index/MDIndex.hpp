@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2021 by the OpFlow developers
+//  Copyright (c) 2019 - 2022 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -28,7 +28,7 @@
 namespace OpFlow::DS {
 
     template <std::size_t d>
-    struct MDIndex : SerializableObj {
+    struct MDIndex : public SerializableObj {
     protected:
         std::array<int, d> idx;
 
@@ -126,22 +126,15 @@ namespace OpFlow::DS {
             return c;
         }
 
-        std::string toString() const override {
-            std::string ret = "{";
+        [[nodiscard]] std::string toString(int n, const std::string& prefix) const override {
+            std::string ret;
+            while (n-- > 0) ret += prefix;
+            ret += "{";
             if constexpr (d > 0) ret += fmt::format("{}", idx[0]);
             for (auto i = 1; i < d; ++i) ret += fmt::format(", {}", idx[i]);
             ret += "}";
             return ret;
         }
-
-        std::string toString(int n, const std::string& prefix) const override {
-            std::string ret;
-            while (n-- > 0) ret += prefix;
-            ret += toString();
-            return ret;
-        }
-
-        std::ostream& operator<<(std::ostream& os) const override { return os << toString(); }
     };
 }// namespace OpFlow::DS
 

@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2021 by the OpFlow developers
+//  Copyright (c) 2019 - 2022 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -166,7 +166,7 @@ namespace OpFlow::DS {
             // we assert here dim k will at most add1 to dim k + 1
 #ifndef NDEBUG
             if (index[k] - index.range.end[k] >= index.range.end[k] - index.range.start[k]) {
-                OP_ERROR("Index {} add more than 1 to dim {}", index.toString(), k);
+                OP_ERROR("Index {} add more than 1 to dim {}", index, k);
                 OP_ERROR("Index range = {}", index.range.toString());
             }
 #endif

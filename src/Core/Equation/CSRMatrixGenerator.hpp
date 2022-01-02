@@ -32,8 +32,21 @@ namespace OpFlow {
         void resize(int n_row, int nnz_per_row) {
             row.resize(n_row + 1);
             col.resize(n_row * nnz_per_row);
-            val.reserve(n_row * nnz_per_row);
+            val.resize(n_row * nnz_per_row);
             rhs.resize(n_row);
+        }
+
+        [[nodiscard]] std::string toString() const {
+            std::string ret;
+            for (int i : row) ret += fmt::format("{}, ", i);
+            ret += "\n";
+            for (int i : col) ret += fmt::format("{}, ", i);
+            ret += "\n";
+            for (double i : val) ret += fmt::format("{}, ", i);
+            ret += "\n";
+            for (double i : rhs) ret += fmt::format("{}, ", i);
+            ret += "\n";
+            return ret;
         }
 
         std::vector<int> row, col;
@@ -62,18 +75,22 @@ namespace OpFlow {
                 int r, c;
                 Real v;
                 bool operator<(const m_tuple& other) const {
-                    return r <= other.r && c <= other.c && !(r == other.r && c == other.c);
+                    return r < other.r || (r == other.r && c < other.c);
                 }
             };
             oneapi::tbb::concurrent_vector<m_tuple> coo;
             coo.reserve(local_range.count() * stencil_size);
             mat.resize(local_range.count(), stencil_size);
-            rangeFor(local_range, [&](auto&& i) {
-                auto r = pinValue ? mapper(i) - 1 : mapper(i);
+            rangeFor_s(local_range, [&](auto&& i) {
+                auto r = mapper(i);
                 auto currentStencil = uniEqn.evalAt(i);
-                if (pinValue && mapper(i) == 0) return;
+                if (pinValue && r == 0) {
+                    coo.template emplace_back(0, 0, 1);
+                    mat.rhs[r] = 0.;
+                    return;
+                }
                 for (const auto& [key, v] : currentStencil.pad) {
-                    auto idx = pinValue ? mapper(key) - 1 : mapper(key);
+                    auto idx = mapper(key);
                     coo.template emplace_back(r, idx, v);
                 }
                 mat.rhs[r] = currentStencil.bias;
@@ -92,15 +109,16 @@ namespace OpFlow {
                         int temp = sum;
                         for (int i = r.begin(); i < r.end(); ++i) {
                             temp += nnz_counts[i];
-                            if (is_final) nnz_prefix[i] = temp;
+                            if (is_final) nnz_prefix[i + 1] = temp;
                         }
                         return temp;
                     },
                     [](int l, int r) { return l + r; });
             // copy to the global array
             oneapi::tbb::parallel_for(0, local_range.count(), [&](int i) { mat.row[i] = nnz_prefix[i]; });
-            oneapi::tbb::parallel_for(0, (int) coo.size(), [&](int i) { /*mat.col[i] = coo[i].c;*/ });
-            oneapi::tbb::parallel_for(0, (int) coo.size(), [&](int i) { /*mat.val[i] = coo[i].v;*/ });
+            mat.row.back() = coo.size();
+            oneapi::tbb::parallel_for(0, (int) coo.size(), [&](int i) { mat.col[i] = coo[i].c; });
+            oneapi::tbb::parallel_for(0, (int) coo.size(), [&](int i) { mat.val[i] = coo[i].v; });
 
             return mat;
         }

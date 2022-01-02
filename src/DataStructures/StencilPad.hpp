@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2021 by the OpFlow developers
+// Copyright (c) 2019 - 2022 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -14,6 +14,7 @@
 #define OPFLOW_STENCILPAD_HPP
 
 #include "Core/BasicDataTypes.hpp"
+#include "Core/Interfaces/Serializable.hpp"
 #include "Core/Meta.hpp"
 #include <algorithm>
 #include <unordered_map>
@@ -124,21 +125,19 @@ namespace OpFlow::DS {
     };
 
     template <typename Idx, template <typename K, typename V> typename map_impl = fake_map>
-    struct StencilPad {
+    struct StencilPad : public SerializableObj {
         map_impl<Idx, Real> pad {};
         Real bias = 0.;
 
         StencilPad() = default;
         explicit StencilPad(Real b) : bias(b) {}
 
-        auto toString(int level = 1) const {
-            std::string prefix;
-            for (auto i = 0; i < level; ++i) prefix += "\t";
-            std::string ret = "\n" + prefix + "pad:\n";
-            for (const auto& [k, v] : pad) {
-                ret += prefix + "\t" + fmt::format("({})\t {}\n", k.toString(), v);
-            }
-            ret += prefix + fmt::format("bias: {}", bias);
+        [[nodiscard]] std::string toString(int n, const std::string& prefix) const override {
+            std::string _prefix;
+            for (auto i = 0; i < n; ++i) _prefix += prefix;
+            std::string ret = "\n" + _prefix + "pad:\n";
+            for (const auto& [k, v] : pad) { ret += _prefix + "\t" + fmt::format("({})\t {}\n", k, v); }
+            ret += _prefix + fmt::format("bias: {}", bias);
             return ret;
         }
 

@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2021 by the OpFlow developers
+//  Copyright (c) 2019 - 2022 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -98,6 +98,8 @@ namespace OpFlow {
         OpFlow::stackTracer.push(fmt::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__)            \
                                  + fmt::format(__VA_ARGS__));                                                \
     } while (0)
+#define OP_STACK_APPEND(...)                                                                                 \
+    do { OpFlow::stackTracer.append(fmt::format(__VA_ARGS__)); } while (0)
 #define OP_STACK_POP                                                                                         \
     do { OpFlow::stackTracer.pop(); } while (0)
 #define OP_DUMPSTACK                                                                                         \
@@ -105,6 +107,7 @@ namespace OpFlow {
 #else
 
 #define OP_STACK_PUSH(...)
+#define OP_STACK_APPEND(...)
 #define OP_STACK_POP
 #define OP_DUMPSTACK
 #endif

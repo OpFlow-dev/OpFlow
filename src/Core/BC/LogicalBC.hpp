@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2021 by the OpFlow developers
+// Copyright (c) 2019 - 2022 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -41,7 +41,7 @@ namespace OpFlow {
             auto reflected = reflectIndex(index);
             OP_ASSERT_MSG(
                     DS::inRange(DS::commonRange(this->_f->accessibleRange, this->_f->localRange), reflected),
-                    "Reflected index {} out of range {}", reflected.toString(),
+                    "Reflected index {} out of range {}", reflected,
                     DS::commonRange(this->_f->accessibleRange, this->_f->localRange).toString());
             auto ret = this->_f->evalAt(reflected);
             return ret;
@@ -100,7 +100,7 @@ namespace OpFlow {
             auto reflected = reflectIndex(index);
             OP_ASSERT_MSG(
                     DS::inRange(DS::commonRange(this->_f->accessibleRange, this->_f->localRange), reflected),
-                    "Reflected index {} out of range {}", reflected.toString(),
+                    "Reflected index {} out of range {}", reflected,
                     DS::commonRange(this->_f->accessibleRange, this->_f->localRange).toString());
             if constexpr (Meta::Numerical<typename internal::StructuredFieldExprTrait<F>::elem_type>) {
                 OP_ASSERT_MSG((reflected != index || this->_f->evalAt(index) == 0),
@@ -111,7 +111,7 @@ namespace OpFlow {
                                || this->_f->evalAt(index) ==
                                           typename internal::StructuredFieldExprTrait<F>::elem_type(0)),
                               "ASymmetric BC specified on a boundary which is evaluated to {} != 0.",
-                              this->_f->evalAt(index).toString());
+                              this->_f->evalAt(index));
             }
             return -this->_f->evalAt(reflected);
         }

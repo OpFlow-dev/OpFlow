@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2021 by the OpFlow developers
+//  Copyright (c) 2019 - 2022 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -23,8 +23,9 @@ namespace OpFlow::Utils {
 
         void push(std::string s) { msg.push_back(std::move(s)); }
         void pop() { msg.pop_back(); }
+        void append(const std::string& s) { msg.back() += s; }
 
-        std::string dump() const {
+        [[nodiscard]] std::string dump() const {
             std::string str;
             str += fmt::format("\nCall stack:\n");
             int size = msg.size();
