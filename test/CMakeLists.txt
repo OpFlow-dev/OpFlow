@@ -99,3 +99,5 @@ add_subdirectory(Utils)
 get_property(all_test_srcs_list GLOBAL PROPERTY all_test_srcs)
 list(REMOVE_DUPLICATES all_test_srcs_list)
 add_gmock(UniTests ${all_test_srcs_list})
+
+add_dependencies(All_CI AllTests)

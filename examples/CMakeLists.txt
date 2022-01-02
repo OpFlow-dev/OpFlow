@@ -48,3 +48,5 @@ add_subdirectory(TaylorGreen)
 # AMR Cases
 add_subdirectory(AMR)
 add_subdirectory(LevelSet)
+
+add_dependencies(All_CI AllExamples)

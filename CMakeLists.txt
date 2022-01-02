@@ -364,6 +364,11 @@ target_link_options(opflow
         INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_UB}>: -fsanitize=undefined>)
 
 # ----------------------------------------------------------------------------
+# All_CI target (= AllExamples + AllBenchmarks + AllTests)
+# ----------------------------------------------------------------------------
+add_custom_target(All_CI)
+
+# ----------------------------------------------------------------------------
 # Build binaries
 # ----------------------------------------------------------------------------
 if (OPFLOW_BUILD_EXAMPLES OR OPFLOW_BUILD_ALL)
