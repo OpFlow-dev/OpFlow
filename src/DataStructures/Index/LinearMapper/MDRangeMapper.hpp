@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2021  by the OpFlow developers
+//  Copyright (c) 2019 - 2021 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -9,8 +9,6 @@
 //  level directory of OpFlow.
 //
 //  ----------------------------------------------------------------------------
-//
-//
 
 #ifndef OPFLOW_MDRANGEMAPPER_HPP
 #define OPFLOW_MDRANGEMAPPER_HPP
