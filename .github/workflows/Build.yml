@@ -88,7 +88,7 @@ jobs:
                 -DOPFLOW_WITH_HDF5=ON -DBENCHMARK_ENABLE_TESTING=OFF -DOPFLOW_BUILD_ALL=ON -DOPFLOW_INSTALL=OFF \
                 -DOPFLOW_WITH_VTK=OFF -DOPFLOW_TBB_EXTERNAL=ON -DDOXYGEN_DIR=$(brew --prefix doxygen)/bin \
                 -DTBB_DIR=$(brew --prefix tbb)/lib/cmake/TBB ..
-          cmake --build . -t AllExamples AllTests AllBenchmarks --parallel ${{ matrix.config.cores }} --config ${{ matrix.config.config }}
+          cmake --build . -t All_CI --parallel ${{ matrix.config.cores }} --config ${{ matrix.config.config }}
       - name: Test
         working-directory: ./build
         run: |

@@ -27,3 +27,5 @@ endfunction()
 
 add_subdirectory(Core)
 add_subdirectory(DataStructure)
+
+add_dependencies(All_CI AllBenchmarks)
