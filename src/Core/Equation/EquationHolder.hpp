@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 -  by the OpFlow developers
+//  Copyright (c) 2019 - 2022 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -27,6 +27,7 @@ namespace OpFlow {
 
     template <typename E1, typename T1>
     struct EqnHolder<E1, T1> {
+        constexpr static int size = 1;
         T1* target1;
         using st_field_type1 = Meta::RealType<decltype(target1->template getStencilField<DS::fake_map>())>;
         using getter_type1 = std::function<E1(st_field_type1&)>;
@@ -61,6 +62,7 @@ namespace OpFlow {
 
     template <typename E1, typename E2, typename T1, typename T2>
     struct EqnHolder<E1, E2, T1, T2> {
+        constexpr static int size = 2;
         T1* target1;
         T2* target2;
         using st_field_type1
@@ -117,6 +119,7 @@ namespace OpFlow {
 
     template <typename E1, typename E2, typename E3, typename T1, typename T2, typename T3>
     struct EqnHolder<E1, E2, E3, T1, T2, T3> {
+        constexpr static int size = 3;
         T1* target1;
         T2* target2;
         T3* target3;
@@ -197,6 +200,7 @@ namespace OpFlow {
     template <typename E1, typename E2, typename E3, typename E4, typename T1, typename T2, typename T3,
               typename T4>
     struct EqnHolder<E1, E2, E3, E4, T1, T2, T3, T4> {
+        constexpr static int size = 4;
         T1* target1;
         T2* target2;
         T3* target3;
@@ -304,6 +308,7 @@ namespace OpFlow {
     template <typename E1, typename E2, typename E3, typename E4, typename E5, typename T1, typename T2,
               typename T3, typename T4, typename T5>
     struct EqnHolder<E1, E2, E3, E4, E5, T1, T2, T3, T4, T5> {
+        constexpr static int size = 5;
         T1* target1;
         T2* target2;
         T3* target3;
@@ -437,6 +442,7 @@ namespace OpFlow {
     template <typename E1, typename E2, typename E3, typename E4, typename E5, typename E6, typename T1,
               typename T2, typename T3, typename T4, typename T5, typename T6>
     struct EqnHolder<E1, E2, E3, E4, E5, E6, T1, T2, T3, T4, T5, T6> {
+        constexpr static int size = 6;
         T1* target1;
         T2* target2;
         T3* target3;
@@ -601,6 +607,7 @@ namespace OpFlow {
     template <typename E1, typename E2, typename E3, typename E4, typename E5, typename E6, typename E7,
               typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7>
     struct EqnHolder<E1, E2, E3, E4, E5, E6, E7, T1, T2, T3, T4, T5, T6, T7> {
+        constexpr static int size = 7;
         T1* target1;
         T2* target2;
         T3* target3;
@@ -809,6 +816,7 @@ namespace OpFlow {
               typename E8, typename T1, typename T2, typename T3, typename T4, typename T5, typename T6,
               typename T7, typename T8>
     struct EqnHolder<E1, E2, E3, E4, E5, E6, E7, E8, T1, T2, T3, T4, T5, T6, T7, T8> {
+        constexpr static int size = 8;
         T1* target1;
         T2* target2;
         T3* target3;
@@ -1053,6 +1061,7 @@ namespace OpFlow {
               typename E8, typename E9, typename T1, typename T2, typename T3, typename T4, typename T5,
               typename T6, typename T7, typename T8, typename T9>
     struct EqnHolder<E1, E2, E3, E4, E5, E6, E7, E8, E9, T1, T2, T3, T4, T5, T6, T7, T8, T9> {
+        constexpr static int size = 9;
         T1* target1;
         T2* target2;
         T3* target3;
@@ -1334,6 +1343,7 @@ namespace OpFlow {
               typename E8, typename E9, typename E10, typename T1, typename T2, typename T3, typename T4,
               typename T5, typename T6, typename T7, typename T8, typename T9, typename T10>
     struct EqnHolder<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> {
+        constexpr static int size = 10;
         T1* target1;
         T2* target2;
         T3* target3;

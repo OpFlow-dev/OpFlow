@@ -36,6 +36,27 @@ namespace OpFlow {
             rhs.resize(n_row);
         }
 
+        void trim(int nnz) {
+            col.resize(nnz);
+            val.resize(nnz);
+        }
+
+        [[nodiscard]] int nnz() const { return val.size(); }
+
+        void append(const CSRMatrix& mat) {
+            int base = row.size(), offset = row.back();
+            row.resize(row.size() + mat.row.size() - 1);
+            rhs.resize(rhs.size() + mat.rhs.size());
+            oneapi::tbb::parallel_for(0, (int) mat.row.size() - 1,
+                                      [&](int k) { row[base + k + 1] = mat.row[k + 1] + offset; });
+            oneapi::tbb::parallel_for(0, (int) mat.rhs.size(), [&](int k) { rhs[base + k] = mat.rhs[k]; });
+            base = col.size();
+            col.resize(col.size() + mat.col.size());
+            val.resize(val.size() + mat.val.size());
+            oneapi::tbb::parallel_for(0, (int) mat.col.size(), [&](int k) { col[base + k] = mat.col[k]; });
+            oneapi::tbb::parallel_for(0, (int) mat.val.size(), [&](int k) { val[base + k] = mat.val[k]; });
+        }
+
         [[nodiscard]] std::string toString() const {
             std::string ret;
             for (int i : row) ret += fmt::format("{}, ", i);
@@ -54,11 +75,16 @@ namespace OpFlow {
     };
 
     struct CSRMatrixGenerator {
-        template <typename S>
-        static auto generate(const S& s) {
+        template <typename S, typename M>
+        static auto generate(const S& s, const std::vector<M>& mappers, const std::vector<bool>& pin_flags) {
             CSRMatrix csr;
 
-            for (int i_eqn = 0; i_eqn < s.comm_stencils.size(); ++i_eqn) {}
+            Meta::static_for<S::size>([&]<int i>(Meta::int_<i>) {
+                CSRMatrix m = generate<i + 1>(s, mappers[i], pin_flags[i]);
+                csr.append(m);
+            });
+
+            return csr;
         }
 
         template <std::size_t iTarget, typename S>
@@ -81,7 +107,7 @@ namespace OpFlow {
             oneapi::tbb::concurrent_vector<m_tuple> coo;
             coo.reserve(local_range.count() * stencil_size);
             mat.resize(local_range.count(), stencil_size);
-            rangeFor_s(local_range, [&](auto&& i) {
+            rangeFor(local_range, [&](auto&& i) {
                 auto r = mapper(i);
                 auto currentStencil = uniEqn.evalAt(i);
                 if (pinValue && r == 0) {
@@ -119,6 +145,7 @@ namespace OpFlow {
             mat.row.back() = coo.size();
             oneapi::tbb::parallel_for(0, (int) coo.size(), [&](int i) { mat.col[i] = coo[i].c; });
             oneapi::tbb::parallel_for(0, (int) coo.size(), [&](int i) { mat.val[i] = coo[i].v; });
+            mat.trim(coo.size());
 
             return mat;
         }
