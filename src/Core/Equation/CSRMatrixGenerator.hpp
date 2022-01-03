@@ -111,11 +111,14 @@ namespace OpFlow {
             coo.reserve(local_range.count() * stencil_size);
             mat.resize(local_range.count(), stencil_size);
             rangeFor(local_range, [&](auto&& i) {
-                auto r = mapper(
-                        DS::ColoredIndex<typename decltype(local_range)::base_index_type> {i, 1});
+                auto r = mapper(DS::ColoredIndex<typename decltype(local_range)::base_index_type> {i, 1});
                 auto currentStencil = uniEqn.evalAt(i);
                 if (pinValue && r == 0) {
-                    coo.template emplace_back(0, 0, 1);
+                    coo.template emplace_back(
+                            0,
+                            mapper(DS::ColoredIndex<typename decltype(local_range)::base_index_type> {
+                                    i, iTarget}),
+                            1);
                     mat.rhs[r] = 0.;
                     return;
                 }

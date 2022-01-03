@@ -166,3 +166,46 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson_2Eqn) {
         ASSERT_DOUBLE_EQ(mat.rhs[i], mat.rhs[j]);
     }
 }
+
+TEST_F(CSRMatrixGeneratorTest, SimplePoisson_Neum_2Eqn) {
+    p = ExprBuilder<Field>()
+                .setMesh(m)
+                .setName("p")
+                .setBC(0, DimPos::start, BCType::Neum, 0.)
+                .setBC(0, DimPos::end, BCType::Neum, 0.)
+                .setBC(1, DimPos::start, BCType::Neum, 0.)
+                .setBC(1, DimPos::end, BCType::Neum, 0.)
+                .setExt(0, DimPos::start, 1)
+                .setExt(0, DimPos::end, 1)
+                .setExt(1, DimPos::start, 1)
+                .setExt(1, DimPos::end, 1)
+                .setLoc({LocOnMesh::Center, LocOnMesh::Center})
+                .build();
+
+    auto eqn = makeEqnHolder(
+            [&](auto&& e, auto&&) {
+                return 1.0 == d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e);
+            },
+            [&](auto&&, auto&& e) {
+                return 1.0 == d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e);
+            },
+            p, p);
+    auto st = makeStencilHolder(eqn);
+    DS::ColoredMDRangeMapper<2> mapper {p.assignableRange, p.assignableRange};
+    std::vector<bool> pin {true, true};
+
+    auto mat = CSRMatrixGenerator::generate(st, mapper, pin);
+
+    for (int i = mat.row.size() / 2, j = 0; i < mat.row.size(); ++i, ++j) {
+        ASSERT_EQ(mat.row[i] - mat.row[mat.row.size() / 2], mat.row[j]);
+    }
+    for (int i = mat.col.size() / 2, j = 0; i < mat.col.size(); ++i, ++j) {
+        ASSERT_EQ(mat.col[i] - 16, mat.col[j]);
+    }
+    for (int i = mat.val.size() / 2, j = 0; i < mat.val.size(); ++i, ++j) {
+        ASSERT_DOUBLE_EQ(mat.val[i], mat.val[j]);
+    }
+    for (int i = mat.rhs.size() / 2, j = 0; i < mat.rhs.size(); ++i, ++j) {
+        ASSERT_DOUBLE_EQ(mat.rhs[i], mat.rhs[j]);
+    }
+}
