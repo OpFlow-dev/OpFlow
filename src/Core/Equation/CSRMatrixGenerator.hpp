@@ -85,7 +85,6 @@ namespace OpFlow {
             Meta::static_for<S::size>([&]<int i>(Meta::int_<i>) {
                 CSRMatrix m = generate<i + 1>(s, mapper, pin_flags[i]);
                 csr.append(m);
-                OP_INFO("{}", csr.toString());
             });
 
             return csr;
@@ -113,7 +112,7 @@ namespace OpFlow {
             mat.resize(local_range.count(), stencil_size);
             rangeFor(local_range, [&](auto&& i) {
                 auto r = mapper(
-                        DS::ColoredIndex<typename decltype(local_range)::base_index_type> {i, iTarget});
+                        DS::ColoredIndex<typename decltype(local_range)::base_index_type> {i, 1});
                 auto currentStencil = uniEqn.evalAt(i);
                 if (pinValue && r == 0) {
                     coo.template emplace_back(0, 0, 1);
