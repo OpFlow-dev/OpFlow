@@ -68,7 +68,7 @@ namespace OpFlow {
                     auto idx = mapper(key);
                     coo.template emplace_back(r, idx, v);
                 }
-                mat.rhs[r] = currentStencil.bias;
+                mat.rhs[r] = -currentStencil.bias;
             });
 
             oneapi::tbb::parallel_sort(coo.begin(), coo.end());

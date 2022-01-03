@@ -50,7 +50,7 @@ namespace OpFlow {
         }
 
         template <int i>
-        auto getTarget() const {
+        auto getTarget() {
             if constexpr (i == 1) return target1;
         }
     };
@@ -101,7 +101,7 @@ namespace OpFlow {
         }
 
         template <int i>
-        auto getTarget() const {
+        auto getTarget() {
             if constexpr (i == 1) return target1;
             if constexpr (i == 2) return target2;
         }
@@ -174,7 +174,7 @@ namespace OpFlow {
         }
 
         template <int i>
-        auto getTarget() const {
+        auto getTarget() {
             if constexpr (i == 1) return target1;
             if constexpr (i == 2) return target2;
             if constexpr (i == 3) return target3;
@@ -273,7 +273,7 @@ namespace OpFlow {
         }
 
         template <int i>
-        auto getTarget() const {
+        auto getTarget() {
             if constexpr (i == 1) return target1;
             if constexpr (i == 2) return target2;
             if constexpr (i == 3) return target3;
@@ -396,7 +396,7 @@ namespace OpFlow {
         }
 
         template <int i>
-        auto getTarget() const {
+        auto getTarget() {
             if constexpr (i == 1) return target1;
             if constexpr (i == 2) return target2;
             if constexpr (i == 3) return target3;
@@ -547,7 +547,7 @@ namespace OpFlow {
         }
 
         template <int i>
-        auto getTarget() const {
+        auto getTarget() {
             if constexpr (i == 1) return target1;
             if constexpr (i == 2) return target2;
             if constexpr (i == 3) return target3;
@@ -741,7 +741,7 @@ namespace OpFlow {
         }
 
         template <int i>
-        auto getTarget() const {
+        auto getTarget() {
             if constexpr (i == 1) return target1;
             if constexpr (i == 2) return target2;
             if constexpr (i == 3) return target3;
@@ -969,7 +969,7 @@ namespace OpFlow {
         }
 
         template <int i>
-        auto getTarget() const {
+        auto getTarget() {
             if constexpr (i == 1) return target1;
             if constexpr (i == 2) return target2;
             if constexpr (i == 3) return target3;
@@ -1231,7 +1231,7 @@ namespace OpFlow {
         }
 
         template <int i>
-        auto getTarget() const {
+        auto getTarget() {
             if constexpr (i == 1) return target1;
             if constexpr (i == 2) return target2;
             if constexpr (i == 3) return target3;
@@ -1531,7 +1531,7 @@ namespace OpFlow {
         }
 
         template <int i>
-        auto getTarget() const {
+        auto getTarget() {
             if constexpr (i == 1) return target1;
             if constexpr (i == 2) return target2;
             if constexpr (i == 3) return target3;
