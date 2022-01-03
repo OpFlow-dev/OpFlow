@@ -153,6 +153,16 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson_2Eqn) {
 
     auto mat = CSRMatrixGenerator::generate(st, mapper, pin);
 
-    OP_INFO("{}", mat.toString());
-    ASSERT_TRUE(true);
+    for (int i = mat.row.size() / 2, j = 0; i < mat.row.size(); ++i, ++j) {
+        ASSERT_EQ(mat.row[i] - mat.row[mat.row.size() / 2], mat.row[j]);
+    }
+    for (int i = mat.col.size() / 2, j = 0; i < mat.col.size(); ++i, ++j) {
+        ASSERT_EQ(mat.col[i] - 16, mat.col[j]);
+    }
+    for (int i = mat.val.size() / 2, j = 0; i < mat.val.size(); ++i, ++j) {
+        ASSERT_DOUBLE_EQ(mat.val[i], mat.val[j]);
+    }
+    for (int i = mat.rhs.size() / 2, j = 0; i < mat.rhs.size(); ++i, ++j) {
+        ASSERT_DOUBLE_EQ(mat.rhs[i], mat.rhs[j]);
+    }
 }
