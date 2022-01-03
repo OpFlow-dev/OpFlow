@@ -85,7 +85,7 @@ struct EqnHolder<{}, {}> {{
     }}
     
     template <int i>
-    auto getTarget() const {{
+    auto getTarget() {{
         {}
     }}
 }};
@@ -351,7 +351,99 @@ struct StencilHolder<{}, {}> {{
         f.write("}\n#endif")
 
 
+def gen_unified_solve_hpp(n=10):
+    with open("./UnifiedSolve.hpp", "w") as f:
+        f.write(common_header)
+        f.write('''
+#ifndef OPFLOW_UNIFIEDSOLVE_HPP
+#define OPFLOW_UNIFIEDSOLVE_HPP
+
+#include "Core/Equation/Equation.hpp"
+#include "Core/Equation/HYPREEqnSolveHandler.hpp"
+#include "Core/Solvers/IJ/IJSolver.hpp"
+#include "Core/Solvers/SemiStruct/SemiStructSolver.hpp"
+#include "Core/Solvers/SemiStruct/SemiStructSolverFAC.hpp"
+#include "Core/Solvers/Struct/StructSolver.hpp"
+#include "Core/Solvers/Struct/StructSolverBiCGSTAB.hpp"
+#include "Core/Solvers/Struct/StructSolverCycRed.hpp"
+#include "Core/Solvers/Struct/StructSolverFGMRES.hpp"
+#include "Core/Solvers/Struct/StructSolverGMRES.hpp"
+#include "Core/Solvers/Struct/StructSolverJacobi.hpp"
+#include "Core/Solvers/Struct/StructSolverLGMRES.hpp"
+#include "Core/Solvers/Struct/StructSolverNone.hpp"
+#include "Core/Solvers/Struct/StructSolverPCG.hpp"
+#include "Core/Solvers/Struct/StructSolverPFMG.hpp"
+#include "Core/Solvers/Struct/StructSolverPrecond.hpp"
+#include "Core/Solvers/Struct/StructSolverSMG.hpp"
+#include "Core/Equation/AMGCLBackend.hpp"
+
+namespace OpFlow {
+    template <StructSolverType type = StructSolverType::GMRES,
+              StructSolverType pType = StructSolverType::None, typename F, StructuredFieldExprType T>
+    void Solve(const F& func, T&& target, StructSolverParams<type> params = StructSolverParams<type> {},
+               StructSolverParams<pType> precParams = StructSolverParams<pType> {}) {
+        auto solver = PrecondStructSolver<type, pType>(params, precParams);
+        auto handler = makeEqnSolveHandler(func, target, solver);
+        handler->solve();
+    }
+
+    template <SemiStructSolverType type = SemiStructSolverType::FAC,
+              SemiStructSolverType pType = SemiStructSolverType::None, typename F,
+              SemiStructuredFieldExprType T>
+    void Solve(const F& func, T&& target,
+               SemiStructSolverParams<type> params = SemiStructSolverParams<type> {},
+               SemiStructSolverParams<pType> precParams = SemiStructSolverParams<pType> {}) {
+        if constexpr (pType != SemiStructSolverType::None) {
+            auto solver = PrecondSemiStructSolver<type, pType>(params, precParams);
+            auto handler = makeEqnSolveHandler(func, target, solver);
+            handler->solve();
+        } else {
+            auto solver = SemiStructSolver<type>(params);
+            auto handler = HYPREEqnSolveHandler<Meta::RealType<F>, Meta::RealType<T>, SemiStructSolver<type>>(
+                    func, target, solver);
+            handler.solve();
+        }
+    }
+
+    template <typename S, typename F, FieldExprType T>
+    void Solve(F&& func, T&& target, auto&& indexer, IJSolverParams<S> params = IJSolverParams<S> {}) {
+        auto handler = makeEqnSolveHandler(func, target, indexer, params);
+        handler->solve();
+    }        
+        ''')
+        for i in range(1, n + 1):
+            f.write('''
+            template <typename S, {}, {}>
+            void SolveEqns({}, {}, auto&& mapper, const std::vector<IJSolverParams<S>>& params) {{
+        auto eqn_holder = makeEqnHolder({}, {});
+        auto st_holder = makeStencilHolder(eqn_holder);
+        std::vector<bool> pin;
+        for (const auto& p : params) pin.push_back(p.pinValue);
+        auto mat = CSRMatrixGenerator::generate(st_holder, mapper, pin);
+        std::vector<Real> x(mat.rhs.size());
+        AMGCLBackend<S, Real>::solve(mat, x, params[0].p, params[0].bp, params[0].verbose);
+        Meta::static_for<decltype(st_holder)::size>([&]<int i>(Meta::int_<i>) {{
+            auto target = eqn_holder.template getTarget<i>();
+            rangeFor(target->assignableRange, [&](auto&& k) {{
+                (*target)[k] = x[mapper(DS::ColoredIndex<Meta::RealType<decltype(k)>>{{k, i}})];
+            }});
+        }});
+    }}
+            '''.format(
+                concat_repeat(lambda j: "typename F{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "typename T{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "F{}&& f{}".format(j, j), ",", 1, i),
+                concat_repeat(lambda j: "T{}&& t{}".format(j, j), ",", 1, i),
+                concat_repeat(lambda j: "f{}".format(j), ",", 1, i),
+                concat_repeat(lambda j: "t{}".format(j), ",", 1, i)
+            ))
+        f.write('''
+        }
+        #endif''')
+
+
 if __name__ == "__main__":
     gen_equation_holder_hpp()
     gen_expression_hpp()
     gen_stencil_holder_hpp()
+    gen_unified_solve_hpp()
