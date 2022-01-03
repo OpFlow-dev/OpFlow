@@ -239,7 +239,7 @@ namespace OpFlow::DS {
 
     template <typename Idx, template <typename, typename> typename map_impl, Meta::Numerical Num>
     auto operator-(Num a, const StencilPad<Idx, map_impl>& b) {
-        return StencilPad<Idx>(a) - b;
+        return StencilPad<Idx, map_impl>(a) - b;
     }
 
     template <typename Idx, template <typename, typename> typename map_impl, Meta::Numerical Num>
