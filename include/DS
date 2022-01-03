@@ -19,6 +19,10 @@
 #include "DataStructures/Arrays/Tensor/TensorTrait.hpp"
 #include "DataStructures/Arrays/Tensor/FixedSizeTensor.hpp"
 
+// Matrix
+#include "DataStructures/Matrix/CSRMatrix.hpp"
+#include "DataStructures/Matrix/COOMatrix.hpp"
+
 // Geometry
 #include "DataStructures/Geometry/BasicElements.hpp"
 #include "DataStructures/Geometry/KdTree.hpp"

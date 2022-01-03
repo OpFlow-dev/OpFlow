@@ -15,75 +15,17 @@
 
 #include "Core/Equation/StencilHolder.hpp"
 #include "Core/Meta.hpp"
+#include "DataStructures/Matrix/CSRMatrix.hpp"
 #include <vector>
 
 namespace OpFlow {
-    struct CSRMatrix {
-        CSRMatrix() = default;
-        CSRMatrix(int n_row, int nnz_per_row) { resize(n_row, nnz_per_row); }
-
-        void reserve(int n_row, int nnz_per_row) {
-            row.reserve(n_row + 1);
-            col.reserve(n_row * nnz_per_row);
-            val.reserve(n_row * nnz_per_row);
-            rhs.reserve(n_row);
-        }
-
-        void resize(int n_row, int nnz_per_row) {
-            row.resize(n_row + 1);
-            col.resize(n_row * nnz_per_row);
-            val.resize(n_row * nnz_per_row);
-            rhs.resize(n_row);
-        }
-
-        void trim(int nnz) {
-            col.resize(nnz);
-            val.resize(nnz);
-        }
-
-        [[nodiscard]] int nnz() const { return val.size(); }
-
-        void append(const CSRMatrix& mat) {
-            int base_row = row.size(), base_rhs = rhs.size(), offset = row.back();
-            row.resize(row.size() + mat.row.size() - 1);
-            rhs.resize(rhs.size() + mat.rhs.size());
-            oneapi::tbb::parallel_for(0, (int) mat.row.size() - 1,
-                                      [&](int k) { row[base_row + k] = mat.row[k + 1] + offset; });
-            oneapi::tbb::parallel_for(0, (int) mat.rhs.size(),
-                                      [&](int k) { rhs[base_rhs + k] = mat.rhs[k]; });
-            int base_col = col.size();
-            col.resize(col.size() + mat.col.size());
-            val.resize(val.size() + mat.val.size());
-            oneapi::tbb::parallel_for(0, (int) mat.col.size(),
-                                      [&](int k) { col[base_col + k] = mat.col[k]; });
-            oneapi::tbb::parallel_for(0, (int) mat.val.size(),
-                                      [&](int k) { val[base_col + k] = mat.val[k]; });
-        }
-
-        [[nodiscard]] std::string toString() const {
-            std::string ret;
-            for (int i : row) ret += fmt::format("{}, ", i);
-            ret += "\n";
-            for (int i : col) ret += fmt::format("{}, ", i);
-            ret += "\n";
-            for (double i : val) ret += fmt::format("{}, ", i);
-            ret += "\n";
-            for (double i : rhs) ret += fmt::format("{}, ", i);
-            ret += "\n";
-            return ret;
-        }
-
-        std::vector<int> row {0}, col;
-        std::vector<Real> val, rhs;
-    };
-
     struct CSRMatrixGenerator {
         template <typename S, typename M>
         static auto generate(S& s, M&& mapper, const std::vector<bool>& pin_flags) {
-            CSRMatrix csr;
+            DS::CSRMatrix csr;
 
             Meta::static_for<S::size>([&]<int i>(Meta::int_<i>) {
-                CSRMatrix m = generate<i + 1>(s, mapper, pin_flags[i]);
+                DS::CSRMatrix m = generate<i + 1>(s, mapper, pin_flags[i]);
                 csr.append(m);
             });
 
@@ -92,7 +34,7 @@ namespace OpFlow {
 
         template <std::size_t iTarget, typename S>
         static auto generate(S& s, auto&& mapper, bool pinValue) {
-            CSRMatrix mat;
+            DS::CSRMatrix mat;
             auto target = s.template getTarget<iTarget>();
             auto commStencil = s.comm_stencils[iTarget - 1];
             auto& uniEqn = s.template getEqnExpr<iTarget>();
