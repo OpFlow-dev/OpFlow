@@ -26,7 +26,7 @@ find_dependency(spdlog PATHS @CMAKE_INSTALL_PREFIX@)
 
 # Find HYPRE
 if (OPFLOW_HYPRE_EXTERNAL)
-    find_dependency(HYPRE CONFIG)
+    find_dependency(HYPRE CONFIG PATHS @HYPRE_DIR@)
 else ()
     find_dependency(HYPRE CONFIG
             PATHS @CMAKE_INSTALL_PREFIX@)
@@ -35,7 +35,7 @@ endif ()
 # Find VTK
 if (OPFLOW_WITH_VTK)
     if (OPFLOW_VTK_EXTERNAL)
-        find_dependency(VTK CONFIG)
+        find_dependency(VTK CONFIG PATHS @VTK_DIR@)
     else ()
         find_dependency(VTK CONFIG
                 PATHS @CMAKE_INSTALL_PREFIX@)
@@ -57,5 +57,12 @@ endif ()
 
 # Find AMGCL
 find_dependency(amgcl HINTS @CMAKE_INSTALL_PREFIX@)
+
+# Find TBB
+if (OPFLOW_TBB_EXTERNAL)
+    find_dependency(TBB CONFIG REQUIRED PATHS @TBB_DIR@)
+else()
+    find_dependency(TBB CONFIG PATHS @CMAKE_INSTALL_PREFIX@)
+endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/${OPFLOW_CONFIG_TARGETS_FILE}")
