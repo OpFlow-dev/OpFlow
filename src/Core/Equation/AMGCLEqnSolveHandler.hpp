@@ -100,54 +100,6 @@ namespace OpFlow {
             val = reinterpret_cast<decltype(val)>(malloc(sizeof(*val) * prev_nnz));
         }
 
-        void generateAb2() {
-            auto local_range = DS::commonRange(target->assignableRange, target->localRange);
-            // prepare: evaluate the common stencil & pre-fill the arrays
-            int stencil_size = commStencil.pad.size();
-
-            struct m_tuple {
-                int r, c;
-                Real v;
-                bool operator<(const m_tuple& other) const {
-                    return r <= other.r && c <= other.c && !(r == other.r && c == other.c);
-                }
-            };
-            oneapi::tbb::concurrent_vector<m_tuple> coo;
-            coo.reserve(local_range.count() * stencil_size);
-            rangeFor(local_range, [&](auto&& i) {
-                auto r = pinValue ? mapper(i) - 1 : mapper(i);
-                auto currentStencil = uniEqn->evalAt(i);
-                if (pinValue && mapper(i) == 0) return;
-                for (const auto& [key, v] : currentStencil.pad) {
-                    auto idx = pinValue ? mapper(key) - 1 : mapper(key);
-                    coo.template emplace_back(r, idx, v);
-                }
-                rhs[r] = currentStencil.bias;
-            });
-
-            oneapi::tbb::parallel_sort(coo.begin(), coo.end());
-            std::vector<std::atomic_int> nnz_counts(local_range.count(), 0);
-            int common_base = coo.front().r;
-            oneapi::tbb::parallel_for_each(coo.begin(), coo.end(),
-                                           [&](const m_tuple& t) { nnz_counts[t.r - common_base]++; });
-            std::vector<int> nnz_prefix;
-            oneapi::tbb::parallel_scan(
-                    oneapi::tbb::blocked_range<int>(0, nnz_counts.size()), 0,
-                    [&](const oneapi::tbb::blocked_range<int>& r, int sum, bool is_final) {
-                        int temp = sum;
-                        for (int i = r.begin(); i < r.end(); ++i) {
-                            temp += nnz_counts[i];
-                            if (is_final) nnz_prefix[i] = temp;
-                        }
-                        return temp;
-                    },
-                    [](int l, int r) { return l + r; });
-            // copy to the global array
-            oneapi::tbb::parallel_for(0, local_range.count(), [&](int i) { row[i] = nnz_prefix[i]; });
-            oneapi::tbb::parallel_for(0, coo.size(), [&](int i) { col[i] = coo[i].c; });
-            oneapi::tbb::parallel_for(0, coo.size(), [&](int i) { val[i] = coo[i].v; });
-        }
-
         void generateAb() {
             auto local_range = DS::commonRange(target->assignableRange, target->localRange);
             // prepare: evaluate the common stencil & pre-fill the arrays
