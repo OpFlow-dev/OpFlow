@@ -44,17 +44,20 @@ namespace OpFlow {
         [[nodiscard]] int nnz() const { return val.size(); }
 
         void append(const CSRMatrix& mat) {
-            int base = row.size(), offset = row.back();
+            int base_row = row.size(), base_rhs = rhs.size(), offset = row.back();
             row.resize(row.size() + mat.row.size() - 1);
             rhs.resize(rhs.size() + mat.rhs.size());
             oneapi::tbb::parallel_for(0, (int) mat.row.size() - 1,
-                                      [&](int k) { row[base + k + 1] = mat.row[k + 1] + offset; });
-            oneapi::tbb::parallel_for(0, (int) mat.rhs.size(), [&](int k) { rhs[base + k] = mat.rhs[k]; });
-            base = col.size();
+                                      [&](int k) { row[base_row + k] = mat.row[k + 1] + offset; });
+            oneapi::tbb::parallel_for(0, (int) mat.rhs.size(),
+                                      [&](int k) { rhs[base_rhs + k] = mat.rhs[k]; });
+            int base_col = col.size();
             col.resize(col.size() + mat.col.size());
             val.resize(val.size() + mat.val.size());
-            oneapi::tbb::parallel_for(0, (int) mat.col.size(), [&](int k) { col[base + k] = mat.col[k]; });
-            oneapi::tbb::parallel_for(0, (int) mat.val.size(), [&](int k) { val[base + k] = mat.val[k]; });
+            oneapi::tbb::parallel_for(0, (int) mat.col.size(),
+                                      [&](int k) { col[base_col + k] = mat.col[k]; });
+            oneapi::tbb::parallel_for(0, (int) mat.val.size(),
+                                      [&](int k) { val[base_col + k] = mat.val[k]; });
         }
 
         [[nodiscard]] std::string toString() const {
@@ -70,18 +73,19 @@ namespace OpFlow {
             return ret;
         }
 
-        std::vector<int> row, col;
+        std::vector<int> row {0}, col;
         std::vector<Real> val, rhs;
     };
 
     struct CSRMatrixGenerator {
         template <typename S, typename M>
-        static auto generate(const S& s, const std::vector<M>& mappers, const std::vector<bool>& pin_flags) {
+        static auto generate(S& s, M&& mapper, const std::vector<bool>& pin_flags) {
             CSRMatrix csr;
 
             Meta::static_for<S::size>([&]<int i>(Meta::int_<i>) {
-                CSRMatrix m = generate<i + 1>(s, mappers[i], pin_flags[i]);
+                CSRMatrix m = generate<i + 1>(s, mapper, pin_flags[i]);
                 csr.append(m);
+                OP_INFO("{}", csr.toString());
             });
 
             return csr;
@@ -108,7 +112,8 @@ namespace OpFlow {
             coo.reserve(local_range.count() * stencil_size);
             mat.resize(local_range.count(), stencil_size);
             rangeFor(local_range, [&](auto&& i) {
-                auto r = mapper(i);
+                auto r = mapper(
+                        DS::ColoredIndex<typename decltype(local_range)::base_index_type> {i, iTarget});
                 auto currentStencil = uniEqn.evalAt(i);
                 if (pinValue && r == 0) {
                     coo.template emplace_back(0, 0, 1);
@@ -128,7 +133,7 @@ namespace OpFlow {
             int common_base = coo.front().r;
             oneapi::tbb::parallel_for_each(coo.begin(), coo.end(),
                                            [&](const m_tuple& t) { nnz_counts[t.r - common_base]++; });
-            std::vector<int> nnz_prefix(local_range.count());
+            std::vector<int> nnz_prefix(local_range.count() + 1);
             oneapi::tbb::parallel_scan(
                     oneapi::tbb::blocked_range<int>(0, nnz_counts.size()), 0,
                     [&](const oneapi::tbb::blocked_range<int>& r, int sum, bool is_final) {

@@ -13,3 +13,5 @@
 project(OpFlow_DataStructure_Benchmarks)
 
 add_bench(StencilPad StencilPad.cpp)
+
+add_bench(ArrayType ArrayType.cpp)
