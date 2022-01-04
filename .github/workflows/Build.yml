@@ -45,16 +45,16 @@ jobs:
             cores: 2,
           }
           - {
-            name: "MacOSX/10.15/Static/X64/Release",
-            os: macos-10.15,
+            name: "MacOSX/11/Static/X64/Release",
+            os: macos-11,
             config: Release,
             sudocmd: "sudo",
             artifact_name: "MacOSX",
             cores: 3,
           }
           - {
-            name: "MacOSX/10.15/Static/X64/Debug",
-            os: macos-10.15,
+            name: "MacOSX/11/Static/X64/Debug",
+            os: macos-11,
             config: Debug,
             sudocmd: "sudo",
             artifact_name: "MacOSX",
