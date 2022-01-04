@@ -423,9 +423,9 @@ namespace OpFlow {
         std::vector<Real> x(mat.rhs.size());
         AMGCLBackend<S, Real>::solve(mat, x, params[0].p, params[0].bp, params[0].verbose);
         Meta::static_for<decltype(st_holder)::size>([&]<int i>(Meta::int_<i>) {{
-            auto target = eqn_holder.template getTarget<i>();
+            auto target = eqn_holder.template getTarget<i+1>();
             rangeFor(target->assignableRange, [&](auto&& k) {{
-                (*target)[k] = x[mapper(DS::ColoredIndex<Meta::RealType<decltype(k)>>{{k, i}})];
+                (*target)[k] = x[mapper(DS::ColoredIndex<Meta::RealType<decltype(k)>>{{k, i+1}})];
             }});
         }});
     }}
