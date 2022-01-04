@@ -71,7 +71,7 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson) {
 
     auto eqn = makeEqnHolder(simple_poisson(), p);
     auto st = makeStencilHolder(eqn);
-    auto mat = CSRMatrixGenerator::generate<1>(st, DS::MDRangeMapper<2> {p.assignableRange}, false);
+    auto mat = CSRMatrixGenerator::generate<1>(st, DS::ColoredMDRangeMapper<2> {p.assignableRange}, false);
 
     std::vector<int> ptr {0, 3, 7, 11, 14, 18, 23, 28, 32, 36, 41, 46, 50, 53, 57, 61, 64},
             col {0,  1,  4, 0,  1,  2,  5, 1,  2,  3,  6,  2,  3,  7,  0,  4,  5,  8,  1,  4, 5, 6,
@@ -106,7 +106,7 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson_Neum) {
 
     auto eqn = makeEqnHolder(simple_poisson(), p);
     auto st = makeStencilHolder(eqn);
-    auto mat = CSRMatrixGenerator::generate<1>(st, DS::MDRangeMapper<2> {p.assignableRange}, true);
+    auto mat = CSRMatrixGenerator::generate<1>(st, DS::ColoredMDRangeMapper<2> {p.assignableRange}, true);
 
     std::vector<int> ptr {0, 1, 5, 9, 12, 16, 21, 26, 30, 34, 39, 44, 48, 51, 55, 59, 62},
             col {0,  0,  1, 2,  5,  1,  2, 3,  6,  2, 3,  7,  0,  4,  5,  8,  1,  4,  5,  6, 9,

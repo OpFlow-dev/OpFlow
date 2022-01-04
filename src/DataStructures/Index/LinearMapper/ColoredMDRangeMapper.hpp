@@ -35,6 +35,8 @@ namespace OpFlow::DS {
             return mappers[idx.color - 1](idx) + offset[idx.color];
         }
 
+        auto operator()(const MDIndex<dim>& idx, int i) const { return mappers[i - 1](idx); }
+
         std::vector<Range<dim>> ranges;
         std::vector<MDRangeMapper<dim>> mappers;
         std::vector<int> offset;
