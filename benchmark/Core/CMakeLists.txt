@@ -23,3 +23,5 @@ add_bench(AMRFieldInit AMRFieldInit.cpp)
 add_bench(LaplaceOp LaplaceOp.cpp)
 
 add_bench(EqnSolve EqnSolve.cpp)
+
+add_bench(EqnSet EqnSet.cpp)
