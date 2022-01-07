@@ -105,6 +105,74 @@ namespace OpFlow {
 
             return mat;
         }
+
+        template <std::size_t iTarget, typename S>
+        static auto gen_approx(S& s, auto&& mapper, bool pinValue) {
+            DS::CSRMatrix mat;
+            auto target = s.template getTarget<iTarget>();
+            auto commStencil = s.comm_stencils[iTarget - 1];
+            auto& uniEqn = s.template getEqnExpr<iTarget>();
+            auto local_range = DS::commonRange(target->assignableRange, target->localRange);
+            // prepare: evaluate the common stencil & pre-fill the arrays
+            int stencil_size = commStencil.pad.size();
+            mat.resize(local_range.count(), stencil_size);
+
+            rangeFor(local_range, [&](auto&& k) {
+                auto r = mapper(k, iTarget);// local rank
+                // delete the pinned equation
+                if (pinValue && r == 0) {
+                    mat.col[0]
+                            = mapper(DS::ColoredIndex<typename decltype(local_range)::base_index_type> {k, iTarget});
+                    mat.val[0] = 1.0;
+                    mat.rhs[0] = 0.;
+                    for (auto i = 1; i < stencil_size; ++i) {
+                        mat.col[i] = i;
+                        mat.val[i] = 0.;
+                    }
+                    return;
+                }
+                auto currentStencil = uniEqn.evalAt(k);
+                int _local_rank = r;
+                int _iter = 0;
+                for (const auto& [key, v] : currentStencil.pad) {
+                    auto idx = mapper(key);
+                    mat.col[stencil_size * _local_rank + _iter] = idx;
+                    mat.val[stencil_size * _local_rank + _iter] = v;
+                    _iter++;
+                }
+                mat.rhs[_local_rank] = -currentStencil.bias;
+                if (_iter < stencil_size) {
+                    // boundary case. find the neighbor ranks and assign 0 to them
+                    auto local_max = *std::max_element(mat.col.begin() + stencil_size * _local_rank,
+                                                       mat.col.begin() + stencil_size * _local_rank + _iter);
+                    auto local_min = *std::min_element(mat.col.begin() + stencil_size * _local_rank,
+                                                       mat.col.begin() + stencil_size * _local_rank + _iter);
+                    if (local_max + stencil_size - _iter
+                        < mapper(DS::ColoredIndex<typename decltype(local_range)::base_index_type> {
+                                target->assignableRange.last(), iTarget})) {
+                        // use virtual indexes upper side
+                        for (; _iter < stencil_size; ++_iter) {
+                            mat.col[stencil_size * _local_rank + _iter] = ++local_max;
+                            mat.val[stencil_size * _local_rank + _iter] = 0;
+                        }
+                    } else if (local_min - (stencil_size - _iter)
+                               >= mapper(DS::ColoredIndex<typename decltype(local_range)::base_index_type> {
+                                          target->assignableRange.first(), iTarget}) + 1) {
+                        // use virtual indexes lower side
+                        for (; _iter < stencil_size; ++_iter) {
+                            mat.col[stencil_size * _local_rank + _iter] = --local_min;
+                            mat.val[stencil_size * _local_rank + _iter] = 0;
+                        }
+                    } else {
+                        // the case may be tiny
+                        OP_CRITICAL("AMGCL: Cannot find proper filling. Abort.");
+                        OP_ABORT;
+                    }
+                }
+            });
+
+            return mat;
+        }
     };
 }// namespace OpFlow
 
