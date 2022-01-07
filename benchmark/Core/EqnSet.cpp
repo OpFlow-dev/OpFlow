@@ -46,18 +46,20 @@ static void EqnSolve_1eqn(benchmark::State& state) {
     IJSolverParams<Solver> params;
     params.p.solver.maxiter = 0;
 
+    auto eqn_holder = makeEqnHolder(
+            [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; },
+            u);
+    auto st_holder = makeStencilHolder(eqn_holder);
+    auto mapper = DS::ColoredMDRangeMapper<2>{u.assignableRange};
+    auto pin = std::vector{false};
+
     for (auto _ : state)
-        SolveEqns<Solver>(
-                [&](auto&& e) {
-                    return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0;
-                },
-                u, DS::ColoredMDRangeMapper<2> {u.assignableRange}, std::vector{params});
+        auto mat = CSRMatrixGenerator::generate(st_holder, mapper, pin);
 }
 
 static void EqnSolve_1eqn_Params(benchmark::internal::Benchmark* b) {
-    for (auto i = 8; i <= 2 << 10; i *= 2) b->Args({i + 1});
+    for (auto i = 1024; i <= 2 << 10; i *= 2) b->Args({i + 1});
 }
-
 
 BENCHMARK(EqnSolve_1eqn)->Apply(EqnSolve_1eqn_Params)->UseRealTime()->Unit(benchmark::kSecond);
 

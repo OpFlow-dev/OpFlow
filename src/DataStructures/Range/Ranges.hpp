@@ -94,6 +94,14 @@ namespace OpFlow::DS {
             return ret;
         }
 
+        constexpr auto covers(const Range& other) const {
+            auto ret = true;
+            for (std::size_t i = 0; i < d; ++i) {
+                ret &= start[i] <= other.start[i] && end[i] >= other.end[i];
+            }
+            return ret;
+        }
+
         constexpr const auto& getPace() const { return pace; }
 
         /// \brief Get the sliced range (1 layer thick) along dim \p k at position \p pos

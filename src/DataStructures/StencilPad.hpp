@@ -23,7 +23,7 @@ namespace OpFlow::DS {
     template <typename K, typename V>
     struct fake_map {
     private:
-        std::array<std::pair<K, V>, 30> val;
+        std::array<std::pair<K, V>, 20> val;
 
         int _size = 0;
 

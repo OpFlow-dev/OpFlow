@@ -19,6 +19,7 @@ namespace OpFlow {
         virtual ~EqnSolveHandler() = default;
         virtual void init() = 0;
         virtual void solve() = 0;
+        virtual void generateAb() {};
     };
 }// namespace OpFlow
 

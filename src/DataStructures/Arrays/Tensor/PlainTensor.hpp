@@ -26,12 +26,13 @@
 
 namespace OpFlow::DS {
     template <typename ScalarType, int d, typename Allocator>
-    requires Utils::StaticAllocatorType<ScalarType, Allocator> struct PlainTensor;
+    requires Utils::StaticAllocatorType<ScalarType, Allocator>
+    struct PlainTensor;
 
     namespace internal {
         template <typename ScalarType, int d, typename Allocator>
-        requires Utils::StaticAllocatorType<ScalarType, Allocator> struct TensorTrait<
-                PlainTensor<ScalarType, d, Allocator>> {
+        requires Utils::StaticAllocatorType<ScalarType, Allocator>
+        struct TensorTrait<PlainTensor<ScalarType, d, Allocator>> {
             using scalar_type = ScalarType;
             static constexpr auto dim = d;
             using allocator_type = Allocator;
@@ -46,19 +47,19 @@ namespace OpFlow::DS {
     }// namespace internal
 
     template <typename ScalarType, int d, typename Allocator = Utils::AlignedAllocator<ScalarType>>
-    requires Utils::StaticAllocatorType<ScalarType, Allocator> struct PlainTensor
-        : public Tensor<PlainTensor<ScalarType, d, Allocator>> {
+    requires Utils::StaticAllocatorType<ScalarType, Allocator>
+    struct PlainTensor : public Tensor<PlainTensor<ScalarType, d, Allocator>> {
     private:
         ScalarType* data = nullptr;
 
     public:
         std::array<int, d> dims;
-        long long total_size = 1;
+        long long total_size = 1, allocated_size = 0;
 
         using Scalar = ScalarType;
 
         PlainTensor() { dims.fill(0); }
-        ~PlainTensor() { Allocator::deallocate(data, total_size); }
+        ~PlainTensor() { Allocator::deallocate(data, allocated_size); }
 
         explicit PlainTensor(std::integral auto size, std::integral auto... sizes) {
             reShape(size, sizes...);
@@ -71,11 +72,38 @@ namespace OpFlow::DS {
         }
 
         auto& reShape(const std::array<int, d>& sizes) {
-            if (data) Allocator::deallocate(data, total_size);
+            if (data) Allocator::deallocate(data, allocated_size);
             dims = sizes;
             total_size = 1;
             for (auto i = 0; i < d; ++i) { total_size *= dims[i]; }
             data = Allocator::allocate(total_size);
+            allocated_size = total_size;
+            return *this;
+        }
+
+        auto& resize(std::integral auto size, std::integral auto ... sizes) {
+            return resize(std::array<int, d> {(int)size, (int)sizes...});
+        }
+
+        auto& resize(const std::array<int, d>& sizes) {
+            if (DS::Range<d>{dims}.covers(DS::Range<d>{sizes})) {
+                dims = sizes;
+                total_size = 1;
+                for (auto i = 0; i < d; ++i) total_size *= sizes[i];
+            } else {
+                ScalarType* new_data;
+                total_size = 1;
+                for (auto i = 0; i < d; ++i) total_size *= sizes[i];
+                new_data = Allocator::allocate(total_size);
+                if (data) {
+                    rangeFor(DS::commonRange(DS::Range<d> {dims}, DS::Range<d> {sizes}),
+                             [&](auto&& k) { new_data[getOffset(k)] = data[getOffset(k)]; });
+                    Allocator::deallocate(data, allocated_size);
+                }
+                allocated_size = total_size;
+                data = new_data;
+                dims = sizes;
+            }
             return *this;
         }
 
@@ -84,6 +112,7 @@ namespace OpFlow::DS {
             : dims(other.dims), total_size(other.total_size) {
             if (other.raw() == nullptr) return;
             data = Allocator::allocate(total_size);
+            allocated_size = total_size;
             // deep copy of data, assuming OtherScalar can be converted to Scalar
             std::copy(other.raw(), other.raw() + total_size, this->raw());
         }
@@ -92,6 +121,7 @@ namespace OpFlow::DS {
             : dims(other.dims), total_size(other.total_size) {
             if (other.raw() == nullptr) return;
             data = Allocator::allocate(total_size);
+            allocated_size = total_size;
             // deep copy of data, assuming OtherScalar can be converted to Scalar
             std::copy(other.raw(), other.raw() + total_size, this->raw());
         }
@@ -138,10 +168,11 @@ namespace OpFlow::DS {
 
         template <typename OtherScalar>
         void reShape(const PlainTensor<OtherScalar, d>& other) {
-            if (data) Allocator::deallocate(data, total_size);
+            if (data) Allocator::deallocate(data, allocated_size);
             dims = other.dims;
             total_size = other.total_size;
             data = Allocator::allocate(total_size);
+            allocated_size = total_size;
         }
 
         auto operator==(const PlainTensor& other) const { return raw() == other.raw(); }
@@ -155,6 +186,11 @@ namespace OpFlow::DS {
 
         auto end() { return data + total_size; }
         auto end() const { return data + total_size; }
+
+        auto& front() { return *data; }
+        const auto& front() const { return *data; }
+        auto& back() { return data[total_size - 1]; }
+        const auto& back() const { return data[total_size - 1]; }
 
         auto size() const { return total_size; }
         auto getDims() const { return dims; }
@@ -171,8 +207,10 @@ namespace OpFlow::DS {
             return pos;
         }
 
+        auto getOffset(int index) const { return index; }
+
         template <typename... I>
-        requires(std::integral<Meta::RealType<I>>&&...) auto getOffset(I&&... i) const {
+        requires(std::integral<Meta::RealType<I>>&&...) && (sizeof...(I) > 1) auto getOffset(I&&... i) const {
             return getOffset(DS::MDIndex<d> {i...});
         }
 
