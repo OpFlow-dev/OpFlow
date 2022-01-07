@@ -49,35 +49,42 @@ namespace OpFlow {
                     return r < other.r || (r == other.r && c < other.c);
                 }
             };
-            oneapi::tbb::concurrent_vector<m_tuple> coo;
-            coo.reserve(local_range.count() * stencil_size);
+            DS::DenseVector<m_tuple> coo;
+            coo.resize(local_range.count() * stencil_size);
             mat.resize(local_range.count(), stencil_size);
             rangeFor(local_range, [&](auto&& i) {
                 auto r = mapper(i, iTarget);// r is the local rank
                 auto currentStencil = uniEqn.evalAt(i);
+                int count = 0;
                 if (pinValue && r == 0) {
-                    coo.template emplace_back(
+                    coo[r * stencil_size] = m_tuple(
                             0,
                             mapper(DS::ColoredIndex<typename decltype(local_range)::base_index_type> {
                                     i, iTarget}),
                             1);
                     mat.rhs[r] = 0.;
-                    return;
+                    count++;
+                } else {
+                    for (const auto& [key, v] : currentStencil.pad) {
+                        auto idx = mapper(key);
+                        coo[r * stencil_size + count++] = m_tuple(r, idx, v);
+                    }
+                    mat.rhs[r] = -currentStencil.bias;
                 }
-                for (const auto& [key, v] : currentStencil.pad) {
-                    auto idx = mapper(key);
-                    coo.template emplace_back(r, idx, v);
-                }
-                mat.rhs[r] = -currentStencil.bias;
+                for (; count < stencil_size; ++count)
+                    coo[r * stencil_size + count]
+                            = m_tuple(std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0.);
             });
-
             oneapi::tbb::parallel_sort(coo.begin(), coo.end());
+            auto iter = std::lower_bound(
+                    coo.begin(), coo.end(),
+                    m_tuple(std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0.));
+            coo.resize(iter - coo.begin());
             std::vector<std::atomic_int> nnz_counts(local_range.count());
-            std::fill(nnz_counts.begin(), nnz_counts.end(), 0);
             int common_base = coo.front().r;
             oneapi::tbb::parallel_for_each(coo.begin(), coo.end(),
                                            [&](const m_tuple& t) { nnz_counts[t.r - common_base]++; });
-            std::vector<int> nnz_prefix(local_range.count() + 1);
+            DS::DenseVector<int> nnz_prefix(local_range.count() + 1);
             oneapi::tbb::parallel_scan(
                     oneapi::tbb::blocked_range<int>(0, nnz_counts.size()), 0,
                     [&](const oneapi::tbb::blocked_range<int>& r, int sum, bool is_final) {

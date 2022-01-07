@@ -16,18 +16,12 @@
 #include "Core/BasicDataTypes.hpp"
 #include <fmt/format.h>
 #include <oneapi/tbb/parallel_for.h>
+#include "DataStructures/Arrays/Arrays.hpp"
 
 namespace OpFlow::DS {
     struct CSRMatrix {
         CSRMatrix() = default;
         CSRMatrix(int n_row, int nnz_per_row) { resize(n_row, nnz_per_row); }
-
-        void reserve(int n_row, int nnz_per_row) {
-            row.reserve(n_row + 1);
-            col.reserve(n_row * nnz_per_row);
-            val.reserve(n_row * nnz_per_row);
-            rhs.reserve(n_row);
-        }
 
         void resize(int n_row, int nnz_per_row) {
             row.resize(n_row + 1);
@@ -91,8 +85,8 @@ namespace OpFlow::DS {
             return ret;
         }
 
-        std::vector<int> row {0}, col;
-        std::vector<Real> val, rhs;
+        DS::DenseVector<int> row {0}, col;
+        DS::DenseVector<Real> val, rhs;
     };
 }// namespace OpFlow::DS
 
