@@ -20,6 +20,7 @@
 #include "TensorBase.hpp"
 #include "Utils/Allocator/AlignedAllocator.hpp"
 #include "Utils/Allocator/StaticAllocator.hpp"
+#include "Core/Loops/RangeFor.hpp"
 #include <array>
 #include <concepts>
 #include <memory>
@@ -57,6 +58,7 @@ namespace OpFlow::DS {
         long long total_size = 1, allocated_size = 0;
 
         using Scalar = ScalarType;
+        using value_type = Scalar; // mocking std::vector
 
         PlainTensor() { dims.fill(0); }
         ~PlainTensor() { Allocator::deallocate(data, allocated_size); }

@@ -84,7 +84,7 @@ namespace OpFlow {
             int common_base = coo.front().r;
             oneapi::tbb::parallel_for_each(coo.begin(), coo.end(),
                                            [&](const m_tuple& t) { nnz_counts[t.r - common_base]++; });
-            DS::DenseVector<int> nnz_prefix(local_range.count() + 1);
+            DS::DenseVector<int> nnz_prefix(local_range.count() + 1); nnz_prefix[0] = 0;
             oneapi::tbb::parallel_scan(
                     oneapi::tbb::blocked_range<int>(0, nnz_counts.size()), 0,
                     [&](const oneapi::tbb::blocked_range<int>& r, int sum, bool is_final) {
