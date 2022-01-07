@@ -20,7 +20,9 @@
 
 namespace OpFlow::DS {
     struct CSRMatrix {
-        CSRMatrix() = default;
+        CSRMatrix() : row(1), col(0), rhs(0), val(0) {
+            row[0] = 0;
+        }
         CSRMatrix(int n_row, int nnz_per_row) { resize(n_row, nnz_per_row); }
 
         void resize(int n_row, int nnz_per_row) {
@@ -85,8 +87,9 @@ namespace OpFlow::DS {
             return ret;
         }
 
-        DS::DenseVector<int> row {0}, col;
-        DS::DenseVector<Real> val, rhs;
+        DS::DenseVector<std::ptrdiff_t> row, col;
+        DS::DenseVector<Real> val;
+        std::vector<Real> rhs; // AMGCL requirement
     };
 }// namespace OpFlow::DS
 

@@ -22,8 +22,10 @@ namespace OpFlow {
         static void solve(const DS::CSRMatrix& mat, std::vector<D>& x, typename Solver::params p,
                           typename Solver::backend_params bp, bool verbose = false) {
             int rows = mat.row.size() - 1;
-            auto A_tie = std::tie(rows, mat.row, mat.col, mat.val);
-            Solver solver(A_tie, p, bp);
+            auto A = amgcl::adapter::zero_copy(rows, mat.row.begin(), mat.col.begin(), mat.val.begin());
+            //auto A_tie = std::tie(rows, mat.row, mat.col, mat.val);
+            Solver solver(*A, p, bp);
+            //Solver solver(A_tie, p, bp);
             int iters;
             double error;
             std::tie(iters, error) = solver(mat.rhs, x);
