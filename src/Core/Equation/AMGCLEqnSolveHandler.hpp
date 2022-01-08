@@ -100,7 +100,7 @@ namespace OpFlow {
             val = reinterpret_cast<decltype(val)>(malloc(sizeof(*val) * prev_nnz));
         }
 
-        void generateAb() override{
+        void generateAb() override {
             auto local_range = DS::commonRange(target->assignableRange, target->localRange);
             // prepare: evaluate the common stencil & pre-fill the arrays
             int stencil_size = commStencil.pad.size();

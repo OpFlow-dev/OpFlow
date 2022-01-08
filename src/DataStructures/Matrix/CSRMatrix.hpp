@@ -14,15 +14,13 @@
 #define OPFLOW_CSRMATRIX_HPP
 
 #include "Core/BasicDataTypes.hpp"
+#include "DataStructures/Arrays/Arrays.hpp"
 #include <fmt/format.h>
 #include <oneapi/tbb/parallel_for.h>
-#include "DataStructures/Arrays/Arrays.hpp"
 
 namespace OpFlow::DS {
     struct CSRMatrix {
-        CSRMatrix() : row(1), col(0), rhs(0), val(0) {
-            row[0] = 0;
-        }
+        CSRMatrix() : row(1), col(0), rhs(0), val(0) { row[0] = 0; }
         CSRMatrix(int n_row, int nnz_per_row) { resize(n_row, nnz_per_row); }
 
         void resize(int n_row, int nnz_per_row) {
@@ -89,7 +87,7 @@ namespace OpFlow::DS {
 
         DS::DenseVector<std::ptrdiff_t> row, col;
         DS::DenseVector<Real> val;
-        std::vector<Real> rhs; // AMGCL requirement
+        std::vector<Real> rhs;// AMGCL requirement
     };
 }// namespace OpFlow::DS
 

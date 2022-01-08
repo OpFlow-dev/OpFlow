@@ -13,6 +13,7 @@
 #ifndef OPFLOW_PLAINTENSOR_HPP
 #define OPFLOW_PLAINTENSOR_HPP
 
+#include "Core/Loops/RangeFor.hpp"
 #include "Core/Macros.hpp"
 #include "Core/Meta.hpp"
 #include "DataStructures/Index/MDIndex.hpp"
@@ -20,20 +21,18 @@
 #include "TensorBase.hpp"
 #include "Utils/Allocator/AlignedAllocator.hpp"
 #include "Utils/Allocator/StaticAllocator.hpp"
-#include "Core/Loops/RangeFor.hpp"
 #include <array>
 #include <concepts>
 #include <memory>
 
 namespace OpFlow::DS {
     template <typename ScalarType, int d, typename Allocator>
-    requires Utils::StaticAllocatorType<ScalarType, Allocator>
-    struct PlainTensor;
+    requires Utils::StaticAllocatorType<ScalarType, Allocator> struct PlainTensor;
 
     namespace internal {
         template <typename ScalarType, int d, typename Allocator>
-        requires Utils::StaticAllocatorType<ScalarType, Allocator>
-        struct TensorTrait<PlainTensor<ScalarType, d, Allocator>> {
+        requires Utils::StaticAllocatorType<ScalarType, Allocator> struct TensorTrait<
+                PlainTensor<ScalarType, d, Allocator>> {
             using scalar_type = ScalarType;
             static constexpr auto dim = d;
             using allocator_type = Allocator;
@@ -48,8 +47,8 @@ namespace OpFlow::DS {
     }// namespace internal
 
     template <typename ScalarType, int d, typename Allocator = Utils::AlignedAllocator<ScalarType>>
-    requires Utils::StaticAllocatorType<ScalarType, Allocator>
-    struct PlainTensor : public Tensor<PlainTensor<ScalarType, d, Allocator>> {
+    requires Utils::StaticAllocatorType<ScalarType, Allocator> struct PlainTensor
+        : public Tensor<PlainTensor<ScalarType, d, Allocator>> {
     private:
         ScalarType* data = nullptr;
 
@@ -58,7 +57,7 @@ namespace OpFlow::DS {
         long long total_size = 1, allocated_size = 0;
 
         using Scalar = ScalarType;
-        using value_type = Scalar; // mocking std::vector
+        using value_type = Scalar;// mocking std::vector
 
         PlainTensor() { dims.fill(0); }
         ~PlainTensor() { Allocator::deallocate(data, allocated_size); }
@@ -83,12 +82,12 @@ namespace OpFlow::DS {
             return *this;
         }
 
-        auto& resize(std::integral auto size, std::integral auto ... sizes) {
-            return resize(std::array<int, d> {(int)size, (int)sizes...});
+        auto& resize(std::integral auto size, std::integral auto... sizes) {
+            return resize(std::array<int, d> {(int) size, (int) sizes...});
         }
 
         auto& resize(const std::array<int, d>& sizes) {
-            if (DS::Range<d>{dims}.covers(DS::Range<d>{sizes})) {
+            if (DS::Range<d> {dims}.covers(DS::Range<d> {sizes})) {
                 dims = sizes;
                 total_size = 1;
                 for (auto i = 0; i < d; ++i) total_size *= sizes[i];
@@ -212,7 +211,8 @@ namespace OpFlow::DS {
         auto getOffset(int index) const { return index; }
 
         template <typename... I>
-        requires(std::integral<Meta::RealType<I>>&&...) && (sizeof...(I) > 1) auto getOffset(I&&... i) const {
+                requires(std::integral<Meta::RealType<I>>&&...)
+                && (sizeof...(I) > 1) auto getOffset(I&&... i) const {
             return getOffset(DS::MDIndex<d> {i...});
         }
 

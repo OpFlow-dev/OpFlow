@@ -50,11 +50,10 @@ static void EqnSolve_1eqn(benchmark::State& state) {
             [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; },
             u);
     auto st_holder = makeStencilHolder(eqn_holder);
-    auto mapper = DS::ColoredMDRangeMapper<2>{u.assignableRange};
-    auto pin = std::vector{false};
+    auto mapper = DS::ColoredMDRangeMapper<2> {u.assignableRange};
+    auto pin = std::vector {false};
 
-    for (auto _ : state)
-        auto mat = CSRMatrixGenerator::generate(st_holder, mapper, pin);
+    for (auto _ : state) auto mat = CSRMatrixGenerator::generate(st_holder, mapper, pin);
 }
 
 static void EqnSolve_1eqn_Params(benchmark::internal::Benchmark* b) {
