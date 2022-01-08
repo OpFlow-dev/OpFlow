@@ -84,7 +84,8 @@ namespace OpFlow {
             int common_base = coo.front().r;
             oneapi::tbb::parallel_for_each(coo.begin(), coo.end(),
                                            [&](const m_tuple& t) { nnz_counts[t.r - common_base]++; });
-            DS::DenseVector<int> nnz_prefix(local_range.count() + 1); nnz_prefix[0] = 0;
+            DS::DenseVector<int> nnz_prefix(local_range.count() + 1);
+            nnz_prefix[0] = 0;
             oneapi::tbb::parallel_scan(
                     oneapi::tbb::blocked_range<int>(0, nnz_counts.size()), 0,
                     [&](const oneapi::tbb::blocked_range<int>& r, int sum, bool is_final) {
@@ -121,8 +122,8 @@ namespace OpFlow {
                 auto r = mapper(k, iTarget);// local rank
                 // delete the pinned equation
                 if (pinValue && r == 0) {
-                    mat.col[0]
-                            = mapper(DS::ColoredIndex<typename decltype(local_range)::base_index_type> {k, iTarget});
+                    mat.col[0] = mapper(
+                            DS::ColoredIndex<typename decltype(local_range)::base_index_type> {k, iTarget});
                     mat.val[0] = 1.0;
                     mat.rhs[0] = 0.;
                     for (auto i = 1; i < stencil_size; ++i) {
@@ -157,7 +158,8 @@ namespace OpFlow {
                         }
                     } else if (local_min - (stencil_size - _iter)
                                >= mapper(DS::ColoredIndex<typename decltype(local_range)::base_index_type> {
-                                          target->assignableRange.first(), iTarget}) + 1) {
+                                          target->assignableRange.first(), iTarget})
+                                          + 1) {
                         // use virtual indexes lower side
                         for (; _iter < stencil_size; ++_iter) {
                             mat.col[stencil_size * _local_rank + _iter] = --local_min;

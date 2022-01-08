@@ -23,7 +23,7 @@ jobs:
         fi
     - name: Autoformat
       id: format
-      uses: SKIRT/auto-format@master
+      uses: Luohaothu/auto-format@master
     - name: Autocommit
       if: steps.format.outputs.status == 'changed' || steps.copyright.outputs.status == 'changed'
       run: |
