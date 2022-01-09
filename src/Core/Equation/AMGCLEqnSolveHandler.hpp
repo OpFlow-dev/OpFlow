@@ -98,10 +98,6 @@ namespace OpFlow {
             prev_nnz = prev_mat_size * stencil_size;
             col = reinterpret_cast<decltype(col)>(malloc(sizeof(*col) * prev_nnz));
             val = reinterpret_cast<decltype(val)>(malloc(sizeof(*val) * prev_nnz));
-            for (int i = 0; i < prev_nnz; ++i) {
-                col[i] = std::numeric_limits<std::ptrdiff_t>::quiet_NaN();
-                val[i] = std::numeric_limits<Real>::quiet_NaN();
-            }
         }
 
         void generateAb() override {
@@ -225,9 +221,7 @@ namespace OpFlow {
                 else
                     generateAb();
                 initx();
-                if (pinValue)
-                    solver.init(x.size() - 2, row, col + commStencil.pad.size(),
-                                val + commStencil.pad.size());
+                if (pinValue) solver.init(x.size() - 2, row, col, val);
                 else
                     solver.init(x.size() - 1, row, col, val);
                 solver.solve(rhs, x);

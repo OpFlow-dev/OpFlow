@@ -11,8 +11,8 @@
 //  ----------------------------------------------------------------------------
 
 #include <OpFlow>
-#include <gmock/gmock.h>
 #include <cmath>
+#include <gmock/gmock.h>
 
 using namespace OpFlow;
 using namespace testing;
@@ -68,6 +68,8 @@ TEST_F(EqnSetTest, SimplePoisson_2Eqn) {
                 .setExt(1, DimPos::end, 1)
                 .setLoc({LocOnMesh::Center, LocOnMesh::Center})
                 .build();
+    // must give a valid initial value as AMGCLEqnSolveHandler relies on it
+    p = 0;
     auto p2 = p;
     auto p_true = p;
 
@@ -121,6 +123,7 @@ TEST_F(EqnSetTest, SimplePoisson_Neum_2Eqn) {
                 .setExt(1, DimPos::end, 1)
                 .setLoc({LocOnMesh::Center, LocOnMesh::Center})
                 .build();
+    p = 0;
     auto p2 = p;
     auto p_true = p;
 
