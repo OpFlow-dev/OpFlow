@@ -98,6 +98,10 @@ namespace OpFlow {
             prev_nnz = prev_mat_size * stencil_size;
             col = reinterpret_cast<decltype(col)>(malloc(sizeof(*col) * prev_nnz));
             val = reinterpret_cast<decltype(val)>(malloc(sizeof(*val) * prev_nnz));
+            for (int i = 0; i < prev_nnz; ++i) {
+                col[i] = std::numeric_limits<std::ptrdiff_t>::quiet_NaN();
+                val[i] = std::numeric_limits<Real>::quiet_NaN();
+            }
         }
 
         void generateAb() override {
