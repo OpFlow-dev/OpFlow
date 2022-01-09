@@ -12,6 +12,7 @@
 
 #include <OpFlow>
 #include <gmock/gmock.h>
+#include <cmath>
 
 using namespace OpFlow;
 using namespace testing;
@@ -76,7 +77,7 @@ TEST_F(EqnSetTest, SimplePoisson_2Eqn) {
     typedef amgcl::backend::builtin<float> PBackend;
     typedef amgcl::make_solver<
             amgcl::amg<PBackend, amgcl::coarsening::smoothed_aggregation, amgcl::relaxation::spai0>,
-            amgcl::solver::cg<SBackend>>
+            amgcl::solver::bicgstab<SBackend>>
             PSolver;
 
     std::vector<IJSolverParams<PSolver>> params(2);
@@ -90,13 +91,19 @@ TEST_F(EqnSetTest, SimplePoisson_2Eqn) {
             },
             p, p2, mapper, params);
 
+    params[0].dumpPath = "./A1";
+    params[0].verbose = true;
     Solve<PSolver>(
             [&](auto&& e) { return 1.0 == d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e); },
-            p_true, DS::MDRangeMapper<2> {p.assignableRange});
+            p_true, DS::MDRangeMapper<2> {p.assignableRange}, params[0]);
 
     rangeFor_s(p.assignableRange, [&](auto&& k) {
-        ASSERT_NEAR(p[k] / p_true[k], 1.0, 1e-10);
-        ASSERT_NEAR(p2[k] / p[k], 1.0, 1e-10);
+        if (std::isnan(p[k]) || std::isnan(p_true[k])) {
+            OP_INFO("p[{}] = {}, p2[{}] = {}, p_true[{}] = {}", k, p[k], k, p2[k], k, p_true[k]);
+        }
+        OP_INFO("{}", k);
+        ASSERT_NEAR(p[k], p_true[k], std::abs(1e-10 * p_true[k]));
+        ASSERT_NEAR(p2[k], p[k], std::abs(1e-10 * p[k]));
     });
 }
 
@@ -123,7 +130,7 @@ TEST_F(EqnSetTest, SimplePoisson_Neum_2Eqn) {
     typedef amgcl::backend::builtin<float> PBackend;
     typedef amgcl::make_solver<
             amgcl::amg<PBackend, amgcl::coarsening::smoothed_aggregation, amgcl::relaxation::spai0>,
-            amgcl::solver::cg<SBackend>>
+            amgcl::solver::bicgstab<SBackend>>
             PSolver;
 
     std::vector<IJSolverParams<PSolver>> params(2);
@@ -139,12 +146,17 @@ TEST_F(EqnSetTest, SimplePoisson_Neum_2Eqn) {
             },
             p, p2, mapper, params);
 
+    params[0].dumpPath = "./A2";
     Solve<PSolver>(
             [&](auto&& e) { return 1.0 == d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e); },
             p_true, DS::MDRangeMapper<2> {p.assignableRange}, params[0]);
 
     rangeFor_s(p.assignableRange, [&](auto&& k) {
-        ASSERT_LE(std::abs(p[k] - p_true[k]), 1e-10);
+        if (std::isnan(p[k]) || std::isnan(p_true[k])) {
+            OP_INFO("p[{}] = {}, p2[{}] = {}, p_true[{}] = {}", k, p[k], k, p2[k], k, p_true[k]);
+        }
+
+        ASSERT_NEAR(p[k], p_true[k], std::abs(1e-10 * p_true[k]));
         ASSERT_DOUBLE_EQ(p[k], p2[k]);
     });
 }
