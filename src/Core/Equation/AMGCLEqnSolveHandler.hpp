@@ -98,6 +98,10 @@ namespace OpFlow {
             prev_nnz = prev_mat_size * stencil_size;
             col = reinterpret_cast<decltype(col)>(malloc(sizeof(*col) * prev_nnz));
             val = reinterpret_cast<decltype(val)>(malloc(sizeof(*val) * prev_nnz));
+            for (int i = 0; i < prev_nnz; ++i) {
+                col[i] = std::numeric_limits<std::ptrdiff_t>::quiet_NaN();
+                val[i] = std::numeric_limits<Real>::quiet_NaN();
+            }
         }
 
         void generateAb() override {
@@ -112,7 +116,7 @@ namespace OpFlow {
                 // delete the pinned equation
                 if (pinValue && mapper(k) == 0) return;
                 auto currentStencil = uniEqn->evalAt(k);
-                int _local_rank = local_mapper(k);
+                int _local_rank = local_mapper(k) - local_offset;
                 int _iter = 0;
                 for (const auto& [key, v] : currentStencil.pad) {
                     auto idx = pinValue ? mapper(key) - 1 : mapper(key);
@@ -120,7 +124,7 @@ namespace OpFlow {
                     val[stencil_size * _local_rank + _iter] = v;
                     _iter++;
                 }
-                rhs[_local_rank - local_offset] = -currentStencil.bias;
+                rhs[_local_rank] = -currentStencil.bias;
                 if (_iter < stencil_size) {
                     // boundary case. find the neighbor ranks and assign 0 to them
                     auto local_max = *std::max_element(col + stencil_size * _local_rank,
@@ -133,8 +137,7 @@ namespace OpFlow {
                             col[stencil_size * _local_rank + _iter] = ++local_max;
                             val[stencil_size * _local_rank + _iter] = 0;
                         }
-                    } else if (local_min - (stencil_size - _iter)
-                               >= mapper(target->assignableRange.first()) + 1) {
+                    } else if (local_min - (stencil_size - _iter) >= 0) {
                         // use virtual indexes lower side
                         for (; _iter < stencil_size; ++_iter) {
                             col[stencil_size * _local_rank + _iter] = --local_min;
@@ -212,9 +215,7 @@ namespace OpFlow {
             if (firstRun) {
                 generateAb();
                 initx();
-                if (pinValue)
-                    solver.init(x.size() - 2, row, col + commStencil.pad.size(),
-                                val + commStencil.pad.size());
+                if (pinValue) solver.init(x.size() - 2, row, col, val);
                 else
                     solver.init(x.size() - 1, row, col, val);
                 solver.solve(rhs, x);

@@ -18,97 +18,34 @@
 using namespace OpFlow;
 using namespace testing;
 
-class AMGCLTest : public Test {
-protected:
-    ParallelPlan ori_plan;
-    void SetUp() override {
-        ori_plan = getGlobalParallelPlan();
-        auto info = makeParallelInfo();
-        info.threadInfo.thread_count = std::min(info.threadInfo.thread_count, 4);
-        setGlobalParallelInfo(info);
-        setGlobalParallelPlan(makeParallelPlan(getGlobalParallelInfo(), ParallelIdentifier::SharedMem));
+TEST(AMGCLTest, Mat1) {
+    for (int _t = 0; _t < 1; _t++) {
+    std::vector<std::ptrdiff_t> row {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85},
+            col {1,  0,  4,  5, 6,  2,  1,  0,  5,  6, 3,  2,  1,  6,  7, 3,  2,  7,  8,  9,
+                 5,  4,  8,  0, 9,  6,  5,  4,  9,  1, 7,  6,  5,  10, 2, 7,  6,  11, 3,  12,
+                 9,  8,  12, 4, 13, 10, 9,  8,  13, 5, 11, 10, 9,  14, 6, 11, 10, 15, 7,  6,
+                 13, 12, 8,  7, 6,  14, 13, 12, 9,  8, 15, 14, 13, 10, 9, 15, 14, 11, 10, 9, -90000, 0, 800000, -12000000000};
+    std::vector<double> val {-1, 6, -1, 0,  0, -1, 5, -1, -1, 0,  -1, 5, -1, -1, 0,  6, -1, -1, 0,  0,
+                             -1, 5, -1, -1, 0, -1, 4, -1, -1, -1, -1, 4, -1, -1, -1, 5, -1, -1, -1, 0,
+                             -1, 5, -1, -1, 0, -1, 4, -1, -1, -1, -1, 4, -1, -1, -1, 5, -1, -1, -1, 0,
+                             -1, 6, -1, 0,  0, -1, 5, -1, -1, 0,  -1, 5, -1, -1, 0,  6, -1, -1, 0,  0},
+            rhs {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}, x;
+    x.resize(rhs.size());
 
-        m = MeshBuilder<Mesh>().newMesh(65, 65).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
-        p = ExprBuilder<Field>()
-                    .setMesh(m)
-                    .setName("p")
-                    .setBC(0, DimPos::start, BCType::Dirc, 0.)
-                    .setBC(0, DimPos::end, BCType::Dirc, 0.)
-                    .setBC(1, DimPos::start, BCType::Dirc, 0.)
-                    .setBC(1, DimPos::end, BCType::Dirc, 0.)
-                    .setExt(0, DimPos::start, 1)
-                    .setExt(0, DimPos::end, 1)
-                    .setExt(1, DimPos::start, 1)
-                    .setExt(1, DimPos::end, 1)
-                    .setLoc({LocOnMesh::Center, LocOnMesh::Center})
-                    .build();
-        p_true = p;
-        p_true.name = "ptrue";
-        r = ExprBuilder<Field>()
-                    .setMesh(m)
-                    .setName("r")
-                    .setBC(0, DimPos::start, BCType::Dirc, 1.)
-                    .setBC(0, DimPos::end, BCType::Dirc, 1.)
-                    .setBC(1, DimPos::start, BCType::Dirc, 1.)
-                    .setBC(1, DimPos::end, BCType::Dirc, 1.)
-                    .setExt(0, DimPos::start, 1)
-                    .setExt(0, DimPos::end, 1)
-                    .setExt(1, DimPos::start, 1)
-                    .setExt(1, DimPos::end, 1)
-                    .setLoc({LocOnMesh::Center, LocOnMesh::Center})
-                    .build();
-        b = p;
-        b.name = "b";
-        p_true.initBy([&](auto&& x) { return x[0] * (1. - x[0]) * x[1] * (1. - x[1]); });
+    typedef amgcl::backend::builtin<double> SBackend;
+    typedef amgcl::backend::builtin<float> PBackend;
+    typedef amgcl::make_solver<
+            amgcl::amg<PBackend, amgcl::coarsening::smoothed_aggregation, amgcl::relaxation::spai0>,
+            amgcl::solver::bicgstab<SBackend>>
+            PSolver;
+
+        auto rc = x.size();
+        auto A = amgcl::adapter::zero_copy(rc, row.data(), col.data(), val.data());
+
+        IJSolverParams<PSolver> p;
+        PSolver solver(*A, p.p, p.bp);
+        solver(rhs, x);
+
+        ASSERT_DOUBLE_EQ(x[0], -0.3749999999999963);
     }
-
-    void TearDown() override { setGlobalParallelPlan(ori_plan); }
-
-    void reset_case(double xc, double yc) {
-        r.initBy([&](auto&& x) {
-            auto dist = Math::norm2(x[0] - xc, x[1] - yc);
-            auto hevi = Math::smoothHeviside(r.getMesh().dx(0, 0) * 8, dist - 0.2);
-            return 1. * hevi + (1. - hevi) * 1000;
-        });
-        b = dx<D1FirstOrderCenteredUpwind>(dx<D1FirstOrderCenteredDownwind>(p_true)
-                                           / d1IntpCenterToCorner<0>((r)))
-            + dy<D1FirstOrderCenteredUpwind>(dy<D1FirstOrderCenteredDownwind>(p_true)
-                                             / d1IntpCenterToCorner<1>(r));
-        p = 0.;
-    }
-
-    bool check_solution(double rel = 1e-10) {
-        auto res = p - p_true;
-        res.prepare();
-        bool ret = true;
-        rangeFor_s(p.assignableRange, [&](auto&& i) {
-            auto c_res = res.evalAt(i);
-            auto p_ref = p_true.evalAt(i);
-            auto rel_res = std::abs(c_res) / std::abs(p_ref);
-            if (std::isnan(c_res)) {
-                OP_ERROR("Check fail: res = nan @ {}", i);
-                ret = false;
-            }
-            if (rel_res > rel) {
-                OP_ERROR("Check fail: res = {} / {} @ {}", c_res, rel_res, i);
-                ret = false;
-            }
-        });
-        return ret;
-    }
-
-    auto poisson_eqn() {
-        return [&](auto&& e) {
-            return b
-                   == dx<D1FirstOrderCenteredUpwind>(dx<D1FirstOrderCenteredDownwind>(e)
-                                                     / d1IntpCenterToCorner<0>((r)))
-                              + dy<D1FirstOrderCenteredUpwind>(dy<D1FirstOrderCenteredDownwind>(e)
-                                                               / d1IntpCenterToCorner<1>(r));
-        };
-    }
-
-    using Mesh = CartesianMesh<Meta::int_<2>>;
-    using Field = CartesianField<Real, Mesh>;
-    Mesh m;
-    Field p, r, b, p_true;
-};
+}
