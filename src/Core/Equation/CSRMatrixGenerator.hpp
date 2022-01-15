@@ -75,6 +75,8 @@ namespace OpFlow {
                     coo[r * stencil_size + count]
                             = m_tuple(std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0.);
             });
+            tbb::global_control globalControl(tbb::detail::d1::global_control::max_allowed_parallelism,
+                                              getGlobalParallelPlan().shared_memory_workers_count);
             oneapi::tbb::parallel_sort(coo.begin(), coo.end());
             auto iter = std::lower_bound(
                     coo.begin(), coo.end(),
