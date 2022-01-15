@@ -101,7 +101,9 @@ namespace OpFlow {
 #else
                 tbb::task_arena arena(1);
 #endif
-                tbb::parallel_for(range, [&](const R& r) { rangeFor_s(r, OP_PERFECT_FOWD(func)); });
+                arena.template execute([&]() {
+                    tbb::parallel_for(range, [&](const R& r) { rangeFor_s(r, OP_PERFECT_FOWD(func)); });
+                });
             }
         } else {
             OP_NOT_IMPLEMENTED;
@@ -138,7 +140,8 @@ namespace OpFlow {
         } reducer {op, func};
 
         if (range.stride[0] == 1) {
-            tbb::parallel_reduce(range, reducer);
+            tbb::task_arena arena(getGlobalParallelPlan().shared_memory_workers_count);
+            arena.template execute([&]() { tbb::parallel_reduce(range, reducer); });
             return reducer.result;
         } else {
             OP_NOT_IMPLEMENTED;
