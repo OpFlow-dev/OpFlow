@@ -88,7 +88,7 @@ namespace OpFlow {
 
         void allocArrays() {
             auto local_range = DS::commonRange(target->assignableRange, target->localRange);
-            int stencil_size = commStencil.pad.size();
+            int stencil_size = commStencil.pad.size() * 1.5;
             prev_mat_size = local_range.count() + 1;
             row = reinterpret_cast<decltype(row)>(malloc(sizeof(*row) * prev_mat_size));
 #pragma omp parallel for default(shared)
@@ -107,7 +107,7 @@ namespace OpFlow {
         void generateAb() override {
             auto local_range = DS::commonRange(target->assignableRange, target->localRange);
             // prepare: evaluate the common stencil & pre-fill the arrays
-            int stencil_size = commStencil.pad.size();
+            int stencil_size = commStencil.pad.size() * 1.5;
 
             auto local_mapper = DS::MDRangeMapper<dim> {local_range};
             int local_offset = pinValue && mapper(local_range.first()) == 0 ? 1 : 0;
@@ -148,6 +148,9 @@ namespace OpFlow {
                         OP_CRITICAL("AMGCL: Cannot find proper filling. Abort.");
                         OP_ABORT;
                     }
+                } else if (_iter > stencil_size){
+                    OP_CRITICAL("{} > {}. stencil_size is wrong.", _iter, stencil_size);
+                    OP_ABORT;
                 }
             });
 
@@ -162,6 +165,20 @@ namespace OpFlow {
                 for (int i = 0; i < local_range.count() * stencil_size; ++i) of << fmt::format("{} ", val[i]);
                 of << std::endl;
                 for (int i = 0; i < local_range.count(); ++i) of << fmt::format("{} ", rhs[i]);
+                of << std::endl;
+                of.flush();
+                for (int i = 0; i < local_range.count(); ++i) {
+                    for (int j = row[i]; j < row[i + 1]; ++j) {
+                        of << fmt::format("({}, {}) = {}\n", i, col[j], val[j]);
+                    }
+                    of << fmt::format("rhs[{}] = {}\n", i, rhs[i]);
+                }
+                of.flush();
+                rangeFor_s(local_range, [&](auto&& k) {
+                    if (pinValue && mapper(k) == 0) return;
+                    auto currentStencil = uniEqn->evalAt(k);
+                    of << fmt::format("stencil[{}] = {}\n", k, currentStencil);
+                });
                 of.flush();
             }
         }
