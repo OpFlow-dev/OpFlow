@@ -169,6 +169,50 @@ namespace OpFlow::DS {
         }
 
         void setEmpty() { *this = EmptyRange(); }
+
+        auto first() const { return base_index_type {level, part, start}; }
+        auto last() const {
+            auto ret = base_index_type {level, part, end};
+            for (int i = 0; i < d; ++i) ret[i]--;
+            return ret;
+        }
+
+        bool empty() const { return count() <= 0; }
+
+        bool is_divisible() const {
+            for (int i = 0; i < dim; ++i) {
+                if (end[i] - start[i] > 1) return true;
+            }
+            return false;
+        }
+
+        LevelRange(LevelRange& r, tbb::detail::split split) : LevelRange(r) {
+            this->reValidPace();
+            int max_iter = std::max_element(pace.begin(), pace.end()) - pace.begin();
+            this->end[max_iter] = this->start[max_iter] + this->pace[max_iter] / 2;
+            r.start[max_iter] = this->end[max_iter];
+            this->pace[max_iter] /= 2;
+            r.pace[max_iter] = r.end[max_iter] - r.start[max_iter];
+        }
+
+        LevelRange(LevelRange& r, tbb::detail::proportional_split proportion) : LevelRange(r) {
+            this->reValidPace();
+            int max_iter = std::max_element(pace.begin(), pace.end()) - pace.begin();
+            int right_part = int(float(r.end[max_iter] - r.start[max_iter]) * float(proportion.right())
+                                         / float(proportion.left() + proportion.right())
+                                 + 0.5f);
+            r.end[max_iter] -= right_part;
+            this->start[max_iter] = r.end[max_iter];
+            this->pace[max_iter] = this->end[max_iter] - this->start[max_iter];
+            r.pace[max_iter] = r.end[max_iter] - r.start[max_iter];
+        }
+
+        static constexpr bool is_splittable_in_proportion = true;
+        auto center() const {
+            auto ret = base_index_type {level, part, start};
+            for (int i = 0; i < d; ++i) ret[i] = (ret[i] + end[i]) / 2;
+            return ret;
+        }
     };
     template <std::size_t dim1, std::size_t dim2>
     constexpr auto commonRange(const LevelRange<dim1>& a, const LevelRange<dim2>& b) {
