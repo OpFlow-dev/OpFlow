@@ -20,6 +20,7 @@
 #ifdef OPFLOW_WITH_OPENMP
 #include <omp.h>
 #endif
+#include <oneapi/tbb.h>
 
 namespace OpFlow {
     struct NodeInfo {
@@ -52,13 +53,18 @@ namespace OpFlow {
         ret.nodeInfo.node_count = 1;
 #endif
 
-#if defined(OPFLOW_WITH_OPENMP) && defined(OPFLOW_THREAD_MODEL_OPENMP)
-        ret.parallelType |= ParallelIdentifier::SharedMem;
+#ifdef OPFLOW_THREAD_MODEL_OPENMP
         ret.threadInfo.type = SharedMemType::OpenMP;
+#elif defined(OPFLOW_THREAD_MODEL_TBB)
+        ret.threadInfo.type = SharedMemType::TBB;
+#else
+        ret.threadInfo.type = SharedMemType::None;
+#endif
+#if defined(OPFLOW_WITH_OPENMP)
+        ret.parallelType |= ParallelIdentifier::SharedMem;
         ret.threadInfo.thread_count = omp_get_max_threads();
 #elif defined(OPFLOW_THREAD_MODEL_TBB)
         ret.parallelType |= ParallelIdentifier::SharedMem;
-        ret.threadInfo.type = SharedMemType::TBB;
         // tbb will handle the thread count to use so we don't calculate it here
 #else
         ret.threadInfo.type = SharedMemType::None;
