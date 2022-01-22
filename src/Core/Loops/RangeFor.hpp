@@ -68,43 +68,10 @@ namespace OpFlow {
         auto line_size = range.end[0] - range.start[0];
         if (line_size <= 0) return std::forward<F>(func);
         if (range.stride[0] == 1) {
-            if constexpr (dim == 1) {
-#pragma omp parallel for
-                for (auto i = range.start[0]; i < range.end[0]; ++i) { func(typename R::base_index_type(i)); }
-            } else if constexpr (dim == 2) {
-                constexpr static int block_x = 8, block_y = 8;
-#pragma omp parallel for schedule(dynamic)
-#pragma omp tile sizes(block_y, block_x)
-                for (int j = range.start[1]; j < range.end[1]; ++j)
-                    for (int i = range.start[0]; i < range.end[0]; ++i) {
-                        typename R::index_type idx(range);
-                        idx[0] = i;
-                        idx[1] = j;
-                        func(static_cast<typename R::base_index_type&>(idx));
-                    }
-            } else if constexpr (dim == 3) {
-                constexpr static int block_x = 8, block_y = 4, block_z = 4;
-#pragma omp parallel for schedule(dynamic)
-#pragma omp tile sizes(block_z, block_y, block_x)
-                for (int k = range.start[2]; k < range.end[2]; ++k)
-                    for (int j = range.start[1]; j < range.end[1]; ++j)
-                        for (int i = range.start[0]; i < range.end[0]; ++i) {
-                            typename R::index_type idx(range);
-                            idx[0] = i;
-                            idx[1] = j;
-                            idx[2] = k;
-                            func(static_cast<typename R::base_index_type&>(idx));
-                        }
-            } else {
-#ifdef OPFLOW_WITH_OPENMP
-                tbb::task_arena arena(getGlobalParallelPlan().shared_memory_workers_count);
-#else
-                tbb::task_arena arena(1);
-#endif
-                arena.template execute([&]() {
-                    tbb::parallel_for(range, [&](const R& r) { rangeFor_s(r, OP_PERFECT_FOWD(func)); });
-                });
-            }
+            tbb::task_arena arena(getGlobalParallelPlan().shared_memory_workers_count);
+            arena.template execute([&]() {
+                tbb::parallel_for(range, [&](const R& r) { rangeFor_s(r, OP_PERFECT_FOWD(func)); });
+            });
         } else {
             OP_NOT_IMPLEMENTED;
             std::abort();

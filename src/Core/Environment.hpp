@@ -35,8 +35,8 @@ namespace OpFlow {
     }
 
     namespace internal {
-        static inline ParallelInfo GLOBAL_PARALLELINFO;
-        static inline ParallelPlan GLOBAL_PARALLELPLAN;
+        inline ParallelInfo GLOBAL_PARALLELINFO;
+        inline ParallelPlan GLOBAL_PARALLELPLAN;
     }// namespace internal
 
     inline static auto& getGlobalParallelInfo() { return internal::GLOBAL_PARALLELINFO; }
@@ -50,11 +50,7 @@ namespace OpFlow {
     inline static void setGlobalParallelPlan(const ParallelPlan& plan) {
         internal::GLOBAL_PARALLELPLAN = plan;
 #ifdef OPFLOW_WITH_OPENMP
-#ifdef OPFLOW_THREAD_MODEL_OPENMP
         omp_set_num_threads(plan.shared_memory_workers_count);
-#else
-        omp_set_num_threads(1);
-#endif
 #endif
     }
 

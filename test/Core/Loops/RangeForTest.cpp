@@ -109,5 +109,55 @@ TEST_F(RangedIndexTest, OneBeforeFirstReturnFirst) {
 
 class RangeForTest : public Test {
 protected:
-    void SetUp() override {}
+    void SetUp() override {
+        auto info = makeParallelInfo();
+        setGlobalParallelInfo(info);
+        setGlobalParallelPlan(makeParallelPlan(info, ParallelIdentifier::SharedMem));
+    }
 };
+
+TEST_F(RangeForTest, 1D) {
+    DS::Range<1> r {{100}};
+    std::vector<int> a(100, 0);
+    rangeFor(r, [&](auto&& k) { a[k[0]]++; });
+    for (auto& i : a) { ASSERT_EQ(i, 1); }
+}
+
+TEST_F(RangeForTest, 2D) {
+    DS::Range<2> r {{100, 100}};
+    int a[100][100];
+    for (int i = 0; i < 100; ++i)
+        for (int j = 0; j < 100; ++j) a[i][j] = 0;
+    rangeFor(r, [&](auto&& k) { a[k[0]][k[1]]++; });
+    for (int i = 0; i < 100; ++i)
+        for (int j = 0; j < 100; ++j) { ASSERT_EQ(a[i][j], 1); }
+}
+
+TEST_F(RangeForTest, 2D2) {
+    DS::Range<2> r {{1, 1}, {100, 100}};
+    int a[100][100];
+    for (int i = 0; i < 100; ++i)
+        for (int j = 0; j < 100; ++j) a[i][j] = 0;
+    rangeFor(r, [&](auto&& k) { a[k[0]][k[1]]++; });
+    for (int i = 0; i < 100; ++i) {
+        for (int j = 0; j < 100; ++j) {
+            if (1 <= i && 1 <= j) {
+                ASSERT_EQ(a[i][j], 1);
+            } else {
+                ASSERT_EQ(a[i][j], 0);
+            }
+        }
+    }
+}
+
+TEST_F(RangeForTest, 3D) {
+    DS::Range<3> r {{100, 100, 100}};
+    int a[100][100][100];
+    for (int i = 0; i < 100; ++i)
+        for (int j = 0; j < 100; ++j)
+            for (int k = 0; k < 100; ++k) a[i][j][k] = 0;
+    rangeFor(r, [&](auto&& k) { a[k[0]][k[1]][k[2]]++; });
+    for (int i = 0; i < 100; ++i)
+        for (int j = 0; j < 100; ++j)
+            for (int k = 0; k < 100; ++k) { ASSERT_EQ(a[i][j][k], 1); }
+}

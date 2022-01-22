@@ -148,7 +148,7 @@ namespace OpFlow {
                         OP_CRITICAL("AMGCL: Cannot find proper filling. Abort.");
                         OP_ABORT;
                     }
-                } else if (_iter > stencil_size){
+                } else if (_iter > stencil_size) {
                     OP_CRITICAL("{} > {}. stencil_size is wrong.", _iter, stencil_size);
                     OP_ABORT;
                 }
