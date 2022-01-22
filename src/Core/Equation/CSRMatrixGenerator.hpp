@@ -40,7 +40,7 @@ namespace OpFlow {
             auto& uniEqn = s.template getEqnExpr<iTarget>();
             auto local_range = DS::commonRange(target->assignableRange, target->localRange);
             // prepare: evaluate the common stencil & pre-fill the arrays
-            int stencil_size = commStencil.pad.size();
+            int stencil_size = commStencil.pad.size() * 1.5;
 
             struct m_tuple {
                 int r, c;
@@ -117,7 +117,7 @@ namespace OpFlow {
             auto& uniEqn = s.template getEqnExpr<iTarget>();
             auto local_range = DS::commonRange(target->assignableRange, target->localRange);
             // prepare: evaluate the common stencil & pre-fill the arrays
-            int stencil_size = commStencil.pad.size();
+            int stencil_size = commStencil.pad.size() * 1.5;
             mat.resize(local_range.count(), stencil_size);
 
             rangeFor(local_range, [&](auto&& k) {
