@@ -132,6 +132,8 @@ namespace OpFlow::Utils {
             return *this;
         }
 
+        std::string static commonSuffix() { return ""; }
+
     private:
         std::string path;
         TimeStamp time {};

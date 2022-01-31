@@ -113,6 +113,8 @@ namespace OpFlow::Utils {
         template <CartesianFieldType T>
         H5Stream& operator>>(T& f);
 
+        std::string static commonSuffix() { return ".h5"; }
+
     private:
         std::string path;
 #ifdef OPFLOW_WITH_HDF5
