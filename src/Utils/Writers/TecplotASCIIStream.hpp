@@ -40,6 +40,8 @@ namespace OpFlow::Utils {
             return *this;
         }
 
+        std::string static commonSuffix() { return ".tec"; }
+
         void alwaysWriteMesh(bool o) { _alwaysWriteMesh = o; }
 
         template <CartesianFieldExprType T>

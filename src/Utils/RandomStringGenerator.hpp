@@ -45,9 +45,7 @@ namespace OpFlow::Utils {
         return result;
     }
 
-    auto random_name(std::size_t len = 4) {
-        return generate_random_alphanumeric_string(len);
-    }
+    auto random_name(std::size_t len = 4) { return generate_random_alphanumeric_string(len); }
 }// namespace OpFlow::Utils
 
 #endif//OPFLOW_RANDOMSTRINGGENERATOR_HPP
