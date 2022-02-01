@@ -23,7 +23,7 @@
 namespace OpFlow::Utils {
     // copied from https://stackoverflow.com/a/444614
     template <typename T = std::mt19937>
-    auto random_generator() -> T {
+    inline auto random_generator() -> T {
         auto constexpr seed_bytes = sizeof(typename T::result_type) * T::state_size;
         auto constexpr seed_len = seed_bytes / sizeof(std::seed_seq::result_type);
         auto seed = std::array<std::seed_seq::result_type, seed_len>();
@@ -34,7 +34,7 @@ namespace OpFlow::Utils {
     }
 
     // copied from https://stackoverflow.com/a/444614
-    auto generate_random_alphanumeric_string(std::size_t len) -> std::string {
+    inline auto generate_random_alphanumeric_string(std::size_t len) -> std::string {
         static constexpr auto chars = "0123456789"
                                       "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                       "abcdefghijklmnopqrstuvwxyz";
@@ -45,7 +45,7 @@ namespace OpFlow::Utils {
         return result;
     }
 
-    auto random_name(std::size_t len = 4) { return generate_random_alphanumeric_string(len); }
+    inline auto random_name(std::size_t len = 4) { return generate_random_alphanumeric_string(len); }
 }// namespace OpFlow::Utils
 
 #endif//OPFLOW_RANDOMSTRINGGENERATOR_HPP
