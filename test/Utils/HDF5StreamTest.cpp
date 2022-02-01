@@ -42,6 +42,40 @@ TEST(H5RWTest, ReadAfterWrite) {
     ASSERT_EQ(v.evalAt(DS::MDIndex<2>(2, 2)), u.evalAt(DS::MDIndex<2>(2, 2)));
 }
 
+TEST(H5RWTest, ReadAtTime) {
+    using namespace OpFlow;
+    using Mesh = CartesianMesh<Meta::int_<2>>;
+    using Field = CartesianField<Real, Mesh>;
+
+    constexpr auto n = 5;
+    auto mesh = MeshBuilder<Mesh>().newMesh(n, n).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
+    auto u = ExprBuilder<Field>()
+                     .setName("u")
+                     .setMesh(mesh)
+                     .setBC(0, DimPos::start, BCType::Dirc, 1.)
+                     .setBC(0, DimPos::end, BCType::Dirc, 1.)
+                     .setBC(1, DimPos::start, BCType::Dirc, 1.)
+                     .setBC(1, DimPos::end, BCType::Dirc, 1.)
+                     .setLoc(std::array {LocOnMesh ::Center, LocOnMesh ::Center})
+                     .build();
+
+    u = 0.;
+    u[DS::MDIndex<2>(2, 2)] = 2.;
+    Utils::H5Stream stream("./u_rat.h5");
+    Utils::TimeStamp t0(0);
+    stream << t0 << u;
+    Utils::TimeStamp t1(1);
+    u[DS::MDIndex<2>(3, 3)] = 3.;
+    stream << t1 << u;
+
+    auto v = u;
+    v = 0.;
+    Utils::H5Stream istream("./u_rat.h5", StreamIn);
+    istream.moveToTime(t1);
+    istream >> v;
+    ASSERT_EQ(v.evalAt(DS::MDIndex<2>(3, 3)), u.evalAt(DS::MDIndex<2>(3, 3)));
+}
+
 TEST(H5RWTest, ReadAfterWriteInEqualDim) {
     using namespace OpFlow;
     using Mesh = CartesianMesh<Meta::int_<2>>;
