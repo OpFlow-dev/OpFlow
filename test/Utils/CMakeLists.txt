@@ -13,3 +13,5 @@
 project(OpFlow_Utils_Tests)
 
 add_gmock(HDF5StreamTest ${CMAKE_CURRENT_LIST_DIR}/HDF5StreamTest.cpp)
+
+add_gmock(IOGroupTest ${CMAKE_CURRENT_LIST_DIR}/IOGroupTest.cpp)

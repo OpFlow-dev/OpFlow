@@ -23,16 +23,21 @@ namespace OpFlow::Utils {
         IOGroup(const IOGroup&) = default;
         IOGroup(IOGroup&&) noexcept = default;
 
-        template <typename... Ts>
-        explicit IOGroup(const std::string& root, Ts&&... es) : exprs({OP_PERFECT_FOWD(es)...}) {
+        explicit IOGroup(const std::string& root, unsigned int mode, Exprs&... es) : exprs(es...) {
             Meta::static_for<sizeof...(Exprs)>([&]<int k>(Meta::int_<k>) {
                 std::string name = std::get<k>(exprs).getName();
-                if (name.empty() || name.size() > 8) name = random_name(4);
-                streams.emplace_back(root + name + Stream::commonSuffix());
+                if (name.empty() || name.size() > 8) {
+                    name = random_name(4);
+                    std::get<k>(exprs).name = "data";
+                }
+                if constexpr (RStreamType<Stream> && WStreamType<Stream>)
+                    streams.emplace_back(root + name + Stream::commonSuffix(), mode);
+                else
+                    streams.template emplace_back(root + name + Stream::commonSuffix());
             });
         }
 
-        void dump(const TimeStamp& t) const requires WStreamType<Stream> {
+        void dump(const TimeStamp& t) requires WStreamType<Stream> {
             Meta::static_for<sizeof...(Exprs)>(
                     [&]<int k>(Meta::int_<k>) { streams[k] << t << std::get<k>(exprs); });
         }
@@ -42,9 +47,20 @@ namespace OpFlow::Utils {
                     [&]<int k>(Meta::int_<k>) { streams[k].moveToTime(t) >> std::get<k>(exprs); });
         }
 
-        std::tuple<typename OpFlow::internal::ExprProxy<Exprs>...> exprs;
+        std::tuple<typename std::add_const<typename OpFlow::internal::ExprProxy<Exprs>::type>::type...> exprs;
         std::vector<Stream> streams;
     };
+
+    template <typename Stream, ExprType... Exprs>
+    auto makeIOGroup(const std::string& root, Exprs&&... es) {
+        return IOGroup<Stream, Meta::RealType<Exprs>...>(root, StreamOut, OP_PERFECT_FOWD(es)...);
+    }
+
+    template <typename Stream, ExprType... Exprs>
+    auto makeIOGroup(const std::string& root, unsigned int mode, Exprs&&... es) {
+        return IOGroup<Stream, Meta::RealType<Exprs>...>(root, mode, OP_PERFECT_FOWD(es)...);
+    }
+
 }// namespace OpFlow::Utils
 
 #endif//OPFLOW_IOGROUP_HPP
