@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2022  by the OpFlow developers
+//  Copyright (c) 2019 - 2022 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -63,7 +63,7 @@ TEST(IOGroupTest, DoubleField) {
     ASSERT_EQ((u[DS::MDIndex<2> {0, 0}]), 2);
     ASSERT_EQ((v[DS::MDIndex<2> {0, 0}]), 1);
 }
-/*
+
 TEST(IOGroupTest, DoubleFieldWithoutName) {
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<double, Mesh>;
@@ -84,7 +84,7 @@ TEST(IOGroupTest, DoubleFieldWithoutName) {
 
     ASSERT_EQ((u[DS::MDIndex<2> {0, 0}]), 2);
     ASSERT_EQ((v[DS::MDIndex<2> {0, 0}]), 1);
-}*/
+}
 
 TEST(IOGroupTest, WriteOnlyStream) {
     using Mesh = CartesianMesh<Meta::int_<2>>;
