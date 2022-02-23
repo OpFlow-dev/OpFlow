@@ -38,6 +38,15 @@ namespace OpFlow::Utils {
 
     struct H5Stream : FieldStream<H5Stream> {
         H5Stream() = default;
+        H5Stream(const H5Stream&) = delete;
+        H5Stream(H5Stream&& other) noexcept
+            : path(other.path), file(other.file), current_group(other.current_group), time(other.time),
+              first_run(other.first_run), file_inited(other.file_inited), group_inited(other.group_inited),
+              fixed_mesh(other.fixed_mesh), write_mesh(other.write_mesh), mode(other.mode),
+              mpi_comm(other.mpi_comm) {
+            other.file_inited = false;
+        }
+
         ~H5Stream() { close(); }
         explicit H5Stream(const std::filesystem::path& path, unsigned int mode = StreamOut)
             : path(path.string()), mode(mode) {
@@ -55,7 +64,6 @@ namespace OpFlow::Utils {
             if (mode & StreamOut) file = H5Fcreate(this->path.c_str(), H5F_ACC_TRUNC, fcpl_id, fapl_id);
             else
                 file = H5Fopen(this->path.c_str(), H5F_ACC_RDONLY, fapl_id);
-            OP_INFO("create file id {}\n", file);
             H5Pclose(fapl_id);
             file_inited = true;
 #else
@@ -68,7 +76,6 @@ namespace OpFlow::Utils {
             if (file_inited) {
                 if (group_inited) {
                     H5Gclose(current_group);
-                    OP_INFO("closed group {}", current_group);
                     group_inited = false;
                 }
                 H5Fclose(file);
@@ -91,7 +98,6 @@ namespace OpFlow::Utils {
             }
             std::string group_name = fmt::format("/T={}", time.time);
             current_group = H5Gcreate(file, group_name.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-            OP_INFO("create group id {}\n", current_group);
             group_inited = true;
 #else
             OP_MPI_MASTER_WARN("H5Stream not enabled.");
