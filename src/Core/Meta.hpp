@@ -145,5 +145,19 @@ namespace OpFlow::Meta {
     void static_for(F&& func) {
         static_for(std::forward<F>(func), make_integer_sequence<int, start, end, step>());
     }
+
+    template <std::size_t... Ints, std::size_t... IntsRemain, typename... Ts>
+    inline auto tuple_split_impl(std::index_sequence<Ints...>, std::index_sequence<IntsRemain...>,
+                                 std::tuple<Ts...>& t) {
+        return std::make_tuple(std::forward_as_tuple(std::get<Ints>(t)...),
+                               std::forward_as_tuple(std::get<IntsRemain>(t)...));
+    }
+
+    template <std::size_t Nsplit, typename... Ts>
+    inline auto tuple_split(std::tuple<Ts...>& t) {
+        static_assert(Nsplit < sizeof...(Ts));
+        return tuple_split_impl(std::make_index_sequence<Nsplit>(),
+                                make_integer_sequence<std::size_t, Nsplit, sizeof...(Ts)>(), t);
+    }
 }// namespace OpFlow::Meta
 #endif//OPFLOW_META_HPP
