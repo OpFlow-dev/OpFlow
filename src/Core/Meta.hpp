@@ -15,6 +15,7 @@
 
 #include <array>
 #include <concepts>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -97,14 +98,52 @@ namespace OpFlow::Meta {
     template <typename...>
     struct TypeName;
 
-    template <typename F, std::size_t... Is>
-    void static_for(F&& func, std::index_sequence<Is...>) {
+    template <typename F, int... Is>
+    void static_for(F&& func, std::integer_sequence<int, Is...>) {
         (func(int_<Is> {}), ...);
     }
 
     template <std::size_t N, typename F>
     void static_for(F&& func) {
-        static_for(std::forward<F>(func), std::make_index_sequence<N>());
+        static_for(std::forward<F>(func), std::make_integer_sequence<int, N>());
+    }
+
+    template <typename, typename, typename>
+    struct integer_seq_cat;
+
+    template <typename T, T... As, T... Bs>
+    struct integer_seq_cat<T, std::integer_sequence<T, As...>, std::integer_sequence<T, Bs...>> {
+        using type = std::integer_sequence<T, As..., Bs...>;
+    };
+
+    template <typename T, T start, T end, T step = 1>
+    struct make_integer_seq_impl;
+
+    template <typename T, T start, T end, T step>
+    requires(step > 0 && start < end)
+            || (step < 0 && start > end) struct make_integer_seq_impl<T, start, end, step> {
+        using type = typename integer_seq_cat<
+                T, std::integer_sequence<T, start>,
+                typename make_integer_seq_impl<T, start + step, end, step>::type>::type;
+    };
+
+    template <typename T, T start, T end, T step>
+    requires(step > 0 && start >= end)
+            || (step < 0 && start <= end) struct make_integer_seq_impl<T, start, end, step> {
+        using type = std::integer_sequence<T>;
+    };
+
+    template <typename T, T start, T end, T step = 1>
+    using make_integer_sequence = typename make_integer_seq_impl<T, start, end, step>::type;
+
+    template <int start, int end, typename F>
+    void static_for(F&& func) {
+        static_for(std::forward<F>(func), make_integer_sequence<int, start, end>());
+    }
+
+    template <int start, int end, int step, typename F>
+    void static_for(F&& func) {
+        static_for(std::forward<F>(func), make_integer_sequence<int, start, end, step>());
     }
 }// namespace OpFlow::Meta
 #endif//OPFLOW_META_HPP
