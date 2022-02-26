@@ -25,7 +25,7 @@ namespace OpFlow {
             DS::CSRMatrix csr;
 
             Meta::static_for<S::size>([&]<int i>(Meta::int_<i>) {
-                DS::CSRMatrix m = generate<i + 1>(s, mapper, pin_flags[i]);
+                DS::CSRMatrix m = generate<i>(s, mapper, pin_flags[i]);
                 csr.append(m);
             });
 
@@ -35,8 +35,8 @@ namespace OpFlow {
         template <std::size_t iTarget, typename S>
         static auto generate(S& s, auto&& mapper, bool pinValue) {
             DS::CSRMatrix mat;
-            auto target = s.template getTarget<iTarget>();
-            auto commStencil = s.comm_stencils[iTarget - 1];
+            auto target = s.template getTargetPtr<iTarget>();
+            auto commStencil = s.comm_stencils[iTarget];
             auto& uniEqn = s.template getEqnExpr<iTarget>();
             auto local_range = DS::commonRange(target->assignableRange, target->localRange);
             // prepare: evaluate the common stencil & pre-fill the arrays
@@ -113,7 +113,7 @@ namespace OpFlow {
         static auto gen_approx(S& s, auto&& mapper, bool pinValue) {
             DS::CSRMatrix mat;
             auto target = s.template getTarget<iTarget>();
-            auto commStencil = s.comm_stencils[iTarget - 1];
+            auto commStencil = s.comm_stencils[iTarget];
             auto& uniEqn = s.template getEqnExpr<iTarget>();
             auto local_range = DS::commonRange(target->assignableRange, target->localRange);
             // prepare: evaluate the common stencil & pre-fill the arrays

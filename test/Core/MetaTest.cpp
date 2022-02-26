@@ -17,40 +17,37 @@ using namespace OpFlow;
 
 TEST(MetaTest, StaticFor) {
     std::vector<int> a(10, 0);
-    Meta::static_for<5>([&]<int i>(Meta::int_<i>) {
-        a[i] = i;
-    });
-    for (int i = 0; i < 5; ++i) {
-        ASSERT_EQ(a[i], i);
-    }
-    for (int i = 5; i < 10; ++i) {
-        ASSERT_EQ(a[i], 0);
-    }
+    Meta::static_for<5>([&]<int i>(Meta::int_<i>) { a[i] = i; });
+    for (int i = 0; i < 5; ++i) { ASSERT_EQ(a[i], i); }
+    for (int i = 5; i < 10; ++i) { ASSERT_EQ(a[i], 0); }
 }
 
 TEST(MetaTest, StaticForReverse) {
     std::vector<int> a(10, 0);
-    Meta::static_for<4, -1, -1>([&]<int i>(Meta::int_<i>) {
-        a[i] = i;
-    });
-    for (int i = 0; i < 5; ++i) {
-        ASSERT_EQ(a[i], i);
-    }
-    for (int i = 5; i < 10; ++i) {
-        ASSERT_EQ(a[i], 0);
-    }
+    Meta::static_for<4, -1, -1>([&]<int i>(Meta::int_<i>) { a[i] = i; });
+    for (int i = 0; i < 5; ++i) { ASSERT_EQ(a[i], i); }
+    for (int i = 5; i < 10; ++i) { ASSERT_EQ(a[i], 0); }
 }
 
 TEST(MetaTest, StaticForStep2) {
     std::vector<int> a(10, 0);
-    Meta::static_for<0, 10, 2>([&]<int i>(Meta::int_<i>) {
-        a[i] = i;
-    });
+    Meta::static_for<0, 10, 2>([&]<int i>(Meta::int_<i>) { a[i] = i; });
 
-    for (int i = 0; i < 10; i += 2) {
-        ASSERT_EQ(a[i], i);
-    }
-    for (int i = 1; i < 10; i += 2) {
-        ASSERT_EQ(a[i], 0);
-    }
+    for (int i = 0; i < 10; i += 2) { ASSERT_EQ(a[i], i); }
+    for (int i = 1; i < 10; i += 2) { ASSERT_EQ(a[i], 0); }
+}
+
+TEST(MetaTest, TupleSplit) {
+    struct A {
+        A() { OP_INFO("A ctor"); }
+        A(const A&) { OP_INFO("A C-ctor"); }
+        A(A&&) { OP_INFO("A M-ctor"); }
+        ~A() { OP_INFO("~A()"); }
+    };
+    A a;
+    auto t = std::forward_as_tuple(a, A(), a);
+    auto&& [i, j] = Meta::tuple_split<1>(t);
+    auto&& [k, m] = Meta::tuple_split<1>(j);
+    ASSERT_EQ(&a, &std::get<0>(i));
+    ASSERT_EQ(&a, &std::get<0>(m));
 }
