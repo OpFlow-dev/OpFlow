@@ -46,9 +46,11 @@ static void EqnSolve_1eqn(benchmark::State& state) {
     IJSolverParams<Solver> params;
     params.p.solver.maxiter = 0;
 
-    auto eqn_holder = makeEqnHolder(
-            [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; },
-            u);
+    auto eqn_holder
+            = makeEqnHolder(std::forward_as_tuple([&](auto&& e) {
+                                return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0;
+                            }),
+                            std::forward_as_tuple(u));
     auto st_holder = makeStencilHolder(eqn_holder);
     auto mapper = DS::ColoredMDRangeMapper<2> {u.assignableRange};
     auto pin = std::vector {false};
