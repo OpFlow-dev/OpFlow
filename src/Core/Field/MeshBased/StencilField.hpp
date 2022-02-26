@@ -357,6 +357,7 @@ namespace OpFlow {
         using colored_index_type = DS::ColoredIndex<index_type>;
 
     private:
+        // todo: why need explicit storage here?
         std::vector<std::vector<typename internal::ExprTrait<typename internal::ExprTrait<
                 T>::template other_type<DS::StencilPad<colored_index_type, map_impl>>>::container_type>>
                 data;

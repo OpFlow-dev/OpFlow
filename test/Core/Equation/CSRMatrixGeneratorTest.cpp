@@ -69,9 +69,9 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson) {
                 .setLoc({LocOnMesh::Center, LocOnMesh::Center})
                 .build();
 
-    auto eqn = makeEqnHolder(simple_poisson(), p);
+    auto eqn = makeEqnHolder(std::forward_as_tuple(simple_poisson()), std::forward_as_tuple(p));
     auto st = makeStencilHolder(eqn);
-    auto mat = CSRMatrixGenerator::generate<1>(st, DS::ColoredMDRangeMapper<2> {p.assignableRange}, false);
+    auto mat = CSRMatrixGenerator::generate<0>(st, DS::ColoredMDRangeMapper<2> {p.assignableRange}, false);
 
     std::vector<int> ptr {0, 3, 7, 11, 14, 18, 23, 28, 32, 36, 41, 46, 50, 53, 57, 61, 64},
             col {0,  1,  4, 0,  1,  2,  5, 1,  2,  3,  6,  2,  3,  7,  0,  4,  5,  8,  1,  4, 5, 6,
@@ -104,9 +104,9 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson_Neum) {
                 .setLoc({LocOnMesh::Center, LocOnMesh::Center})
                 .build();
 
-    auto eqn = makeEqnHolder(simple_poisson(), p);
+    auto eqn = makeEqnHolder(std::forward_as_tuple(simple_poisson()), std::forward_as_tuple(p));
     auto st = makeStencilHolder(eqn);
-    auto mat = CSRMatrixGenerator::generate<1>(st, DS::ColoredMDRangeMapper<2> {p.assignableRange}, true);
+    auto mat = CSRMatrixGenerator::generate<0>(st, DS::ColoredMDRangeMapper<2> {p.assignableRange}, true);
 
     std::vector<int> ptr {0, 1, 5, 9, 12, 16, 21, 26, 30, 34, 39, 44, 48, 51, 55, 59, 62},
             col {0,  0,  1, 2,  5,  1,  2, 3,  6,  2, 3,  7,  0,  4,  5,  8,  1,  4,  5,  6, 9,
@@ -140,13 +140,14 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson_2Eqn) {
                 .build();
 
     auto eqn = makeEqnHolder(
-            [&](auto&& e, auto&&) {
-                return 1.0 == d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e);
-            },
-            [&](auto&&, auto&& e) {
-                return 1.0 == d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e);
-            },
-            p, p);
+            std::forward_as_tuple(
+                    [&](auto&& e, auto&&) {
+                        return 1.0 == d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e);
+                    },
+                    [&](auto&&, auto&& e) {
+                        return 1.0 == d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e);
+                    }),
+            std::forward_as_tuple(p, p));
     auto st = makeStencilHolder(eqn);
     DS::ColoredMDRangeMapper<2> mapper {p.assignableRange, p.assignableRange};
     std::vector<bool> pin {false, false};
@@ -183,13 +184,14 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson_Neum_2Eqn) {
                 .build();
 
     auto eqn = makeEqnHolder(
-            [&](auto&& e, auto&&) {
-                return 1.0 == d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e);
-            },
-            [&](auto&&, auto&& e) {
-                return 1.0 == d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e);
-            },
-            p, p);
+            std::forward_as_tuple(
+                    [&](auto&& e, auto&&) {
+                        return 1.0 == d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e);
+                    },
+                    [&](auto&&, auto&& e) {
+                        return 1.0 == d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e);
+                    }),
+            std::forward_as_tuple(p, p));
     auto st = makeStencilHolder(eqn);
     DS::ColoredMDRangeMapper<2> mapper {p.assignableRange, p.assignableRange};
     std::vector<bool> pin {true, true};

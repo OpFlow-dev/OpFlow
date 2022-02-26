@@ -15,6 +15,7 @@
 
 #include <array>
 #include <concepts>
+#include <functional>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -120,15 +121,15 @@ namespace OpFlow::Meta {
     struct make_integer_seq_impl;
 
     template <typename T, T start, T end, T step>
-    requires(step > 0 && start < end)
-            || (step < 0 && start > end) struct make_integer_seq_impl<T, start, end, step> {
+            requires(step > 0 && start < end)
+            || (step<0 && start> end) struct make_integer_seq_impl<T, start, end, step> {
         using type = typename integer_seq_cat<
                 T, std::integer_sequence<T, start>,
                 typename make_integer_seq_impl<T, start + step, end, step>::type>::type;
     };
 
     template <typename T, T start, T end, T step>
-    requires(step > 0 && start >= end)
+            requires(step > 0 && start >= end)
             || (step < 0 && start <= end) struct make_integer_seq_impl<T, start, end, step> {
         using type = std::integer_sequence<T>;
     };
@@ -158,6 +159,36 @@ namespace OpFlow::Meta {
         static_assert(Nsplit < sizeof...(Ts));
         return tuple_split_impl(std::make_index_sequence<Nsplit>(),
                                 make_integer_sequence<std::size_t, Nsplit, sizeof...(Ts)>(), t);
+    }
+
+    template <typename F, typename G, typename... Ts>
+    constexpr decltype(auto) custom_invoke(F&& func, G&& getter, Ts&&... ts) {
+        return std::invoke(std::forward<F>(func), getter(std::forward<Ts>(ts))...);
+    }
+
+    template <typename F, typename G, typename Tuple, std::size_t... Ints>
+    constexpr decltype(auto) custom_apply_impl(F&& func, G&& getter, Tuple&& tuple,
+                                               std::index_sequence<Ints...>) {
+        return custom_invoke(std::forward<F>(func), std::forward<G>(getter),
+                             std::get<Ints>(std::forward<Tuple>(tuple))...);
+    }
+
+    template <typename F, typename G, typename Tuple>
+    constexpr decltype(auto) custom_apply(F&& func, G&& getter, Tuple&& tuple) {
+        return custom_apply_impl(std::forward<F>(func), std::forward<G>(getter), std::forward<Tuple>(tuple),
+                                 std::make_index_sequence<std::tuple_size_v<std::remove_cvref_t<Tuple>>>());
+    }
+
+    template <typename F, typename G, typename C, std::size_t... Ints>
+    constexpr decltype(auto) custom_apply_container_impl(F&& func, G&& getter, C&& container,
+                                                         std::index_sequence<Ints...>) {
+        return std::invoke(std::forward<F>(func), getter(container[Ints], Meta::int_<Ints>())...);
+    }
+
+    template <std::size_t n, typename F, typename G, typename C>
+    constexpr decltype(auto) custom_apply_container(F&& func, G&& getter, C&& container) {
+        return custom_apply_container_impl(std::forward<F>(func), std::forward<G>(getter),
+                                           std::forward<C>(container), std::make_index_sequence<n>());
     }
 }// namespace OpFlow::Meta
 #endif//OPFLOW_META_HPP

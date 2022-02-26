@@ -112,27 +112,28 @@ protected:
 };
 
 TEST_F(EqnHolderTest, SingleEqn) {
-    auto h = makeEqnHolder(poisson_eqn(), p);
-    ASSERT_EQ(h.target1, &p);
+    auto h = makeEqnHolder(std::forward_as_tuple(poisson_eqn()), std::forward_as_tuple(p));
+    ASSERT_EQ(h.getTargetPtr<0>(), &p);
 }
 
 TEST_F(EqnHolderTest, DoubleEqn) {
     auto h = makeEqnHolder(
-            [&](auto&& e, auto&&) {
-                return b
-                       == dx<D1FirstOrderCenteredUpwind>(dx<D1FirstOrderCenteredDownwind>(e)
-                                                         / d1IntpCenterToCorner<0>((r)))
-                                  + dy<D1FirstOrderCenteredUpwind>(dy<D1FirstOrderCenteredDownwind>(e)
-                                                                   / d1IntpCenterToCorner<1>(r));
-            },
-            [&](auto&&, auto&& e) {
-                return b
-                       == dx<D1FirstOrderCenteredUpwind>(dx<D1FirstOrderCenteredDownwind>(e)
-                                                         / d1IntpCenterToCorner<0>((r)))
-                                  + dy<D1FirstOrderCenteredUpwind>(dy<D1FirstOrderCenteredDownwind>(e)
-                                                                   / d1IntpCenterToCorner<1>(r));
-            },
-            p, p);
-    ASSERT_EQ(h.target1, &p);
-    ASSERT_EQ(h.target2, &p);
+            std::forward_as_tuple(
+                    [&](auto&& e, auto&&) {
+                        return b
+                               == dx<D1FirstOrderCenteredUpwind>(dx<D1FirstOrderCenteredDownwind>(e)
+                                                                 / d1IntpCenterToCorner<0>((r)))
+                                          + dy<D1FirstOrderCenteredUpwind>(dy<D1FirstOrderCenteredDownwind>(e)
+                                                                           / d1IntpCenterToCorner<1>(r));
+                    },
+                    [&](auto&&, auto&& e) {
+                        return b
+                               == dx<D1FirstOrderCenteredUpwind>(dx<D1FirstOrderCenteredDownwind>(e)
+                                                                 / d1IntpCenterToCorner<0>((r)))
+                                          + dy<D1FirstOrderCenteredUpwind>(dy<D1FirstOrderCenteredDownwind>(e)
+                                                                           / d1IntpCenterToCorner<1>(r));
+                    }),
+            std::forward_as_tuple(p, p));
+    ASSERT_EQ(h.getTargetPtr<0>(), &p);
+    ASSERT_EQ(h.getTargetPtr<1>(), &p);
 }

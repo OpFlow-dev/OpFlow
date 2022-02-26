@@ -70,7 +70,7 @@ namespace OpFlow {
     template <typename Solver>
     struct IJSolver {
         IJSolver() = default;
-        IJSolver(const IJSolverParams<Solver>& p) : params(p) {}
+        explicit IJSolver(const IJSolverParams<Solver>& p) : params(p) {}
         IJSolver(const IJSolver& other) : params(other.params) {
             if (other.solver) solver = std::make_unique<Solver>(*other.solver);
             if (other.A_shared)
