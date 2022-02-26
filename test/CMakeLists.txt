@@ -17,7 +17,12 @@ if (NOT TARGET opflow)
     find_package(opflow REQUIRED)
 endif ()
 
-include(${CMAKE_CURRENT_LIST_DIR}/../cmake/CodeCoverage.cmake)
+if (OPFLOW_ENABLE_COVERAGE)
+    include(${CMAKE_CURRENT_LIST_DIR}/../cmake/CodeCoverage.cmake)
+else()
+    function(SETUP_TARGET_FOR_COVERAGE)
+    endfunction()
+endif ()
 
 #define_property(GLOBAL PROPERTY all_test_srcs)
 set_property(GLOBAL PROPERTY all_test_srcs)
