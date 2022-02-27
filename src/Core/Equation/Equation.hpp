@@ -67,7 +67,7 @@ namespace OpFlow {
         std::tuple<Eqns...> eqns;
     };
 
-    template <typename ... Ts>
+    template <typename... Ts>
     struct TargetSet {
         template <int i>
         using target_type = std::tuple_element_t<i, std::tuple<Meta::RealType<Ts>...>>;

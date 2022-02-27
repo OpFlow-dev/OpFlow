@@ -52,6 +52,9 @@ namespace OpFlow::DS {
             return this->operator()(MDIndex<d> {idx});
         }
 
+        // todo: workaround same as MDIndexMapper
+        int operator()(const MDIndex<d>& idx, int) const { return operator()(idx); }
+
     private:
         void calculateMultiplier() {
             _offset.resize(_ranges.size());

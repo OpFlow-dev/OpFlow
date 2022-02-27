@@ -13,9 +13,9 @@
 #ifndef OPFLOW_EQUATIONHOLDER_HPP
 #define OPFLOW_EQUATIONHOLDER_HPP
 
+#include "Core/Equation/Equation.hpp"
 #include "Core/Meta.hpp"
 #include "DataStructures/StencilPad.hpp"
-#include "Core/Equation/Equation.hpp"
 #include <any>
 #include <boost/core/demangle.hpp>
 #include <functional>
