@@ -15,7 +15,7 @@
 using namespace OpFlow;
 
 int main(int argc, char* argv[]) {
-    InitEnvironment(&argc, &argv);
+    auto _ = EnvironmentGardian(&argc, &argv);
 
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<Real, Mesh>;
@@ -33,6 +33,7 @@ int main(int argc, char* argv[]) {
                      .setBC(1, OpFlow::DimPos::start, BCType::Neum, 0.)
                      .setBC(1, OpFlow::DimPos::end, BCType::Neum, 0.)
                      .setLoc({LocOnMesh::Center, LocOnMesh::Center})
+                     .setExt(1)
                      .setPadding(1)
                      .setSplitStrategy(strategy)
                      .build();
@@ -62,6 +63,5 @@ int main(int argc, char* argv[]) {
         OP_MPI_MASTER_INFO("Solver finished.");
     }
 
-    FinalizeEnvironment();
     return 0;
 }

@@ -34,6 +34,15 @@ namespace OpFlow {
 #endif
     }
 
+    struct EnvironmentGardian {
+        EnvironmentGardian(int* argc, char*** argv) {
+            InitEnvironment(argc, argv);
+        }
+        ~EnvironmentGardian() {
+            FinalizeEnvironment();
+        }
+    };
+
     namespace internal {
         inline ParallelInfo GLOBAL_PARALLELINFO;
         inline ParallelPlan GLOBAL_PARALLELPLAN;
