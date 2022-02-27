@@ -32,6 +32,17 @@ namespace OpFlow {
             return csr;
         }
 
+        template <typename S, typename M>
+        static void generate_rhs(S& s, M&& mapper, const std::vector<bool>& pin_flags,
+                                 DS::CSRMatrix& origin) {
+            int from = 0;
+            Meta::static_for<S::size>([&]<int i>(Meta::int_<i>) {
+                std::vector<Real> rhs = generate_rhs<i>(s, mapper, pin_flags[i]);
+                origin.update_rhs(from, rhs);
+                from += (int) rhs.size();
+            });
+        }
+
         template <std::size_t iTarget, typename S>
         static auto generate(S& s, auto&& mapper, bool pinValue) {
             DS::CSRMatrix mat;
@@ -107,6 +118,27 @@ namespace OpFlow {
             mat.trim(coo.size());
 
             return mat;
+        }
+
+        template <std::size_t iTarget, typename S>
+        static auto generate_rhs(S& s, auto&& mapper, bool pinValue) {
+            auto target = s.template getTargetPtr<iTarget>();
+            auto commStencil = s.comm_stencils[iTarget];
+            auto& uniEqn = s.template getEqnExpr<iTarget>();
+            auto local_range = DS::commonRange(target->assignableRange, target->localRange);
+
+            std::vector<Real> rhs(local_range.count());
+            rangeFor(local_range, [&](auto&& i) {
+                auto r = mapper(i, iTarget);// r is the local rank
+                auto currentStencil = uniEqn.evalAt(i);
+                if (pinValue && r == 0) {
+                    rhs[r] = 0.;
+                } else {
+                    rhs[r] = -currentStencil.bias;
+                }
+            });
+
+            return rhs;
         }
     };
 }// namespace OpFlow

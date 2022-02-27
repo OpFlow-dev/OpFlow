@@ -28,6 +28,9 @@ namespace OpFlow::DS {
             calculateMultiplier();
         }
 
+        // todo: temporary workaround for non-colored mappers operates like colored mapper's operator()(idx, i)
+        int operator()(const MDIndex<d>& idx, int) const { return operator()(idx); }
+
         int operator()(const MDIndex<d>& idx) const {
             int ret = 0;
             for (std::size_t i = 0; i < d; ++i) ret += (idx[i] - _range.start[i]) * _fac[i];

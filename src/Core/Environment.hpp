@@ -35,12 +35,8 @@ namespace OpFlow {
     }
 
     struct EnvironmentGardian {
-        EnvironmentGardian(int* argc, char*** argv) {
-            InitEnvironment(argc, argv);
-        }
-        ~EnvironmentGardian() {
-            FinalizeEnvironment();
-        }
+        EnvironmentGardian(int* argc, char*** argv) { InitEnvironment(argc, argv); }
+        ~EnvironmentGardian() { FinalizeEnvironment(); }
     };
 
     namespace internal {

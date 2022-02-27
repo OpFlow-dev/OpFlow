@@ -72,6 +72,10 @@ namespace OpFlow::DS {
                                       [&](int k) { val[base_col + k] = mat.val[k]; });
         }
 
+        void update_rhs(int from, const std::vector<Real>& r) {
+            std::copy(r.begin(), r.end(), rhs.begin() + from);
+        }
+
         [[nodiscard]] std::string toString() const {
             std::string ret;
             for (int i : row) ret += fmt::format("{}, ", i);
