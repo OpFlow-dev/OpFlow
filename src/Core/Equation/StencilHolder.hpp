@@ -22,21 +22,21 @@ namespace OpFlow {
     struct StencilHolder;
 
     template <typename... Es, typename... Ts>
-    struct StencilHolder<internal::equations<Es...>, internal::targets<Ts...>> {
+    struct StencilHolder<EquationSet<Es...>, TargetSet<Ts...>> {
         constexpr static int size = sizeof...(Es);
 
         std::vector<std::any> targets, eqns;
         template <int i>
-        using equation_type = typename internal::equations<Es...>::template eqn_type<i>;
+        using equation_type = typename EquationSet<Es...>::template eqn_type<i>;
         template <int i>
         using eqn_expr_type
                 = decltype(std::declval<equation_type<i>&>().lhs - std::declval<equation_type<i>&>().rhs);
         template <int i>
-        using target_type = typename internal::targets<Ts...>::template target_type<i>;
+        using target_type = typename TargetSet<Ts...>::template target_type<i>;
         using stencil_type = typename internal::ExprTrait<eqn_expr_type<0>>::elem_type;
         std::array<stencil_type, size> comm_stencils;
 
-        StencilHolder(EqnHolder<internal::equations<Es...>, internal::targets<Ts...>>& eqnHolder)
+        StencilHolder(EqnHolder<EquationSet<Es...>, TargetSet<Ts...>>& eqnHolder)
             : targets(eqnHolder.targets) {
             std::tuple<Ts*...> target_ptrs;
             Meta::static_for<size>([&]<int i>(Meta::int_<i>) {
@@ -67,8 +67,8 @@ namespace OpFlow {
     };
 
     template <typename... Es, typename... Ts>
-    auto makeStencilHolder(EqnHolder<internal::equations<Es...>, internal::targets<Ts...>>& eqnHolder) {
-        return StencilHolder<internal::equations<Es...>, internal::targets<Ts...>>(eqnHolder);
+    auto makeStencilHolder(EqnHolder<EquationSet<Es...>, TargetSet<Ts...>>& eqnHolder) {
+        return StencilHolder<EquationSet<Es...>, TargetSet<Ts...>>(eqnHolder);
     }
 }// namespace OpFlow
 #endif
