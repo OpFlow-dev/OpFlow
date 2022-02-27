@@ -15,6 +15,7 @@
 
 #include "Core/Meta.hpp"
 #include "DataStructures/StencilPad.hpp"
+#include "Core/Equation/Equation.hpp"
 #include <any>
 #include <boost/core/demangle.hpp>
 #include <functional>
@@ -25,27 +26,13 @@ namespace OpFlow {
     template <typename E, typename T>
     struct EqnHolder;
 
-    namespace internal {
-        template <typename... E>
-        struct equations {
-            template <int i>
-            using eqn_type = std::tuple_element_t<i, std::tuple<E...>>;
-        };
-
-        template <typename... T>
-        struct targets {
-            template <int i>
-            using target_type = std::tuple_element_t<i, std::tuple<Meta::RealType<T>...>>;
-        };
-    }// namespace internal
-
     template <typename... Es, typename... Ts>
-    struct EqnHolder<internal::equations<Es...>, internal::targets<Ts...>> {
+    struct EqnHolder<EquationSet<Es...>, TargetSet<Ts...>> {
         static_assert(sizeof...(Es) == sizeof...(Ts));
         constexpr static int size = sizeof...(Es);
 
-        using eqns_type = internal::equations<Es...>;
-        using targets_type = internal::targets<Ts...>;
+        using eqns_type = EquationSet<Es...>;
+        using targets_type = TargetSet<Ts...>;
 
         template <int i>
         using st_field_type = std::conditional_t<
@@ -113,29 +100,29 @@ namespace OpFlow {
     auto makeEqnHolder_impl(std::tuple<Fs...>&& getters, std::tuple<Ts&...>&& targets,
                             std::index_sequence<Ints...>) {
         if constexpr (sizeof...(Ts) == 1)
-            return EqnHolder<internal::equations<decltype(std::declval<Meta::RealType<Fs>>()(
+            return EqnHolder<EquationSet<decltype(std::declval<Meta::RealType<Fs>>()(
                                      std::declval<Meta::RealType<Ts>&>()
                                              .template getStencilField<DS::fake_map>(Ints)...))...>,
-                             internal::targets<Meta::RealType<Ts>...>>(getters, targets);
+                             TargetSet<Meta::RealType<Ts>...>>(getters, targets);
         else
-            return EqnHolder<internal::equations<decltype(std::declval<Meta::RealType<Fs>>()(
+            return EqnHolder<EquationSet<decltype(std::declval<Meta::RealType<Fs>>()(
                                      std::declval<Meta::RealType<Ts>&>()
                                              .template getStencilField<std::unordered_map>(Ints)...))...>,
-                             internal::targets<Meta::RealType<Ts>...>>(getters, targets);
+                             TargetSet<Meta::RealType<Ts>...>>(getters, targets);
     }
     template <typename... Fs, typename... Ts, std::size_t... Ints>
     auto makeEqnHolder_impl(std::tuple<Fs...>& getters, std::tuple<Ts&...>& targets,
                             std::index_sequence<Ints...>) {
         if constexpr (sizeof...(Ts) == 1)
-            return EqnHolder<internal::equations<decltype(std::declval<Meta::RealType<Fs>>()(
+            return EqnHolder<EquationSet<decltype(std::declval<Meta::RealType<Fs>>()(
                                      std::declval<Meta::RealType<Ts>&>()
                                              .template getStencilField<DS::fake_map>(Ints)...))...>,
-                             internal::targets<Meta::RealType<Ts>...>>(getters, targets);
+                             TargetSet<Meta::RealType<Ts>...>>(getters, targets);
         else
-            return EqnHolder<internal::equations<decltype(std::declval<Meta::RealType<Fs>>()(
+            return EqnHolder<EquationSet<decltype(std::declval<Meta::RealType<Fs>>()(
                                      std::declval<Meta::RealType<Ts>&>()
                                              .template getStencilField<std::unordered_map>(Ints)...))...>,
-                             internal::targets<Meta::RealType<Ts>...>>(getters, targets);
+                             TargetSet<Meta::RealType<Ts>...>>(getters, targets);
     }
 
     template <typename... Fs, typename... Ts>

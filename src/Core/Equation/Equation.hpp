@@ -60,7 +60,17 @@ namespace OpFlow {
     template <typename... Eqns>
     struct EquationSet {
         explicit EquationSet(const Eqns&... e) : eqns(std::make_tuple(OP_PERFECT_FOWD(e)...)) {}
+
+        template <int i>
+        using eqn_type = std::tuple_element_t<i, std::tuple<Eqns...>>;
+
         std::tuple<Eqns...> eqns;
+    };
+
+    template <typename ... Ts>
+    struct TargetSet {
+        template <int i>
+        using target_type = std::tuple_element_t<i, std::tuple<Meta::RealType<Ts>...>>;
     };
 }// namespace OpFlow
 #endif//OPFLOW_EQUATION_HPP
