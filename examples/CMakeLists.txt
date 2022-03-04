@@ -39,6 +39,12 @@ function(add_example example_name)
     add_dependencies(AllExamples ${example_name})
 endfunction()
 
+function(add_mpi_example example_name)
+    if (OPFLOW_WITH_MPI)
+        add_example(${example_name} ${ARGN})
+    endif ()
+endfunction()
+
 add_subdirectory(LidDriven)
 add_subdirectory(FTCS)
 add_subdirectory(CONV1D)

@@ -9,5 +9,4 @@ add_example(LidDriven2D LidDriven2D.cpp)
 
 add_example(LidDriven3D LidDriven3D.cpp)
 
-add_example(LidDriven2D-MPI LidDriven2D-MPI.cpp)
-target_compile_definitions(LidDriven2D-MPI PRIVATE OPFLOW_DISTRIBUTE_MODEL_MPI)
+add_mpi_example(LidDriven2D-MPI LidDriven2D-MPI.cpp)

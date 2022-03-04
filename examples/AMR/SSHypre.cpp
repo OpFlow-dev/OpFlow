@@ -6,6 +6,9 @@
 #include <iostream>
 
 void sshypre_d2() {
+#ifndef MPI_COMM_WORLD
+    int MPI_COMM_WORLD = 0;
+#endif
     // step 1: gen composite grid
     /*     (1, 1) -> (4, 4) coarse mesh
      *     _________________________

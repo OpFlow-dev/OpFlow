@@ -15,8 +15,10 @@
 
 #include "DataStructures/Matrix/CSRMatrix.hpp"
 #include <amgcl/adapter/zero_copy.hpp>
+#ifdef OPFLOW_WITH_MPI
 #include <amgcl/mpi/distributed_matrix.hpp>
 #include <amgcl/mpi/make_solver.hpp>
+#endif
 #include <optional>
 #include <tuple>
 
@@ -27,7 +29,7 @@ namespace OpFlow {
         static void solve(const DS::CSRMatrix& mat, std::vector<D>& x, typename Solver::params p,
                           typename Solver::backend_params bp, bool verbose = false) {
             int rows = mat.row.size() - 1;
-#if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
+#if defined(OPFLOW_WITH_MPI)
             amgcl::mpi::communicator world(MPI_COMM_WORLD);
             auto A = std::make_shared<amgcl::mpi::distributed_matrix<typename Solver::backend_type>>(
                     world,
@@ -60,7 +62,7 @@ namespace OpFlow {
                             typename Solver::backend_params& bp) {
             if (!solver || rebuilt_period.has_value() && solve_counter % rebuilt_period.value() == 0) {
                 int rows = mat.row.size() - 1;
-#if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
+#if defined(OPFLOW_WITH_MPI)
                 amgcl::mpi::communicator world(MPI_COMM_WORLD);
                 auto A = std::make_shared<amgcl::mpi::distributed_matrix<typename Solver::backend_type>>(
                         world,

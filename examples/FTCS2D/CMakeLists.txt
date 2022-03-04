@@ -6,7 +6,5 @@ if (NOT TARGET opflow)
 endif ()
 
 add_example(FTCS-OMP FTCS-OMP.cpp)
-target_compile_definitions(FTCS-OMP PRIVATE OPFLOW_THREAD_MODEL_OPENMP)
 
-add_example(FTCS-MPI FTCS-MPI.cpp)
-target_compile_definitions(FTCS-MPI PRIVATE OPFLOW_DISTRIBUTE_MODEL_MPI)
+add_mpi_example(FTCS-MPI FTCS-MPI.cpp)

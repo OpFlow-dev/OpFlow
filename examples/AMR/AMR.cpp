@@ -4,9 +4,8 @@
 #include "pch.hpp"
 int hypre_test(int argc, char* argv[]);
 int main(int argc, char** argv) {
-    MPI_Init(&argc, &argv);
+    OpFlow::EnvironmentGardian _(&argc, &argv);
     //amrls();
     Poisson();
-    MPI_Finalize();
     //hypre_test(argc, argv);
 }
