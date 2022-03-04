@@ -13,10 +13,6 @@
 # The main CMakeList for OpFlow
 #
 # ----------------------------------------------------------------------------
-#
-# Modified from CMakeList.txt in spdlog (https://github.com/gabime/spdlog)
-#
-# ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.13)
 
