@@ -69,7 +69,7 @@ namespace OpFlow {
         if (line_size <= 0) return std::forward<F>(func);
         if (range.stride[0] == 1) {
             tbb::task_arena arena(getGlobalParallelPlan().shared_memory_workers_count);
-            arena.template execute([&]() {
+            arena.execute([&]() {
                 tbb::parallel_for(range, [&](const R& r) { rangeFor_s(r, OP_PERFECT_FOWD(func)); });
             });
         } else {
