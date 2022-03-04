@@ -2,7 +2,7 @@
 using namespace OpFlow;
 
 int main(int argc, char* argv[]) {
-    MPI_Init(&argc, &argv);
+    EnvironmentGardian _(&argc, &argv);
 
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<Real, Mesh>;
@@ -38,6 +38,5 @@ int main(int argc, char* argv[]) {
     handler->solve();
     OP_INFO("Solver finished.");
 
-    MPI_Finalize();
     return 0;
 }

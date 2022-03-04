@@ -13,7 +13,6 @@
 #ifndef OPFLOW_IJSOLVER_HPP
 #define OPFLOW_IJSOLVER_HPP
 
-#include <mpi.h>
 #include <optional>
 
 #include <cstddef>
@@ -24,6 +23,8 @@
 #include <amgcl/adapter/crs_tuple.hpp>
 #include <amgcl/backend/builtin.hpp>
 
+#ifdef OPFLOW_WITH_MPI
+#include <mpi.h>
 #include <amgcl/mpi/amg.hpp>
 #include <amgcl/mpi/coarsening/smoothed_aggregation.hpp>
 #include <amgcl/mpi/distributed_matrix.hpp>
@@ -35,6 +36,7 @@
 #include <amgcl/mpi/solver/fgmres.hpp>
 #include <amgcl/mpi/solver/gmres.hpp>
 #include <amgcl/mpi/solver/preonly.hpp>
+#endif
 
 #include <amgcl/amg.hpp>
 #include <amgcl/coarsening/smoothed_aggregation.hpp>
@@ -65,71 +67,6 @@ namespace OpFlow {
         typename Solver::backend_params bp;
         bool staticMat = false, pinValue = false, verbose = false;
         std::optional<std::string> dumpPath {};
-    };
-
-    template <typename Solver>
-    struct IJSolver {
-        IJSolver() = default;
-        explicit IJSolver(const IJSolverParams<Solver>& p) : params(p) {}
-        IJSolver(const IJSolver& other) : params(other.params) {
-            if (other.solver) solver = std::make_unique<Solver>(*other.solver);
-            if (other.A_shared)
-                A_shared = std::make_shared<amgcl::mpi::distributed_matrix<typename Solver::backend_type>>(
-                        *other.A_shared);
-        }
-
-        template <typename T>
-        void init(std::ptrdiff_t rows, std::vector<ptrdiff_t>& ptr, std::vector<std::ptrdiff_t>& col,
-                  std::vector<T>& val) {
-#if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
-            amgcl::mpi::communicator world(MPI_COMM_WORLD);
-            A_shared = std::make_shared<amgcl::mpi::distributed_matrix<typename Solver::backend_type>>(
-                    world, std::tie(rows, ptr, col, val));
-            solver = std::make_unique<Solver>(world, A_shared, params.p, params.bp);
-#else
-            auto A_tie = std::tie(rows, ptr, col, val);
-            solver = std::make_unique<Solver>(A_tie, params.p, params.bp);
-#endif
-        }
-
-        template <typename T>
-        void init(std::ptrdiff_t rows, ptrdiff_t* ptr, std::ptrdiff_t* col, T* val) {
-#if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
-            amgcl::mpi::communicator world(MPI_COMM_WORLD);
-            A_shared = std::make_shared<amgcl::mpi::distributed_matrix<typename Solver::backend_type>>(
-                    world, *amgcl::adapter::zero_copy(rows, ptr, col, val));
-            solver = std::make_unique<Solver>(world, A_shared, params.p, params.bp);
-#else
-            A = amgcl::adapter::zero_copy(rows, ptr, col, val);
-            solver = std::make_unique<Solver>(*A, params.p, params.bp);
-#endif
-        }
-
-        template <typename T>
-        void solve(std::vector<T>& rhs, std::vector<T>& x) {
-#if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
-            std::tie(iters, error) = (*solver)(*A_shared, rhs, x);
-#else
-            std::tie(iters, error) = (*solver)(rhs, x);
-#endif
-            if (params.verbose) OP_INFO("AMGCL iters = {}, err = {}", iters, error);
-        }
-
-        const auto& getParams() const { return params; }
-        auto& getParams() { return params; }
-
-        [[nodiscard]] std::string logInfo() const {
-            std::string ret = fmt::format("Iter = {}, Res = {}", iters, error);
-            return ret;
-        }
-
-    private:
-        std::shared_ptr<amgcl::backend::crs<Real>> A;
-        IJSolverParams<Solver> params;
-        std::unique_ptr<Solver> solver = nullptr;
-        std::shared_ptr<amgcl::mpi::distributed_matrix<typename Solver::backend_type>> A_shared = nullptr;
-        int iters {};
-        double error {};
     };
 }// namespace OpFlow
 

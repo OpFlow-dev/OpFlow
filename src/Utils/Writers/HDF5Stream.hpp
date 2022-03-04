@@ -42,8 +42,11 @@ namespace OpFlow::Utils {
         H5Stream(H5Stream&& other) noexcept
             : path(other.path), file(other.file), current_group(other.current_group), time(other.time),
               first_run(other.first_run), file_inited(other.file_inited), group_inited(other.group_inited),
-              fixed_mesh(other.fixed_mesh), write_mesh(other.write_mesh), mode(other.mode),
-              mpi_comm(other.mpi_comm) {
+              fixed_mesh(other.fixed_mesh), write_mesh(other.write_mesh), mode(other.mode)
+#ifdef OPFLOW_WITH_MPI
+              , mpi_comm(other.mpi_comm)
+#endif
+        {
             other.file_inited = false;
         }
 
@@ -72,7 +75,9 @@ namespace OpFlow::Utils {
         }
         void close() {
 #ifdef OPFLOW_WITH_HDF5
+#ifdef OPFLOW_WITH_MPI
             MPI_Barrier(mpi_comm);
+#endif
             if (file_inited) {
                 if (group_inited) {
                     H5Gclose(current_group);
@@ -81,7 +86,9 @@ namespace OpFlow::Utils {
                 H5Fclose(file);
                 file_inited = false;
             }
+#ifdef OPFLOW_WITH_MPI
             MPI_Barrier(mpi_comm);
+#endif
 #else
             OP_MPI_MASTER_WARN("H5Stream not enabled.");
 #endif

@@ -21,6 +21,7 @@ macro(CONFIG_AND_INSTALL_HYPRE)
             "-DHYPRE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
             "-DHYPRE_ENABLE_SINGLE=${OPFLOW_SINGLE_PRECISION}"
             "-DHYPRE_WITH_OPENMP=${OPFLOW_WITH_OPENMP}"
+            "-DHYPRE_WITH_MPI=${OPFLOW_WITH_MPI}"
             "-DHYPRE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}")
     string(REPLACE " " "\t\n" _hypre_options ${HYPRE_OPTIONS})
     message(STATUS "HYPRE is to be configured with:\t\n${_hypre_options}")
@@ -32,6 +33,7 @@ macro(CONFIG_AND_INSTALL_HYPRE)
             -DHYPRE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
             -DHYPRE_ENABLE_SINGLE=${OPFLOW_SINGLE_PRECISION}
             -DHYPRE_WITH_OPENMP=${OPFLOW_WITH_OPENMP}
+            -DHYPRE_WITH_MPI=${OPFLOW_WITH_MPI}
             -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
             ${CMAKE_CURRENT_SOURCE_DIR}/external/hypre/src
             RESULT_VARIABLE _result

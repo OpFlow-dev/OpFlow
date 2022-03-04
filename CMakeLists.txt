@@ -114,7 +114,7 @@ option(OPFLOW_SINGLE_PRECISION "Use float as default real type" OFF)
 
 # performance options
 option(OPFLOW_WITH_OPENMP "Build OpFlow with OpenMP support" ON)
-option(OPFLOW_WITH_MPI "Build OpFlow with MPI support" ON)
+option(OPFLOW_WITH_MPI "Build OpFlow with MPI support" OFF)
 
 # utility options
 option(OPFLOW_WITH_HDF5 "Build OpFlow with HDF5 support" OFF)
@@ -313,7 +313,7 @@ if (OPFLOW_WITH_HDF5)
     set(HDF5_USE_STATIC_LIBRARIES ON)
     include(FindHDF5)
     find_package(HDF5 COMPONENTS C REQUIRED)
-    if (NOT HDF5_IS_PARALLEL)
+    if (HDF5_PREFER_PARALLEL AND NOT HDF5_IS_PARALLEL)
         message(FATAL_ERROR "Cannot find parallel HDF5 library")
     endif ()
     target_include_directories(opflow INTERFACE ${HDF5_C_INCLUDE_DIRS})
