@@ -124,7 +124,7 @@ namespace OpFlow::DS {
         }
     };
 
-    template <typename Idx, template <typename K, typename V> typename map_impl = fake_map>
+    template <typename Idx, template <typename...> typename map_impl = fake_map>
     struct StencilPad : public SerializableObj {
         map_impl<Idx, Real> pad {};
         Real bias = 0.;
@@ -205,44 +205,44 @@ namespace OpFlow::DS {
         }
     };
 
-    template <typename Idx, template <typename, typename> typename map_impl>
+    template <typename Idx, template <typename...> typename map_impl>
     auto operator+(const StencilPad<Idx, map_impl>& a, const StencilPad<Idx, map_impl>& b) {
         auto ret = a;
         ret += b;
         return ret;
     }
 
-    template <typename Idx, template <typename, typename> typename map_impl, Meta::Numerical Num>
+    template <typename Idx, template <typename...> typename map_impl, Meta::Numerical Num>
     auto operator+(const StencilPad<Idx, map_impl>& a, Num b) {
         auto ret = a;
         ret += b;
         return ret;
     }
 
-    template <typename Idx, template <typename, typename> typename map_impl, Meta::Numerical Num>
+    template <typename Idx, template <typename...> typename map_impl, Meta::Numerical Num>
     auto operator+(Num a, const StencilPad<Idx, map_impl>& b) {
         auto ret = b;
         ret += a;
         return ret;
     }
 
-    template <typename Idx, template <typename, typename> typename map_impl>
+    template <typename Idx, template <typename...> typename map_impl>
     auto operator-(const StencilPad<Idx, map_impl>& a, const StencilPad<Idx, map_impl>& b) {
         auto ret = b * -1.0;
         return a + ret;
     }
 
-    template <typename Idx, template <typename, typename> typename map_impl, Meta::Numerical Num>
+    template <typename Idx, template <typename...> typename map_impl, Meta::Numerical Num>
     auto operator-(const StencilPad<Idx, map_impl>& a, Num b) {
         return a + (-b);
     }
 
-    template <typename Idx, template <typename, typename> typename map_impl, Meta::Numerical Num>
+    template <typename Idx, template <typename...> typename map_impl, Meta::Numerical Num>
     auto operator-(Num a, const StencilPad<Idx, map_impl>& b) {
         return StencilPad<Idx, map_impl>(a) - b;
     }
 
-    template <typename Idx, template <typename, typename> typename map_impl, Meta::Numerical Num>
+    template <typename Idx, template <typename...> typename map_impl, Meta::Numerical Num>
     auto operator*(const StencilPad<Idx, map_impl>& a, Num b) {
         auto ret = a;
         for (auto& [idx, val] : ret.pad) { val *= b; }
@@ -250,17 +250,17 @@ namespace OpFlow::DS {
         return ret;
     }
 
-    template <typename Idx, template <typename, typename> typename map_impl, Meta::Numerical Num>
+    template <typename Idx, template <typename...> typename map_impl, Meta::Numerical Num>
     auto operator*(Num b, const StencilPad<Idx, map_impl>& a) {
         return a * b;
     }
 
-    template <typename Idx, template <typename, typename> typename map_impl, Meta::Numerical Num>
+    template <typename Idx, template <typename...> typename map_impl, Meta::Numerical Num>
     auto operator/(const StencilPad<Idx, map_impl>& a, Num b) {
         return a * (1. / b);
     }
 
-    template <typename IdxA, typename IdxB, template <typename, typename> typename map_impl>
+    template <typename IdxA, typename IdxB, template <typename...> typename map_impl>
     auto getOffsetStencil(const StencilPad<IdxA, map_impl>& a, const IdxB& base) {
         StencilPad<IdxA, map_impl> ret;
         for (const auto& [idx, val] : a.pad) { ret.pad[idx - base] = val; }
@@ -268,7 +268,7 @@ namespace OpFlow::DS {
         return ret;
     }
 
-    template <typename Idx, template <typename, typename> typename map_impl>
+    template <typename Idx, template <typename...> typename map_impl>
     auto commonStencil(const StencilPad<Idx, map_impl>& a, const Idx& base,
                        const StencilPad<decltype(base - base), map_impl>& offsetStencil) {
         auto a_offset = getOffsetStencil(a, base);
@@ -284,7 +284,7 @@ namespace OpFlow::DS {
     /// \param a
     /// \param base
     /// \return
-    template <typename Idx, template <typename, typename> typename map_impl>
+    template <typename Idx, template <typename...> typename map_impl>
     auto commonStencil(const StencilPad<Idx, map_impl>& a, const StencilPad<Idx, map_impl>& base) {
         auto ret = a;
         for (const auto& [idx, val] : base.pad) {
@@ -298,7 +298,7 @@ namespace OpFlow::DS {
     /// \param a
     /// \param b
     /// \return
-    template <typename Idx, template <typename, typename> typename map_impl>
+    template <typename Idx, template <typename...> typename map_impl>
     auto mergeStencil(const StencilPad<Idx, map_impl>& a, const StencilPad<Idx, map_impl>& b) {
         auto ret = a;
         for (const auto& [idx, val] : b.pad) {

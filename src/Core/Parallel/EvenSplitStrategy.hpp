@@ -130,9 +130,8 @@ namespace OpFlow {
             else {
                 auto split_plan = gen_split_plan(range, plan);
 
-#ifdef OPFLOW_WITH_MPI
-                int proc_rank;
-                MPI_Comm_rank(MPI_COMM_WORLD, &proc_rank);
+#if defined(OPFLOW_WITH_MPI) || defined(OPFLOW_TEST_ENVIRONMENT)
+                int proc_rank = getWorkerId();
                 DS::Range<d> proc_range(split_plan);
                 DS::RangedIndex<d> idx(proc_range);
                 idx += proc_rank;
@@ -162,7 +161,7 @@ namespace OpFlow {
             else {
                 auto split_plan = gen_split_plan(range, plan);
 
-#ifdef OPFLOW_WITH_MPI
+#if defined(OPFLOW_WITH_MPI) || defined(OPFLOW_TEST_ENVIRONMENT)
                 int worker_count = plan.distributed_workers_count;
                 DS::Range<d> proc_range(split_plan);
                 DS::RangedIndex<d> idx(proc_range);

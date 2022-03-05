@@ -68,30 +68,30 @@ namespace OpFlow {
                 auto currentStencil = uniEqn.evalAt(i);
                 int count = 0;
                 if (pinValue && r == 0) {
-                    coo[r * stencil_size] = m_tuple(
+                    coo[r * stencil_size] = m_tuple {
                             0,
                             mapper(DS::ColoredIndex<typename decltype(local_range)::base_index_type> {
                                     i, iTarget}),
-                            1);
+                            1};
                     mat.rhs[r] = 0.;
                     count++;
                 } else {
                     for (const auto& [key, v] : currentStencil.pad) {
                         auto idx = mapper(key);
-                        coo[r * stencil_size + count++] = m_tuple(r, idx, v);
+                        coo[r * stencil_size + count++] = m_tuple {r, idx, v};
                     }
                     mat.rhs[r] = -currentStencil.bias;
                 }
                 for (; count < stencil_size; ++count)
                     coo[r * stencil_size + count]
-                            = m_tuple(std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0.);
+                            = m_tuple {std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0.};
             });
             tbb::global_control globalControl(tbb::detail::d1::global_control::max_allowed_parallelism,
                                               getGlobalParallelPlan().shared_memory_workers_count);
             oneapi::tbb::parallel_sort(coo.begin(), coo.end());
             auto iter = std::lower_bound(
                     coo.begin(), coo.end(),
-                    m_tuple(std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0.));
+                    m_tuple {std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0.});
             coo.resize(iter - coo.begin());
             std::vector<std::atomic_int> nnz_counts(local_range.count());
             int common_base = coo.front().r;

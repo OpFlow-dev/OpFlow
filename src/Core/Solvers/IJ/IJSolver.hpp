@@ -24,7 +24,6 @@
 #include <amgcl/backend/builtin.hpp>
 
 #ifdef OPFLOW_WITH_MPI
-#include <mpi.h>
 #include <amgcl/mpi/amg.hpp>
 #include <amgcl/mpi/coarsening/smoothed_aggregation.hpp>
 #include <amgcl/mpi/distributed_matrix.hpp>
@@ -36,6 +35,7 @@
 #include <amgcl/mpi/solver/fgmres.hpp>
 #include <amgcl/mpi/solver/gmres.hpp>
 #include <amgcl/mpi/solver/preonly.hpp>
+#include <mpi.h>
 #endif
 
 #include <amgcl/amg.hpp>
