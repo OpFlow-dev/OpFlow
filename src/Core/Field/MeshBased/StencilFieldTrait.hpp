@@ -20,11 +20,11 @@
 #include "DataStructures/StencilPad.hpp"
 
 namespace OpFlow {
-    template <typename T, template <typename, typename> typename map_impl = DS::fake_map>
+    template <typename T, template <typename...> typename map_impl = DS::fake_map>
     struct StencilField;
 
     namespace internal {
-        template <StructuredFieldExprType T, template <typename, typename> typename map_impl>
+        template <StructuredFieldExprType T, template <typename...> typename map_impl>
         struct ExprTrait<StencilField<T, map_impl>>
             : ExprTrait<typename StructuredFieldExprTrait<T>::template other_type<DS::StencilPad<
                       DS::ColoredIndex<typename StructuredFieldExprTrait<T>::index_type>, map_impl>>> {

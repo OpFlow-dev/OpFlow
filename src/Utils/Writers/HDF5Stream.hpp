@@ -41,14 +41,15 @@ namespace OpFlow::Utils {
         H5Stream(const H5Stream&) = delete;
         H5Stream(H5Stream&& other) noexcept
             : path(other.path),
-            #ifdef OPFLOW_WITH_HDF5
-            file(other.file), current_group(other.current_group),
-            #endif
-            time(other.time),
-              first_run(other.first_run), file_inited(other.file_inited), group_inited(other.group_inited),
-              fixed_mesh(other.fixed_mesh), write_mesh(other.write_mesh), mode(other.mode)
+#ifdef OPFLOW_WITH_HDF5
+              file(other.file), current_group(other.current_group),
+#endif
+              time(other.time), first_run(other.first_run), file_inited(other.file_inited),
+              group_inited(other.group_inited), fixed_mesh(other.fixed_mesh), write_mesh(other.write_mesh),
+              mode(other.mode)
 #ifdef OPFLOW_WITH_MPI
-              , mpi_comm(other.mpi_comm)
+              ,
+              mpi_comm(other.mpi_comm)
 #endif
         {
             other.file_inited = false;

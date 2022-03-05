@@ -71,7 +71,8 @@ namespace OpFlow {
         auto t = std::forward_as_tuple(OP_PERFECT_FOWD(fs)...);
         auto&& [getters, rest1] = Meta::tuple_split<sizeof...(fs) / 2 - 1>(t);
         auto&& [targets, rest2] = Meta::tuple_split<sizeof...(fs) / 2 - 1>(rest1);
-        auto&& [mapper, params] = rest2;
+        auto& mapper = std::get<0>(rest2);
+        auto& params = std::get<1>(rest2);
         auto eqn_holder = makeEqnHolder(getters, targets);
         auto st_holder = makeStencilHolder(eqn_holder);
         std::vector<bool> pin;

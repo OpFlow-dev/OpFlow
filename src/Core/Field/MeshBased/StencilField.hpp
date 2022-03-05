@@ -27,7 +27,7 @@
 
 namespace OpFlow {
 
-    template <StructuredFieldExprType T, template <typename, typename> typename map_impl>
+    template <StructuredFieldExprType T, template <typename...> typename map_impl>
     struct StencilField<T, map_impl>
         : internal::StructuredFieldExprTrait<T>::template twin_type<StencilField<T, map_impl>> {
         std::array<DS::Pair<std::unique_ptr<BCBase<StencilField>>>, internal::ExprTrait<StencilField>::dim>
@@ -351,7 +351,7 @@ namespace OpFlow {
         constexpr static auto dim = internal::MeshBasedFieldExprTrait<T>::dim;
     };
 
-    template <CartAMRFieldType T, template <typename, typename> typename map_impl>
+    template <CartAMRFieldType T, template <typename...> typename map_impl>
     struct StencilField<T, map_impl> : CartAMRFieldExpr<StencilField<T, map_impl>> {
         using index_type = typename internal::ExprTrait<T>::index_type;
         using colored_index_type = DS::ColoredIndex<index_type>;

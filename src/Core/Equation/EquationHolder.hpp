@@ -119,7 +119,7 @@ namespace OpFlow {
                                              .template getStencilField<DS::fake_map>(Ints)...))...>,
                              TargetSet<Meta::RealType<Ts>...>>(getters, targets);
         else
-            return EqnHolder<EquationSet<decltype(std::declval<Meta::RealType<Fs>>()(
+            return EqnHolder<EquationSet<decltype(std::declval<Meta::RealType<Fs>&>()(
                                      std::declval<Meta::RealType<Ts>&>()
                                              .template getStencilField<std::unordered_map>(Ints)...))...>,
                              TargetSet<Meta::RealType<Ts>...>>(getters, targets);

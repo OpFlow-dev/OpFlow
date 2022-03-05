@@ -85,7 +85,7 @@ namespace OpFlow {
             for (const auto& p : params) staticMat &= p.staticMat;
         }
 
-        void generateAb() { mat = CSRMatrixGenerator::generate(*st_holder, mapper, pin); }
+        void generateAb() override { mat = CSRMatrixGenerator::generate(*st_holder, mapper, pin); }
 
         void generateb() { CSRMatrixGenerator::generate_rhs(*st_holder, mapper, pin, mat); }
 

@@ -33,7 +33,7 @@ namespace OpFlow {
 
         [[maybe_unused]] const auto& getMesh() const { return mesh; }
         void setMesh(const MeshType& m) { mesh = m; }
-        template <template <typename, typename> typename map_impl = DS::fake_map>
+        template <template <typename...> typename map_impl = DS::fake_map>
         auto getStencilField(int color = 0) const {
             return StencilField<Derived, map_impl>(this->derived(), color);
         }

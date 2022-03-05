@@ -120,7 +120,7 @@ namespace OpFlow {
             });
         }
 
-        void generateAb() {
+        void generateAb() override {
             std::vector<int> entries(commStencil.pad.size());
             for (auto i = 0; i < entries.size(); ++i) entries[i] = i;
             int periodic[dim];
