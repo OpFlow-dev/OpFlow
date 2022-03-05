@@ -21,45 +21,14 @@ on:
       - '.github/workflows/Build.yml'
 jobs:
   generate:
-    name: ${{ matrix.config.name }}
-    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.os }}/MPI${{ matrix.mpi }}/${{ matrix.mode }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        config:
-          # see: https://github.com/actions/virtual-environments
-          - {
-            name: "Ubuntu/20.04/Static/X64/Release",
-            os: ubuntu-20.04,
-            config: Release,
-            sudocmd: "sudo",
-            artifact_name: "Linux",
-            cores: 2,
-          }
-          - {
-            name: "Ubuntu/20.04/Static/X64/Debug",
-            os: ubuntu-20.04,
-            config: Debug,
-            sudocmd: "sudo",
-            artifact_name: "Linux",
-            cores: 2,
-          }
-          - {
-            name: "MacOSX/11/Static/X64/Release",
-            os: macos-11,
-            config: Release,
-            sudocmd: "sudo",
-            artifact_name: "MacOSX",
-            cores: 3,
-          }
-          - {
-            name: "MacOSX/11/Static/X64/Debug",
-            os: macos-11,
-            config: Debug,
-            sudocmd: "sudo",
-            artifact_name: "MacOSX",
-            cores: 3,
-          }
+        os: [ubuntu-20.04, macos-11]
+        mpi: [ON, OFF]
+        mode: [Debug, Release]
     if: "!contains(github.event.head_commit.message, 'skip build')"
     steps:
       - name: Checkout
@@ -69,11 +38,20 @@ jobs:
           fetch-depth: 0
       - name: Install dependence
         run: |
+          export INPUT_MPI=${{ matrix.mpi }}
           brew install gcc@11 doxygen tbb
           if [ "$RUNNER_OS" == "Linux" ]; then
-               sudo apt update && sudo apt install -y libopenmpi-dev libhdf5-mpi-dev libhdf5-dev python3-pip python3-sphinx lcov libboost-all-dev
+            if [ "$INPUT_MPI" == "ON" ]; then
+               sudo apt update && sudo apt install -y libopenmpi-dev libhdf5-mpi-dev python3-pip python3-sphinx lcov libboost-all-dev
+            else
+              sudo apt update && sudo apt install -y libhdf5-dev python3-pip python3-sphinx lcov libboost-all-dev
+            fi
           elif [ "$RUNNER_OS" == "macOS" ]; then
+            if [ "$INPUT_MPI" == "ON" ]; then
                brew install open-mpi hdf5-mpi sphinx lcov boost
+            else
+              brew install hdf5 sphinx lcov boost
+            fi
           else
                echo "$RUNNER_OS not supported"
                exit 1
@@ -84,12 +62,20 @@ jobs:
       - name: Generate
         working-directory: ./build
         run: |
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.config.config }} -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 \
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 \
                 -DOPFLOW_WITH_HDF5=ON -DBENCHMARK_ENABLE_TESTING=OFF -DOPFLOW_BUILD_ALL=ON -DOPFLOW_INSTALL=OFF \
                 -DOPFLOW_WITH_VTK=OFF -DOPFLOW_TBB_EXTERNAL=ON -DDOXYGEN_DIR=$(brew --prefix doxygen)/bin \
-                -DTBB_DIR=$(brew --prefix tbb)/lib/cmake/TBB ..
-          cmake --build . -t All_CI --parallel ${{ matrix.config.cores }} --config ${{ matrix.config.config }}
+                -DTBB_DIR=$(brew --prefix tbb)/lib/cmake/TBB -DOPFLOW_WITH_MPI=${{ matrix.mpi }} ..
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            cmake --build . -t All_CI --parallel 2 --config ${{ matrix.mode }}
+          else
+            cmake --build . -t All_CI --parallel 3 --config ${{ matrix.mode }}
+          fi
       - name: Test
         working-directory: ./build
         run: |
-          ctest --parallel ${{ matrix.config.cores }} -C ${{ matrix.config.config }} -VV
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            ctest --parallel 2 -C ${{ matrix.mode }} -VV
+          else
+            ctest --parallel 3 -C ${{ matrix.mode }} -VV
+          fi
