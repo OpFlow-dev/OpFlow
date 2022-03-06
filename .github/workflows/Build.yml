@@ -40,9 +40,9 @@ jobs:
       - name: Install dependence
         run: |
           export INPUT_MPI=${{ matrix.mpi }}
-          brew install gcc@11 doxygen tbb llvm libomp
+          brew install gcc@11 doxygen tbb llvm
           if [ "$RUNNER_OS" == "Linux" ]; then
-            sudo apt update && sudo apt install -y python3-pip python3-sphinx lcov libboost-all-dev
+            sudo apt update && sudo apt install -y python3-pip python3-sphinx lcov libboost-all-dev libomp-12-dev clang-12
             if [ "$INPUT_MPI" == "ON" ]; then
                sudo apt install -y libopenmpi-dev libhdf5-mpi-dev
             else
@@ -67,7 +67,7 @@ jobs:
         run: |
           if [ "${{ matrix.compiler }}" == "clang" ]; then
             if [ "$RUNNER_OS" == "Linux" ]; then
-              cmake -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+              cmake -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DCMAKE_C_COMPILER=clang-12 -DCMAKE_CXX_COMPILER=clang++-12 \
                     -DOPFLOW_WITH_HDF5=ON -DBENCHMARK_ENABLE_TESTING=OFF -DOPFLOW_BUILD_ALL=ON -DOPFLOW_INSTALL=OFF \
                     -DOPFLOW_WITH_VTK=OFF -DOPFLOW_TBB_EXTERNAL=ON -DDOXYGEN_DIR=$(brew --prefix doxygen)/bin \
                     -DTBB_DIR=$(brew --prefix tbb)/lib/cmake/TBB -DOPFLOW_WITH_MPI=${{ matrix.mpi }} ..
