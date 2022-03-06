@@ -52,7 +52,9 @@ static void UniFieldAssignRaw_2d(benchmark::State& state) {
     omp_set_num_threads(state.range(1));
     for (auto _ : state) {
 #pragma omp parallel for
+#ifndef __clang__// clang current doesn't support sizes clause ( clang-13 )
 #pragma omp tile sizes(8, 8)
+#endif
         for (auto j = 0; j < n - 1; ++j)
             for (auto i = 0; i < n - 1; ++i) u(DS::MDIndex<2> {i, j}) = v(DS::MDIndex<2> {i, j});
     }

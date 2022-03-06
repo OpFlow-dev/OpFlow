@@ -320,7 +320,7 @@ namespace OpFlow {
             allocated = false;
         }
 
-        void generateAb() {
+        void generateAb() override {
             for (auto l = 0; l < target->getLevels(); ++l) {
                 for (auto p = 0; p < target->localRanges[l].size(); ++p) {
                     rangeFor_s(target->localRanges[l][p], [&](auto&& i) {
