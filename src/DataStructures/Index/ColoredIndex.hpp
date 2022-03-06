@@ -161,7 +161,9 @@ namespace OpFlow::DS {
         constexpr bool operator==(const LevelMDIndex<d>& index) const {
             return idx == index.idx && l == index.l && p == index.p;
         }
-        constexpr bool operator==(const ColoredIndex&) const = default;
+        constexpr bool operator==(const ColoredIndex& other) const {
+            return idx == other.idx && l == other.l && p == other.p && color == other.color;
+        }
         constexpr auto operator+(const LevelMDIndex<d>& index) const {
             auto ret = *this;
             ret += index;
