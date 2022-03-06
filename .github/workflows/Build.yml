@@ -21,12 +21,13 @@ on:
       - '.github/workflows/Build.yml'
 jobs:
   generate:
-    name: ${{ matrix.os }}/MPI${{ matrix.mpi }}/${{ matrix.mode }}
+    name: ${{ matrix.os }}/${{ matrix.compiler }}/MPI${{ matrix.mpi }}/${{ matrix.mode }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04, macos-11]
+        compiler: [clang, gcc]
         mpi: [ON, OFF]
         mode: [Debug, Release]
     if: "!contains(github.event.head_commit.message, 'skip build')"
@@ -39,18 +40,20 @@ jobs:
       - name: Install dependence
         run: |
           export INPUT_MPI=${{ matrix.mpi }}
-          brew install gcc@11 doxygen tbb
+          brew install gcc@11 doxygen tbb llvm libomp
           if [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt update && sudo apt install -y python3-pip python3-sphinx lcov libboost-all-dev
             if [ "$INPUT_MPI" == "ON" ]; then
-               sudo apt update && sudo apt install -y libopenmpi-dev libhdf5-mpi-dev python3-pip python3-sphinx lcov libboost-all-dev
+               sudo apt install -y libopenmpi-dev libhdf5-mpi-dev
             else
-              sudo apt update && sudo apt install -y libhdf5-dev python3-pip python3-sphinx lcov libboost-all-dev
+              sudo apt install -y libhdf5-dev
             fi
           elif [ "$RUNNER_OS" == "macOS" ]; then
+            brew install sphinx lcov boost
             if [ "$INPUT_MPI" == "ON" ]; then
-               brew install open-mpi hdf5-mpi sphinx lcov boost
+               brew install open-mpi hdf5-mpi
             else
-              brew install hdf5 sphinx lcov boost
+              brew install hdf5
             fi
           else
                echo "$RUNNER_OS not supported"
@@ -62,10 +65,25 @@ jobs:
       - name: Generate
         working-directory: ./build
         run: |
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 \
-                -DOPFLOW_WITH_HDF5=ON -DBENCHMARK_ENABLE_TESTING=OFF -DOPFLOW_BUILD_ALL=ON -DOPFLOW_INSTALL=OFF \
-                -DOPFLOW_WITH_VTK=OFF -DOPFLOW_TBB_EXTERNAL=ON -DDOXYGEN_DIR=$(brew --prefix doxygen)/bin \
-                -DTBB_DIR=$(brew --prefix tbb)/lib/cmake/TBB -DOPFLOW_WITH_MPI=${{ matrix.mpi }} ..
+          if [ "${{ matrix.compiler }}" == "clang" ]; then
+            if [ "$RUNNER_OS" == "Linux" ]; then
+              cmake -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+                    -DOPFLOW_WITH_HDF5=ON -DBENCHMARK_ENABLE_TESTING=OFF -DOPFLOW_BUILD_ALL=ON -DOPFLOW_INSTALL=OFF \
+                    -DOPFLOW_WITH_VTK=OFF -DOPFLOW_TBB_EXTERNAL=ON -DDOXYGEN_DIR=$(brew --prefix doxygen)/bin \
+                    -DTBB_DIR=$(brew --prefix tbb)/lib/cmake/TBB -DOPFLOW_WITH_MPI=${{ matrix.mpi }} ..
+            else
+              cmake -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DCMAKE_C_COMPILER=/usr/local/opt/llvm/bin/clang \
+                    -DCMAKE_CXX_COMPILER=/usr/local/opt/llvm/bin/clang++ \
+                    -DOPFLOW_WITH_HDF5=ON -DBENCHMARK_ENABLE_TESTING=OFF -DOPFLOW_BUILD_ALL=ON -DOPFLOW_INSTALL=OFF \
+                    -DOPFLOW_WITH_VTK=OFF -DOPFLOW_TBB_EXTERNAL=ON -DDOXYGEN_DIR=$(brew --prefix doxygen)/bin \
+                    -DTBB_DIR=$(brew --prefix tbb)/lib/cmake/TBB -DOPFLOW_WITH_MPI=${{ matrix.mpi }} ..
+            fi
+          else
+            cmake -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 \
+                  -DOPFLOW_WITH_HDF5=ON -DBENCHMARK_ENABLE_TESTING=OFF -DOPFLOW_BUILD_ALL=ON -DOPFLOW_INSTALL=OFF \
+                  -DOPFLOW_WITH_VTK=OFF -DOPFLOW_TBB_EXTERNAL=ON -DDOXYGEN_DIR=$(brew --prefix doxygen)/bin \
+                  -DTBB_DIR=$(brew --prefix tbb)/lib/cmake/TBB -DOPFLOW_WITH_MPI=${{ matrix.mpi }} ..
+          fi
           if [ "$RUNNER_OS" == "Linux" ]; then
             cmake --build . -t All_CI --parallel 2 --config ${{ matrix.mode }}
           else
