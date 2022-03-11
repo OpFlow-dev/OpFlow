@@ -1,0 +1,8 @@
+{
+    "cmake.configureSettings": {
+        "OPFLOW_BUILD_TESTS" : "ON",
+        "OPFLOW_BUILD_EXAMPLES" : "ON",
+        "OPFLOW_WITH_HDF5" : "ON"
+    },
+    "cmake.buildDirectory": "${workspaceFolder}/build/${variant:buildType}"
+}
