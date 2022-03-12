@@ -141,7 +141,7 @@ namespace OpFlow::DS {
             if (!data) {
                 reShape(other);
             } else {
-                assert(total_size == other.total_size);
+                if (this->total_size < other.total_size) reShape(other);
             }
             std::copy(other.raw(), other.raw() + total_size, data);
             return *this;
@@ -153,7 +153,7 @@ namespace OpFlow::DS {
             if (data == nullptr) {
                 reShape(other);
             } else {
-                assert(total_size == other.total_size);
+                if (total_size < other.total_size) reShape(other);
             }
             std::copy(other.raw(), other.raw() + total_size, data);
             return *this;
