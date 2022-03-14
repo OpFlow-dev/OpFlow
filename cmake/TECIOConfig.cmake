@@ -48,6 +48,7 @@ macro(CONFIG_AND_INSTALL_TECIO)
                 ${CMAKE_CURRENT_SOURCE_DIR}/external/tecio/teciompisrc/tecio.for
                 ${CMAKE_CURRENT_SOURCE_DIR}/external/tecio/teciompisrc/tecio.f90
                 ${CMAKE_CURRENT_SOURCE_DIR}/external/tecio/teciompisrc/tecio_license_agreement.txt
+                ${CMAKE_CURRENT_SOURCE_DIR}/external/tecio/teciompisrc/StandardIntegralTypes.h
                 DESTINATION ${CMAKE_INSTALL_PREFIX}/include/tecio)
 
         file(COPY ${CMAKE_CURRENT_BINARY_DIR}/tecio-build/libteciompi.a DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
@@ -58,6 +59,7 @@ macro(CONFIG_AND_INSTALL_TECIO)
                 ${CMAKE_CURRENT_SOURCE_DIR}/external/tecio/teciosrc/tecio.for
                 ${CMAKE_CURRENT_SOURCE_DIR}/external/tecio/teciosrc/tecio.f90
                 ${CMAKE_CURRENT_SOURCE_DIR}/external/tecio/teciosrc/tecio_license_agreement.txt
+                ${CMAKE_CURRENT_SOURCE_DIR}/external/tecio/teciosrc/StandardIntegralTypes.h
                 DESTINATION ${CMAKE_INSTALL_PREFIX}/include/tecio)
 
         file(COPY ${CMAKE_CURRENT_BINARY_DIR}/tecio-build/libtecio.a DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
