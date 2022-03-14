@@ -162,6 +162,7 @@ namespace OpFlow::DS {
         auto& operator=(PlainTensor&& other) noexcept {
             dims = std::move(other.dims);
             total_size = other.total_size;
+            if (data) Allocator::deallocate(data, allocated_size);
             data = other.data;
             other.data = nullptr;
             return *this;
