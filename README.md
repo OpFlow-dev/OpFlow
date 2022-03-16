@@ -64,3 +64,10 @@ cmake --build . -t CONV1D && ./examples/CONV1D/CONV1D
 ## Installation
 
 Please refer to the documentation for installation instructions.
+
+
+## Acknowledgement
+I specially thank the JetBrains company to provide a free [Open Source development license](https://jb.gg/OpenSourceSupport) to support the
+development of OpFlow. CLion is a great cross-platform IDE for C/C++ development. I highly recommend you to try OpFlow out with it.
+
+<img src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.png" alt="JetBrains Logo (Main) logo." height="192px">
