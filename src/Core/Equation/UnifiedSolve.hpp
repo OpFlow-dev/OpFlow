@@ -79,7 +79,7 @@ namespace OpFlow {
         for (const auto& p : params) pin.push_back(p.pinValue);
         auto mat = CSRMatrixGenerator::generate(st_holder, mapper, pin);
         if (params[0].dumpPath && !params[0].dumpPath.value().empty()) {
-            std::ofstream of(params[0].dumpPath.value() + "/A.mat");
+            std::ofstream of(params[0].dumpPath.value() + "A.mat");
             of << mat.toString(false);
         }
         std::vector<Real> x(mat.rhs.size());
@@ -89,6 +89,7 @@ namespace OpFlow {
             rangeFor(target->assignableRange, [&](auto&& k) {
                 (*target)[k] = x[mapper(DS::ColoredIndex<Meta::RealType<decltype(k)>> {k, i})];
             });
+            target->updatePadding();
         });
     }
 }// namespace OpFlow
