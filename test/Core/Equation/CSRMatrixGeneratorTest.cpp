@@ -124,7 +124,6 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson_Neum) {
     for (int i = 0; i < rhs.size(); ++i) { ASSERT_DOUBLE_EQ(rhs[i], mat.rhs[i]); }
 }
 
-
 TEST_F(CSRMatrixGeneratorTest, SimplePoisson_Periodic) {
     p = ExprBuilder<Field>()
                 .setMesh(m)
@@ -158,7 +157,6 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson_Periodic) {
     fmt::print("{}\n", mat.toString(true));
     ASSERT_TRUE(true);
 }
-
 
 TEST_F(CSRMatrixGeneratorTest, SimplePoisson_2Eqn) {
     p = ExprBuilder<Field>()
