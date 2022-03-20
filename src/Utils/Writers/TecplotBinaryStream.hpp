@@ -111,7 +111,7 @@ namespace OpFlow::Utils {
                     rangeFor_s(f.localRange, [&](auto&& i) {
                         int N = 1;
                         int db = 1;
-                        tecdat142(&N, (void*) (&xs[i[k]]), &db);
+                        tecdat142(&N, (void*) (&xs[i[k] - f.localRange.start[k]]), &db);
                     });
                 }
                 writeMesh = _alwaysWriteMesh;
