@@ -69,7 +69,7 @@ namespace OpFlow::DS {
         explicit PlainTensor(const std::array<int, d>& size) { reShape(size); }
 
         auto& reShape(std::integral auto size, std::integral auto... sizes) {
-            return reShape(std::array {size, sizes...});
+            return reShape(std::array<int, sizeof...(sizes) + 1> {size, sizes...});
         }
 
         auto& reShape(const std::array<int, d>& sizes) {

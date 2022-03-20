@@ -89,6 +89,32 @@ namespace OpFlow::DS {
             return ret;
         }
 
+        // print in dense format
+        [[nodiscard]] std::string toString(bool force) const {
+            if (row.size() > 129 && !force) {
+                // we consider a matrix too large if #row > 128
+                OP_WARN("CSRMatrix: the matrix to be serialized too large (> 128 rows). Fall back to compact mode");
+                return toString();
+            } else {
+                int mat_size = (int)row.size() - 1;
+                DS::PlainTensor<Real, 2> mat(mat_size, mat_size);
+                mat.setZero();
+                for (int irow = 0; irow < row.size() - 1; ++irow) {
+                    for (int icol = (int)row[irow]; icol < row[irow + 1]; ++icol) {
+                        mat((int)irow, (int)col[icol]) = val[icol];
+                    }
+                }
+                std::string ret = "";
+                for (int irow = 0; irow < mat_size; ++irow) {
+                    for (int icol = 0; icol < mat_size; ++icol) {
+                        ret += fmt::format("{:> } ", mat(irow, icol));
+                    }
+                    ret += fmt::format("rhs[{}] = {:> }\n", irow, rhs[irow]);
+                }
+                return ret;
+            }
+        }
+
         DS::DenseVector<std::ptrdiff_t> row, col;
         DS::DenseVector<Real> val;
         std::vector<Real> rhs;// AMGCL requirement

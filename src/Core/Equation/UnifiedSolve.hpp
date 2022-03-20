@@ -78,6 +78,10 @@ namespace OpFlow {
         std::vector<bool> pin;
         for (const auto& p : params) pin.push_back(p.pinValue);
         auto mat = CSRMatrixGenerator::generate(st_holder, mapper, pin);
+        if (params[0].dumpPath && !params[0].dumpPath.value().empty()) {
+            std::ofstream of(params[0].dumpPath.value() + "/A.mat");
+            of << mat.toString(false);
+        }
         std::vector<Real> x(mat.rhs.size());
         AMGCLBackend<S, Real>::solve(mat, x, params[0].p, params[0].bp, params[0].verbose);
         Meta::static_for<decltype(st_holder)::size>([&]<int i>(Meta::int_<i>) {
