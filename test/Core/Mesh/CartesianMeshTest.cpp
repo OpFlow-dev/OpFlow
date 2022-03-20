@@ -22,6 +22,7 @@
 using namespace OpFlow;
 using namespace OpFlow::Meta;
 
+using Mesh1 = CartesianMesh<int_<1>>;
 using Mesh3 = CartesianMesh<int_<3>>;
 
 TEST(CartesianMeshTest, SetMeshPointsByFunctor) {
@@ -105,5 +106,30 @@ TEST(CartesianMeshTest, SetMeshPointsByNumber) {
             ASSERT_FLOAT_EQ(mesh.dx(0, i), 1. / 10);
             ASSERT_FLOAT_EQ(mesh.idx(0, i), 10.);
         }
+    }
+}
+
+TEST(CartesianMeshTest, SymmPadding) {
+    auto mesh = MeshBuilder<Mesh1>()
+                        .newMesh(5)
+                        .setMeshOfDim(0, [](int i) { return i * i; })
+                        .setPadWidth(3)
+                        .build();
+    if constexpr (std::is_same_v<OpFlow::Real, double>) {
+        // default symm padding
+        ASSERT_DOUBLE_EQ(mesh.x(0, -1), -1);
+        ASSERT_DOUBLE_EQ(mesh.x(0, -2), -4);
+        ASSERT_DOUBLE_EQ(mesh.x(0, -3), -9);
+        ASSERT_DOUBLE_EQ(mesh.x(0, 5), 23);
+        ASSERT_DOUBLE_EQ(mesh.x(0, 6), 28);
+        ASSERT_DOUBLE_EQ(mesh.x(0, 7), 31);
+    } else {
+        // default symm padding
+        ASSERT_FLOAT_EQ(mesh.x(0, -1), -1);
+        ASSERT_FLOAT_EQ(mesh.x(0, -2), -4);
+        ASSERT_FLOAT_EQ(mesh.x(0, -3), -9);
+        ASSERT_FLOAT_EQ(mesh.x(0, 5), 23);
+        ASSERT_FLOAT_EQ(mesh.x(0, 6), 28);
+        ASSERT_FLOAT_EQ(mesh.x(0, 7), 31);
     }
 }
