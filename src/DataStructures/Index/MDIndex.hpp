@@ -40,7 +40,7 @@ namespace OpFlow::DS {
 
         template <Meta::WeakIntegral... T>
         constexpr explicit MDIndex(T&&... indexes) noexcept
-            : MDIndex(std::array {std::forward<T>(indexes)...}) {}
+            : MDIndex(std::array<int, sizeof...(indexes)> {std::forward<T>(indexes)...}) {}
 
         constexpr explicit MDIndex(const std::array<int, d>& array) noexcept : idx(array) {}
 

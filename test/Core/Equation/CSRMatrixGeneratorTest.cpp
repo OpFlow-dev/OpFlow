@@ -124,6 +124,42 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson_Neum) {
     for (int i = 0; i < rhs.size(); ++i) { ASSERT_DOUBLE_EQ(rhs[i], mat.rhs[i]); }
 }
 
+
+TEST_F(CSRMatrixGeneratorTest, SimplePoisson_Periodic) {
+    p = ExprBuilder<Field>()
+                .setMesh(m)
+                .setName("p")
+                .setBC(0, DimPos::start, BCType::Periodic)
+                .setBC(0, DimPos::end, BCType::Periodic)
+                .setBC(1, DimPos::start, BCType::Periodic)
+                .setBC(1, DimPos::end, BCType::Periodic)
+                .setExt(1)
+                .setLoc({LocOnMesh::Center, LocOnMesh::Center})
+                .build();
+
+    auto eqn = makeEqnHolder(std::forward_as_tuple(simple_poisson()), std::forward_as_tuple(p));
+    auto st = makeStencilHolder(eqn);
+    auto mat = CSRMatrixGenerator::generate<0>(st, DS::ColoredMDRangeMapper<2> {p.assignableRange}, false);
+
+    std::vector<int> ptr {0, 1, 5, 9, 12, 16, 21, 26, 30, 34, 39, 44, 48, 51, 55, 59, 62},
+            col {0,  0,  1, 2,  5,  1,  2, 3,  6,  2, 3,  7,  0,  4,  5,  8,  1,  4,  5,  6, 9,
+                 2,  5,  6, 7,  10, 3,  6, 7,  11, 4, 8,  9,  12, 5,  8,  9,  10, 13, 6,  9, 10,
+                 11, 14, 7, 10, 11, 15, 8, 12, 13, 9, 12, 13, 14, 10, 13, 14, 15, 11, 14, 15};
+    std::vector<double> val {1,  -1, 3,  -1, -1, -1, 3,  -1, -1, -1, 2,  -1, -1, 3,  -1, -1,
+                             -1, -1, 4,  -1, -1, -1, -1, 4,  -1, -1, -1, -1, 3,  -1, -1, 3,
+                             -1, -1, -1, -1, 4,  -1, -1, -1, -1, 4,  -1, -1, -1, -1, 3,  -1,
+                             -1, 2,  -1, -1, -1, 3,  -1, -1, -1, 3,  -1, -1, -1, 2},
+            rhs {0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+
+    //for (int i = 0; i < ptr.size(); ++i) { ASSERT_EQ(ptr[i], mat.row[i]); }
+    //for (int i = 0; i < col.size(); ++i) { ASSERT_EQ(col[i], mat.col[i]); }
+    //for (int i = 0; i < val.size(); ++i) { ASSERT_DOUBLE_EQ(val[i], mat.val[i]); }
+    //for (int i = 0; i < rhs.size(); ++i) { ASSERT_DOUBLE_EQ(rhs[i], mat.rhs[i]); }
+    fmt::print("{}\n", mat.toString(true));
+    ASSERT_TRUE(true);
+}
+
+
 TEST_F(CSRMatrixGeneratorTest, SimplePoisson_2Eqn) {
     p = ExprBuilder<Field>()
                 .setMesh(m)
