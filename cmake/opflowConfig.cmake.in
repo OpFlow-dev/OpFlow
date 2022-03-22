@@ -21,8 +21,8 @@ set(OPFLOW_CONFIG_TARGETS_FILE @config_targets_file@)
 include(CMakeFindDependencyMacro)
 
 # Find fmt & spdlog
-find_dependency(fmt PATHS @CMAKE_INSTALL_PREFIX@)
-find_dependency(spdlog PATHS @CMAKE_INSTALL_PREFIX@)
+find_dependency(fmt PATHS @CMAKE_INSTALL_PREFIX@ NO_DEFAULT_PATH)
+find_dependency(spdlog PATHS @CMAKE_INSTALL_PREFIX@ NO_DEFAULT_PATH)
 
 # Find HYPRE
 if (OPFLOW_HYPRE_EXTERNAL)
