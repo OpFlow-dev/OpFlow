@@ -52,6 +52,7 @@ namespace OpFlow::Utils {
         std::string static commonSuffix() { return ".plt"; }
 
         void alwaysWriteMesh(bool o) { _alwaysWriteMesh = o; }
+        void useLogicalRange(bool o) { dumpLogicalRange = o; }
 
         static int new_global_id() {
             static int id = 1;
@@ -84,10 +85,11 @@ namespace OpFlow::Utils {
             tecfil142(&id);
 
             std::string zone_title = f.getName();
-            int zone_type = 0, imax = f.localRange.end[0] - f.localRange.start[0],
-                jmax = (dim >= 2) ? f.localRange.end[1] - f.localRange.start[1] : 1,
-                kmax = (dim >= 3) ? f.localRange.end[2] - f.localRange.start[2] : 1, icellmax = 0,
-                jcellmax = 0, kcellmax = 0, strandID = 1, parentZone = 0, isBlock = 1, dummy = 0;
+            auto range = dumpLogicalRange ? f.logicalRange : f.localRange;
+            int zone_type = 0, imax = range.end[0] - range.start[0],
+                jmax = (dim >= 2) ? range.end[1] - range.start[1] : 1,
+                kmax = (dim >= 3) ? range.end[2] - range.start[2] : 1, icellmax = 0, jcellmax = 0,
+                kcellmax = 0, strandID = 1, parentZone = 0, isBlock = 1, dummy = 0;
             std::vector<int> passive_var(dim + 1, 0), share(dim + 1, 1);
             share.back() = 0;
 
@@ -100,18 +102,18 @@ namespace OpFlow::Utils {
                 for (auto k = 0; k < dim; ++k) {
                     std::vector<double> xs;
                     if (loc[k] == LocOnMesh::Corner) {
-                        for (int iter = f.localRange.start[k]; iter < f.localRange.end[k]; ++iter) {
+                        for (int iter = range.start[k]; iter < range.end[k]; ++iter) {
                             xs.push_back(m.x(k, iter));
                         }
                     } else {
-                        for (int iter = f.localRange.start[k]; iter < f.localRange.end[k]; ++iter) {
+                        for (int iter = range.start[k]; iter < range.end[k]; ++iter) {
                             xs.push_back(Math::mid(m.x(k, iter), m.x(k, iter + 1)));
                         }
                     }
-                    rangeFor_s(f.localRange, [&](auto&& i) {
+                    rangeFor_s(range, [&](auto&& i) {
                         int N = 1;
                         int db = 1;
-                        tecdat142(&N, (void*) (&xs[i[k] - f.localRange.start[k]]), &db);
+                        tecdat142(&N, (void*) (&xs[i[k] - range.start[k]]), &db);
                     });
                 }
                 writeMesh = _alwaysWriteMesh;
@@ -120,7 +122,7 @@ namespace OpFlow::Utils {
                           &kcellmax, &time.time, &strandID, &parentZone, &isBlock, &dummy, &dummy, &dummy,
                           &dummy, &dummy, passive_var.data(), nullptr, share.data(), &dummy);
             }
-            rangeFor_s(f.localRange, [&](auto&& i) {
+            rangeFor_s(range, [&](auto&& i) {
                 int N = 1;
                 auto var = f[i];
                 tecdat142(&N, (void*) &var, &is_double);
@@ -132,7 +134,7 @@ namespace OpFlow::Utils {
     private:
         std::string path;
         TimeStamp time {};
-        bool writeMesh = true, _alwaysWriteMesh = false;
+        bool writeMesh = true, _alwaysWriteMesh = false, dumpLogicalRange = false;
         bool initialized = false;
         int id;
     };
