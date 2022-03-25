@@ -100,6 +100,7 @@ namespace OpFlow {
                 rangeFor(target->assignableRange, [&](auto&& k) {
                     (*target)[k] = x[mapper(DS::ColoredIndex<Meta::RealType<decltype(k)>> {k, i})];
                 });
+                target->updatePadding();
             });
         }
 
