@@ -456,7 +456,7 @@ endif ()
 if (OPFLOW_BUILD_DOCS OR OPFLOW_BUILD_ALL)
     message(STATUS "Generating docs")
     find_program(SPHINX_PATH sphinx-build
-            HINTS $ENV{PATH})
+            HINTS $ENV{PATH} ${SPHINX_DIR})
     if (NOT SPHINX_PATH)
         message(FATAL_ERROR "sphinx-build not found. Please install it via \
         instructions at https://www.sphinx-doc.org/en/master/usage/installation.html")
@@ -482,6 +482,7 @@ if (OPFLOW_BUILD_DOCS OR OPFLOW_BUILD_ALL)
     endif ()
     message(STATUS "Found Doxygen version: ${_out}")
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen)
     add_custom_target(doxygen_doc
             COMMAND ${DOXYGEN_PATH} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
