@@ -49,7 +49,7 @@ jobs:
               sudo apt install -y libhdf5-dev
             fi
           elif [ "$RUNNER_OS" == "macOS" ]; then
-            brew install sphinx lcov boost
+            brew install lcov boost
             if [ "$INPUT_MPI" == "ON" ]; then
                brew install open-mpi hdf5-mpi
             else
@@ -59,7 +59,7 @@ jobs:
                echo "$RUNNER_OS not supported"
                exit 1
           fi
-          python3 -m pip install sphinx-rtd-dark-mode
+          python3 -m pip install sphinx sphinx-rtd-dark-mode breathe
       - name: Make directory
         run: mkdir -p build
       - name: Generate
