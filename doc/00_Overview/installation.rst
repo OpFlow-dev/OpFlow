@@ -2,7 +2,7 @@ Installation
 ++++++++++++
 
 OpFlow is itself a header-only library, yet the backend of linear solver and data writer is delegated
-to HYPRE and VTK for now. Therefore, these two libraries need to be pre-installed to make OpFlow
+to third-party libraries for now. Therefore, these two libraries need to be pre-installed to make OpFlow
 fully functional. We recommend two ways to introduce OpFlow to your existing project:
 
 .. note::
@@ -12,6 +12,55 @@ fully functional. We recommend two ways to introduce OpFlow to your existing pro
 
 .. caution::
     OpFlow is currently only tested on Linux and macOS. Windows users are recommended to use WSL for now.
+
+Pre-requirement
+---------------------------------------------------------------------
+
+There are some packages needs to be installed before you can successfully build OpFlow with your projects.
+Depending on the components you need and OS you work with, there are several different conditions:
+
+- **Dependencies for all** A C++20 compatible compiler and the boost library are needed for all configurations:
+
+.. code-block:: bash
+
+    # macOS with homebrew
+    brew install gcc boost
+    # Ubuntu with apt
+    sudo apt install gcc-10 g++-10 libboost-all-dev
+
+- **Build with MPI** The MPI library is needed:
+
+.. code-block:: bash
+
+    # macOS with homebrew
+    brew install open-mpi
+    # Ubuntu with apt
+    sudo apt install libopenmpi-dev
+
+- **Build with doc** The doxygen, sphinx and other supporting python libraries are needed:
+
+.. code-block:: bash
+
+    # macOS with homebrew
+    brew install doxygen python3 python3-pip
+    # Ubuntu with apt (needs doxygen >= v1.9.2, currently not included in Ubuntu 20.04's repo)
+    sudo apt install doxygen python3-pip python3-sphinx
+    # All platforms
+    python3 -m pip install sphinx sphinx-rtd-dark-mode breathe
+
+TL;DR: Copy & paste the command in your shell and you're ready to go :)
+
+macOS:
+
+.. code-block:: bash
+
+    brew install gcc doxygen tbb llvm lcov boost open-mpi hdf5-mpi python3 && python3 -m pip install sphinx sphinx-rtd-dark-mode breathe
+
+Ubuntu:
+
+.. code-block:: bash
+
+    sudo apt install -y gcc-10 g++-10 doxygen python3 python3-pip python3-sphinx lcov libboost-all-dev libomp-12-dev clang-12 libopenmpi-dev libhdf5-mpi-dev libhdf5-dev && python3 -m pip install sphinx sphinx-rtd-dark-mode breathe
 
 Approach 1: Via ``add_subdirectory()``
 ---------------------------------------------------------------------
@@ -86,57 +135,33 @@ OPFLOW_SINGLE_PRECISION     Use ``float`` for default Real type             OFF 
 OPFLOW_WITH_OPENMP          Enable OpenMP for shared memory parallelization ON                      Keep ON for now
 OPFLOW_WITH_MPI             Enable MPI for distributed parallelization      ON                      Keep ON for now
 OPFLOW_WITH_HDF5            Enable HDF5 for distributed parallel I/O        OFF                     MPI version of HDF5 is needed to enable
-OPFLOW_SANITIZE_ADDRESS     Enable address sanitizer in tests               OFF
+OPFLOW_SANITIZE_ADDRESS     Enable address sanitizer                        OFF
+OPFLOW_SANITIZE_LEAK        Enable memory leak sanitizer                    OFF
+OPFLOW_SANITIZE_THREAD      Enable thread sanitizer                         OFF
+OPFLOW_SANITIZE_UB          Enable undefined behavior sanitizer             OFF
 OPFLOW_BUILD_WARNINGS       Enable compiler warnings                        OFF
+OPFLOW_ENABLE_COVERAGE      Enable coverage for tests                       OFF
 OPFLOW_INSTALL              Generate the install target                     OPFLOW_MASTER_PROJECT
-OPFLOW_FMT_EXTERNAL         Use external fmt library                        OFF                     Must also set FMT_DIR if enabled
-OPFLOW_FMT_EXTERNAL_HO      Use external fmt header-only library            OFF                     Must also set FMT_DIR if enabled
-OPFLOW_SPDLOG_EXTERNAL      Use external spdlog library                     OFF                     Must also set SPDLOG_DIR if enabled
-OPFLOW_SPDLOG_EXTERNAL_HO   Use external spdlog header-only library         OFF                     Must also set SPDLOG_DIR if enabled
 OPFLOW_HYPRE_EXTERNAL       Use external HYPRE library                      OFF                     Must also set HYPRE_DIR if enabled
-OPFLOW_HYPRE_PRE_DOWNLOAD   Use pre-downloaded HYPRE src for build          OFF                     Must also set OPFLOW_HYPRE_SOURCE_DIR
-                                                                                                    to the path of the source
 OPFLOW_VTK_EXTERNAL         Use external VTK library                        OFF                     Must also set VTK_DIR if enabled
 OPFLOW_VTK_PRE_DOWNLOAD     Use pre-downloaded VTK src for build            OFF                     Must also set OPFLOW_VTK_SOURCE_DIR
                                                                                                     to the path of the source
+OPFLOW_TBB_EXTERNAL         Use external TBB library                        OFF                     Must also set TBB_DIR if enabled
 OPFLOW_NO_EXCEPTIONS        Compile with ``-fno-exceptions``                OFF
 =========================== =============================================== ======================= =======================================
 
-Don't be frightened by the available options. Typically, you can build OpFlow in two styles:
-
-- **Fully automatic style**
-
-  If you haven't install any of the support libraries and just want to try out OpFlow,
-  you can let OpFlow download & install all its dependencies for you (although it's
-  still necessary and beneficial for you to manually install the compiler and MPI
-  library systematically). You can then configure OpFlow as:
+Don't be frightened by the available options. Typically, you can build OpFlow with the default settings:
 
 .. code-block:: bash
 
     cmake .. -DCMAKE_C_COMPILER=gcc-10 -DCMAKE_CXX_COMPILER=g++-10
              -DCMAKE_INSTALL_PREFIX=<your-preferred-dir>
 
-Add options for tests, examples and docs at your demand.
-
-- **Developer/Offline style**
-
-  If you want to play with the code of OpFlow, or trying to deploy OpFlow to an offline environment,
-  you can configure OpFlow in this more detailed mode. This can save you large amount of time of
-  configuring & building external dependencies. Firstly, you need to install the HYPRE & VTK libraries
-  manually, either through package manager on your system or build from source. Then, config OpFlow as:
-
-.. code-block:: bash
-
-    cmake .. -DCMAKE_C_COMPILER=gcc-10 -DCMAKE_CXX_COMPILER=g++-10
-             -DCMAKE_INSTALL_PREFIX=<your-preferred-dir>
-             -DOPFLOW_HYPRE_EXTERNAL=ON -DHYPRE_DIR=<path-to-HYPREConfig.cmake>
-             -DOPFLOW_VTK_EXTERNAL=ON -DVTK_DIR=<path-to-vtk-config.cmake>
-
-As before, you can add options for tests, examples and docs at your demand.
+As before, you can add options for tests, benchmarks, examples and docs at your demand.
 
 .. note::
     You can use any C++20 compatible (or specifically, concept-ready) compiler for compile. The author
-    has tested `gcc-10` and `gcc-11` to be working properly.
+    has tested with `gcc` >= 10.0 and `clang` >= 12.
 
 After configuration, type ``make -j && make install`` to issue the build & deployment. After that,
 turn to your own project, add the following line to your ``CMakeLists.txt``

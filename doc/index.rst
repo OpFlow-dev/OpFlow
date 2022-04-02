@@ -56,6 +56,7 @@ Contents:
     :caption: Development Guide
     :maxdepth: 2
 
+    05_DevGuide/dev_build
     05_DevGuide/new_mesh
     05_DevGuide/new_field
     05_DevGuide/new_operator

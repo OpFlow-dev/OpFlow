@@ -44,18 +44,15 @@ OpFlow makes the algorithm, data structure and execution scheduler fully decoupl
 
 - Linux: (Ubuntu for example)
 ```bash
-sudo apt install -y gcc-10 g++-10 libopenmpi-dev libhdf5-mpi-dev libhdf5-dev python3-pip python3-sphinx lcov
-python3 -m pip install sphinx-rtd-dark-theme
+sudo apt install -y gcc-10 g++-10
 ```
 - macOS: (using Homebrew)
 ```bash
-brew install gcc@10 open-mpi hdf5-mpi sphinx lcov
-python3 -m pip install sphinx-rtd-dark-theme
+brew install gcc
 ```
 1. Configure
 ```bash
-mkdir build && cd build
-cmake -DCMAKE_C_COMPILER=gcc-10 -DCMAKE_CXX_COMPILER=g++-10 -DOPFLOW_BUILD_ALL=ON -DOPFLOW_WITH_VTK=OFF ..
+mkdir build && cd build && cmake -DCMAKE_C_COMPILER=gcc-10 -DCMAKE_CXX_COMPILER=g++-10 -DOPFLOW_BUILD_EXAMPLES=ON ..
 ```
 2. Build & Run
 ```bash
