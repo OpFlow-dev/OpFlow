@@ -13,21 +13,23 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import re
-from functools import partial
-from pathlib import Path
-from typing import Callable, Match, Tuple, Union
+import git
 
 # -- Project information -----------------------------------------------------
 
 project = 'OpFlow'
-copyright = '2021, Luohao Wang'
+copyright = '2022, Luohao Wang'
 author = 'Luohao Wang'
 
+# get the repo version
+repo = git.Repo(search_parent_directories=True)
+tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
+latest_tag = tags[-1]
+
 # The short X.Y version
-version = "0.1"
+version = latest_tag.name
 # The full version, including alpha/beta/rc tags
-release = "0.1"
+release = latest_tag.name
 
 # -- General configuration ---------------------------------------------------
 
@@ -108,7 +110,8 @@ if os.environ.get('READTHEDOCS', '') != '':
 else:
     css_files = []
 
-html_context = {'css_files': css_files}
+# comment out for missing css fix
+# html_context = {'css_files': css_files}
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
