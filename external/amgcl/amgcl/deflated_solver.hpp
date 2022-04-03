@@ -32,24 +32,18 @@ THE SOFTWARE.
  */
 
 #include <amgcl/backend/builtin.hpp>
-#include <amgcl/util.hpp>
 #include <amgcl/detail/inverse.hpp>
+#include <amgcl/util.hpp>
 
 namespace amgcl {
 
-/// Convenience class that bundles together a preconditioner and an iterative solver.
-template <
-    class Precond,
-    class IterativeSolver
-    >
-class deflated_solver : public amgcl::detail::non_copyable {
-    static_assert(
-            backend::backends_compatible<
-                typename IterativeSolver::backend_type,
-                typename Precond::backend_type
-            >::value,
-            "Backends for preconditioner and iterative solver should be compatible"
-            );
+    /// Convenience class that bundles together a preconditioner and an iterative solver.
+    template <class Precond, class IterativeSolver>
+    class deflated_solver : public amgcl::detail::non_copyable {
+        static_assert(backend::backends_compatible<typename IterativeSolver::backend_type,
+                                                   typename Precond::backend_type>::value,
+                      "Backends for preconditioner and iterative solver should be compatible");
+
     public:
         typedef typename IterativeSolver::backend_type backend_type;
         typedef typename backend_type::matrix matrix;
@@ -65,28 +59,22 @@ class deflated_solver : public amgcl::detail::non_copyable {
          * solver.
          */
         struct params {
-            int         nvec; ///< The number of deflation vectors
-            scalar_type *vec; ///< Deflation vectors as a [nvec x n] matrix
+            int nvec;        ///< The number of deflation vectors
+            scalar_type *vec;///< Deflation vectors as a [nvec x n] matrix
 
-            typename Precond::params         precond; ///< Preconditioner parameters.
-            typename IterativeSolver::params solver;  ///< Iterative solver parameters.
+            typename Precond::params precond;       ///< Preconditioner parameters.
+            typename IterativeSolver::params solver;///< Iterative solver parameters.
 
             params() : nvec(0), vec(nullptr) {}
 
 #ifndef AMGCL_NO_BOOST
             params(const boost::property_tree::ptree &p)
-                : AMGCL_PARAMS_IMPORT_VALUE(p, nvec),
-                  AMGCL_PARAMS_IMPORT_VALUE(p, vec),
-                  AMGCL_PARAMS_IMPORT_CHILD(p, precond),
-                  AMGCL_PARAMS_IMPORT_CHILD(p, solver)
-            {
+                : AMGCL_PARAMS_IMPORT_VALUE(p, nvec), AMGCL_PARAMS_IMPORT_VALUE(p, vec),
+                  AMGCL_PARAMS_IMPORT_CHILD(p, precond), AMGCL_PARAMS_IMPORT_CHILD(p, solver) {
                 check_params(p, {"nvec", "vec", "precond", "solver"});
             }
 
-            void get( boost::property_tree::ptree &p,
-                    const std::string &path = ""
-                    ) const
-            {
+            void get(boost::property_tree::ptree &p, const std::string &path = "") const {
                 AMGCL_PARAMS_EXPORT_CHILD(p, path, nvec);
                 AMGCL_PARAMS_EXPORT_CHILD(p, path, vec);
                 AMGCL_PARAMS_EXPORT_CHILD(p, path, precond);
@@ -97,37 +85,19 @@ class deflated_solver : public amgcl::detail::non_copyable {
 
         /** Sets up the preconditioner and creates the iterative solver. */
         template <class Matrix>
-        deflated_solver(
-                const Matrix &A,
-                const params &prm = params(),
-                const backend_params &bprm = backend_params()
-                ) :
-            prm(prm), n(backend::rows(A)),
-            P(A, prm.precond, bprm),
-            S(backend::rows(A), prm.solver, bprm),
-            r(backend_type::create_vector(n, bprm)),
-            Z(prm.nvec),
-            E(prm.nvec * prm.nvec, 0),
-            d(prm.nvec)
-        {
+        deflated_solver(const Matrix &A, const params &prm = params(),
+                        const backend_params &bprm = backend_params())
+            : prm(prm), n(backend::rows(A)), P(A, prm.precond, bprm), S(backend::rows(A), prm.solver, bprm),
+              r(backend_type::create_vector(n, bprm)), Z(prm.nvec), E(prm.nvec * prm.nvec, 0), d(prm.nvec) {
             init(A, bprm);
         }
 
         // Constructs the preconditioner and creates iterative solver.
         // Takes shared pointer to the matrix in internal format.
-        deflated_solver(
-                std::shared_ptr<build_matrix> A,
-                const params &prm = params(),
-                const backend_params &bprm = backend_params()
-                ) :
-            prm(prm), n(backend::rows(*A)),
-            P(A, prm.precond, bprm),
-            S(backend::rows(*A), prm.solver, bprm),
-            r(backend_type::create_vector(n, bprm)),
-            Z(prm.nvec),
-            E(prm.nvec * prm.nvec, 0),
-            d(prm.nvec)
-        {
+        deflated_solver(std::shared_ptr<build_matrix> A, const params &prm = params(),
+                        const backend_params &bprm = backend_params())
+            : prm(prm), n(backend::rows(*A)), P(A, prm.precond, bprm), S(backend::rows(*A), prm.solver, bprm),
+              r(backend_type::create_vector(n, bprm)), Z(prm.nvec), E(prm.nvec * prm.nvec, 0), d(prm.nvec) {
             init(*A, bprm);
         }
 
@@ -135,26 +105,23 @@ class deflated_solver : public amgcl::detail::non_copyable {
         void init(const Matrix &A, const backend_params &bprm) {
             precondition(prm.nvec > 0 && prm.vec != nullptr, "Deflation vectors are not set!");
 
-            for(int i = 0; i < prm.nvec; ++i) {
+            for (int i = 0; i < prm.nvec; ++i) {
                 Z[i] = backend_type::copy_vector(
-                        std::make_shared<backend::numa_vector<scalar_type>>(make_iterator_range(prm.vec + n * i, prm.vec + n * (i + 1))),
+                        std::make_shared<backend::numa_vector<scalar_type>>(
+                                make_iterator_range(prm.vec + n * i, prm.vec + n * (i + 1))),
                         bprm);
             }
 
             std::vector<scalar_type> AZ(prm.nvec);
             std::fill(E.begin(), E.end(), math::zero<scalar_type>());
-            for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(n); ++i) {
+            for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(n); ++i) {
                 std::fill(AZ.begin(), AZ.end(), math::zero<scalar_type>());
-                for(auto a = backend::row_begin(A, i); a; ++a) {
-                    for(int j = 0; j < prm.nvec; ++j) {
-                        AZ[j] += a.value() * prm.vec[j * n + a.col()];
-                    }
+                for (auto a = backend::row_begin(A, i); a; ++a) {
+                    for (int j = 0; j < prm.nvec; ++j) { AZ[j] += a.value() * prm.vec[j * n + a.col()]; }
                 }
 
-                for(int ii = 0, k = 0; ii < prm.nvec; ++ii) {
-                    for(int jj = 0; jj < prm.nvec; ++jj, ++k) {
-                        E[k] += prm.vec[i + ii * n] * AZ[jj];
-                    }
+                for (int ii = 0, k = 0; ii < prm.nvec; ++ii) {
+                    for (int jj = 0; jj < prm.nvec; ++jj, ++k) { E[k] += prm.vec[i + ii * n] * AZ[jj]; }
                 }
             }
 
@@ -178,9 +145,7 @@ class deflated_solver : public amgcl::detail::non_copyable {
          * \endrst
          */
         template <class Matrix, class Vec1, class Vec2>
-        std::tuple<size_t, scalar_type> operator()(
-                const Matrix &A, const Vec1 &rhs, Vec2 &&x) const
-        {
+        std::tuple<size_t, scalar_type> operator()(const Matrix &A, const Vec1 &rhs, Vec2 &&x) const {
             project(rhs, x);
             return S(A, *this, rhs, x);
         }
@@ -207,70 +172,51 @@ class deflated_solver : public amgcl::detail::non_copyable {
             // x += Z^T E^{-1} Z (b - Ax)
             backend::residual(b, P.system_matrix(), x, *r);
             std::fill(d.begin(), d.end(), math::zero<scalar_type>());
-            for(int j = 0; j < prm.nvec; ++j) {
+            for (int j = 0; j < prm.nvec; ++j) {
                 auto fj = backend::inner_product(*Z[j], *r);
-                for(int i = 0; i < prm.nvec; ++i)
-                    d[i] += E[i*prm.nvec+j] * fj;
+                for (int i = 0; i < prm.nvec; ++i) d[i] += E[i * prm.nvec + j] * fj;
             }
             backend::lin_comb(prm.nvec, d, Z, 1, x);
         }
 
         /// Returns reference to the constructed preconditioner.
-        const Precond& precond() const {
-            return P;
-        }
+        const Precond &precond() const { return P; }
 
         /// Returns reference to the constructed preconditioner.
-        Precond& precond() {
-            return P;
-        }
+        Precond &precond() { return P; }
 
         /// Returns reference to the constructed iterative solver.
-        const IterativeSolver& solver() const {
-            return S;
-        }
+        const IterativeSolver &solver() const { return S; }
 
         /// Returns the system matrix in the backend format.
-        std::shared_ptr<typename Precond::matrix> system_matrix_ptr() const {
-            return P.system_matrix_ptr();
-        }
+        std::shared_ptr<typename Precond::matrix> system_matrix_ptr() const { return P.system_matrix_ptr(); }
 
-        typename Precond::matrix const& system_matrix() const {
-            return P.system_matrix();
-        }
+        typename Precond::matrix const &system_matrix() const { return P.system_matrix(); }
 
 #ifndef AMGCL_NO_BOOST
         /// Stores the parameters used during construction into the property tree \p p.
-        void get_params(boost::property_tree::ptree &p) const {
-            prm.get(p);
-        }
+        void get_params(boost::property_tree::ptree &p) const { prm.get(p); }
 #endif
 
         /// Returns the size of the system matrix.
-        size_t size() const {
-            return n;
+        size_t size() const { return n; }
+
+        size_t bytes() const { return backend::bytes(S) + backend::bytes(P); }
+
+        friend std::ostream &operator<<(std::ostream &os, const deflated_solver &p) {
+            return os << "Solver\n======\n" << p.S << std::endl << "Preconditioner\n==============\n" << p.P;
         }
 
-        size_t bytes() const {
-            return backend::bytes(S) + backend::bytes(P);
-        }
-
-        friend std::ostream& operator<<(std::ostream &os, const deflated_solver &p) {
-            return os
-                << "Solver\n======\n" << p.S << std::endl
-                << "Preconditioner\n==============\n" << p.P;
-        }
     private:
-        size_t           n;
-        Precond          P;
-        IterativeSolver  S;
+        size_t n;
+        Precond P;
+        IterativeSolver S;
         std::shared_ptr<vector> r;
         std::vector<std::shared_ptr<vector>> Z;
         std::vector<scalar_type> E;
         mutable std::vector<scalar_type> d;
-};
+    };
 
-} // namespace amgcl
-
+}// namespace amgcl
 
 #endif

@@ -37,64 +37,58 @@ THE SOFTWARE.
 #include <amgcl/value_type/interface.hpp>
 
 namespace amgcl {
-namespace preconditioner {
-namespace side {
+    namespace preconditioner {
+        namespace side {
 
-enum type {
-    left,
-    right
-};
+            enum type { left, right };
 
-inline std::ostream& operator<<(std::ostream &os, type p) {
-    switch (p) {
-        case left:
-            return os << "left";
-        case right:
-            return os << "right";
-        default:
-            return os << "???";
-    }
-}
+            inline std::ostream &operator<<(std::ostream &os, type p) {
+                switch (p) {
+                    case left:
+                        return os << "left";
+                    case right:
+                        return os << "right";
+                    default:
+                        return os << "???";
+                }
+            }
 
-inline std::istream& operator>>(std::istream &in, type &p) {
-    std::string val;
-    in >> val;
+            inline std::istream &operator>>(std::istream &in, type &p) {
+                std::string val;
+                in >> val;
 
-    if (val == "left")
-        p = left;
-    else if (val == "right")
-        p = right;
-    else
-        throw std::invalid_argument("Invalid preconditioning side. "
-                "Valid choices are: left, right.");
+                if (val == "left") p = left;
+                else if (val == "right")
+                    p = right;
+                else
+                    throw std::invalid_argument("Invalid preconditioning side. "
+                                                "Valid choices are: left, right.");
 
-    return in;
-}
+                return in;
+            }
 
-} // namespace side
+        }// namespace side
 
-// Preconditioned matrix-vector product
-template <class Precond, class Matrix, class VecF, class VecX, class VecT>
-inline void spmv(side::type pside, const Precond &P, const Matrix &A,
-        const VecF &F, VecX &X, VecT &T)
-{
-    typedef typename backend::value_type<Matrix>::type value;
-    typedef typename math::scalar_of<value>::type scalar;
+        // Preconditioned matrix-vector product
+        template <class Precond, class Matrix, class VecF, class VecX, class VecT>
+        inline void spmv(side::type pside, const Precond &P, const Matrix &A, const VecF &F, VecX &X,
+                         VecT &T) {
+            typedef typename backend::value_type<Matrix>::type value;
+            typedef typename math::scalar_of<value>::type scalar;
 
-    static const scalar one  = math::identity<scalar>();
-    static const scalar zero = math::zero<scalar>();
+            static const scalar one = math::identity<scalar>();
+            static const scalar zero = math::zero<scalar>();
 
-    if (pside == side::left) {
-        backend::spmv(one, A, F, zero, T);
-        P.apply(T, X);
-    } else {
-        P.apply(F, T);
-        backend::spmv(one, A, T, zero, X);
-    }
-}
+            if (pside == side::left) {
+                backend::spmv(one, A, F, zero, T);
+                P.apply(T, X);
+            } else {
+                P.apply(F, T);
+                backend::spmv(one, A, T, zero, X);
+            }
+        }
 
-} // namespace preconditioner
-} // namespace amgcl
-
+    }// namespace preconditioner
+}// namespace amgcl
 
 #endif

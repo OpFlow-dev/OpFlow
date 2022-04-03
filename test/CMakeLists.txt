@@ -65,9 +65,6 @@ function(add_gmock_mpi testname proccount testfile)
     if (OPFLOW_WITH_MPI)
         add_executable(${testname} EXCLUDE_FROM_ALL ${testfile} ${ARGN} ${TEST_MAIN_CPP})
         target_link_libraries(${testname} gmock opflow::opflow)
-        target_compile_options(${testname} PRIVATE $<$<CXX_COMPILER_ID:GNU>:--coverage>
-                PRIVATE $<$<CXX_COMPILER_ID:GNU>:-fconcepts-diagnostics-depth=5>
-                PRIVATE $<$<CXX_COMPILER_ID:Clang>:-fprofile-instr-generate -fcoverage-mapping>)
         target_compile_definitions(${testname} PUBLIC OPFLOW_DISTRIBUTE_MODEL_MPI OPFLOW_TEST_ENVIRONMENT)
         set_property(GLOBAL APPEND PROPERTY all_test_srcs ${testfile} ${ARGN})
         add_dependencies(AllTests ${testname})
@@ -81,6 +78,9 @@ function(add_gmock_mpi testname proccount testfile)
         endif ()
         if (${CMAKE_BUILD_TYPE} STREQUAL "Debug" AND OPFLOW_ENABLE_COVERAGE)
             target_link_libraries(${testname} gcov)
+            target_compile_options(${testname} PRIVATE $<$<CXX_COMPILER_ID:GNU>:--coverage>
+                    PRIVATE $<$<CXX_COMPILER_ID:GNU>:-fconcepts-diagnostics-depth=5>
+                    PRIVATE $<$<CXX_COMPILER_ID:Clang>:-fprofile-instr-generate -fcoverage-mapping>)
             SETUP_TARGET_FOR_COVERAGE(${testname}_coverage ${testname} ${testname}_coverage)
         endif ()
     endif ()

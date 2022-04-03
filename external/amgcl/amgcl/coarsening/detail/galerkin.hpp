@@ -31,23 +31,20 @@ THE SOFTWARE.
  * \brief  Galerkin operator.
  */
 
-#include <memory>
 #include <amgcl/backend/builtin.hpp>
+#include <memory>
 
 namespace amgcl {
-namespace coarsening {
-namespace detail {
+    namespace coarsening {
+        namespace detail {
 
-template <class Matrix>
-std::shared_ptr<Matrix> galerkin(
-        const Matrix &A, const Matrix &P, const Matrix &R
-        )
-{
-    return product(R, *product(A, P));
-}
+            template <class Matrix>
+            std::shared_ptr<Matrix> galerkin(const Matrix &A, const Matrix &P, const Matrix &R) {
+                return product(R, *product(A, P));
+            }
 
-} // namespace detail
-} // namespace coarsening
-} // namespace amgcl
+        }// namespace detail
+    }    // namespace coarsening
+}// namespace amgcl
 
 #endif

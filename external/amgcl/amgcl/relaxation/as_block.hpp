@@ -31,101 +31,81 @@ THE SOFTWARE.
  * \brief  Block matrix adapter for an amgcl smoother.
  */
 
-#include <vector>
-#include <memory>
-#include <amgcl/util.hpp>
-#include <amgcl/backend/interface.hpp>
-#include <amgcl/backend/interface.hpp>
 #include <amgcl/adapter/block_matrix.hpp>
+#include <amgcl/backend/interface.hpp>
+#include <amgcl/util.hpp>
+#include <memory>
+#include <vector>
 
 namespace amgcl {
-namespace relaxation {
+    namespace relaxation {
 
-/// Converts input matrix to block format before constructing an amgcl smoother.
-template <class BlockBackend, template <class> class Relax>
-struct as_block {
-    typedef typename BlockBackend::value_type BlockType;
+        /// Converts input matrix to block format before constructing an amgcl smoother.
+        template <class BlockBackend, template <class> class Relax>
+        struct as_block {
+            typedef typename BlockBackend::value_type BlockType;
 
-    template <class Backend>
-    class type {
-        public:
-            typedef Backend backend_type;
+            template <class Backend>
+            class type {
+            public:
+                typedef Backend backend_type;
 
-            typedef Relax<BlockBackend>       Base;
+                typedef Relax<BlockBackend> Base;
 
-            typedef typename Backend::matrix  matrix;
-            typedef typename Backend::vector  vector;
-            typedef typename Base::params     params;
-            typedef typename Backend::params  backend_params;
+                typedef typename Backend::matrix matrix;
+                typedef typename Backend::vector vector;
+                typedef typename Base::params params;
+                typedef typename Backend::params backend_params;
 
-            typedef typename Backend::value_type value_type;
-            typedef typename Backend::col_type   col_type;
-            typedef typename Backend::ptr_type   ptr_type;
-            typedef typename backend::builtin<value_type, col_type, ptr_type>::matrix build_matrix;
+                typedef typename Backend::value_type value_type;
+                typedef typename Backend::col_type col_type;
+                typedef typename Backend::ptr_type ptr_type;
+                typedef typename backend::builtin<value_type, col_type, ptr_type>::matrix build_matrix;
 
-            template <class Matrix>
-            type(
-                    const Matrix &A,
-                    const params &prm = params(),
-                    const backend_params &bprm = backend_params()
-                    )
-            : base(*std::make_shared<typename backend::crs<BlockType, col_type, ptr_type>>(adapter::block_matrix<BlockType>(A)), prm, bprm),
-              nrows(backend::rows(A) / math::static_rows<BlockType>::value)
-            { }
+                template <class Matrix>
+                type(const Matrix &A, const params &prm = params(),
+                     const backend_params &bprm = backend_params())
+                    : base(*std::make_shared<typename backend::crs<BlockType, col_type, ptr_type>>(
+                                   adapter::block_matrix<BlockType>(A)),
+                           prm, bprm),
+                      nrows(backend::rows(A) / math::static_rows<BlockType>::value) {}
 
-            template <class Matrix, class VectorRHS, class VectorX, class VectorTMP>
-            void apply_pre(
-                    const Matrix &A,
-                    const VectorRHS &rhs,
-                    VectorX &x,
-                    VectorTMP &tmp
-                    ) const
-            {
-                auto F = backend::reinterpret_as_rhs<BlockType>(rhs);
-                auto X = backend::reinterpret_as_rhs<BlockType>(x);
-                auto T = backend::reinterpret_as_rhs<BlockType>(tmp);
-                base.apply_pre(A, F, X, T);
-            }
+                template <class Matrix, class VectorRHS, class VectorX, class VectorTMP>
+                void apply_pre(const Matrix &A, const VectorRHS &rhs, VectorX &x, VectorTMP &tmp) const {
+                    auto F = backend::reinterpret_as_rhs<BlockType>(rhs);
+                    auto X = backend::reinterpret_as_rhs<BlockType>(x);
+                    auto T = backend::reinterpret_as_rhs<BlockType>(tmp);
+                    base.apply_pre(A, F, X, T);
+                }
 
-            template <class Matrix, class VectorRHS, class VectorX, class VectorTMP>
-            void apply_post(
-                    const Matrix &A,
-                    const VectorRHS &rhs,
-                    VectorX &x,
-                    VectorTMP &tmp
-                    ) const
-            {
-                auto F = backend::reinterpret_as_rhs<BlockType>(rhs);
-                auto X = backend::reinterpret_as_rhs<BlockType>(x);
-                auto T = backend::reinterpret_as_rhs<BlockType>(tmp);
-                base.apply_post(A, F, X, T);
-            }
+                template <class Matrix, class VectorRHS, class VectorX, class VectorTMP>
+                void apply_post(const Matrix &A, const VectorRHS &rhs, VectorX &x, VectorTMP &tmp) const {
+                    auto F = backend::reinterpret_as_rhs<BlockType>(rhs);
+                    auto X = backend::reinterpret_as_rhs<BlockType>(x);
+                    auto T = backend::reinterpret_as_rhs<BlockType>(tmp);
+                    base.apply_post(A, F, X, T);
+                }
 
-            template <class Matrix, class Vec1, class Vec2>
-            void apply(const Matrix &A, const Vec1 &rhs, Vec2 &&x) const {
-                auto F = backend::reinterpret_as_rhs<BlockType>(rhs);
-                auto X = backend::reinterpret_as_rhs<BlockType>(x);
-                base.apply(A, F, X);
-            }
+                template <class Matrix, class Vec1, class Vec2>
+                void apply(const Matrix &A, const Vec1 &rhs, Vec2 &&x) const {
+                    auto F = backend::reinterpret_as_rhs<BlockType>(rhs);
+                    auto X = backend::reinterpret_as_rhs<BlockType>(x);
+                    base.apply(A, F, X);
+                }
 
-            const matrix& system_matrix() const {
-                return base.system_matrix();
-            }
+                const matrix &system_matrix() const { return base.system_matrix(); }
 
-            std::shared_ptr<matrix> system_matrix_ptr() const {
-                return base.system_matrix_ptr();
-            }
+                std::shared_ptr<matrix> system_matrix_ptr() const { return base.system_matrix_ptr(); }
 
-            size_t bytes() const {
-                return base.bytes();
-            }
-        private:
-            Base base;
-            size_t nrows;
-    };
-};
+                size_t bytes() const { return base.bytes(); }
 
-} // namespace relaxation
-} // namespace amgcl
+            private:
+                Base base;
+                size_t nrows;
+            };
+        };
+
+    }// namespace relaxation
+}// namespace amgcl
 
 #endif

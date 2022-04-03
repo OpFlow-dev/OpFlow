@@ -32,41 +32,38 @@ THE SOFTWARE.
  * \brief  Cray energy counter.
  */
 
-#include <fstream>
 #include <amgcl/util.hpp>
+#include <fstream>
 
 namespace amgcl {
-namespace perf_counter {
+    namespace perf_counter {
 
-class cray_energy {
-    public:
-        typedef long long value_type;
+        class cray_energy {
+        public:
+            typedef long long value_type;
 
-        cray_energy() : f(attribute_path()) {
-            precondition(f, std::string("Failed to open ") + attribute_path());
-        }
+            cray_energy() : f(attribute_path()) {
+                precondition(f, std::string("Failed to open ") + attribute_path());
+            }
 
-        static const char* units() {
-            return "J";
-        }
+            static const char* units() { return "J"; }
 
-        value_type current() {
-            f.clear();
-            f.seekg(0, std::ios::beg);
+            value_type current() {
+                f.clear();
+                f.seekg(0, std::ios::beg);
 
-            value_type v;
-            f >> v;
-            return v;
-        }
-    private:
-        static const char* attribute_path() {
-            return "/sys/cray/pm_counters/energy";
-        }
+                value_type v;
+                f >> v;
+                return v;
+            }
 
-        std::ifstream f;
-};
+        private:
+            static const char* attribute_path() { return "/sys/cray/pm_counters/energy"; }
 
-} // namespace perf_counter
-} // namespace amgcl
+            std::ifstream f;
+        };
+
+    }// namespace perf_counter
+}// namespace amgcl
 
 #endif

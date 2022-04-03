@@ -25,25 +25,34 @@
 namespace OpFlow {
     template <typename Solver, typename D>
     struct AMGCLBackend {
+        constexpr static bool _enable_mpi = !requires { typename Solver::col_type; };
+
         // the static solver which performs a fresh solve on each invoke
         static void solve(const DS::CSRMatrix& mat, std::vector<D>& x, typename Solver::params p,
                           typename Solver::backend_params bp, bool verbose = false) {
             int rows = mat.row.size() - 1;
+            std::unique_ptr<Solver> solver;
 #if defined(OPFLOW_WITH_MPI)
-            amgcl::mpi::communicator world(MPI_COMM_WORLD);
-            auto A = std::make_shared<amgcl::mpi::distributed_matrix<typename Solver::backend_type>>(
-                    world,
-                    *amgcl::adapter::zero_copy(rows, mat.row.begin(), mat.col.begin(), mat.val.begin()));
-            Solver solver(world, A, p, bp);
+            if constexpr (_enable_mpi) {
+                amgcl::mpi::communicator world(MPI_COMM_WORLD);
+                auto A = std::make_shared<amgcl::mpi::distributed_matrix<typename Solver::backend_type>>(
+                        world,
+                        *amgcl::adapter::zero_copy(rows, mat.row.begin(), mat.col.begin(), mat.val.begin()));
+                solver = std::make_unique<Solver>(world, A, p, bp);
+            } else {
+                auto A = amgcl::adapter::zero_copy(rows, mat.row.begin(), mat.col.begin(), mat.val.begin());
+                //auto A_tie = std::tie(rows, mat.row, mat.col, mat.val);
+                solver = std::make_unique<Solver>(*A, p, bp);
+            }
 #else
             auto A = amgcl::adapter::zero_copy(rows, mat.row.begin(), mat.col.begin(), mat.val.begin());
             //auto A_tie = std::tie(rows, mat.row, mat.col, mat.val);
-            Solver solver(*A, p, bp);
+            solver = std::make_unique<Solver>(*A, p, bp);
 #endif
             //Solver solver(A_tie, p, bp);
             int iters;
             double error;
-            std::tie(iters, error) = solver(mat.rhs, x);
+            std::tie(iters, error) = (*solver)(mat.rhs, x);
             if (verbose) { OP_INFO("AMGCL report: iter = {}, relerr = {}", iters, error); }
         }
 
@@ -63,11 +72,17 @@ namespace OpFlow {
             if (!solver || rebuilt_period.has_value() && solve_counter % rebuilt_period.value() == 0) {
                 int rows = mat.row.size() - 1;
 #if defined(OPFLOW_WITH_MPI)
-                amgcl::mpi::communicator world(MPI_COMM_WORLD);
-                auto A = std::make_shared<amgcl::mpi::distributed_matrix<typename Solver::backend_type>>(
-                        world,
-                        *amgcl::adapter::zero_copy(rows, mat.row.begin(), mat.col.begin(), mat.val.begin()));
-                solver = std::make_unique<Solver>(world, A, p, bp);
+                if constexpr (_enable_mpi) {
+                    amgcl::mpi::communicator world(MPI_COMM_WORLD);
+                    auto A = std::make_shared<amgcl::mpi::distributed_matrix<typename Solver::backend_type>>(
+                            world, *amgcl::adapter::zero_copy(rows, mat.row.begin(), mat.col.begin(),
+                                                              mat.val.begin()));
+                    solver = std::make_unique<Solver>(world, A, p, bp);
+                } else {
+                    auto A = amgcl::adapter::zero_copy(rows, mat.row.begin(), mat.col.begin(),
+                                                       mat.val.begin());
+                    solver = std::make_unique<Solver>(*A, p, bp);
+                }
 #else
                 auto A = amgcl::adapter::zero_copy(rows, mat.row.begin(), mat.col.begin(), mat.val.begin());
                 solver = std::make_unique<Solver>(*A, p, bp);
