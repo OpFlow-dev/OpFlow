@@ -1,14 +1,14 @@
-#include <vector>
 #include <iostream>
+#include <vector>
 
-#include <amgcl/backend/builtin.hpp>
 #include <amgcl/adapter/crs_tuple.hpp>
+#include <amgcl/backend/builtin.hpp>
 #include <amgcl/coarsening/rigid_body_modes.hpp>
 
-#include <amgcl/mpi/distributed_matrix.hpp>
-#include <amgcl/mpi/make_solver.hpp>
 #include <amgcl/mpi/amg.hpp>
 #include <amgcl/mpi/coarsening/smoothed_aggregation.hpp>
+#include <amgcl/mpi/distributed_matrix.hpp>
+#include <amgcl/mpi/make_solver.hpp>
 #include <amgcl/mpi/relaxation/spai0.hpp>
 #include <amgcl/mpi/solver/cg.hpp>
 
@@ -16,9 +16,9 @@
 #include <amgcl/profiler.hpp>
 
 #if defined(AMGCL_HAVE_PARMETIS)
-#  include <amgcl/mpi/partition/parmetis.hpp>
+#include <amgcl/mpi/partition/parmetis.hpp>
 #elif defined(AMGCL_HAVE_SCOTCH)
-#  include <amgcl/mpi/partition/ptscotch.hpp>
+#include <amgcl/mpi/partition/ptscotch.hpp>
 #endif
 
 int main(int argc, char *argv[]) {
@@ -62,38 +62,34 @@ int main(int argc, char *argv[]) {
     prof.toc("read");
 
     if (world.rank == 0) {
-        std::cout
-            << "Matrix " << argv[1] << ": " << rows << "x" << rows << std::endl
-            << "RHS "    << argv[2] << ": " << rows << "x1" << std::endl
-            << "Coords " << argv[3] << ": " << rows / 3 << "x3" << std::endl;
+        std::cout << "Matrix " << argv[1] << ": " << rows << "x" << rows << std::endl
+                  << "RHS " << argv[2] << ": " << rows << "x1" << std::endl
+                  << "Coords " << argv[3] << ": " << rows / 3 << "x3" << std::endl;
     }
 
     // Declare the backends and the solver type
-    typedef amgcl::backend::builtin<double> SBackend; // the solver backend
-    typedef amgcl::backend::builtin<float>  PBackend; // the preconditioner backend
+    typedef amgcl::backend::builtin<double> SBackend;// the solver backend
+    typedef amgcl::backend::builtin<float> PBackend; // the preconditioner backend
 
     typedef amgcl::mpi::make_solver<
-        amgcl::mpi::amg<
-            PBackend,
-            amgcl::mpi::coarsening::smoothed_aggregation<PBackend>,
-            amgcl::mpi::relaxation::spai0<PBackend>
-            >,
-        amgcl::mpi::solver::cg<PBackend>
-        > Solver;
+            amgcl::mpi::amg<PBackend, amgcl::mpi::coarsening::smoothed_aggregation<PBackend>,
+                            amgcl::mpi::relaxation::spai0<PBackend>>,
+            amgcl::mpi::solver::cg<PBackend>>
+            Solver;
 
     // The distributed matrix
-    auto A = std::make_shared<amgcl::mpi::distributed_matrix<SBackend>>(
-            world, std::tie(chunk, ptr, col, val));
+    auto A = std::make_shared<amgcl::mpi::distributed_matrix<SBackend>>(world,
+                                                                        std::tie(chunk, ptr, col, val));
 
     // Partition the matrix, the RHS vector, and the coordinates.
     // If neither ParMETIS not PT-SCOTCH are not available,
     // just keep the current naive partitioning.
 #if defined(AMGCL_HAVE_PARMETIS) || defined(AMGCL_HAVE_SCOTCH)
-#  if defined(AMGCL_HAVE_PARMETIS)
+#if defined(AMGCL_HAVE_PARMETIS)
     typedef amgcl::mpi::partition::parmetis<SBackend> Partition;
-#  elif defined(AMGCL_HAVE_SCOTCH)
+#elif defined(AMGCL_HAVE_SCOTCH)
     typedef amgcl::mpi::partition::ptscotch<SBackend> Partition;
-#  endif
+#endif
 
     if (world.size > 1) {
         auto t = prof.scoped_tic("partition");
@@ -132,8 +128,8 @@ int main(int argc, char *argv[]) {
     // The function returns the number of near null-space vectors
     // (3 in 2D case, 6 in 3D case) and writes the vectors to the
     // std::vector<double> specified as the last argument:
-    prm.precond.coarsening.aggr.nullspace.cols = amgcl::coarsening::rigid_body_modes(
-            3, coo, prm.precond.coarsening.aggr.nullspace.B);
+    prm.precond.coarsening.aggr.nullspace.cols
+            = amgcl::coarsening::rigid_body_modes(3, coo, prm.precond.coarsening.aggr.nullspace.B);
 
     // Initialize the solver with the system matrix.
     prof.tic("setup");
@@ -155,9 +151,6 @@ int main(int argc, char *argv[]) {
     // Output the number of iterations, the relative error,
     // and the profiling data:
     if (world.rank == 0) {
-        std::cout
-            << "Iters: " << iters << std::endl
-            << "Error: " << error << std::endl
-            << prof << std::endl;
+        std::cout << "Iters: " << iters << std::endl << "Error: " << error << std::endl << prof << std::endl;
     }
 }

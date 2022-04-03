@@ -31,39 +31,38 @@ THE SOFTWARE.
  * \brief  Builtin backend that uses scalar matrices to build the hierarchy, but stores the computed matrix in block format.
  */
 
+#include <amgcl/adapter/block_matrix.hpp>
 #include <amgcl/backend/builtin.hpp>
 #include <amgcl/value_type/interface.hpp>
-#include <amgcl/adapter/block_matrix.hpp>
 
 namespace amgcl {
-namespace backend {
+    namespace backend {
 
-// Hybrid backend uses scalar matrices to build the hierarchy,
-// but stores the computed matrices in the block format.
-template <typename BlockType, typename ColumnType = ptrdiff_t, typename PointerType = ColumnType>
-struct builtin_hybrid : public builtin<typename math::scalar_of<BlockType>::type, ColumnType, PointerType>
-{
-    typedef typename math::scalar_of<BlockType>::type ScalarType;
-    typedef builtin<ScalarType, ColumnType, PointerType> Base;
-    typedef crs<BlockType, ColumnType, PointerType> matrix;
-    struct provides_row_iterator : std::false_type {};
+        // Hybrid backend uses scalar matrices to build the hierarchy,
+        // but stores the computed matrices in the block format.
+        template <typename BlockType, typename ColumnType = ptrdiff_t, typename PointerType = ColumnType>
+        struct builtin_hybrid
+            : public builtin<typename math::scalar_of<BlockType>::type, ColumnType, PointerType> {
+            typedef typename math::scalar_of<BlockType>::type ScalarType;
+            typedef builtin<ScalarType, ColumnType, PointerType> Base;
+            typedef crs<BlockType, ColumnType, PointerType> matrix;
+            struct provides_row_iterator : std::false_type {};
 
-    static std::shared_ptr<matrix>
-    copy_matrix(std::shared_ptr<typename Base::matrix> As, const typename Base::params&)
-    {
-        return std::make_shared<matrix>(amgcl::adapter::block_matrix<BlockType>(*As));
-    }
-};
+            static std::shared_ptr<matrix> copy_matrix(std::shared_ptr<typename Base::matrix> As,
+                                                       const typename Base::params&) {
+                return std::make_shared<matrix>(amgcl::adapter::block_matrix<BlockType>(*As));
+            }
+        };
 
-template <typename B1, typename B2, typename C, typename P>
-struct backends_compatible< builtin_hybrid<B1, C, P>, builtin_hybrid<B2, C, P> > : std::true_type {};
+        template <typename B1, typename B2, typename C, typename P>
+        struct backends_compatible<builtin_hybrid<B1, C, P>, builtin_hybrid<B2, C, P>> : std::true_type {};
 
-template <typename T1, typename B2, typename C, typename P>
-struct backends_compatible< builtin<T1, C, P>, builtin_hybrid<B2, C, P> > : std::true_type {};
+        template <typename T1, typename B2, typename C, typename P>
+        struct backends_compatible<builtin<T1, C, P>, builtin_hybrid<B2, C, P>> : std::true_type {};
 
-template <typename B1, typename T2, typename C, typename P>
-struct backends_compatible< builtin_hybrid<B1, C, P>, builtin<T2, C, P> > : std::true_type {};
+        template <typename B1, typename T2, typename C, typename P>
+        struct backends_compatible<builtin_hybrid<B1, C, P>, builtin<T2, C, P>> : std::true_type {};
 
-} // namespace backend
-} // namespace amgcl
+    }// namespace backend
+}// namespace amgcl
 #endif

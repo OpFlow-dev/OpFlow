@@ -36,247 +36,238 @@ THE SOFTWARE.
 #include <type_traits>
 
 #ifdef AMGCL_NO_BOOST
-#  error Runtime interface relies on Boost.PropertyTree!
+#error Runtime interface relies on Boost.PropertyTree!
 #endif
 
 #include <boost/property_tree/ptree.hpp>
 
-#include <amgcl/util.hpp>
-#include <amgcl/solver/cg.hpp>
 #include <amgcl/solver/bicgstab.hpp>
 #include <amgcl/solver/bicgstabl.hpp>
-#include <amgcl/solver/gmres.hpp>
-#include <amgcl/solver/lgmres.hpp>
-#include <amgcl/solver/fgmres.hpp>
-#include <amgcl/solver/idrs.hpp>
-#include <amgcl/solver/richardson.hpp>
-#include <amgcl/solver/preonly.hpp>
+#include <amgcl/solver/cg.hpp>
 #include <amgcl/solver/detail/default_inner_product.hpp>
+#include <amgcl/solver/fgmres.hpp>
+#include <amgcl/solver/gmres.hpp>
+#include <amgcl/solver/idrs.hpp>
+#include <amgcl/solver/lgmres.hpp>
+#include <amgcl/solver/preonly.hpp>
+#include <amgcl/solver/richardson.hpp>
+#include <amgcl/util.hpp>
 
 namespace amgcl {
-namespace runtime {
-namespace solver {
+    namespace runtime {
+        namespace solver {
 
-enum type {
-    cg,         ///< Conjugate gradients method
-    bicgstab,   ///< BiConjugate Gradient Stabilized
-    bicgstabl,  ///< BiCGStab(ell)
-    gmres,      ///< GMRES
-    lgmres,     ///< LGMRES
-    fgmres,     ///< FGMRES
-    idrs,       ///< IDR(s)
-    richardson, ///< Richardson iteration
-    preonly     ///< Only apply preconditioner once
-};
+            enum type {
+                cg,        ///< Conjugate gradients method
+                bicgstab,  ///< BiConjugate Gradient Stabilized
+                bicgstabl, ///< BiCGStab(ell)
+                gmres,     ///< GMRES
+                lgmres,    ///< LGMRES
+                fgmres,    ///< FGMRES
+                idrs,      ///< IDR(s)
+                richardson,///< Richardson iteration
+                preonly    ///< Only apply preconditioner once
+            };
 
-inline std::ostream& operator<<(std::ostream &os, type s)
-{
-    switch (s) {
-        case cg:
-            return os << "cg";
-        case bicgstab:
-            return os << "bicgstab";
-        case bicgstabl:
-            return os << "bicgstabl";
-        case gmres:
-            return os << "gmres";
-        case lgmres:
-            return os << "lgmres";
-        case fgmres:
-            return os << "fgmres";
-        case idrs:
-            return os << "idrs";
-        case richardson:
-            return os << "richardson";
-        case preonly:
-            return os << "preonly";
-        default:
-            return os << "???";
-    }
-}
+            inline std::ostream &operator<<(std::ostream &os, type s) {
+                switch (s) {
+                    case cg:
+                        return os << "cg";
+                    case bicgstab:
+                        return os << "bicgstab";
+                    case bicgstabl:
+                        return os << "bicgstabl";
+                    case gmres:
+                        return os << "gmres";
+                    case lgmres:
+                        return os << "lgmres";
+                    case fgmres:
+                        return os << "fgmres";
+                    case idrs:
+                        return os << "idrs";
+                    case richardson:
+                        return os << "richardson";
+                    case preonly:
+                        return os << "preonly";
+                    default:
+                        return os << "???";
+                }
+            }
 
-inline std::istream& operator>>(std::istream &in, type &s)
-{
-    std::string val;
-    in >> val;
+            inline std::istream &operator>>(std::istream &in, type &s) {
+                std::string val;
+                in >> val;
 
-    if (val == "cg")
-        s = cg;
-    else if (val == "bicgstab")
-        s = bicgstab;
-    else if (val == "bicgstabl")
-        s = bicgstabl;
-    else if (val == "gmres")
-        s = gmres;
-    else if (val == "lgmres")
-        s = lgmres;
-    else if (val == "fgmres")
-        s = fgmres;
-    else if (val == "idrs")
-        s = idrs;
-    else if (val == "richardson")
-        s = richardson;
-    else if (val == "preonly")
-        s = preonly;
-    else
-        throw std::invalid_argument("Invalid solver value. Valid choices are: "
-                "cg, bicgstab, bicgstabl, gmres, lgmres, fgmres, idrs, richardson, preonly.");
+                if (val == "cg") s = cg;
+                else if (val == "bicgstab")
+                    s = bicgstab;
+                else if (val == "bicgstabl")
+                    s = bicgstabl;
+                else if (val == "gmres")
+                    s = gmres;
+                else if (val == "lgmres")
+                    s = lgmres;
+                else if (val == "fgmres")
+                    s = fgmres;
+                else if (val == "idrs")
+                    s = idrs;
+                else if (val == "richardson")
+                    s = richardson;
+                else if (val == "preonly")
+                    s = preonly;
+                else
+                    throw std::invalid_argument(
+                            "Invalid solver value. Valid choices are: "
+                            "cg, bicgstab, bicgstabl, gmres, lgmres, fgmres, idrs, richardson, preonly.");
 
-    return in;
-}
+                return in;
+            }
 
-template <
-    class Backend,
-    class InnerProduct = amgcl::solver::detail::default_inner_product
-    >
-struct wrapper {
-    typedef boost::property_tree::ptree                params;
-    typedef typename Backend::params                   backend_params;
-    typedef typename Backend::value_type               value_type;
-    typedef typename math::scalar_of<value_type>::type scalar_type;
-    typedef Backend                                    backend_type;
+            template <class Backend, class InnerProduct = amgcl::solver::detail::default_inner_product>
+            struct wrapper {
+                typedef boost::property_tree::ptree params;
+                typedef typename Backend::params backend_params;
+                typedef typename Backend::value_type value_type;
+                typedef typename math::scalar_of<value_type>::type scalar_type;
+                typedef Backend backend_type;
 
-    type s;
-    void *handle;
+                type s;
+                void *handle;
 
-    wrapper(size_t n, params prm = params(),
-            const backend_params &bprm = backend_params(),
-            const InnerProduct &inner_product = InnerProduct()
-            )
-        : s(prm.get("type", runtime::solver::bicgstab)), handle(0)
-    {
-        if (!prm.erase("type")) AMGCL_PARAM_MISSING("type");
+                wrapper(size_t n, params prm = params(), const backend_params &bprm = backend_params(),
+                        const InnerProduct &inner_product = InnerProduct())
+                    : s(prm.get("type", runtime::solver::bicgstab)), handle(0) {
+                    if (!prm.erase("type")) AMGCL_PARAM_MISSING("type");
 
-        switch(s) {
+                    switch (s) {
 
-#define AMGCL_RUNTIME_SOLVER(type) \
-            case type: \
-                handle = static_cast<void*>(new amgcl::solver::type<Backend, InnerProduct>(n, prm, bprm, inner_product)); \
-                break
+#define AMGCL_RUNTIME_SOLVER(type)                                                                           \
+    case type:                                                                                               \
+        handle = static_cast<void *>(                                                                        \
+                new amgcl::solver::type<Backend, InnerProduct>(n, prm, bprm, inner_product));                \
+        break
 
-            AMGCL_RUNTIME_SOLVER(cg);
-            AMGCL_RUNTIME_SOLVER(bicgstab);
-            AMGCL_RUNTIME_SOLVER(bicgstabl);
-            AMGCL_RUNTIME_SOLVER(gmres);
-            AMGCL_RUNTIME_SOLVER(lgmres);
-            AMGCL_RUNTIME_SOLVER(fgmres);
-            AMGCL_RUNTIME_SOLVER(idrs);
-            AMGCL_RUNTIME_SOLVER(richardson);
-            AMGCL_RUNTIME_SOLVER(preonly);
+                        AMGCL_RUNTIME_SOLVER(cg);
+                        AMGCL_RUNTIME_SOLVER(bicgstab);
+                        AMGCL_RUNTIME_SOLVER(bicgstabl);
+                        AMGCL_RUNTIME_SOLVER(gmres);
+                        AMGCL_RUNTIME_SOLVER(lgmres);
+                        AMGCL_RUNTIME_SOLVER(fgmres);
+                        AMGCL_RUNTIME_SOLVER(idrs);
+                        AMGCL_RUNTIME_SOLVER(richardson);
+                        AMGCL_RUNTIME_SOLVER(preonly);
 
 #undef AMGCL_RUNTIME_SOLVER
 
-            default:
-                throw std::invalid_argument("Unsupported solver type");
-        }
-    }
+                        default:
+                            throw std::invalid_argument("Unsupported solver type");
+                    }
+                }
 
-    ~wrapper() {
-        switch(s) {
+                ~wrapper() {
+                    switch (s) {
 
-#define AMGCL_RUNTIME_SOLVER(type) \
-            case type: \
-                delete static_cast<amgcl::solver::type<Backend, InnerProduct>*>(handle); \
-                break
+#define AMGCL_RUNTIME_SOLVER(type)                                                                           \
+    case type:                                                                                               \
+        delete static_cast<amgcl::solver::type<Backend, InnerProduct> *>(handle);                            \
+        break
 
-            AMGCL_RUNTIME_SOLVER(cg);
-            AMGCL_RUNTIME_SOLVER(bicgstab);
-            AMGCL_RUNTIME_SOLVER(bicgstabl);
-            AMGCL_RUNTIME_SOLVER(gmres);
-            AMGCL_RUNTIME_SOLVER(lgmres);
-            AMGCL_RUNTIME_SOLVER(fgmres);
-            AMGCL_RUNTIME_SOLVER(idrs);
-            AMGCL_RUNTIME_SOLVER(richardson);
-            AMGCL_RUNTIME_SOLVER(preonly);
-
-#undef AMGCL_RUNTIME_SOLVER
-        }
-    }
-
-    template <class Matrix, class Precond, class Vec1, class Vec2>
-    std::tuple<size_t, scalar_type> operator()(
-            const Matrix &A, const Precond &P, const Vec1 &rhs, Vec2 &&x) const
-    {
-        switch(s) {
-
-#define AMGCL_RUNTIME_SOLVER(type) \
-            case type: \
-                return static_cast<amgcl::solver::type<Backend, InnerProduct>*>(handle)->operator()(A, P, rhs, x)
-
-            AMGCL_RUNTIME_SOLVER(cg);
-            AMGCL_RUNTIME_SOLVER(bicgstab);
-            AMGCL_RUNTIME_SOLVER(bicgstabl);
-            AMGCL_RUNTIME_SOLVER(gmres);
-            AMGCL_RUNTIME_SOLVER(lgmres);
-            AMGCL_RUNTIME_SOLVER(fgmres);
-            AMGCL_RUNTIME_SOLVER(idrs);
-            AMGCL_RUNTIME_SOLVER(richardson);
-            AMGCL_RUNTIME_SOLVER(preonly);
+                        AMGCL_RUNTIME_SOLVER(cg);
+                        AMGCL_RUNTIME_SOLVER(bicgstab);
+                        AMGCL_RUNTIME_SOLVER(bicgstabl);
+                        AMGCL_RUNTIME_SOLVER(gmres);
+                        AMGCL_RUNTIME_SOLVER(lgmres);
+                        AMGCL_RUNTIME_SOLVER(fgmres);
+                        AMGCL_RUNTIME_SOLVER(idrs);
+                        AMGCL_RUNTIME_SOLVER(richardson);
+                        AMGCL_RUNTIME_SOLVER(preonly);
 
 #undef AMGCL_RUNTIME_SOLVER
+                    }
+                }
 
-            default:
-                throw std::invalid_argument("Unsupported solver type");
-        }
-    }
+                template <class Matrix, class Precond, class Vec1, class Vec2>
+                std::tuple<size_t, scalar_type> operator()(const Matrix &A, const Precond &P, const Vec1 &rhs,
+                                                           Vec2 &&x) const {
+                    switch (s) {
 
-    template <class Precond, class Vec1, class Vec2>
-    std::tuple<size_t, scalar_type> operator()(
-            const Precond &P, const Vec1 &rhs, Vec2 &&x) const
-    {
-        return (*this)(P.system_matrix(), P, rhs, x);
-    }
+#define AMGCL_RUNTIME_SOLVER(type)                                                                           \
+    case type:                                                                                               \
+        return static_cast<amgcl::solver::type<Backend, InnerProduct> *>(handle)->operator()(A, P, rhs, x)
 
-    friend std::ostream& operator<<(std::ostream &os, const wrapper &w) {
-        switch(w.s) {
-
-#define AMGCL_RUNTIME_SOLVER(type) \
-            case type: \
-                return os << *static_cast<amgcl::solver::type<Backend, InnerProduct>*>(w.handle)
-
-            AMGCL_RUNTIME_SOLVER(cg);
-            AMGCL_RUNTIME_SOLVER(bicgstab);
-            AMGCL_RUNTIME_SOLVER(bicgstabl);
-            AMGCL_RUNTIME_SOLVER(gmres);
-            AMGCL_RUNTIME_SOLVER(lgmres);
-            AMGCL_RUNTIME_SOLVER(fgmres);
-            AMGCL_RUNTIME_SOLVER(idrs);
-            AMGCL_RUNTIME_SOLVER(richardson);
-            AMGCL_RUNTIME_SOLVER(preonly);
+                        AMGCL_RUNTIME_SOLVER(cg);
+                        AMGCL_RUNTIME_SOLVER(bicgstab);
+                        AMGCL_RUNTIME_SOLVER(bicgstabl);
+                        AMGCL_RUNTIME_SOLVER(gmres);
+                        AMGCL_RUNTIME_SOLVER(lgmres);
+                        AMGCL_RUNTIME_SOLVER(fgmres);
+                        AMGCL_RUNTIME_SOLVER(idrs);
+                        AMGCL_RUNTIME_SOLVER(richardson);
+                        AMGCL_RUNTIME_SOLVER(preonly);
 
 #undef AMGCL_RUNTIME_SOLVER
 
-            default:
-                throw std::invalid_argument("Unsupported solver type");
-        }
-    }
+                        default:
+                            throw std::invalid_argument("Unsupported solver type");
+                    }
+                }
 
-    size_t bytes() const {
-        switch(s) {
+                template <class Precond, class Vec1, class Vec2>
+                std::tuple<size_t, scalar_type> operator()(const Precond &P, const Vec1 &rhs,
+                                                           Vec2 &&x) const {
+                    return (*this)(P.system_matrix(), P, rhs, x);
+                }
 
-#define AMGCL_RUNTIME_SOLVER(type) \
-            case type: \
-                return backend::bytes(*static_cast<amgcl::solver::type<Backend, InnerProduct>*>(handle))
+                friend std::ostream &operator<<(std::ostream &os, const wrapper &w) {
+                    switch (w.s) {
 
-            AMGCL_RUNTIME_SOLVER(cg);
-            AMGCL_RUNTIME_SOLVER(bicgstab);
-            AMGCL_RUNTIME_SOLVER(bicgstabl);
-            AMGCL_RUNTIME_SOLVER(gmres);
-            AMGCL_RUNTIME_SOLVER(lgmres);
-            AMGCL_RUNTIME_SOLVER(fgmres);
-            AMGCL_RUNTIME_SOLVER(idrs);
-            AMGCL_RUNTIME_SOLVER(richardson);
-            AMGCL_RUNTIME_SOLVER(preonly);
+#define AMGCL_RUNTIME_SOLVER(type)                                                                           \
+    case type:                                                                                               \
+        return os << *static_cast<amgcl::solver::type<Backend, InnerProduct> *>(w.handle)
+
+                        AMGCL_RUNTIME_SOLVER(cg);
+                        AMGCL_RUNTIME_SOLVER(bicgstab);
+                        AMGCL_RUNTIME_SOLVER(bicgstabl);
+                        AMGCL_RUNTIME_SOLVER(gmres);
+                        AMGCL_RUNTIME_SOLVER(lgmres);
+                        AMGCL_RUNTIME_SOLVER(fgmres);
+                        AMGCL_RUNTIME_SOLVER(idrs);
+                        AMGCL_RUNTIME_SOLVER(richardson);
+                        AMGCL_RUNTIME_SOLVER(preonly);
 
 #undef AMGCL_RUNTIME_SOLVER
 
-            default:
-                throw std::invalid_argument("Unsupported solver type");
-        }
-    }
-};
+                        default:
+                            throw std::invalid_argument("Unsupported solver type");
+                    }
+                }
 
-} // namespace solver
-} // namespace runtime
-} // namespace amgcl
+                size_t bytes() const {
+                    switch (s) {
+
+#define AMGCL_RUNTIME_SOLVER(type)                                                                           \
+    case type:                                                                                               \
+        return backend::bytes(*static_cast<amgcl::solver::type<Backend, InnerProduct> *>(handle))
+
+                        AMGCL_RUNTIME_SOLVER(cg);
+                        AMGCL_RUNTIME_SOLVER(bicgstab);
+                        AMGCL_RUNTIME_SOLVER(bicgstabl);
+                        AMGCL_RUNTIME_SOLVER(gmres);
+                        AMGCL_RUNTIME_SOLVER(lgmres);
+                        AMGCL_RUNTIME_SOLVER(fgmres);
+                        AMGCL_RUNTIME_SOLVER(idrs);
+                        AMGCL_RUNTIME_SOLVER(richardson);
+                        AMGCL_RUNTIME_SOLVER(preonly);
+
+#undef AMGCL_RUNTIME_SOLVER
+
+                        default:
+                            throw std::invalid_argument("Unsupported solver type");
+                    }
+                }
+            };
+
+        }// namespace solver
+    }    // namespace runtime
+}// namespace amgcl
 #endif

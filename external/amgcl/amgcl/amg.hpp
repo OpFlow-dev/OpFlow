@@ -31,8 +31,8 @@ THE SOFTWARE.
  * \brief  An AMG preconditioner.
  */
 
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <list>
 #include <memory>
 
@@ -43,8 +43,8 @@ THE SOFTWARE.
 /// Primary namespace.
 namespace amgcl {
 
-/// Algebraic multigrid method.
-/**
+    /// Algebraic multigrid method.
+    /**
  * AMG is one the most effective methods for solution of large sparse
  * unstructured systems of equations, arising, for example, from discretization
  * of PDEs on unstructured grids \cite Trottenberg2001. The method can be used
@@ -60,30 +60,26 @@ namespace amgcl {
  * Instance of the class builds the AMG hierarchy for the given system matrix
  * and is intended to be used as a preconditioner.
  */
-template <
-    class Backend,
-    template <class> class Coarsening,
-    template <class> class Relax
-    >
-class amg {
+    template <class Backend, template <class> class Coarsening, template <class> class Relax>
+    class amg {
     public:
         typedef Backend backend_type;
 
         typedef typename Backend::value_type value_type;
-        typedef typename Backend::col_type   col_type;
-        typedef typename Backend::ptr_type   ptr_type;
-        typedef typename Backend::matrix     matrix;
-        typedef typename Backend::vector     vector;
+        typedef typename Backend::col_type col_type;
+        typedef typename Backend::ptr_type ptr_type;
+        typedef typename Backend::matrix matrix;
+        typedef typename Backend::vector vector;
 
-        typedef Coarsening<Backend>            coarsening_type;
-        typedef Relax<Backend>                 relax_type;
+        typedef Coarsening<Backend> coarsening_type;
+        typedef Relax<Backend> relax_type;
 
         typedef typename backend::builtin<value_type, col_type, ptr_type>::matrix build_matrix;
 
         typedef typename math::scalar_of<value_type>::type scalar_type;
 
         /// Backend parameters.
-        typedef typename Backend::params     backend_params;
+        typedef typename Backend::params backend_params;
 
         /// Parameters of the method.
         /**
@@ -94,8 +90,8 @@ class amg {
             typedef typename coarsening_type::params coarsening_params;
             typedef typename relax_type::params relax_params;
 
-            coarsening_params coarsening;   ///< Coarsening parameters.
-            relax_params      relax;        ///< Relaxation parameters.
+            coarsening_params coarsening;///< Coarsening parameters.
+            relax_params relax;          ///< Relaxation parameters.
 
             /// Specifies when level is coarse enough to be solved directly.
             /**
@@ -134,39 +130,25 @@ class amg {
             /// Keep matrices in internal format to allow for quick rebuild of the hierarchy
             bool allow_rebuild;
 
-            params() :
-                coarse_enough( Backend::direct_solver::coarse_enough() ),
-                direct_coarse(true),
-                max_levels( std::numeric_limits<unsigned>::max() ),
-                npre(1), npost(1), ncycle(1), pre_cycles(1),
-                allow_rebuild(std::is_same<matrix, build_matrix>::value)
-            {}
+            params()
+                : coarse_enough(Backend::direct_solver::coarse_enough()), direct_coarse(true),
+                  max_levels(std::numeric_limits<unsigned>::max()), npre(1), npost(1), ncycle(1),
+                  pre_cycles(1), allow_rebuild(std::is_same<matrix, build_matrix>::value) {}
 
 #ifndef AMGCL_NO_BOOST
             params(const boost::property_tree::ptree &p)
-                : AMGCL_PARAMS_IMPORT_CHILD(p, coarsening),
-                  AMGCL_PARAMS_IMPORT_CHILD(p, relax),
-                  AMGCL_PARAMS_IMPORT_VALUE(p, coarse_enough),
-                  AMGCL_PARAMS_IMPORT_VALUE(p, direct_coarse),
-                  AMGCL_PARAMS_IMPORT_VALUE(p, max_levels),
-                  AMGCL_PARAMS_IMPORT_VALUE(p, npre),
-                  AMGCL_PARAMS_IMPORT_VALUE(p, npost),
-                  AMGCL_PARAMS_IMPORT_VALUE(p, ncycle),
-                  AMGCL_PARAMS_IMPORT_VALUE(p, pre_cycles),
-                  AMGCL_PARAMS_IMPORT_VALUE(p, allow_rebuild)
-            {
-                check_params(p, {"coarsening", "relax", "coarse_enough",
-                        "direct_coarse", "max_levels", "npre", "npost",
-                        "ncycle",  "pre_cycles", "allow_rebuild"});
+                : AMGCL_PARAMS_IMPORT_CHILD(p, coarsening), AMGCL_PARAMS_IMPORT_CHILD(p, relax),
+                  AMGCL_PARAMS_IMPORT_VALUE(p, coarse_enough), AMGCL_PARAMS_IMPORT_VALUE(p, direct_coarse),
+                  AMGCL_PARAMS_IMPORT_VALUE(p, max_levels), AMGCL_PARAMS_IMPORT_VALUE(p, npre),
+                  AMGCL_PARAMS_IMPORT_VALUE(p, npost), AMGCL_PARAMS_IMPORT_VALUE(p, ncycle),
+                  AMGCL_PARAMS_IMPORT_VALUE(p, pre_cycles), AMGCL_PARAMS_IMPORT_VALUE(p, allow_rebuild) {
+                check_params(p, {"coarsening", "relax", "coarse_enough", "direct_coarse", "max_levels",
+                                 "npre", "npost", "ncycle", "pre_cycles", "allow_rebuild"});
 
                 precondition(max_levels > 0, "max_levels should be positive");
             }
 
-            void get(
-                    boost::property_tree::ptree &p,
-                    const std::string &path = ""
-                    ) const
-            {
+            void get(boost::property_tree::ptree &p, const std::string &path = "") const {
                 AMGCL_PARAMS_EXPORT_CHILD(p, path, coarsening);
                 AMGCL_PARAMS_EXPORT_CHILD(p, path, relax);
                 AMGCL_PARAMS_EXPORT_VALUE(p, path, coarse_enough);
@@ -192,12 +174,8 @@ class amg {
          * \sa amgcl/adapter/crs_tuple.hpp
          */
         template <class Matrix>
-        amg(
-                const Matrix &M,
-                const params &p = params(),
-                const backend_params &bprm = backend_params()
-           ) : prm(p)
-        {
+        amg(const Matrix &M, const params &p = params(), const backend_params &bprm = backend_params())
+            : prm(p) {
             auto A = std::make_shared<build_matrix>(M);
             sort_rows(*A);
 
@@ -217,12 +195,9 @@ class amg {
          *
          * \sa amgcl/adapter/crs_tuple.hpp
          */
-        amg(
-                std::shared_ptr<build_matrix> A,
-                const params &p = params(),
-                const backend_params &bprm = backend_params()
-           ) : prm(p)
-        {
+        amg(std::shared_ptr<build_matrix> A, const params &p = params(),
+            const backend_params &bprm = backend_params())
+            : prm(p) {
             do_init(A, bprm);
         }
 
@@ -232,11 +207,7 @@ class amg {
          * operators created during the initial setup are reused.
          */
         template <class Matrix>
-        void rebuild(
-                const Matrix &M,
-                const backend_params &bprm = backend_params()
-                )
-        {
+        void rebuild(const Matrix &M, const backend_params &bprm = backend_params()) {
             auto A = std::make_shared<build_matrix>(M);
             sort_rows(*A);
             rebuild(A, bprm);
@@ -247,24 +218,15 @@ class amg {
          * This requires for prm.allow_rebuild to be set. The transfer
          * operators created during the initial setup are reused.
          */
-        void rebuild(
-                std::shared_ptr<build_matrix> A,
-                const backend_params &bprm = backend_params()
-                )
-        {
-            precondition(prm.allow_rebuild,
-                    "allow_rebuild is not set!");
-            precondition(
-                    backend::rows(*A) == backend::rows(system_matrix()) &&
-                    backend::cols(*A) == backend::rows(*A),
-                    "Matrix dimensions differ from the original ones!"
-                    );
+        void rebuild(std::shared_ptr<build_matrix> A, const backend_params &bprm = backend_params()) {
+            precondition(prm.allow_rebuild, "allow_rebuild is not set!");
+            precondition(backend::rows(*A) == backend::rows(system_matrix())
+                                 && backend::cols(*A) == backend::rows(*A),
+                         "Matrix dimensions differ from the original ones!");
 
             AMGCL_TIC("rebuild");
             coarsening_type C(prm.coarsening);
-            for(auto &level : levels) {
-                A = level.rebuild(A, C, prm, bprm);
-            }
+            for (auto &level : levels) { A = level.rebuild(A, C, prm, bprm); }
             AMGCL_TOC("rebuild");
         }
 
@@ -289,27 +251,23 @@ class amg {
         void apply(const Vec1 &rhs, Vec2 &&x) const {
             if (prm.pre_cycles) {
                 backend::clear(x);
-                for(unsigned i = 0; i < prm.pre_cycles; ++i)
-                    cycle(rhs, x);
+                for (unsigned i = 0; i < prm.pre_cycles; ++i) cycle(rhs, x);
             } else {
                 backend::copy(rhs, x);
             }
         }
 
         /// Returns the system matrix from the finest level.
-        std::shared_ptr<matrix> system_matrix_ptr() const {
-            return levels.front().A;
-        }
+        std::shared_ptr<matrix> system_matrix_ptr() const { return levels.front().A; }
 
-        const matrix& system_matrix() const {
-            return *system_matrix_ptr();
-        }
+        const matrix &system_matrix() const { return *system_matrix_ptr(); }
 
         size_t bytes() const {
             size_t b = 0;
-            for(const auto &lvl : levels) b += lvl.bytes();
+            for (const auto &lvl : levels) b += lvl.bytes();
             return b;
         }
+
     private:
         struct level {
             size_t m_rows, m_nonzeros;
@@ -325,7 +283,7 @@ class amg {
             std::shared_ptr<build_matrix> bP;
             std::shared_ptr<build_matrix> bR;
 
-            std::shared_ptr< typename Backend::direct_solver > solve;
+            std::shared_ptr<typename Backend::direct_solver> solve;
 
             std::shared_ptr<relax_type> relax;
 
@@ -348,10 +306,8 @@ class amg {
 
             level() : m_rows(0), m_nonzeros(0) {}
 
-            level(std::shared_ptr<build_matrix> A,
-                    params &prm, const backend_params &bprm)
-                : m_rows(backend::rows(*A)), m_nonzeros(backend::nonzeros(*A))
-            {
+            level(std::shared_ptr<build_matrix> A, params &prm, const backend_params &bprm)
+                : m_rows(backend::rows(*A)), m_nonzeros(backend::nonzeros(*A)) {
                 AMGCL_TIC("move to backend");
                 f = Backend::create_vector(m_rows, bprm);
                 u = Backend::create_vector(m_rows, bprm);
@@ -364,17 +320,14 @@ class amg {
                 AMGCL_TOC("relaxation");
             }
 
-            std::shared_ptr<build_matrix> step_down(
-                    std::shared_ptr<build_matrix> A,
-                    coarsening_type &C, const backend_params &bprm,
-                    bool allow_rebuild)
-            {
+            std::shared_ptr<build_matrix> step_down(std::shared_ptr<build_matrix> A, coarsening_type &C,
+                                                    const backend_params &bprm, bool allow_rebuild) {
                 AMGCL_TIC("transfer operators");
                 std::shared_ptr<build_matrix> P, R;
 
                 try {
                     std::tie(P, R) = C.transfer_operators(*A);
-                } catch(error::empty_level) {
+                } catch (error::empty_level) {
                     AMGCL_TOC("transfer operators");
                     return std::shared_ptr<build_matrix>();
                 }
@@ -401,35 +354,27 @@ class amg {
                 return A;
             }
 
-            void create_coarse(
-                    std::shared_ptr<build_matrix> A,
-                    const backend_params &bprm, bool single_level)
-            {
-                m_rows     = backend::rows(*A);
+            void create_coarse(std::shared_ptr<build_matrix> A, const backend_params &bprm,
+                               bool single_level) {
+                m_rows = backend::rows(*A);
                 m_nonzeros = backend::nonzeros(*A);
 
                 u = Backend::create_vector(m_rows, bprm);
                 f = Backend::create_vector(m_rows, bprm);
 
                 solve = Backend::create_solver(A, bprm);
-                if (single_level)
-                    this->A = Backend::copy_matrix(A, bprm);
+                if (single_level) this->A = Backend::copy_matrix(A, bprm);
             }
 
-            std::shared_ptr<build_matrix> rebuild(
-                    std::shared_ptr<build_matrix> A,
-                    const coarsening_type &C,
-                    const params &prm,
-                    const backend_params &bprm
-                    )
-            {
+            std::shared_ptr<build_matrix> rebuild(std::shared_ptr<build_matrix> A, const coarsening_type &C,
+                                                  const params &prm, const backend_params &bprm) {
                 if (this->A) {
                     AMGCL_TIC("move to backend");
                     this->A = Backend::copy_matrix(A, bprm);
                     AMGCL_TOC("move to backend");
                 }
 
-                if(relax) {
+                if (relax) {
                     AMGCL_TIC("relaxation");
                     relax = std::make_shared<relax_type>(*A, prm.relax, bprm);
                     AMGCL_TOC("relaxation");
@@ -451,35 +396,24 @@ class amg {
                 return A;
             }
 
-            size_t rows() const {
-                return m_rows;
-            }
+            size_t rows() const { return m_rows; }
 
-            size_t nonzeros() const {
-                return m_nonzeros;
-            }
+            size_t nonzeros() const { return m_nonzeros; }
         };
 
         typedef typename std::list<level>::const_iterator level_iterator;
 
         std::list<level> levels;
 
-        void do_init(
-                std::shared_ptr<build_matrix> A,
-                const backend_params &bprm = backend_params()
-           )
-        {
-            precondition(
-                    backend::rows(*A) == backend::cols(*A),
-                    "Matrix should be square!"
-                    );
+        void do_init(std::shared_ptr<build_matrix> A, const backend_params &bprm = backend_params()) {
+            precondition(backend::rows(*A) == backend::cols(*A), "Matrix should be square!");
 
             bool direct_coarse_solve = true;
 
             coarsening_type C(prm.coarsening);
 
-            while( backend::rows(*A) > prm.coarse_enough) {
-                levels.push_back( level(A, prm, bprm) );
+            while (backend::rows(*A) > prm.coarse_enough) {
+                levels.push_back(level(A, prm, bprm));
 
                 if (levels.size() >= prm.max_levels) break;
 
@@ -505,15 +439,14 @@ class amg {
                     l.create_coarse(A, bprm, levels.empty());
                     levels.push_back(l);
                 } else {
-                    levels.push_back( level(A, prm, bprm) );
+                    levels.push_back(level(A, prm, bprm));
                 }
                 AMGCL_TOC("coarsest level");
             }
         }
 
         template <class Vec1, class Vec2>
-        void cycle(level_iterator lvl, const Vec1 &rhs, Vec2 &x) const
-        {
+        void cycle(level_iterator lvl, const Vec1 &rhs, Vec2 &x) const {
             level_iterator nxt = lvl, end = levels.end();
             ++nxt;
 
@@ -524,79 +457,73 @@ class amg {
                     AMGCL_TOC("coarse");
                 } else {
                     AMGCL_TIC("relax");
-                    for(size_t i = 0; i < prm.npre;  ++i) lvl->relax->apply_pre(*lvl->A, rhs, x, *lvl->t);
-                    for(size_t i = 0; i < prm.npost; ++i) lvl->relax->apply_post(*lvl->A, rhs, x, *lvl->t);
+                    for (size_t i = 0; i < prm.npre; ++i) lvl->relax->apply_pre(*lvl->A, rhs, x, *lvl->t);
+                    for (size_t i = 0; i < prm.npost; ++i) lvl->relax->apply_post(*lvl->A, rhs, x, *lvl->t);
                     AMGCL_TOC("relax");
                 }
             } else {
                 for (size_t j = 0; j < prm.ncycle; ++j) {
                     AMGCL_TIC("relax");
-                    for(size_t i = 0; i < prm.npre; ++i)
-                        lvl->relax->apply_pre(*lvl->A, rhs, x, *lvl->t);
+                    for (size_t i = 0; i < prm.npre; ++i) lvl->relax->apply_pre(*lvl->A, rhs, x, *lvl->t);
                     AMGCL_TOC("relax");
 
                     backend::residual(rhs, *lvl->A, x, *lvl->t);
 
-                    backend::spmv(math::identity<scalar_type>(), *lvl->R, *lvl->t, math::zero<scalar_type>(), *nxt->f);
+                    backend::spmv(math::identity<scalar_type>(), *lvl->R, *lvl->t, math::zero<scalar_type>(),
+                                  *nxt->f);
 
                     backend::clear(*nxt->u);
                     cycle(nxt, *nxt->f, *nxt->u);
 
-                    backend::spmv(math::identity<scalar_type>(), *lvl->P, *nxt->u, math::identity<scalar_type>(), x);
+                    backend::spmv(math::identity<scalar_type>(), *lvl->P, *nxt->u,
+                                  math::identity<scalar_type>(), x);
 
                     AMGCL_TIC("relax");
-                    for(size_t i = 0; i < prm.npost; ++i)
-                        lvl->relax->apply_post(*lvl->A, rhs, x, *lvl->t);
+                    for (size_t i = 0; i < prm.npost; ++i) lvl->relax->apply_post(*lvl->A, rhs, x, *lvl->t);
                     AMGCL_TOC("relax");
                 }
             }
         }
 
+        template <class B, template <class> class C, template <class> class R>
+        friend std::ostream &operator<<(std::ostream &os, const amg<B, C, R> &a);
+    };
+
+    /// Sends information about the AMG hierarchy to output stream.
     template <class B, template <class> class C, template <class> class R>
-    friend std::ostream& operator<<(std::ostream &os, const amg<B, C, R> &a);
-};
+    std::ostream &operator<<(std::ostream &os, const amg<B, C, R> &a) {
+        typedef typename amg<B, C, R>::level level;
+        ios_saver ss(os);
 
-/// Sends information about the AMG hierarchy to output stream.
-template <class B, template <class> class C, template <class> class R>
-std::ostream& operator<<(std::ostream &os, const amg<B, C, R> &a)
-{
-    typedef typename amg<B, C, R>::level level;
-    ios_saver ss(os);
+        size_t sum_dof = 0;
+        size_t sum_nnz = 0;
+        size_t sum_mem = 0;
 
-    size_t sum_dof = 0;
-    size_t sum_nnz = 0;
-    size_t sum_mem = 0;
+        for (const level &lvl : a.levels) {
+            sum_dof += lvl.rows();
+            sum_nnz += lvl.nonzeros();
+            sum_mem += lvl.bytes();
+        }
 
-    for(const level &lvl : a.levels) {
-        sum_dof += lvl.rows();
-        sum_nnz += lvl.nonzeros();
-        sum_mem += lvl.bytes();
+        os << "Number of levels:    " << a.levels.size() << "\nOperator complexity: " << std::fixed
+           << std::setprecision(2) << 1.0 * sum_nnz / a.levels.front().nonzeros()
+           << "\nGrid complexity:     " << std::fixed << std::setprecision(2)
+           << 1.0 * sum_dof / a.levels.front().rows()
+           << "\nMemory footprint:    " << human_readable_memory(sum_mem)
+           << "\n\n"
+              "level     unknowns       nonzeros      memory\n"
+              "---------------------------------------------\n";
+
+        size_t depth = 0;
+        for (const level &lvl : a.levels) {
+            os << std::setw(5) << depth++ << std::setw(13) << lvl.rows() << std::setw(15) << lvl.nonzeros()
+               << std::setw(12) << human_readable_memory(lvl.bytes()) << " (" << std::setw(5) << std::fixed
+               << std::setprecision(2) << 100.0 * lvl.nonzeros() / sum_nnz << "%)" << std::endl;
+        }
+
+        return os;
     }
 
-    os << "Number of levels:    "   << a.levels.size()
-        << "\nOperator complexity: " << std::fixed << std::setprecision(2)
-        << 1.0 * sum_nnz / a.levels.front().nonzeros()
-        << "\nGrid complexity:     " << std::fixed << std::setprecision(2)
-        << 1.0 * sum_dof / a.levels.front().rows()
-        << "\nMemory footprint:    " << human_readable_memory(sum_mem)
-        << "\n\n"
-           "level     unknowns       nonzeros      memory\n"
-           "---------------------------------------------\n";
-
-    size_t depth = 0;
-    for(const level &lvl : a.levels) {
-        os << std::setw(5)  << depth++
-            << std::setw(13) << lvl.rows()
-            << std::setw(15) << lvl.nonzeros()
-            << std::setw(12) << human_readable_memory(lvl.bytes())
-            << " (" << std::setw(5) << std::fixed << std::setprecision(2)
-            << 100.0 * lvl.nonzeros() / sum_nnz
-            << "%)" << std::endl;
-    }
-
-    return os;
-}
-
-} // namespace amgcl
+}// namespace amgcl
 
 #endif

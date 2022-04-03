@@ -1,24 +1,23 @@
 #define BOOST_TEST_MODULE TestSkylineLU
 #include <boost/test/unit_test.hpp>
 
+#include "sample_problem.hpp"
 #include <amgcl/adapter/zero_copy.hpp>
-#include <amgcl/solver/skyline_lu.hpp>
 #include <amgcl/backend/builtin.hpp>
 #include <amgcl/profiler.hpp>
-#include "sample_problem.hpp"
+#include <amgcl/solver/skyline_lu.hpp>
 
 namespace amgcl {
     profiler<> prof;
 }
 
-BOOST_AUTO_TEST_SUITE( test_skyline_lu )
+BOOST_AUTO_TEST_SUITE(test_skyline_lu)
 
-BOOST_AUTO_TEST_CASE(skyline_lu)
-{
+BOOST_AUTO_TEST_CASE(skyline_lu) {
     std::vector<ptrdiff_t> ptr;
     std::vector<ptrdiff_t> col;
-    std::vector<double>    val;
-    std::vector<double>    rhs;
+    std::vector<double> val;
+    std::vector<double> rhs;
 
     size_t n = sample_problem(16, val, col, ptr, rhs);
 
@@ -37,4 +36,3 @@ BOOST_AUTO_TEST_CASE(skyline_lu)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-

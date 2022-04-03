@@ -1,17 +1,17 @@
-#include <vector>
 #include <iostream>
+#include <vector>
 
-#include <amgcl/backend/builtin.hpp>
-#include <amgcl/value_type/static_matrix.hpp>
-#include <amgcl/adapter/crs_tuple.hpp>
 #include <amgcl/adapter/block_matrix.hpp>
-#include <amgcl/make_solver.hpp>
+#include <amgcl/adapter/crs_tuple.hpp>
 #include <amgcl/amg.hpp>
-#include <amgcl/coarsening/smoothed_aggregation.hpp>
-#include <amgcl/coarsening/rigid_body_modes.hpp>
+#include <amgcl/backend/builtin.hpp>
 #include <amgcl/coarsening/as_scalar.hpp>
+#include <amgcl/coarsening/rigid_body_modes.hpp>
+#include <amgcl/coarsening/smoothed_aggregation.hpp>
+#include <amgcl/make_solver.hpp>
 #include <amgcl/relaxation/ilu0.hpp>
 #include <amgcl/solver/cg.hpp>
+#include <amgcl/value_type/static_matrix.hpp>
 
 #include <amgcl/io/mm.hpp>
 #include <amgcl/profiler.hpp>
@@ -38,28 +38,23 @@ int main(int argc, char *argv[]) {
     prof.toc("read");
 
     amgcl::precondition(ncoo * ndim == rows && (ndim == 2 || ndim == 3),
-            "The coordinate file has wrong dimensions");
+                        "The coordinate file has wrong dimensions");
 
     std::cout << "Matrix " << argv[1] << ": " << rows << "x" << rows << std::endl;
-    std::cout << "RHS "    << argv[2] << ": " << rows << "x" << cols << std::endl;
+    std::cout << "RHS " << argv[2] << ": " << rows << "x" << cols << std::endl;
     std::cout << "Coords " << argv[3] << ": " << ncoo << "x" << ndim << std::endl;
 
     // Declare the solver type
     typedef amgcl::static_matrix<double, 3, 3> DBlock;
     typedef amgcl::static_matrix<float, 3, 3> FBlock;
-    typedef amgcl::backend::builtin<DBlock> SBackend; // the solver backend
-    typedef amgcl::backend::builtin<FBlock> PBackend; // the preconditioner backend
+    typedef amgcl::backend::builtin<DBlock> SBackend;// the solver backend
+    typedef amgcl::backend::builtin<FBlock> PBackend;// the preconditioner backend
 
     typedef amgcl::make_solver<
-        amgcl::amg<
-            PBackend,
-            amgcl::coarsening::as_scalar<
-                amgcl::coarsening::smoothed_aggregation
-                >::type,
-            amgcl::relaxation::ilu0
-            >,
-        amgcl::solver::cg<SBackend>
-        > Solver;
+            amgcl::amg<PBackend, amgcl::coarsening::as_scalar<amgcl::coarsening::smoothed_aggregation>::type,
+                       amgcl::relaxation::ilu0>,
+            amgcl::solver::cg<SBackend>>
+            Solver;
 
     // Solver parameters:
     Solver::params prm;
@@ -70,8 +65,8 @@ int main(int argc, char *argv[]) {
     // The function returns the number of near null-space vectors
     // (3 in 2D case, 6 in 3D case) and writes the vectors to the
     // std::vector<double> specified as the last argument:
-    prm.precond.coarsening.nullspace.cols = amgcl::coarsening::rigid_body_modes(
-            ndim, coo, prm.precond.coarsening.nullspace.B);
+    prm.precond.coarsening.nullspace.cols
+            = amgcl::coarsening::rigid_body_modes(ndim, coo, prm.precond.coarsening.nullspace.B);
 
     // We use the tuple of CRS arrays to represent the system matrix.
     auto A = std::tie(rows, ptr, col, val);
@@ -100,8 +95,5 @@ int main(int argc, char *argv[]) {
 
     // Output the number of iterations, the relative error,
     // and the profiling data:
-    std::cout << "Iters: " << iters << std::endl
-              << "Error: " << error << std::endl
-              << prof << std::endl;
+    std::cout << "Iters: " << iters << std::endl << "Error: " << error << std::endl << prof << std::endl;
 }
-

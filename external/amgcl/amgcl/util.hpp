@@ -31,22 +31,22 @@ THE SOFTWARE.
  * \brief  Various utilities.
  */
 
-#include <iostream>
-#include <iomanip>
-#include <iterator>
-#include <vector>
 #include <array>
-#include <string>
-#include <set>
 #include <complex>
-#include <limits>
-#include <stdexcept>
 #include <cstddef>
+#include <iomanip>
+#include <iostream>
+#include <iterator>
+#include <limits>
+#include <set>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 // If asked explicitly, or if boost is available, enable
 // using boost::propert_tree::ptree as amgcl parameters:
 #ifndef AMGCL_NO_BOOST
-#  include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/ptree.hpp>
 #endif
 
 #include <amgcl/io/ios_saver.hpp>
@@ -63,202 +63,164 @@ THE SOFTWARE.
  * If AMGCL_PROFILING is undefined, then AMGCL_TIC and AMGCL_TOC are noop macros.
  */
 #ifdef AMGCL_PROFILING
-#  if !defined(AMGCL_TIC) || !defined(AMGCL_TOC)
-#    include <amgcl/profiler.hpp>
-#    define AMGCL_TIC(name) amgcl::prof.tic(name);
-#    define AMGCL_TOC(name) amgcl::prof.toc(name);
-namespace amgcl { extern profiler<> prof; }
-#  endif
+#if !defined(AMGCL_TIC) || !defined(AMGCL_TOC)
+#include <amgcl/profiler.hpp>
+#define AMGCL_TIC(name) amgcl::prof.tic(name);
+#define AMGCL_TOC(name) amgcl::prof.toc(name);
+namespace amgcl {
+    extern profiler<> prof;
+}
+#endif
 #else
-#  ifndef AMGCL_TIC
-#    define AMGCL_TIC(name)
-#  endif
-#  ifndef AMGCL_TOC
-#    define AMGCL_TOC(name)
-#  endif
+#ifndef AMGCL_TIC
+#define AMGCL_TIC(name)
+#endif
+#ifndef AMGCL_TOC
+#define AMGCL_TOC(name)
+#endif
 #endif
 
-#define AMGCL_DEBUG_SHOW(x)                                                    \
-    std::cout << std::setw(20) << #x << ": "                                   \
-              << std::setw(15) << std::setprecision(8) << std::scientific      \
+#define AMGCL_DEBUG_SHOW(x)                                                                                  \
+    std::cout << std::setw(20) << #x << ": " << std::setw(15) << std::setprecision(8) << std::scientific     \
               << (x) << std::endl
 
 namespace amgcl {
 
-/// Throws \p message if \p condition is not true.
-template <class Condition, class Message>
-void precondition(const Condition &condition, const Message &message) {
+    /// Throws \p message if \p condition is not true.
+    template <class Condition, class Message>
+    void precondition(const Condition &condition, const Message &message) {
 #ifdef _MSC_VER
-#  pragma warning(push)
-#  pragma warning(disable: 4800)
+#pragma warning(push)
+#pragma warning(disable : 4800)
 #endif
-    if (!condition) throw std::runtime_error(message);
+        if (!condition) throw std::runtime_error(message);
 #ifdef _MSC_VER
-#  pragma warning(pop)
+#pragma warning(pop)
 #endif
-}
+    }
 
 #ifndef AMGCL_NO_BOOST
 
-#define AMGCL_PARAMS_IMPORT_VALUE(p, name)                                     \
-    name( p.get(#name, params().name) )
+#define AMGCL_PARAMS_IMPORT_VALUE(p, name) name(p.get(#name, params().name))
 
-#define AMGCL_PARAMS_IMPORT_CHILD(p, name)                                     \
-    name( p.get_child(#name, amgcl::detail::empty_ptree()) )
+#define AMGCL_PARAMS_IMPORT_CHILD(p, name) name(p.get_child(#name, amgcl::detail::empty_ptree()))
 
-#define AMGCL_PARAMS_EXPORT_VALUE(p, path, name)                               \
-    p.put(std::string(path) + #name, name)
+#define AMGCL_PARAMS_EXPORT_VALUE(p, path, name) p.put(std::string(path) + #name, name)
 
-namespace detail {
+    namespace detail {
 
-template <typename T>
-inline void params_export_child(
-        boost::property_tree::ptree &p,
-        const std::string &path,
-        const char *name, const T &obj)
-{
-    obj.get(p, std::string(path) + name + ".");
-}
+        template <typename T>
+        inline void params_export_child(boost::property_tree::ptree &p, const std::string &path,
+                                        const char *name, const T &obj) {
+            obj.get(p, std::string(path) + name + ".");
+        }
 
-template <>
-inline void params_export_child(
-        boost::property_tree::ptree &p,
-        const std::string &path, const char *name,
-        const boost::property_tree::ptree &obj)
-{
-    p.add_child(std::string(path) + name, obj);
-}
+        template <>
+        inline void params_export_child(boost::property_tree::ptree &p, const std::string &path,
+                                        const char *name, const boost::property_tree::ptree &obj) {
+            p.add_child(std::string(path) + name, obj);
+        }
 
-} // namespace detail
+    }// namespace detail
 
-#define AMGCL_PARAMS_EXPORT_CHILD(p, path, name)                               \
-    amgcl::detail::params_export_child(p, path, #name, name)
+#define AMGCL_PARAMS_EXPORT_CHILD(p, path, name) amgcl::detail::params_export_child(p, path, #name, name)
 
 // Missing parameter action
 #ifndef AMGCL_PARAM_MISSING
-#  define AMGCL_PARAM_MISSING(name) (void)0
+#define AMGCL_PARAM_MISSING(name) (void) 0
 #endif
 
 // Unknown parameter action
 #ifndef AMGCL_PARAM_UNKNOWN
-#  define AMGCL_PARAM_UNKNOWN(name)                                            \
-      std::cerr << "AMGCL WARNING: unknown parameter " << name << std::endl
+#define AMGCL_PARAM_UNKNOWN(name) std::cerr << "AMGCL WARNING: unknown parameter " << name << std::endl
 #endif
 
-inline void check_params(
-        const boost::property_tree::ptree &p,
-        const std::set<std::string> &names
-        )
-{
-    for(const auto &n : names) {
-        if (!p.count(n)) {
-            AMGCL_PARAM_MISSING(n);
+    inline void check_params(const boost::property_tree::ptree &p, const std::set<std::string> &names) {
+        for (const auto &n : names) {
+            if (!p.count(n)) { AMGCL_PARAM_MISSING(n); }
+        }
+        for (const auto &v : p) {
+            if (!names.count(v.first)) { AMGCL_PARAM_UNKNOWN(v.first); }
         }
     }
-    for(const auto &v : p) {
-        if (!names.count(v.first)) {
-            AMGCL_PARAM_UNKNOWN(v.first);
-        }
-    }
-}
 
-inline void check_params(
-        const boost::property_tree::ptree &p,
-        const std::set<std::string> &names,
-        const std::set<std::string> &opt_names
-        )
-{
-    for(const auto &n : names) {
-        if (!p.count(n)) {
-            AMGCL_PARAM_MISSING(n);
+    inline void check_params(const boost::property_tree::ptree &p, const std::set<std::string> &names,
+                             const std::set<std::string> &opt_names) {
+        for (const auto &n : names) {
+            if (!p.count(n)) { AMGCL_PARAM_MISSING(n); }
+        }
+        for (const auto &n : opt_names) {
+            if (!p.count(n)) { AMGCL_PARAM_MISSING(n); }
+        }
+        for (const auto &v : p) {
+            if (!names.count(v.first) && !opt_names.count(v.first)) { AMGCL_PARAM_UNKNOWN(v.first); }
         }
     }
-    for(const auto &n : opt_names) {
-        if (!p.count(n)) {
-            AMGCL_PARAM_MISSING(n);
-        }
-    }
-    for(const auto &v : p) {
-        if (!names.count(v.first) && !opt_names.count(v.first)) {
-            AMGCL_PARAM_UNKNOWN(v.first);
-        }
-    }
-}
 
-// Put parameter in form "key=value" into a boost::property_tree::ptree
-inline void put(boost::property_tree::ptree &p, const std::string &param) {
-    size_t eq_pos = param.find('=');
-    if (eq_pos == std::string::npos)
-        throw std::invalid_argument("param in amgcl::put() should have \"key=value\" format!");
-    p.put(param.substr(0, eq_pos), param.substr(eq_pos + 1));
-}
+    // Put parameter in form "key=value" into a boost::property_tree::ptree
+    inline void put(boost::property_tree::ptree &p, const std::string &param) {
+        size_t eq_pos = param.find('=');
+        if (eq_pos == std::string::npos)
+            throw std::invalid_argument("param in amgcl::put() should have \"key=value\" format!");
+        p.put(param.substr(0, eq_pos), param.substr(eq_pos + 1));
+    }
 
 #endif
 
-namespace detail {
+    namespace detail {
 
 #ifndef AMGCL_NO_BOOST
-inline const boost::property_tree::ptree& empty_ptree() {
-    static const boost::property_tree::ptree p;
-    return p;
-}
+        inline const boost::property_tree::ptree &empty_ptree() {
+            static const boost::property_tree::ptree p;
+            return p;
+        }
 #endif
 
-struct empty_params {
-    empty_params() {}
+        struct empty_params {
+            empty_params() {}
 
 #ifndef AMGCL_NO_BOOST
-    empty_params(const boost::property_tree::ptree &p) {
-        for(const auto &v : p) {
-            AMGCL_PARAM_UNKNOWN(v.first);
-        }
-    }
-    void get(boost::property_tree::ptree&, const std::string&) const {}
+            empty_params(const boost::property_tree::ptree &p) {
+                for (const auto &v : p) { AMGCL_PARAM_UNKNOWN(v.first); }
+            }
+            void get(boost::property_tree::ptree &, const std::string &) const {}
 #endif
-};
+        };
 
-} // namespace detail
+    }// namespace detail
 
-// Iterator range
-template <class Iterator>
-class iterator_range {
+    // Iterator range
+    template <class Iterator>
+    class iterator_range {
     public:
         typedef Iterator iterator;
         typedef Iterator const_iterator;
         typedef typename std::iterator_traits<Iterator>::value_type value_type;
         typedef typename std::iterator_traits<Iterator>::reference reference;
 
-        iterator_range(Iterator b, Iterator e)
-            : b(b), e(e) {}
+        iterator_range(Iterator b, Iterator e) : b(b), e(e) {}
 
-        ptrdiff_t size() const {
-            return std::distance(b, e);
-        }
+        ptrdiff_t size() const { return std::distance(b, e); }
 
-        Iterator begin() const {
-            return b;
-        }
+        Iterator begin() const { return b; }
 
-        Iterator end() const {
-            return e;
-        }
+        Iterator end() const { return e; }
 
-        reference operator[](size_t i) const {
-            return b[i];
-        }
+        reference operator[](size_t i) const { return b[i]; }
+
     private:
         Iterator b, e;
-};
+    };
 
-template <class Iterator>
-iterator_range<Iterator> make_iterator_range(Iterator b, Iterator e) {
-    return iterator_range<Iterator>(b, e);
-}
+    template <class Iterator>
+    iterator_range<Iterator> make_iterator_range(Iterator b, Iterator e) {
+        return iterator_range<Iterator>(b, e);
+    }
 
-// N-dimensional dense matrix
-template <class T, int N>
-class multi_array {
-    static_assert(N > 0, "Wrong number of dimensions");
+    // N-dimensional dense matrix
+    template <class T, int N>
+    class multi_array {
+        static_assert(N > 0, "Wrong number of dimensions");
 
     public:
         template <class... I>
@@ -267,13 +229,9 @@ class multi_array {
             buf.resize(init(n...));
         }
 
-        size_t size() const {
-            return buf.size();
-        }
+        size_t size() const { return buf.size(); }
 
-        int stride(int i) const {
-            return strides[i];
-        }
+        int stride(int i) const { return strides[i]; }
 
         template <class... I>
         T operator()(I... i) const {
@@ -282,30 +240,25 @@ class multi_array {
         }
 
         template <class... I>
-        T& operator()(I... i) {
+        T &operator()(I... i) {
             static_assert(sizeof...(I) == N, "Wrong number of indices");
             return buf[index(i...)];
         }
 
-        const T* data() const {
-            return buf.data();
-        }
+        const T *data() const { return buf.data(); }
 
-        T* data() {
-            return buf.data();
-        }
+        T *data() { return buf.data(); }
+
     private:
         std::array<int, N> strides;
-        std::vector<T>  buf;
+        std::vector<T> buf;
 
         template <class... I>
         int index(int i, I... tail) const {
             return strides[N - sizeof...(I) - 1] * i + index(tail...);
         }
 
-        int index(int i) const {
-            return strides[N-1] * i;
-        }
+        int index(int i) const { return strides[N - 1] * i; }
 
         template <class... I>
         int init(int i, I... tail) {
@@ -315,21 +268,17 @@ class multi_array {
         }
 
         int init(int i) {
-            strides[N-1] = 1;
+            strides[N - 1] = 1;
             return i;
         }
-};
+    };
 
-template <class T>
-class circular_buffer {
+    template <class T>
+    class circular_buffer {
     public:
-        circular_buffer(size_t n) : start(0) {
-            buf.reserve(n);
-        }
+        circular_buffer(size_t n) : start(0) { buf.reserve(n); }
 
-        size_t size() const {
-            return buf.size();
-        }
+        size_t size() const { return buf.size(); }
 
         void push_back(const T &v) {
             if (buf.size() < buf.capacity()) {
@@ -340,13 +289,9 @@ class circular_buffer {
             }
         }
 
-        const T& operator[](size_t i) const {
-            return buf[(start + i) % buf.capacity()];
-        }
+        const T &operator[](size_t i) const { return buf[(start + i) % buf.capacity()]; }
 
-        T& operator[](size_t i) {
-            return buf[(start + i) % buf.capacity()];
-        }
+        T &operator[](size_t i) { return buf[(start + i) % buf.capacity()]; }
 
         void clear() {
             buf.clear();
@@ -356,70 +301,71 @@ class circular_buffer {
     private:
         size_t start;
         std::vector<T> buf;
-};
+    };
 
+    namespace detail {
 
-namespace detail {
+        template <class T>
+        T eps(size_t n) {
+            return 2 * std::numeric_limits<T>::epsilon() * n;
+        }
 
-template <class T>
-T eps(size_t n) {
-    return 2 * std::numeric_limits<T>::epsilon() * n;
-}
+    }// namespace detail
 
-} // namespace detail
+    template <class T>
+    struct is_complex : std::false_type {};
+    template <class T>
+    struct is_complex<std::complex<T>> : std::true_type {};
 
-template <class T> struct is_complex : std::false_type {};
-template <class T> struct is_complex< std::complex<T> > : std::true_type {};
+    inline std::string human_readable_memory(size_t bytes) {
+        static const char *suffix[] = {"B", "K", "M", "G", "T"};
 
-inline std::string human_readable_memory(size_t bytes) {
-    static const char *suffix[] = {"B", "K", "M", "G", "T"};
+        int i = 0;
+        double m = static_cast<double>(bytes);
+        for (; i < 4 && m >= 1024.0; ++i, m /= 1024.0)
+            ;
 
-    int i = 0;
-    double m = static_cast<double>(bytes);
-    for(; i < 4 && m >= 1024.0; ++i, m /= 1024.0);
+        std::ostringstream s;
+        s << std::fixed << std::setprecision(2) << m << " " << suffix[i];
+        return s.str();
+    }
 
-    std::ostringstream s;
-    s << std::fixed << std::setprecision(2) << m << " " << suffix[i];
-    return s.str();
-}
+    namespace detail {
 
-namespace detail {
+        class non_copyable {
+        protected:
+            non_copyable() = default;
+            ~non_copyable() = default;
 
-class non_copyable {
-    protected:
-        non_copyable() = default;
-        ~non_copyable() = default;
+            non_copyable(non_copyable const &) = delete;
+            void operator=(non_copyable const &x) = delete;
+        };
 
-        non_copyable(non_copyable const &) = delete;
-        void operator=(non_copyable const &x) = delete;
-};
+    }// namespace detail
 
-} // namespace detail
+    namespace error {
 
-namespace error {
+        struct empty_level {};
 
-struct empty_level {};
-
-} // namespace error
-} // namespace amgcl
+    }// namespace error
+}// namespace amgcl
 
 namespace std {
 
-// Read pointers from input streams.
-// This allows to exchange pointers through boost::property_tree::ptree.
-template <class T>
-inline istream& operator>>(istream &is, T* &ptr) {
-    amgcl::ios_saver ss(is);
+    // Read pointers from input streams.
+    // This allows to exchange pointers through boost::property_tree::ptree.
+    template <class T>
+    inline istream &operator>>(istream &is, T *&ptr) {
+        amgcl::ios_saver ss(is);
 
-    size_t val;
-    is >> std::hex >> val;
+        size_t val;
+        is >> std::hex >> val;
 
-    ptr = reinterpret_cast<T*>(val);
+        ptr = reinterpret_cast<T *>(val);
 
-    return is;
-}
+        return is;
+    }
 
-} // namespace std
-
+}// namespace std
 
 #endif

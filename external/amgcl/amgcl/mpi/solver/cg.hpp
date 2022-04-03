@@ -31,23 +31,23 @@ THE SOFTWARE.
  * \brief  MPI wrapper for CG iterative method.
  */
 
-#include <amgcl/solver/cg.hpp>
 #include <amgcl/mpi/inner_product.hpp>
+#include <amgcl/solver/cg.hpp>
 
 namespace amgcl {
-namespace mpi {
-namespace solver {
+    namespace mpi {
+        namespace solver {
 
-template <class Backend, class InnerProduct = mpi::inner_product>
-class cg : public amgcl::solver::cg<Backend, InnerProduct> {
-    typedef amgcl::solver::cg<Backend, InnerProduct> Base;
-    public:
-        using Base::Base;
-};
+            template <class Backend, class InnerProduct = mpi::inner_product>
+            class cg : public amgcl::solver::cg<Backend, InnerProduct> {
+                typedef amgcl::solver::cg<Backend, InnerProduct> Base;
 
-} // namespace solver
-} // namespace mpi
-} // namespace amgcl
+            public:
+                using Base::Base;
+            };
 
+        }// namespace solver
+    }    // namespace mpi
+}// namespace amgcl
 
 #endif

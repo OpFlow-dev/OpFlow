@@ -31,75 +31,59 @@ THE SOFTWARE.
  * \brief  Dummy preconditioner (identity matrix).
  */
 
-#include <memory>
 #include <amgcl/backend/builtin.hpp>
 #include <amgcl/util.hpp>
+#include <memory>
 
 namespace amgcl {
-namespace preconditioner {
+    namespace preconditioner {
 
-template <class Backend>
-class dummy {
-    public:
-        typedef Backend backend_type;
+        template <class Backend>
+        class dummy {
+        public:
+            typedef Backend backend_type;
 
-        typedef typename Backend::matrix  matrix;
-        typedef typename Backend::vector  vector;
-        typedef typename Backend::value_type value_type;
-        typedef typename Backend::col_type col_type;
-        typedef typename Backend::ptr_type ptr_type;
-        typedef typename backend::builtin<value_type, col_type, ptr_type>::matrix build_matrix;
+            typedef typename Backend::matrix matrix;
+            typedef typename Backend::vector vector;
+            typedef typename Backend::value_type value_type;
+            typedef typename Backend::col_type col_type;
+            typedef typename Backend::ptr_type ptr_type;
+            typedef typename backend::builtin<value_type, col_type, ptr_type>::matrix build_matrix;
 
-        typedef amgcl::detail::empty_params params;
-        typedef typename Backend::params backend_params;
+            typedef amgcl::detail::empty_params params;
+            typedef typename Backend::params backend_params;
 
-        template <class Matrix>
-        dummy(
-                const Matrix &M,
-                const params& = params(),
-                const backend_params &bprm = backend_params()
-                )
-            : A(Backend::copy_matrix(std::make_shared<build_matrix>(M), bprm))
-        {
-        }
+            template <class Matrix>
+            dummy(const Matrix &M, const params & = params(), const backend_params &bprm = backend_params())
+                : A(Backend::copy_matrix(std::make_shared<build_matrix>(M), bprm)) {}
 
-        dummy(
-                std::shared_ptr<build_matrix> M,
-                const params& = params(),
-                const backend_params &bprm = backend_params()
-                )
-            : A(Backend::copy_matrix(M, bprm))
-        {
-        }
+            dummy(std::shared_ptr<build_matrix> M, const params & = params(),
+                  const backend_params &bprm = backend_params())
+                : A(Backend::copy_matrix(M, bprm)) {}
 
-        template <class Vec1, class Vec2>
-        void apply(const Vec1 &rhs, Vec2 &&x) const {
-            backend::copy(rhs, x);
-        }
+            template <class Vec1, class Vec2>
+            void apply(const Vec1 &rhs, Vec2 &&x) const {
+                backend::copy(rhs, x);
+            }
 
-        std::shared_ptr<matrix> system_matrix_ptr() const {
-            return A;
-        }
+            std::shared_ptr<matrix> system_matrix_ptr() const { return A; }
 
-        const matrix& system_matrix() const {
-            return *A;
-        }
+            const matrix &system_matrix() const { return *A; }
 
-        size_t bytes() const {
-            return 0;
-        }
-    private:
-        std::shared_ptr<matrix>   A;
+            size_t bytes() const { return 0; }
 
-        friend std::ostream& operator<<(std::ostream &os, const dummy &p) {
-            os << "identity matrix as preconditioner" << std::endl;
-            os << "  unknowns: " << backend::rows(p.system_matrix()) << std::endl;
-            os << "  nonzeros: " << backend::nonzeros(p.system_matrix()) << std::endl;
+        private:
+            std::shared_ptr<matrix> A;
 
-            return os;
-        }
-};
+            friend std::ostream &operator<<(std::ostream &os, const dummy &p) {
+                os << "identity matrix as preconditioner" << std::endl;
+                os << "  unknowns: " << backend::rows(p.system_matrix()) << std::endl;
+                os << "  nonzeros: " << backend::nonzeros(p.system_matrix()) << std::endl;
 
-} // namespace preconditioner
-} // namespace amgcl
+                return os;
+            }
+        };
+
+    }// namespace preconditioner
+}// namespace amgcl
 #endif

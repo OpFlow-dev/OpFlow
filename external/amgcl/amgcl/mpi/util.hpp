@@ -32,205 +32,187 @@ THE SOFTWARE.
  * \brief  MPI utilities.
  */
 
-#include <vector>
-#include <numeric>
 #include <complex>
+#include <numeric>
+#include <vector>
 
-#include <type_traits>
 #include <amgcl/value_type/interface.hpp>
+#include <type_traits>
 
 #include <mpi.h>
 
 namespace amgcl {
-namespace mpi {
+    namespace mpi {
 
-/// Converts C type to MPI datatype.
-template <class T, class Enable = void>
-struct datatype_impl {
-    static MPI_Datatype get() {
-        static const MPI_Datatype t = create();
-        return t;
-    }
+        /// Converts C type to MPI datatype.
+        template <class T, class Enable = void>
+        struct datatype_impl {
+            static MPI_Datatype get() {
+                static const MPI_Datatype t = create();
+                return t;
+            }
 
-    static MPI_Datatype create() {
-        typedef typename math::scalar_of<T>::type S;
-        MPI_Datatype t;
-        int n = sizeof(T) / sizeof(S);
-        MPI_Type_contiguous(n, datatype_impl<S>::get(), &t);
-        MPI_Type_commit(&t);
-        return t;
-    }
-};
+            static MPI_Datatype create() {
+                typedef typename math::scalar_of<T>::type S;
+                MPI_Datatype t;
+                int n = sizeof(T) / sizeof(S);
+                MPI_Type_contiguous(n, datatype_impl<S>::get(), &t);
+                MPI_Type_commit(&t);
+                return t;
+            }
+        };
 
-template <>
-struct datatype_impl<float> {
-    static MPI_Datatype get() { return MPI_FLOAT; }
-};
+        template <>
+        struct datatype_impl<float> {
+            static MPI_Datatype get() { return MPI_FLOAT; }
+        };
 
-template <>
-struct datatype_impl<double> {
-    static MPI_Datatype get() { return MPI_DOUBLE; }
-};
+        template <>
+        struct datatype_impl<double> {
+            static MPI_Datatype get() { return MPI_DOUBLE; }
+        };
 
-template <>
-struct datatype_impl<long double> {
-    static MPI_Datatype get() { return MPI_LONG_DOUBLE; }
-};
+        template <>
+        struct datatype_impl<long double> {
+            static MPI_Datatype get() { return MPI_LONG_DOUBLE; }
+        };
 
-template <>
-struct datatype_impl<int> {
-    static MPI_Datatype get() { return MPI_INT; }
-};
+        template <>
+        struct datatype_impl<int> {
+            static MPI_Datatype get() { return MPI_INT; }
+        };
 
-template <>
-struct datatype_impl<unsigned> {
-    static MPI_Datatype get() { return MPI_UNSIGNED; }
-};
+        template <>
+        struct datatype_impl<unsigned> {
+            static MPI_Datatype get() { return MPI_UNSIGNED; }
+        };
 
-template <>
-struct datatype_impl<long long> {
-    static MPI_Datatype get() { return MPI_LONG_LONG_INT; }
-};
+        template <>
+        struct datatype_impl<long long> {
+            static MPI_Datatype get() { return MPI_LONG_LONG_INT; }
+        };
 
-template <>
-struct datatype_impl<unsigned long long> {
-    static MPI_Datatype get() { return MPI_UNSIGNED_LONG_LONG; }
-};
+        template <>
+        struct datatype_impl<unsigned long long> {
+            static MPI_Datatype get() { return MPI_UNSIGNED_LONG_LONG; }
+        };
 
-template <>
-struct datatype_impl< std::complex<double> > {
-    static MPI_Datatype get() { return MPI_CXX_DOUBLE_COMPLEX; }
-};
+        template <>
+        struct datatype_impl<std::complex<double>> {
+            static MPI_Datatype get() { return MPI_CXX_DOUBLE_COMPLEX; }
+        };
 
-template <>
-struct datatype_impl< std::complex<float> > {
-    static MPI_Datatype get() { return MPI_CXX_FLOAT_COMPLEX; }
-};
+        template <>
+        struct datatype_impl<std::complex<float>> {
+            static MPI_Datatype get() { return MPI_CXX_FLOAT_COMPLEX; }
+        };
 
-template <typename T>
-struct datatype_impl<T,
-    typename std::enable_if<
-        std::is_same<T, ptrdiff_t>::value &&
-        !std::is_same<ptrdiff_t, long long>::value &&
-        !std::is_same<ptrdiff_t, int>::value
-        >::type
-    > : std::conditional<
-        sizeof(ptrdiff_t) == sizeof(int), datatype_impl<int>, datatype_impl<long long>
-        >::type
-{};
+        template <typename T>
+        struct datatype_impl<T, typename std::enable_if<std::is_same<T, ptrdiff_t>::value
+                                                        && !std::is_same<ptrdiff_t, long long>::value
+                                                        && !std::is_same<ptrdiff_t, int>::value>::type>
+            : std::conditional<sizeof(ptrdiff_t) == sizeof(int), datatype_impl<int>,
+                               datatype_impl<long long>>::type {};
 
-template <typename T>
-struct datatype_impl<T,
-    typename std::enable_if<
-        std::is_same<T, size_t>::value &&
-        !std::is_same<size_t, unsigned long long>::value &&
-        !std::is_same<ptrdiff_t, unsigned int>::value
-        >::type
-    >
-    : std::conditional<
-        sizeof(size_t) == sizeof(unsigned), datatype_impl<unsigned>, datatype_impl<unsigned long long>
-        >::type
-{};
+        template <typename T>
+        struct datatype_impl<T,
+                             typename std::enable_if<std::is_same<T, size_t>::value
+                                                     && !std::is_same<size_t, unsigned long long>::value
+                                                     && !std::is_same<ptrdiff_t, unsigned int>::value>::type>
+            : std::conditional<sizeof(size_t) == sizeof(unsigned), datatype_impl<unsigned>,
+                               datatype_impl<unsigned long long>>::type {};
 
-template <>
-struct datatype_impl<char> {
-    static MPI_Datatype get() { return MPI_CHAR; }
-};
+        template <>
+        struct datatype_impl<char> {
+            static MPI_Datatype get() { return MPI_CHAR; }
+        };
 
-template <typename T>
-MPI_Datatype datatype() {
-    return datatype_impl<T>::get();
-}
+        template <typename T>
+        MPI_Datatype datatype() {
+            return datatype_impl<T>::get();
+        }
 
-/// Convenience wrapper around MPI_Init/MPI_Finalize.
-struct init {
-    init(int* argc, char ***argv) {
-        MPI_Init(argc, argv);
-    }
+        /// Convenience wrapper around MPI_Init/MPI_Finalize.
+        struct init {
+            init(int *argc, char ***argv) { MPI_Init(argc, argv); }
 
-    ~init() {
-        MPI_Finalize();
-    }
-};
+            ~init() { MPI_Finalize(); }
+        };
 
-/// Convenience wrapper around MPI_Init_threads/MPI_Finalize.
-struct init_thread {
-    init_thread(int* argc, char ***argv) {
-        int _;
-        MPI_Init_thread(argc, argv, MPI_THREAD_MULTIPLE, &_);
-    }
+        /// Convenience wrapper around MPI_Init_threads/MPI_Finalize.
+        struct init_thread {
+            init_thread(int *argc, char ***argv) {
+                int _;
+                MPI_Init_thread(argc, argv, MPI_THREAD_MULTIPLE, &_);
+            }
 
-    ~init_thread() {
-        MPI_Finalize();
-    }
-};
+            ~init_thread() { MPI_Finalize(); }
+        };
 
-/// Convenience wrapper around MPI_Comm.
-struct communicator {
-    MPI_Comm comm;
-    int      rank;
-    int      size;
+        /// Convenience wrapper around MPI_Comm.
+        struct communicator {
+            MPI_Comm comm;
+            int rank;
+            int size;
 
-    communicator() {}
+            communicator() {}
 
-    communicator(MPI_Comm comm) : comm(comm) {
-        MPI_Comm_rank(comm, &rank);
-        MPI_Comm_size(comm, &size);
-    };
+            communicator(MPI_Comm comm) : comm(comm) {
+                MPI_Comm_rank(comm, &rank);
+                MPI_Comm_size(comm, &size);
+            };
 
-    operator MPI_Comm() const {
-        return comm;
-    }
+            operator MPI_Comm() const { return comm; }
 
-    /// Exclusive sum over mpi communicator
-    template <typename T>
-    std::vector<T> exclusive_sum(T n) const {
-        std::vector<T> v(size + 1); v[0] = 0;
-        MPI_Allgather(&n, 1, datatype<T>(), &v[1], 1, datatype<T>(), comm);
-        std::partial_sum(v.begin(), v.end(), v.begin());
-        return v;
-    }
+            /// Exclusive sum over mpi communicator
+            template <typename T>
+            std::vector<T> exclusive_sum(T n) const {
+                std::vector<T> v(size + 1);
+                v[0] = 0;
+                MPI_Allgather(&n, 1, datatype<T>(), &v[1], 1, datatype<T>(), comm);
+                std::partial_sum(v.begin(), v.end(), v.begin());
+                return v;
+            }
 
-    template <typename T>
-    T reduce(MPI_Op op, const T &lval) const {
-        const int elems = math::static_rows<T>::value * math::static_cols<T>::value;
-        T gval;
+            template <typename T>
+            T reduce(MPI_Op op, const T &lval) const {
+                const int elems = math::static_rows<T>::value * math::static_cols<T>::value;
+                T gval;
 
-        MPI_Allreduce((void*)&lval, &gval, elems, datatype<T>(), op, comm);
-        return gval;
-    }
+                MPI_Allreduce((void *) &lval, &gval, elems, datatype<T>(), op, comm);
+                return gval;
+            }
 
-    /// Communicator-wise condition checking.
-    /**
+            /// Communicator-wise condition checking.
+            /**
      * Checks conditions at each process in the communicator;
      *
      * If the condition is false on any of the participating processes, outputs the
      * provided message together with the ranks of the offending process.
      * After that each process in the communicator throws.
      */
-    template <class Condition, class Message>
-    void check(const Condition &cond, const Message &message) {
-        int lc = static_cast<int>(cond);
-        int gc = reduce(MPI_PROD, lc);
+            template <class Condition, class Message>
+            void check(const Condition &cond, const Message &message) {
+                int lc = static_cast<int>(cond);
+                int gc = reduce(MPI_PROD, lc);
 
-        if (!gc) {
-            std::vector<int> c(size);
-            MPI_Gather(&lc, 1, MPI_INT, &c[0], size, MPI_INT, 0, comm);
-            if (rank == 0) {
-                std::cerr << "Failed assumption: " << message << std::endl;
-                std::cerr << "Offending processes:";
-                for (int i = 0; i < size; ++i)
-                    if (!c[i]) std::cerr << " " << i;
-                std::cerr << std::endl;
+                if (!gc) {
+                    std::vector<int> c(size);
+                    MPI_Gather(&lc, 1, MPI_INT, &c[0], size, MPI_INT, 0, comm);
+                    if (rank == 0) {
+                        std::cerr << "Failed assumption: " << message << std::endl;
+                        std::cerr << "Offending processes:";
+                        for (int i = 0; i < size; ++i)
+                            if (!c[i]) std::cerr << " " << i;
+                        std::cerr << std::endl;
+                    }
+                    MPI_Barrier(comm);
+                    throw std::runtime_error(message);
+                }
             }
-            MPI_Barrier(comm);
-            throw std::runtime_error(message);
-        }
-    }
+        };
 
-};
-
-} // namespace mpi
-} // namespace amgcl
+    }// namespace mpi
+}// namespace amgcl
 
 #endif

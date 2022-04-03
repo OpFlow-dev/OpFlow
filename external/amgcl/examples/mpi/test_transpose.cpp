@@ -3,10 +3,10 @@
 
 #include <boost/scope_exit.hpp>
 
-#include <amgcl/backend/builtin.hpp>
 #include <amgcl/adapter/crs_tuple.hpp>
-#include <amgcl/mpi/distributed_matrix.hpp>
+#include <amgcl/backend/builtin.hpp>
 #include <amgcl/io/mm.hpp>
+#include <amgcl/mpi/distributed_matrix.hpp>
 #include <amgcl/profiler.hpp>
 
 namespace amgcl {
@@ -15,9 +15,8 @@ namespace amgcl {
 
 int main(int argc, char *argv[]) {
     MPI_Init(&argc, &argv);
-    BOOST_SCOPE_EXIT(void) {
-        MPI_Finalize();
-    } BOOST_SCOPE_EXIT_END
+    BOOST_SCOPE_EXIT(void) { MPI_Finalize(); }
+    BOOST_SCOPE_EXIT_END
 
     amgcl::mpi::communicator comm(MPI_COMM_WORLD);
 
@@ -27,11 +26,15 @@ int main(int argc, char *argv[]) {
     int chunk_end = std::min(n, chunk_len * (comm.rank + 1));
     int chunk = chunk_end - chunk_beg;
 
-    std::vector<int>    ptr; ptr.reserve(chunk + 1); ptr.push_back(0);
-    std::vector<int>    col; col.reserve(chunk * 4);
-    std::vector<double> val; val.reserve(chunk * 4);
+    std::vector<int> ptr;
+    ptr.reserve(chunk + 1);
+    ptr.push_back(0);
+    std::vector<int> col;
+    col.reserve(chunk * 4);
+    std::vector<double> val;
+    val.reserve(chunk * 4);
 
-    for(int i = 0, j = chunk_beg; i < chunk; ++i, ++j) {
+    for (int i = 0, j = chunk_beg; i < chunk; ++i, ++j) {
         if (j > 0) {
             col.push_back(j - 1);
             val.push_back(-1);
@@ -40,13 +43,13 @@ int main(int argc, char *argv[]) {
         col.push_back(j);
         val.push_back(2);
 
-        if (j+1 < n) {
-            col.push_back(j+1);
+        if (j + 1 < n) {
+            col.push_back(j + 1);
             val.push_back(-1);
         }
 
-        if (j+5 < n) {
-            col.push_back(j+5);
+        if (j + 5 < n) {
+            col.push_back(j + 5);
             val.push_back(-0.1);
         }
 
@@ -54,7 +57,7 @@ int main(int argc, char *argv[]) {
     }
 
     typedef amgcl::backend::builtin<double> Backend;
-    typedef amgcl::mpi::distributed_matrix<Backend> Matrix; 
+    typedef amgcl::mpi::distributed_matrix<Backend> Matrix;
 
     Matrix A(comm, std::tie(chunk, ptr, col, val), chunk);
 
@@ -83,5 +86,4 @@ int main(int argc, char *argv[]) {
         fname << "B_rem_" << comm.rank << ".mtx";
         amgcl::io::mm_write(fname.str(), *B->remote());
     }
-
 }

@@ -1,16 +1,16 @@
-#include <iostream>
-#include <fstream>
-#include <iterator>
 #include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <iterator>
 
 #include <amgcl/amg.hpp>
 
 #include <amgcl/adapter/crs_tuple.hpp>
 #include <amgcl/backend/block_crs.hpp>
 #include <amgcl/coarsening/aggregation.hpp>
+#include <amgcl/profiler.hpp>
 #include <amgcl/relaxation/spai0.hpp>
 #include <amgcl/solver/bicgstab.hpp>
-#include <amgcl/profiler.hpp>
 
 namespace amgcl {
     profiler<> prof("v2");
@@ -20,20 +20,16 @@ int main() {
     using amgcl::prof;
 
     typedef amgcl::backend::block_crs<double> Backend;
-    typedef amgcl::amg<
-        Backend,
-        amgcl::coarsening::aggregation,
-        amgcl::relaxation::spai0
-        > AMG;
+    typedef amgcl::amg<Backend, amgcl::coarsening::aggregation, amgcl::relaxation::spai0> AMG;
 
     std::vector<ptrdiff_t> ptr;
     std::vector<ptrdiff_t> col;
-    std::vector<double>    val;
-    std::vector<double>    rhs;
+    std::vector<double> val;
+    std::vector<double> rhs;
 
     prof.tic("read");
     {
-        std::istream_iterator<int>    iend;
+        std::istream_iterator<int> iend;
         std::istream_iterator<double> dend;
 
         std::ifstream fptr("rows.txt");
@@ -46,8 +42,8 @@ int main() {
         amgcl::precondition(fval, "values.txt not found");
         amgcl::precondition(frhs, "rhs.txt not found");
 
-        std::istream_iterator<int>    iptr(fptr);
-        std::istream_iterator<int>    icol(fcol);
+        std::istream_iterator<int> iptr(fptr);
+        std::istream_iterator<int> icol(fcol);
         std::istream_iterator<double> ival(fval);
         std::istream_iterator<double> irhs(frhs);
 
@@ -84,9 +80,7 @@ int main() {
     std::tie(iters, resid) = solve(amg, rhs, x);
     prof.toc("solve");
 
-    std::cout << "Iterations: " << iters << std::endl
-              << "Error:      " << resid << std::endl
-              << std::endl;
+    std::cout << "Iterations: " << iters << std::endl << "Error:      " << resid << std::endl << std::endl;
 
     std::cout << amgcl::prof << std::endl;
 }

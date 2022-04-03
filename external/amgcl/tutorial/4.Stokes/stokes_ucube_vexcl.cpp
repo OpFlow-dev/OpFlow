@@ -1,21 +1,21 @@
 #include <iostream>
 #include <string>
 
+#include <amgcl/adapter/block_matrix.hpp>
+#include <amgcl/adapter/crs_tuple.hpp>
+#include <amgcl/amg.hpp>
 #include <amgcl/backend/vexcl.hpp>
 #include <amgcl/backend/vexcl_static_matrix.hpp>
-#include <amgcl/adapter/crs_tuple.hpp>
-#include <amgcl/value_type/static_matrix.hpp>
-#include <amgcl/adapter/block_matrix.hpp>
-#include <amgcl/preconditioner/schur_pressure_correction.hpp>
-#include <amgcl/make_solver.hpp>
-#include <amgcl/make_block_solver.hpp>
-#include <amgcl/amg.hpp>
-#include <amgcl/solver/cg.hpp>
-#include <amgcl/solver/preonly.hpp>
 #include <amgcl/coarsening/aggregation.hpp>
+#include <amgcl/make_block_solver.hpp>
+#include <amgcl/make_solver.hpp>
+#include <amgcl/preconditioner/schur_pressure_correction.hpp>
+#include <amgcl/relaxation/as_preconditioner.hpp>
 #include <amgcl/relaxation/ilu0.hpp>
 #include <amgcl/relaxation/spai0.hpp>
-#include <amgcl/relaxation/as_preconditioner.hpp>
+#include <amgcl/solver/cg.hpp>
+#include <amgcl/solver/preonly.hpp>
+#include <amgcl/value_type/static_matrix.hpp>
 
 #include <amgcl/io/binary.hpp>
 #include <amgcl/profiler.hpp>
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     std::cout << ctx << std::endl;
 
     // Enable support for block-valued matrices in the VexCL kernels:
-    vex::scoped_program_header header(ctx, amgcl::backend::vexcl_static_matrix_declaration<float,3>());
+    vex::scoped_program_header header(ctx, amgcl::backend::vexcl_static_matrix_declaration<float, 3>());
 
     // The profiler:
     amgcl::profiler<> prof("UCube4 (VexCL)");
@@ -62,38 +62,27 @@ int main(int argc, char *argv[]) {
     auto A = std::tie(rows, ptr, col, val);
 
     // Compose the solver type
-    typedef amgcl::backend::vexcl<double> SBackend; // the outer iterative solver backend
-    typedef amgcl::backend::vexcl<float>  PBackend; // the PSolver backend
-    typedef amgcl::backend::vexcl<
-        amgcl::static_matrix<float,3,3>> UBackend;    // the USolver backend
+    typedef amgcl::backend::vexcl<double> SBackend;// the outer iterative solver backend
+    typedef amgcl::backend::vexcl<float> PBackend; // the PSolver backend
+    typedef amgcl::backend::vexcl<amgcl::static_matrix<float, 3, 3>> UBackend;// the USolver backend
 
     typedef amgcl::make_solver<
-        amgcl::preconditioner::schur_pressure_correction<
-            amgcl::make_block_solver<
-                amgcl::amg<
-                    UBackend,
-                    amgcl::coarsening::aggregation,
-                    amgcl::relaxation::ilu0
-                    >,
-                amgcl::solver::preonly<UBackend>
-                >,
-            amgcl::make_solver<
-                amgcl::relaxation::as_preconditioner<
-                    PBackend,
-                    amgcl::relaxation::spai0
-                    >,
-                amgcl::solver::preonly<PBackend>
-                >
-            >,
-        amgcl::solver::cg<SBackend>
-        > Solver;
+            amgcl::preconditioner::schur_pressure_correction<
+                    amgcl::make_block_solver<
+                            amgcl::amg<UBackend, amgcl::coarsening::aggregation, amgcl::relaxation::ilu0>,
+                            amgcl::solver::preonly<UBackend>>,
+                    amgcl::make_solver<
+                            amgcl::relaxation::as_preconditioner<PBackend, amgcl::relaxation::spai0>,
+                            amgcl::solver::preonly<PBackend>>>,
+            amgcl::solver::cg<SBackend>>
+            Solver;
 
     // Solver parameters
     Solver::params prm;
     prm.precond.simplec_dia = false;
     prm.precond.usolver.precond.relax.solve.iters = 4;
     prm.precond.pmask.resize(rows);
-    for(ptrdiff_t i = 0; i < rows; ++i) prm.precond.pmask[i] = (i >= nu);
+    for (ptrdiff_t i = 0; i < rows; ++i) prm.precond.pmask[i] = (i >= nu);
 
     // Set the VexCL context in the backend parameters
     SBackend::params bprm;
@@ -125,7 +114,5 @@ int main(int argc, char *argv[]) {
 
     // Output the number of iterations, the relative error,
     // and the profiling data:
-    std::cout << "Iters: " << iters << std::endl
-              << "Error: " << error << std::endl
-              << prof << std::endl;
+    std::cout << "Iters: " << iters << std::endl << "Error: " << error << std::endl << prof << std::endl;
 }

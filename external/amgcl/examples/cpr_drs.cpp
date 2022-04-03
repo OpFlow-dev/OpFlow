@@ -1,55 +1,56 @@
 #include <iostream>
 #include <string>
 
-#include <boost/program_options.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
+#include <boost/program_options.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 #if defined(SOLVER_BACKEND_VEXCL)
-#  include <amgcl/backend/vexcl.hpp>
-#  include <amgcl/backend/vexcl_static_matrix.hpp>
-   typedef amgcl::backend::vexcl<double> Backend;
+#include <amgcl/backend/vexcl.hpp>
+#include <amgcl/backend/vexcl_static_matrix.hpp>
+typedef amgcl::backend::vexcl<double> Backend;
 #elif defined(SOLVER_BACKEND_VIENNACL)
-#  include <amgcl/backend/viennacl.hpp>
-   typedef amgcl::backend::viennacl< viennacl::compressed_matrix<double> > Backend;
+#include <amgcl/backend/viennacl.hpp>
+typedef amgcl::backend::viennacl<viennacl::compressed_matrix<double>> Backend;
 #elif defined(SOLVER_BACKEND_CUDA)
-#  include <amgcl/backend/cuda.hpp>
-#  include <amgcl/relaxation/cusparse_ilu0.hpp>
-   typedef amgcl::backend::cuda<double> Backend;
+#include <amgcl/backend/cuda.hpp>
+#include <amgcl/relaxation/cusparse_ilu0.hpp>
+typedef amgcl::backend::cuda<double> Backend;
 #else
-#  ifndef SOLVER_BACKEND_BUILTIN
-#    define SOLVER_BACKEND_BUILTIN
-#  endif
-#  include <amgcl/backend/builtin.hpp>
-   typedef amgcl::backend::builtin<double> Backend;
+#ifndef SOLVER_BACKEND_BUILTIN
+#define SOLVER_BACKEND_BUILTIN
+#endif
+#include <amgcl/backend/builtin.hpp>
+typedef amgcl::backend::builtin<double> Backend;
 #endif
 
 #if defined(SOLVER_BACKEND_BUILTIN) || defined(SOLVER_BACKEND_VEXCL)
-#  include <amgcl/value_type/static_matrix.hpp>
-#  include <amgcl/adapter/block_matrix.hpp>
+#include <amgcl/adapter/block_matrix.hpp>
+#include <amgcl/value_type/static_matrix.hpp>
 #endif
 
-#include <amgcl/make_solver.hpp>
-#include <amgcl/amg.hpp>
-#include <amgcl/solver/runtime.hpp>
-#include <amgcl/coarsening/runtime.hpp>
-#include <amgcl/relaxation/runtime.hpp>
-#include <amgcl/relaxation/as_preconditioner.hpp>
-#include <amgcl/preconditioner/cpr_drs.hpp>
 #include <amgcl/adapter/crs_tuple.hpp>
-#include <amgcl/io/mm.hpp>
+#include <amgcl/amg.hpp>
+#include <amgcl/coarsening/runtime.hpp>
 #include <amgcl/io/binary.hpp>
+#include <amgcl/io/mm.hpp>
+#include <amgcl/make_solver.hpp>
+#include <amgcl/preconditioner/cpr_drs.hpp>
 #include <amgcl/profiler.hpp>
+#include <amgcl/relaxation/as_preconditioner.hpp>
+#include <amgcl/relaxation/runtime.hpp>
+#include <amgcl/solver/runtime.hpp>
 
-namespace amgcl { profiler<> prof; }
-using amgcl::prof;
+namespace amgcl {
+    profiler<> prof;
+}
 using amgcl::precondition;
+using amgcl::prof;
 
 //---------------------------------------------------------------------------
 template <class Matrix>
-void solve_cpr(const Matrix &K, const std::vector<double> &rhs, boost::property_tree::ptree &prm)
-{
+void solve_cpr(const Matrix &K, const std::vector<double> &rhs, boost::property_tree::ptree &prm) {
     using amgcl::prof;
     Backend::params bprm;
 
@@ -58,9 +59,8 @@ void solve_cpr(const Matrix &K, const std::vector<double> &rhs, boost::property_
     std::cout << ctx << std::endl;
     bprm.q = ctx;
 #elif defined(SOLVER_BACKEND_VIENNACL)
-    std::cout
-        << viennacl::ocl::current_device().name()
-        << " (" << viennacl::ocl::current_device().vendor() << ")\n\n";
+    std::cout << viennacl::ocl::current_device().name() << " (" << viennacl::ocl::current_device().vendor()
+              << ")\n\n";
 #elif defined(SOLVER_BACKEND_CUDA)
     cusparseCreate(&bprm.cusparse_handle);
     {
@@ -75,19 +75,15 @@ void solve_cpr(const Matrix &K, const std::vector<double> &rhs, boost::property_
 
     auto t1 = prof.scoped_tic("CPR");
 
-    typedef
-        amgcl::amg<Backend, amgcl::runtime::coarsening::wrapper, amgcl::runtime::relaxation::wrapper>
-        PPrecond;
+    typedef amgcl::amg<Backend, amgcl::runtime::coarsening::wrapper, amgcl::runtime::relaxation::wrapper>
+            PPrecond;
 
-    typedef
-        amgcl::relaxation::as_preconditioner<Backend, amgcl::runtime::relaxation::wrapper>
-        SPrecond;
+    typedef amgcl::relaxation::as_preconditioner<Backend, amgcl::runtime::relaxation::wrapper> SPrecond;
 
     prof.tic("setup");
-    amgcl::make_solver<
-        amgcl::preconditioner::cpr_drs<PPrecond, SPrecond>,
-        amgcl::runtime::solver::wrapper<Backend>
-        > solve(K, prm, bprm);
+    amgcl::make_solver<amgcl::preconditioner::cpr_drs<PPrecond, SPrecond>,
+                       amgcl::runtime::solver::wrapper<Backend>>
+            solve(K, prm, bprm);
     prof.toc("setup");
 
     std::cout << solve.precond() << std::endl;
@@ -103,15 +99,13 @@ void solve_cpr(const Matrix &K, const std::vector<double> &rhs, boost::property_
     std::tie(iters, error) = solve(*f, *x);
     prof.toc("solve");
 
-    std::cout << "Iterations: " << iters << std::endl
-              << "Error:      " << error << std::endl;
+    std::cout << "Iterations: " << iters << std::endl << "Error:      " << error << std::endl;
 }
 
 #if defined(SOLVER_BACKEND_BUILTIN) || defined(SOLVER_BACKEND_VEXCL)
 //---------------------------------------------------------------------------
 template <int B, class Matrix>
-void solve_block_cpr(const Matrix &K, const std::vector<double> &rhs, boost::property_tree::ptree &prm)
-{
+void solve_block_cpr(const Matrix &K, const std::vector<double> &rhs, boost::property_tree::ptree &prm) {
     using amgcl::prof;
 
     auto t1 = prof.scoped_tic("CPR");
@@ -120,26 +114,17 @@ void solve_block_cpr(const Matrix &K, const std::vector<double> &rhs, boost::pro
     typedef amgcl::static_matrix<double, B, 1> rhs_type;
 
 #if defined(SOLVER_BACKEND_BUILTIN)
-    typedef amgcl::backend::builtin<val_type>  SBackend;
-    typedef amgcl::backend::builtin<double>    PBackend;
+    typedef amgcl::backend::builtin<val_type> SBackend;
+    typedef amgcl::backend::builtin<double> PBackend;
 #elif defined(SOLVER_BACKEND_VEXCL)
-    typedef amgcl::backend::vexcl<val_type>  SBackend;
-    typedef amgcl::backend::vexcl<double>    PBackend;
+    typedef amgcl::backend::vexcl<val_type> SBackend;
+    typedef amgcl::backend::vexcl<double> PBackend;
 #endif
 
-    typedef
-        amgcl::amg<
-            PBackend,
-            amgcl::runtime::coarsening::wrapper,
-            amgcl::runtime::relaxation::wrapper>
-        PPrecond;
+    typedef amgcl::amg<PBackend, amgcl::runtime::coarsening::wrapper, amgcl::runtime::relaxation::wrapper>
+            PPrecond;
 
-    typedef
-        amgcl::relaxation::as_preconditioner<
-            SBackend,
-            amgcl::runtime::relaxation::wrapper
-            >
-        SPrecond;
+    typedef amgcl::relaxation::as_preconditioner<SBackend, amgcl::runtime::relaxation::wrapper> SPrecond;
 
     typename SBackend::params bprm;
 
@@ -148,21 +133,19 @@ void solve_block_cpr(const Matrix &K, const std::vector<double> &rhs, boost::pro
     std::cout << ctx << std::endl;
     bprm.q = ctx;
 
-    vex::scoped_program_header header(ctx,
-            amgcl::backend::vexcl_static_matrix_declaration<double, B>());
+    vex::scoped_program_header header(ctx, amgcl::backend::vexcl_static_matrix_declaration<double, B>());
 #endif
 
     prof.tic("setup");
-    amgcl::make_solver<
-        amgcl::preconditioner::cpr_drs<PPrecond, SPrecond>,
-        amgcl::runtime::solver::wrapper<SBackend>
-        > solve(amgcl::adapter::block_matrix<val_type>(K), prm, bprm);
+    amgcl::make_solver<amgcl::preconditioner::cpr_drs<PPrecond, SPrecond>,
+                       amgcl::runtime::solver::wrapper<SBackend>>
+            solve(amgcl::adapter::block_matrix<val_type>(K), prm, bprm);
     prof.toc("setup");
 
     std::cout << solve.precond() << std::endl;
 
     size_t n = amgcl::backend::rows(K) / B;
-    auto rhs_ptr = reinterpret_cast<const rhs_type*>(rhs.data());
+    auto rhs_ptr = reinterpret_cast<const rhs_type *>(rhs.data());
 
 #if defined(SOLVER_BACKEND_BUILTIN)
     auto f = amgcl::make_iterator_range(rhs_ptr, rhs_ptr + n);
@@ -180,70 +163,38 @@ void solve_block_cpr(const Matrix &K, const std::vector<double> &rhs, boost::pro
     std::tie(iters, error) = solve(f, *x);
     prof.toc("solve");
 
-    std::cout << "Iterations: " << iters << std::endl
-              << "Error:      " << error << std::endl;
+    std::cout << "Iterations: " << iters << std::endl << "Error:      " << error << std::endl;
 }
 #endif
 
 //---------------------------------------------------------------------------
 int main(int argc, char *argv[]) {
+    using amgcl::precondition;
+    using amgcl::prof;
     using std::string;
     using std::vector;
-    using amgcl::prof;
-    using amgcl::precondition;
 
     namespace po = boost::program_options;
     namespace io = amgcl::io;
 
     po::options_description desc("Options");
 
-    desc.add_options()
-        ("help,h", "show help")
-        (
-         "binary,B",
-         po::bool_switch()->default_value(false),
-         "When specified, treat input files as binary instead of as MatrixMarket. "
-         "It is assumed the files were converted to binary format with mm2bin utility. "
-        )
-        (
-         "matrix,A",
-         po::value<string>()->required(),
-         "The system matrix in MatrixMarket format"
-        )
-        (
-         "rhs,f",
-         po::value<string>(),
-         "The right-hand side in MatrixMarket format"
-        )
-        (
-         "weights,w",
-         po::value<string>(),
-         "Equation weights in MatrixMarket format"
-        )
-        (
-         "runtime-block-size,b",
-         po::value<int>(),
-         "The block size of the system matrix set at runtime"
-        )
-        (
-         "static-block-size,c",
-         po::value<int>()->default_value(1),
-         "The block size of the system matrix set at compiletime"
-        )
-        (
-         "params,P",
-         po::value<string>(),
-         "parameter file in json format"
-        )
-        (
-         "prm,p",
-         po::value< vector<string> >()->multitoken(),
-         "Parameters specified as name=value pairs. "
-         "May be provided multiple times. Examples:\n"
-         "  -p solver.tol=1e-3\n"
-         "  -p precond.coarse_enough=300"
-        )
-        ;
+    desc.add_options()("help,h", "show help")(
+            "binary,B", po::bool_switch()->default_value(false),
+            "When specified, treat input files as binary instead of as MatrixMarket. "
+            "It is assumed the files were converted to binary format with mm2bin utility. ")(
+            "matrix,A", po::value<string>()->required(), "The system matrix in MatrixMarket format")(
+            "rhs,f", po::value<string>(), "The right-hand side in MatrixMarket format")(
+            "weights,w", po::value<string>(), "Equation weights in MatrixMarket format")(
+            "runtime-block-size,b", po::value<int>(), "The block size of the system matrix set at runtime")(
+            "static-block-size,c", po::value<int>()->default_value(1),
+            "The block size of the system matrix set at compiletime")("params,P", po::value<string>(),
+                                                                      "parameter file in json format")(
+            "prm,p", po::value<vector<string>>()->multitoken(),
+            "Parameters specified as name=value pairs. "
+            "May be provided multiple times. Examples:\n"
+            "  -p solver.tol=1e-3\n"
+            "  -p precond.coarse_enough=300");
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -259,15 +210,12 @@ int main(int argc, char *argv[]) {
     if (vm.count("params")) read_json(vm["params"].as<string>(), prm);
 
     if (vm.count("prm")) {
-        for(const string &v : vm["prm"].as<vector<string> >()) {
-            amgcl::put(prm, v);
-        }
+        for (const string &v : vm["prm"].as<vector<string>>()) { amgcl::put(prm, v); }
     }
 
     int cb = vm["static-block-size"].as<int>();
 
-    if (vm.count("runtime-block-size"))
-        prm.put("precond.block_size", vm["runtime-block-size"].as<int>());
+    if (vm.count("runtime-block-size")) prm.put("precond.block_size", vm["runtime-block-size"].as<int>());
     else
         prm.put("precond.block_size", cb);
 
@@ -279,8 +227,8 @@ int main(int argc, char *argv[]) {
     {
         auto t = prof.scoped_tic("reading");
 
-        string Afile  = vm["matrix"].as<string>();
-        bool   binary = vm["binary"].as<bool>();
+        string Afile = vm["matrix"].as<string>();
+        bool binary = vm["binary"].as<bool>();
 
         if (binary) {
             io::read_crs(Afile, rows, ptr, col, val);
@@ -317,30 +265,29 @@ int main(int argc, char *argv[]) {
                 std::tie(n, m) = io::mm_reader(wfile)(wgt);
             }
 
-            prm.put("precond.weights",      &wgt[0]);
+            prm.put("precond.weights", &wgt[0]);
             prm.put("precond.weights_size", wgt.size());
         }
     }
 
-#define CALL_BLOCK_SOLVER(z, data, B)                                          \
-    case B:                                                                    \
-        solve_block_cpr<B>(std::tie(rows, ptr, col, val), rhs, prm);           \
+#define CALL_BLOCK_SOLVER(z, data, B)                                                                        \
+    case B:                                                                                                  \
+        solve_block_cpr<B>(std::tie(rows, ptr, col, val), rhs, prm);                                         \
         break;
 
-    switch(cb) {
+    switch (cb) {
         case 1:
             solve_cpr(std::tie(rows, ptr, col, val), rhs, prm);
             break;
 
 #if defined(SOLVER_BACKEND_BUILTIN) || defined(SOLVER_BACKEND_VEXCL)
-        BOOST_PP_SEQ_FOR_EACH(CALL_BLOCK_SOLVER, ~, AMGCL_BLOCK_SIZES)
+            BOOST_PP_SEQ_FOR_EACH(CALL_BLOCK_SOLVER, ~, AMGCL_BLOCK_SIZES)
 #endif
 
         default:
             precondition(false, "Unsupported block size");
             break;
     }
-
 
     std::cout << prof << std::endl;
 }
