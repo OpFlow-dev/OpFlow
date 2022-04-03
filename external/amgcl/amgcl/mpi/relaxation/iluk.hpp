@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,27 +31,30 @@ THE SOFTWARE.
  * \brief  Distributed memory incomplete LU with fill-in level.
  */
 
-#include <amgcl/mpi/distributed_matrix.hpp>
 #include <amgcl/relaxation/iluk.hpp>
+#include <amgcl/mpi/distributed_matrix.hpp>
 
 namespace amgcl {
-    namespace mpi {
-        namespace relaxation {
+namespace mpi {
+namespace relaxation {
 
-            template <class Backend>
-            struct iluk : public amgcl::relaxation::iluk<Backend> {
-                typedef Backend backend_type;
-                typedef amgcl::relaxation::iluk<Backend> Base;
-                typedef typename Backend::params backend_params;
-                typedef typename Base::params params;
+template <class Backend>
+struct iluk : public amgcl::relaxation::iluk<Backend> {
+    typedef Backend backend_type;
+    typedef amgcl::relaxation::iluk<Backend> Base;
+    typedef typename Backend::params backend_params;
+    typedef typename Base::params params;
 
-                iluk(const distributed_matrix<Backend> &A, const params &prm = params(),
-                     const backend_params &bprm = backend_params())
-                    : Base(*A.local(), prm, bprm) {}
-            };
+    iluk(
+            const distributed_matrix<Backend> &A,
+            const params &prm = params(),
+            const backend_params &bprm = backend_params()
+         ) : Base(*A.local(), prm, bprm)
+    {}
+};
 
-        }// namespace relaxation
-    }    // namespace mpi
-}// namespace amgcl
+} // namespace
+} // mpi
+} // amgcl
 
 #endif

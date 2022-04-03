@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,37 +31,44 @@ THE SOFTWARE.
  * \brief  Default direct solver for coarse level.
  */
 
-#include <amgcl/backend/builtin.hpp>
 #include <memory>
+#include <amgcl/backend/builtin.hpp>
 
 namespace amgcl {
-    namespace backend {
-        namespace detail {
+namespace backend {
+namespace detail {
 
-            template <class Backend>
-            struct default_direct_solver {
-                typedef typename Backend::value_type real;
-                typedef typename Backend::matrix matrix;
-                typedef typename builtin<real>::matrix host_matrix;
+template <class Backend>
+struct default_direct_solver {
+    typedef typename Backend::value_type   real;
+    typedef typename math::scalar_of<real>::type scalar;
+    typedef typename Backend::matrix       matrix;
+    typedef typename builtin<real>::matrix host_matrix;
 
-                std::shared_ptr<matrix> Ainv;
+    std::shared_ptr<matrix> Ainv;
 
-                default_direct_solver(std::shared_ptr<host_matrix> A, typename Backend::params const &prm) {
-                    auto ainv = std::make_shared<host_matrix>();
-                    *ainv = inverse(*A);
-                    Ainv = Backend::copy_matrix(ainv, prm);
-                }
+    default_direct_solver(
+            std::shared_ptr<host_matrix> A,
+            typename Backend::params const &prm
+            )
+    {
+        auto ainv = std::make_shared<host_matrix>();
+        *ainv = inverse(*A);
+        Ainv = Backend::copy_matrix(ainv, prm);
+    }
 
-                template <class Vec1, class Vec2>
-                void operator()(const Vec1 &rhs, Vec2 &x) const {
-                    backend::spmv(1, *Ainv, rhs, 0, x);
-                }
+    template <class Vec1, class Vec2>
+    void operator()(const Vec1 &rhs, Vec2 &x) const {
+        backend::spmv(math::identity<scalar>(), *Ainv, rhs, math::zero<scalar>(), x);
+    }
 
-                static size_t coarse_enough() { return 500; }
-            };
+    static size_t coarse_enough() { return 500; }
+};
 
-        }// namespace detail
-    }    // namespace backend
-}// namespace amgcl
+} // namespace detail
+} // namespace backend
+} // namespace amgcl
+
+
 
 #endif

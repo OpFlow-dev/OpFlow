@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,19 +34,26 @@ THE SOFTWARE.
 #include <amgcl/coarsening/detail/galerkin.hpp>
 
 namespace amgcl {
-    namespace coarsening {
-        namespace detail {
+namespace coarsening {
+namespace detail {
 
-            template <class Matrix>
-            std::shared_ptr<Matrix> scaled_galerkin(const Matrix &A, const Matrix &P, const Matrix &R,
-                                                    float s) {
-                auto a = galerkin(A, P, R);
-                scale(*a, s);
-                return a;
-            }
+template <class Matrix>
+std::shared_ptr<Matrix> scaled_galerkin(
+        const Matrix &A,
+        const Matrix &P,
+        const Matrix &R,
+        float s
+        )
+{
+        auto a = galerkin(A, P, R);
+        scale(*a, s);
+        return a;
+}
 
-        }// namespace detail
-    }    // namespace coarsening
-}// namespace amgcl
+} // namespace detail
+} // namespace coarsening
+} // namespace amgcl
+
+
 
 #endif

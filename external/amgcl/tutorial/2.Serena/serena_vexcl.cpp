@@ -1,16 +1,16 @@
-#include <iostream>
 #include <vector>
+#include <iostream>
 
-#include <amgcl/adapter/block_matrix.hpp>
-#include <amgcl/adapter/crs_tuple.hpp>
-#include <amgcl/amg.hpp>
 #include <amgcl/backend/vexcl.hpp>
 #include <amgcl/backend/vexcl_static_matrix.hpp>
-#include <amgcl/coarsening/smoothed_aggregation.hpp>
+#include <amgcl/adapter/crs_tuple.hpp>
 #include <amgcl/make_solver.hpp>
+#include <amgcl/amg.hpp>
+#include <amgcl/coarsening/smoothed_aggregation.hpp>
 #include <amgcl/relaxation/spai0.hpp>
 #include <amgcl/solver/cg.hpp>
 #include <amgcl/value_type/static_matrix.hpp>
+#include <amgcl/adapter/block_matrix.hpp>
 
 #include <amgcl/io/mm.hpp>
 #include <amgcl/profiler.hpp>
@@ -29,8 +29,8 @@ int main(int argc, char *argv[]) {
     std::cout << ctx << std::endl;
 
     // Enable support for block-valued matrices in the VexCL kernels:
-    vex::scoped_program_header h1(ctx, amgcl::backend::vexcl_static_matrix_declaration<double, 3>());
-    vex::scoped_program_header h2(ctx, amgcl::backend::vexcl_static_matrix_declaration<float, 3>());
+    vex::scoped_program_header h1(ctx, amgcl::backend::vexcl_static_matrix_declaration<double,3>());
+    vex::scoped_program_header h2(ctx, amgcl::backend::vexcl_static_matrix_declaration<float,3>());
 
     // The profiler:
     amgcl::profiler<> prof("Serena (VexCL)");
@@ -51,8 +51,8 @@ int main(int argc, char *argv[]) {
     // Scale the matrix so that it has the unit diagonal.
     // First, find the diagonal values:
     std::vector<double> D(rows, 1.0);
-    for (ptrdiff_t i = 0; i < rows; ++i) {
-        for (ptrdiff_t j = ptr[i], e = ptr[i + 1]; j < e; ++j) {
+    for(ptrdiff_t i = 0; i < rows; ++i) {
+        for(ptrdiff_t j = ptr[i], e = ptr[i+1]; j < e; ++j) {
             if (col[j] == i) {
                 D[i] = 1 / sqrt(val[j]);
                 break;
@@ -61,8 +61,10 @@ int main(int argc, char *argv[]) {
     }
 
     // Then, apply the scaling in-place:
-    for (ptrdiff_t i = 0; i < rows; ++i) {
-        for (ptrdiff_t j = ptr[i], e = ptr[i + 1]; j < e; ++j) { val[j] *= D[i] * D[col[j]]; }
+    for(ptrdiff_t i = 0; i < rows; ++i) {
+        for(ptrdiff_t j = ptr[i], e = ptr[i+1]; j < e; ++j) {
+            val[j] *= D[i] * D[col[j]];
+        }
         f[i] *= D[i];
     }
 
@@ -72,17 +74,21 @@ int main(int argc, char *argv[]) {
     auto A = std::tie(rows, ptr, col, val);
 
     // Compose the solver type
-    typedef amgcl::static_matrix<double, 3, 3> dmat_type;// matrix value type in double precision
-    typedef amgcl::static_matrix<double, 3, 1> dvec_type;// the corresponding vector value type
-    typedef amgcl::static_matrix<float, 3, 3> smat_type; // matrix value type in single precision
+    typedef amgcl::static_matrix<double, 3, 3> dmat_type; // matrix value type in double precision
+    typedef amgcl::static_matrix<double, 3, 1> dvec_type; // the corresponding vector value type
+    typedef amgcl::static_matrix<float,  3, 3> smat_type; // matrix value type in single precision
 
-    typedef amgcl::backend::vexcl<dmat_type> SBackend;// the solver backend
-    typedef amgcl::backend::vexcl<smat_type> PBackend;// the preconditioner backend
-
+    typedef amgcl::backend::vexcl<dmat_type> SBackend; // the solver backend
+    typedef amgcl::backend::vexcl<smat_type> PBackend; // the preconditioner backend
+    
     typedef amgcl::make_solver<
-            amgcl::amg<PBackend, amgcl::coarsening::smoothed_aggregation, amgcl::relaxation::spai0>,
-            amgcl::solver::cg<SBackend>>
-            Solver;
+        amgcl::amg<
+            PBackend,
+            amgcl::coarsening::smoothed_aggregation,
+            amgcl::relaxation::spai0
+            >,
+        amgcl::solver::cg<SBackend>
+        > Solver;
 
     // Solver parameters
     Solver::params prm;
@@ -110,13 +116,14 @@ int main(int argc, char *argv[]) {
 
     // Since we are using mixed precision, we have to transfer the system matrix to the GPU:
     prof.tic("GPU matrix");
-    auto A_gpu = SBackend::copy_matrix(std::make_shared<amgcl::backend::crs<dmat_type>>(Ab), bprm);
+    auto A_gpu = SBackend::copy_matrix(
+            std::make_shared<amgcl::backend::crs<dmat_type>>(Ab), bprm);
     prof.toc("GPU matrix");
 
     // We reinterpret both the RHS and the solution vectors as block-valued,
     // and copy them to the VexCL vectors:
-    auto f_ptr = reinterpret_cast<dvec_type *>(f.data());
-    auto x_ptr = reinterpret_cast<dvec_type *>(x.data());
+    auto f_ptr = reinterpret_cast<dvec_type*>(f.data());
+    auto x_ptr = reinterpret_cast<dvec_type*>(x.data());
     vex::vector<dvec_type> F(ctx, rows / 3, f_ptr);
     vex::vector<dvec_type> X(ctx, rows / 3, x_ptr);
 
@@ -126,5 +133,7 @@ int main(int argc, char *argv[]) {
 
     // Output the number of iterations, the relative error,
     // and the profiling data:
-    std::cout << "Iters: " << iters << std::endl << "Error: " << error << std::endl << prof << std::endl;
+    std::cout << "Iters: " << iters << std::endl
+              << "Error: " << error << std::endl
+              << prof << std::endl;
 }

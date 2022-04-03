@@ -2,29 +2,28 @@
 #include <string>
 
 #include <boost/program_options.hpp>
-#include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
+
+#include <amgcl/backend/builtin.hpp>
+#include <amgcl/relaxation/runtime.hpp>
+#include <amgcl/coarsening/runtime.hpp>
+#include <amgcl/coarsening/rigid_body_modes.hpp>
+#include <amgcl/solver/runtime.hpp>
+#include <amgcl/preconditioner/runtime.hpp>
+#include <amgcl/deflated_solver.hpp>
+#include <amgcl/amg.hpp>
 #include <amgcl/adapter/crs_tuple.hpp>
 #include <amgcl/adapter/reorder.hpp>
-#include <amgcl/amg.hpp>
-#include <amgcl/backend/builtin.hpp>
-#include <amgcl/coarsening/rigid_body_modes.hpp>
-#include <amgcl/coarsening/runtime.hpp>
-#include <amgcl/deflated_solver.hpp>
-#include <amgcl/io/binary.hpp>
 #include <amgcl/io/mm.hpp>
-#include <amgcl/preconditioner/runtime.hpp>
-#include <amgcl/relaxation/runtime.hpp>
-#include <amgcl/solver/runtime.hpp>
+#include <amgcl/io/binary.hpp>
 
 #include <amgcl/profiler.hpp>
 
-namespace amgcl {
-    profiler<> prof;
-}
-using amgcl::precondition;
+namespace amgcl { profiler<> prof; }
 using amgcl::prof;
+using amgcl::precondition;
 
 //---------------------------------------------------------------------------
 int main(int argc, char *argv[]) {
@@ -32,37 +31,67 @@ int main(int argc, char *argv[]) {
     namespace io = amgcl::io;
 
     using amgcl::prof;
-    using std::string;
     using std::vector;
+    using std::string;
 
     po::options_description desc("Options");
 
-    desc.add_options()("help,h", "Show this help.")("prm-file,P", po::value<string>(),
-                                                    "Parameter file in json format. ")(
-            "prm,p", po::value<vector<string>>()->multitoken(),
-            "Parameters specified as name=value pairs. "
-            "May be provided multiple times. Examples:\n"
-            "  -p solver.tol=1e-3\n"
-            "  -p precond.coarse_enough=300")("matrix,A", po::value<string>()->required(),
-                                              "System matrix in the MatrixMarket format.")(
-            "rhs,f", po::value<string>(),
-            "The RHS vector in the MatrixMarket format. "
-            "When omitted, a vector of ones is used by default. "
-            "Should only be provided together with a system matrix. ")(
-            "defvec,D", po::value<string>(), "The near null-space vectors in the MatrixMarket format. ")(
-            "coords,C", po::value<string>(),
-            "Coordinate matrix where number of rows corresponds to the number of grid nodes "
-            "and the number of columns corresponds to the problem dimensionality (2 or 3). "
-            "Will be used to construct near null-space vectors as rigid body modes. ")(
-            "binary,B", po::bool_switch()->default_value(false),
-            "When specified, treat input files as binary instead of as MatrixMarket. "
-            "It is assumed the files were converted to binary format with mm2bin utility. ")(
-            "single-level,1", po::bool_switch()->default_value(false),
-            "When specified, the AMG hierarchy is not constructed. "
-            "Instead, the problem is solved using a single-level smoother as preconditioner. ")(
-            "output,o", po::value<string>(),
-            "Output file. Will be saved in the MatrixMarket format. "
-            "When omitted, the solution is not saved. ");
+    desc.add_options()
+        ("help,h", "Show this help.")
+        ("prm-file,P",
+         po::value<string>(),
+         "Parameter file in json format. "
+        )
+        (
+         "prm,p",
+         po::value< vector<string> >()->multitoken(),
+         "Parameters specified as name=value pairs. "
+         "May be provided multiple times. Examples:\n"
+         "  -p solver.tol=1e-3\n"
+         "  -p precond.coarse_enough=300"
+        )
+        ("matrix,A",
+         po::value<string>()->required(),
+         "System matrix in the MatrixMarket format."
+        )
+        (
+         "rhs,f",
+         po::value<string>(),
+         "The RHS vector in the MatrixMarket format. "
+         "When omitted, a vector of ones is used by default. "
+         "Should only be provided together with a system matrix. "
+        )
+        (
+         "defvec,D",
+         po::value<string>(),
+         "The near null-space vectors in the MatrixMarket format. "
+        )
+        (
+         "coords,C",
+         po::value<string>(),
+         "Coordinate matrix where number of rows corresponds to the number of grid nodes "
+         "and the number of columns corresponds to the problem dimensionality (2 or 3). "
+         "Will be used to construct near null-space vectors as rigid body modes. "
+        )
+        (
+         "binary,B",
+         po::bool_switch()->default_value(false),
+         "When specified, treat input files as binary instead of as MatrixMarket. "
+         "It is assumed the files were converted to binary format with mm2bin utility. "
+        )
+        (
+         "single-level,1",
+         po::bool_switch()->default_value(false),
+         "When specified, the AMG hierarchy is not constructed. "
+         "Instead, the problem is solved using a single-level smoother as preconditioner. "
+        )
+        (
+         "output,o",
+         po::value<string>(),
+         "Output file. Will be saved in the MatrixMarket format. "
+         "When omitted, the solution is not saved. "
+        )
+        ;
 
     po::positional_options_description p;
     p.add("prm", -1);
@@ -83,10 +112,14 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl;
 
     boost::property_tree::ptree prm;
-    if (vm.count("prm-file")) { read_json(vm["prm-file"].as<string>(), prm); }
+    if (vm.count("prm-file")) {
+        read_json(vm["prm-file"].as<string>(), prm);
+    }
 
     if (vm.count("prm")) {
-        for (const string &v : vm["prm"].as<vector<string>>()) { amgcl::put(prm, v); }
+        for(const string &v : vm["prm"].as<vector<string> >()) {
+            amgcl::put(prm, v);
+        }
     }
 
     if (!vm.count("defvec") && !vm.count("coords")) {
@@ -101,8 +134,8 @@ int main(int argc, char *argv[]) {
     {
         auto t = prof.scoped_tic("reading");
 
-        string Afile = vm["matrix"].as<string>();
-        bool binary = vm["binary"].as<bool>();
+        string Afile  = vm["matrix"].as<string>();
+        bool   binary = vm["binary"].as<bool>();
 
         if (binary) {
             io::read_crs(Afile, rows, ptr, col, val);
@@ -143,8 +176,9 @@ int main(int argc, char *argv[]) {
             precondition(m == rows, "Deflation vectors have wrong size");
 
             z.resize(N.size());
-            for (ptrdiff_t i = 0; i < rows; ++i)
-                for (ptrdiff_t j = 0; j < nv; ++j) z[i + j * rows] = N[i * nv + j];
+            for(ptrdiff_t i = 0; i < rows; ++i)
+                for(ptrdiff_t j = 0; j < nv; ++j)
+                    z[i + j * rows] = N[i * nv + j];
         } else if (vm.count("coords")) {
             string cfile = vm["coords"].as<string>();
             std::vector<double> coo;
@@ -159,24 +193,26 @@ int main(int argc, char *argv[]) {
 
             precondition(m * ndim == rows && (ndim == 2 || ndim == 3), "Coordinate matrix has wrong size");
 
-            nv = amgcl::coarsening::rigid_body_modes(ndim, coo, z, /*transpose = */ true);
+            nv = amgcl::coarsening::rigid_body_modes(ndim, coo, z, /*transpose = */true);
         }
 
         prm.put("nvec", nv);
-        prm.put("vec", z.data());
+        prm.put("vec",  z.data());
     }
 
     std::vector<double> x(rows, 0);
 
-    int iters;
+    int    iters;
     double error;
 
-    if (vm["single-level"].as<bool>()) prm.put("precond.class", "relaxation");
+    if (vm["single-level"].as<bool>())
+        prm.put("precond.class", "relaxation");
 
     typedef amgcl::backend::builtin<double> Backend;
-    typedef amgcl::deflated_solver<amgcl::runtime::preconditioner<Backend>,
-                                   amgcl::runtime::solver::wrapper<Backend>>
-            Solver;
+    typedef amgcl::deflated_solver<
+        amgcl::runtime::preconditioner<Backend>,
+        amgcl::runtime::solver::wrapper<Backend>
+        > Solver;
 
     auto A = std::tie(rows, ptr, col, val);
 
@@ -198,7 +234,6 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Iterations: " << iters << std::endl
               << "Error:      " << error << std::endl
-              << "True error: "
-              << sqrt(amgcl::backend::inner_product(r, r)) / sqrt(amgcl::backend::inner_product(rhs, rhs))
+              << "True error: " << sqrt(amgcl::backend::inner_product(r, r)) / sqrt(amgcl::backend::inner_product(rhs, rhs))
               << prof << std::endl;
 }

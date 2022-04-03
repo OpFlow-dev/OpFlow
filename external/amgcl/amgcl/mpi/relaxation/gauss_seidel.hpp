@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,43 +31,49 @@ THE SOFTWARE.
  * \brief  Distributed memory Gauss-Seidel relaxation scheme.
  */
 
-#include <amgcl/mpi/distributed_matrix.hpp>
 #include <amgcl/relaxation/gauss_seidel.hpp>
+#include <amgcl/mpi/distributed_matrix.hpp>
 
 namespace amgcl {
-    namespace mpi {
-        namespace relaxation {
+namespace mpi {
+namespace relaxation {
 
-            template <class Backend>
-            struct gauss_seidel : public amgcl::relaxation::gauss_seidel<Backend> {
-                typedef Backend backend_type;
-                typedef amgcl::relaxation::gauss_seidel<Backend> Base;
-                typedef typename Backend::params backend_params;
-                typedef typename Base::params params;
+template <class Backend>
+struct gauss_seidel : public amgcl::relaxation::gauss_seidel<Backend> {
+    typedef Backend backend_type;
+    typedef amgcl::relaxation::gauss_seidel<Backend> Base;
+    typedef typename Backend::params backend_params;
+    typedef typename Base::params params;
 
-                gauss_seidel(const distributed_matrix<Backend> &A, const params &prm = params(),
-                             const backend_params &bprm = backend_params())
-                    : Base(*A.local(), prm, bprm) {}
+    gauss_seidel(
+            const distributed_matrix<Backend> &A,
+            const params &prm = params(),
+            const backend_params &bprm = backend_params()
+         ) : Base(*A.local(), prm, bprm)
+    {}
 
-                template <class Matrix, class VectorRHS, class VectorX, class VectorTMP>
-                void apply_pre(const Matrix &A, const VectorRHS &rhs, VectorX &x, VectorTMP &t) const {
-                    Base::apply_pre(*A.local_backend(), rhs, x, t);
-                }
+    template <class Matrix, class VectorRHS, class VectorX, class VectorTMP>
+    void apply_pre(const Matrix &A, const VectorRHS &rhs, VectorX &x, VectorTMP &t) const
+    {
+        Base::apply_pre(*A.local_backend(), rhs, x, t);
+    }
 
-                /// \copydoc amgcl::relaxation::damped_jacobi::apply_post
-                template <class Matrix, class VectorRHS, class VectorX, class VectorTMP>
-                void apply_post(const Matrix &A, const VectorRHS &rhs, VectorX &x, VectorTMP &t) const {
-                    Base::apply_post(*A.local_backend(), rhs, x, t);
-                }
+    /// \copydoc amgcl::relaxation::damped_jacobi::apply_post
+    template <class Matrix, class VectorRHS, class VectorX, class VectorTMP>
+    void apply_post(const Matrix &A, const VectorRHS &rhs, VectorX &x, VectorTMP &t) const
+    {
+        Base::apply_post(*A.local_backend(), rhs, x, t);
+    }
 
-                template <class Matrix, class VectorRHS, class VectorX>
-                void apply(const Matrix &A, const VectorRHS &rhs, VectorX &x) const {
-                    Base::apply(*A.local_backend(), rhs, x);
-                }
-            };
+    template <class Matrix, class VectorRHS, class VectorX>
+    void apply(const Matrix &A, const VectorRHS &rhs, VectorX &x) const
+    {
+        Base::apply(*A.local_backend(), rhs, x);
+    }
+};
 
-        }// namespace relaxation
-    }    // namespace mpi
-}// namespace amgcl
+} // namespace
+} // mpi
+} // amgcl
 
 #endif

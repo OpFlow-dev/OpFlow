@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,8 +31,8 @@ THE SOFTWARE.
  * \brief  Non-smoothed aggregation coarsening.
  */
 
-#include <memory>
 #include <tuple>
+#include <memory>
 
 #include <amgcl/backend/builtin.hpp>
 #include <amgcl/coarsening/detail/scaled_galerkin.hpp>
@@ -42,10 +42,10 @@ THE SOFTWARE.
 
 namespace amgcl {
 
-    /// Coarsening strategies
-    namespace coarsening {
+/// Coarsening strategies
+namespace coarsening {
 
-        /**
+/**
  * \defgroup coarsening Coarsening strategies
  * \brief Coarsening strategies for AMG hirarchy construction.
  *
@@ -63,24 +63,24 @@ namespace amgcl {
  * coarsener.
  */
 
-        /// Non-smoothed aggregation.
-        /**
+/// Non-smoothed aggregation.
+/**
  * \ingroup coarsening
  */
-        template <class Backend>
-        struct aggregation {
-            typedef pointwise_aggregates Aggregates;
+template <class Backend>
+struct aggregation {
+    typedef pointwise_aggregates Aggregates;
 
-            /// Coarsening parameters.
-            struct params {
-                /// Aggregation parameters.
-                Aggregates::params aggr;
+    /// Coarsening parameters.
+    struct params {
+        /// Aggregation parameters.
+        Aggregates::params aggr;
 
-                /// Near nullspace parameters.
-                nullspace_params nullspace;
+        /// Near nullspace parameters.
+        nullspace_params nullspace;
 
-                /// Over-interpolation factor \f$\alpha\f$.
-                /**
+        /// Over-interpolation factor \f$\alpha\f$.
+        /**
          * In case of aggregation coarsening, coarse-grid
          * correction of smooth error, and by this the overall convergence, can
          * often be substantially improved by using "over-interpolation", that is,
@@ -92,65 +92,73 @@ namespace amgcl {
          *
          * \sa  \cite Stuben1999, Section 9.1 "Re-scaling of the Galerkin operator".
          */
-                float over_interp;
+        float over_interp;
 
-                params()
-                    : over_interp(math::static_rows<typename Backend::value_type>::value == 1 ? 1.5f : 2.0f) {
-                }
+        params()
+            : over_interp(math::static_rows<typename Backend::value_type>::value == 1 ? 1.5f : 2.0f)
+        {}
 
 #ifndef AMGCL_NO_BOOST
-                params(const boost::property_tree::ptree &p)
-                    : AMGCL_PARAMS_IMPORT_CHILD(p, aggr), AMGCL_PARAMS_IMPORT_CHILD(p, nullspace),
-                      AMGCL_PARAMS_IMPORT_VALUE(p, over_interp) {
-                    check_params(p, {"aggr", "nullspace", "over_interp"});
-                }
+        params(const boost::property_tree::ptree &p)
+            : AMGCL_PARAMS_IMPORT_CHILD(p, aggr),
+              AMGCL_PARAMS_IMPORT_CHILD(p, nullspace),
+              AMGCL_PARAMS_IMPORT_VALUE(p, over_interp)
+        {
+            check_params(p, {"aggr", "nullspace", "over_interp"});
+        }
 
-                void get(boost::property_tree::ptree &p, const std::string &path) const {
-                    AMGCL_PARAMS_EXPORT_CHILD(p, path, aggr);
-                    AMGCL_PARAMS_EXPORT_CHILD(p, path, nullspace);
-                    AMGCL_PARAMS_EXPORT_VALUE(p, path, over_interp);
-                }
+        void get(boost::property_tree::ptree &p, const std::string &path) const {
+            AMGCL_PARAMS_EXPORT_CHILD(p, path, aggr);
+            AMGCL_PARAMS_EXPORT_CHILD(p, path, nullspace);
+            AMGCL_PARAMS_EXPORT_VALUE(p, path, over_interp);
+        }
 #endif
-            } prm;
+    } prm;
 
-            aggregation(const params &prm = params()) : prm(prm) {}
+    aggregation(const params &prm = params()) : prm(prm) {}
 
-            /// Creates transfer operators for the given system matrix.
-            /**
+    /// Creates transfer operators for the given system matrix.
+    /**
      * \param A   The system matrix.
      * \param prm Coarsening parameters.
      * \returns   A tuple of prolongation and restriction operators.
      */
-            template <class Matrix>
-            std::tuple<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> transfer_operators(const Matrix &A) {
-                const size_t n = rows(A);
+    template <class Matrix>
+    std::tuple<
+        std::shared_ptr<Matrix>,
+        std::shared_ptr<Matrix>
+        >
+    transfer_operators(const Matrix &A) {
+        const size_t n = rows(A);
 
-                AMGCL_TIC("aggregates");
-                Aggregates aggr(A, prm.aggr, prm.nullspace.cols);
-                AMGCL_TOC("aggregates");
+        AMGCL_TIC("aggregates");
+        Aggregates aggr(A, prm.aggr, prm.nullspace.cols);
+        AMGCL_TOC("aggregates");
 
-                AMGCL_TIC("interpolation");
-                auto P = tentative_prolongation<Matrix>(n, aggr.count, aggr.id, prm.nullspace,
-                                                        prm.aggr.block_size);
-                AMGCL_TOC("interpolation");
+        AMGCL_TIC("interpolation");
+        auto P = tentative_prolongation<Matrix>(
+                n, aggr.count, aggr.id, prm.nullspace, prm.aggr.block_size
+                );
+        AMGCL_TOC("interpolation");
 
-                return std::make_tuple(P, transpose(*P));
-            }
+        return std::make_tuple(P, transpose(*P));
+    }
 
-            /// Creates system matrix for the coarser level.
-            /**
+    /// Creates system matrix for the coarser level.
+    /**
      * \param A The system matrix at the finer level.
      * \param P Prolongation operator returned by transfer_operators().
      * \param R Restriction operator returned by transfer_operators().
      * \returns System matrix for the coarser level.
      */
-            template <class Matrix>
-            std::shared_ptr<Matrix> coarse_operator(const Matrix &A, const Matrix &P, const Matrix &R) const {
-                return detail::scaled_galerkin(A, P, R, 1 / prm.over_interp);
-            }
-        };
+    template <class Matrix>
+    std::shared_ptr<Matrix>
+    coarse_operator(const Matrix &A, const Matrix &P, const Matrix &R) const {
+        return detail::scaled_galerkin(A, P, R, 1 / prm.over_interp);
+    }
+};
 
-    }// namespace coarsening
-}// namespace amgcl
+} // namespace coarsening
+} // namespace amgcl
 
 #endif

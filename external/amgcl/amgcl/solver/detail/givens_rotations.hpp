@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,34 +34,34 @@ THE SOFTWARE.
 #include <amgcl/value_type/interface.hpp>
 
 namespace amgcl {
-    namespace solver {
-        namespace detail {
+namespace solver {
+namespace detail {
 
-            template <class T>
-            inline void generate_plane_rotation(T dx, T dy, T &cs, T &sn) {
-                if (math::is_zero(dy)) {
-                    cs = 1;
-                    sn = 0;
-                } else if (std::abs(dy) > std::abs(dx)) {
-                    T tmp = dx / dy;
-                    sn = math::inverse(sqrt(math::identity<T>() + tmp * tmp));
-                    cs = tmp * sn;
-                } else {
-                    T tmp = dy / dx;
-                    cs = math::inverse(sqrt(math::identity<T>() + tmp * tmp));
-                    sn = tmp * cs;
-                }
-            }
+template <class T>
+inline void generate_plane_rotation(T dx, T dy, T &cs, T &sn) {
+    if (math::is_zero(dy)) {
+        cs = 1;
+        sn = 0;
+    } else if (std::abs(dy) > std::abs(dx)) {
+        T tmp = dx / dy;
+        sn = math::inverse(sqrt(math::identity<T>() + tmp * tmp));
+        cs = tmp * sn;
+    } else {
+        T tmp = dy / dx;
+        cs = math::inverse(sqrt(math::identity<T>() + tmp * tmp));
+        sn = tmp * cs;
+    }
+}
 
-            template <class T>
-            void apply_plane_rotation(T &dx, T &dy, T cs, T sn) {
-                T tmp = math::adjoint(cs) * dx + math::adjoint(sn) * dy;
-                dy = -sn * dx + cs * dy;
-                dx = tmp;
-            }
+template <class T>
+void apply_plane_rotation(T &dx, T &dy, T cs, T sn) {
+    T tmp = math::adjoint(cs) * dx + math::adjoint(sn) * dy;
+    dy = -sn * dx + cs * dy;
+    dx = tmp;
+}
 
-        }// namespace detail
-    }    // namespace solver
-}// namespace amgcl
+} // namespace detail
+} // namespace solver
+} // namespace amgcl
 
 #endif

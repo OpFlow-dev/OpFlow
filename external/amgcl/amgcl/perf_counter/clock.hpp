@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,36 +34,39 @@ THE SOFTWARE.
  */
 
 #ifdef _OPENMP
-#include <omp.h>
+#  include <omp.h>
 #else
-#include <ctime>
+#  include <ctime>
 #endif
 
 namespace amgcl {
 
-    /// Performance counters for use with amgcl::profiler
-    namespace perf_counter {
+/// Performance counters for use with amgcl::profiler
+namespace perf_counter {
 
-        /// Clock class.
-        /**
+/// Clock class.
+/**
  * Uses omp_get_wtime() when available, std::clock() otherwise.
  */
-        struct clock {
-            typedef double value_type;
+struct clock {
+    typedef double value_type;
 
-            static const char* units() { return "s"; }
+    static const char* units() {
+        return "s";
+    }
 
-            /// Current time point.
-            static double current() {
+    /// Current time point.
+    static double current() {
 #ifdef _OPENMP
-                return omp_get_wtime();
+        return omp_get_wtime();
 #else
-                return std::clock() / static_cast<double>(CLOCKS_PER_SEC);
+        return std::clock() / static_cast<double>(CLOCKS_PER_SEC);
 #endif
-            }
-        };
+    }
+};
 
-    }// namespace perf_counter
-}// namespace amgcl
+} // namespace perf_counter
+} // namespace amgcl
+
 
 #endif

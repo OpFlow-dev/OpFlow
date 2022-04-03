@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -37,119 +37,148 @@ THE SOFTWARE.
 #include <amgcl/value_type/interface.hpp>
 
 namespace amgcl {
-    namespace backend {
+namespace backend {
 
-        /// Enable Eigen matrix as a value-type.
-        template <typename T, int N, int M>
-        struct is_builtin_vector<std::vector<Eigen::Matrix<T, N, M>>> : std::true_type {};
+/// Enable Eigen matrix as a value-type.
+template <typename T, int N, int M>
+struct is_builtin_vector< std::vector<Eigen::Matrix<T, N, M> > > : std::true_type {};
 
-    }// namespace backend
+} // namespace backend
 
-    namespace math {
+namespace math {
 
-        /// Scalar type of a non-scalar type.
-        template <class T, int N, int M>
-        struct scalar_of<Eigen::Matrix<T, N, M>> {
-            typedef typename math::scalar_of<T>::type type;
-        };
+/// Scalar type of a non-scalar type.
+template <class T, int N, int M>
+struct scalar_of< Eigen::Matrix<T, N, M> > {
+    typedef typename math::scalar_of<T>::type type;
+};
 
-        /// Replace scalar type in the static matrix
-        template <class T, int N, int M, class S>
-        struct replace_scalar<Eigen::Matrix<T, N, M>, S> {
-            typedef Eigen::Matrix<S, N, M> type;
-        };
+/// Replace scalar type in the static matrix
+template <class T, int N, int M, class S>
+struct replace_scalar< Eigen::Matrix<T, N, M>, S> {
+    typedef Eigen::Matrix<S, N, M> type;
+};
 
-        /// RHS type corresponding to a non-scalar type.
-        template <class T, int N>
-        struct rhs_of<Eigen::Matrix<T, N, N>> {
-            typedef Eigen::Matrix<T, N, 1> type;
-        };
+/// RHS type corresponding to a non-scalar type.
+template <class T, int N>
+struct rhs_of< Eigen::Matrix<T, N, N> > {
+    typedef Eigen::Matrix<T, N, 1> type;
+};
 
-        /// Whether the value type is a statically sized matrix.
-        template <class T, int N, int M>
-        struct is_static_matrix<Eigen::Matrix<T, N, M>> : std::true_type {};
+/// Element type of a non-scalar type
+template <class T, int N, int M>
+struct element_of< Eigen::Matrix<T, N, M> > {
+    typedef T type;
+};
 
-        /// Number of rows for statically sized matrix types.
-        template <class T, int N, int M>
-        struct static_rows<Eigen::Matrix<T, N, M>> : std::integral_constant<int, N> {};
+/// Whether the value type is a statically sized matrix.
+template <class T, int N, int M>
+struct is_static_matrix< Eigen::Matrix<T, N, M> > : std::true_type {};
 
-        /// Number of columns for statically sized matrix types.
-        template <class T, int N, int M>
-        struct static_cols<Eigen::Matrix<T, N, M>> : std::integral_constant<int, M> {};
+/// Number of rows for statically sized matrix types.
+template <class T, int N, int M>
+struct static_rows< Eigen::Matrix<T, N, M> > : std::integral_constant<int, N> {};
 
-        /// Specialization of conjugate transpose for eigen matrices.
-        template <typename T, int N, int M>
-        struct adjoint_impl<Eigen::Matrix<T, N, M>> {
-            typedef typename Eigen::Matrix<T, N, M>::AdjointReturnType return_type;
+/// Number of columns for statically sized matrix types.
+template <class T, int N, int M>
+struct static_cols< Eigen::Matrix<T, N, M> > : std::integral_constant<int, M> {};
 
-            static return_type get(const Eigen::Matrix<T, N, M> &x) { return x.adjoint(); }
-        };
+/// Specialization of conjugate transpose for eigen matrices.
+template <typename T, int N, int M>
+struct adjoint_impl< Eigen::Matrix<T, N, M> >
+{
+    typedef typename Eigen::Matrix<T, N, M>::AdjointReturnType return_type;
 
-        /// Inner-product result of two Eigen vectors.
-        template <class T, int N>
-        struct inner_product_impl<Eigen::Matrix<T, N, 1>> {
-            typedef T return_type;
-            static T get(const Eigen::Matrix<T, N, 1> &x, const Eigen::Matrix<T, N, 1> &y) {
-                return x.adjoint() * y;
-            }
-        };
+    static return_type get(const Eigen::Matrix<T, N, M> &x) {
+        return x.adjoint();
+    }
+};
 
-        /// Inner-product result of two Eigen matrices.
-        template <class T, int N, int M>
-        struct inner_product_impl<Eigen::Matrix<T, N, M>> {
-            typedef Eigen::Matrix<T, M, M> return_type;
+/// Inner-product result of two Eigen vectors.
+template <class T, int N>
+struct inner_product_impl< Eigen::Matrix<T, N, 1> >
+{
+    typedef T return_type;
+    static T get(const Eigen::Matrix<T, N, 1> &x, const Eigen::Matrix<T, N, 1> &y) {
+        return x.adjoint() * y;
+    }
+};
 
-            static return_type get(const Eigen::Matrix<T, N, M> &x, const Eigen::Matrix<T, N, M> &y) {
-                return x.adjoint() * y;
-            }
-        };
+/// Inner-product result of two Eigen matrices.
+template <class T, int N, int M>
+struct inner_product_impl< Eigen::Matrix<T, N, M> >
+{
+    typedef Eigen::Matrix<T, M, M> return_type;
 
-        /// Specialization of element norm for eigen matrices.
-        template <typename T, int N, int M>
-        struct norm_impl<Eigen::Matrix<T, N, M>> {
-            static typename math::scalar_of<T>::type get(const Eigen::Matrix<T, N, M> &x) { return x.norm(); }
-        };
+    static return_type get(const Eigen::Matrix<T, N, M> &x, const Eigen::Matrix<T, N, M> &y) {
+        return x.adjoint() * y;
+    }
+};
 
-        /// Specialization of zero element for eigen matrices.
-        template <typename T, int N, int M>
-        struct zero_impl<Eigen::Matrix<T, N, M>> {
-            static Eigen::Matrix<T, N, M> get() { return Eigen::Matrix<T, N, M>::Zero(); }
-        };
+/// Specialization of element norm for eigen matrices.
+template <typename T, int N, int M>
+struct norm_impl< Eigen::Matrix<T, N, M> >
+{
+    static typename math::scalar_of<T>::type get(const Eigen::Matrix<T, N, M> &x) {
+        return x.norm();
+    }
+};
 
-        /// Specialization of zero element for eigen matrices.
-        template <typename T, int N, int M>
-        struct is_zero_impl<Eigen::Matrix<T, N, M>> {
-            static bool get(const Eigen::Matrix<T, N, M> &x) { return x.isZero(); }
-        };
+/// Specialization of zero element for eigen matrices.
+template <typename T, int N, int M>
+struct zero_impl< Eigen::Matrix<T, N, M> >
+{
+    static Eigen::Matrix<T, N, M> get() {
+        return Eigen::Matrix<T, N, M>::Zero();
+    }
+};
 
-        /// Specialization of identity for eigen matrices.
-        template <typename T, int N>
-        struct identity_impl<Eigen::Matrix<T, N, N>> {
-            static Eigen::Matrix<T, N, N> get() { return Eigen::Matrix<T, N, N>::Identity(); }
-        };
+/// Specialization of zero element for eigen matrices.
+template <typename T, int N, int M>
+struct is_zero_impl< Eigen::Matrix<T, N, M> >
+{
+    static bool get(const Eigen::Matrix<T, N, M> &x) {
+        return x.isZero();
+    }
+};
 
-        /// Specialization of constant for eigen matrices.
-        template <typename T, int N, int M>
-        struct constant_impl<Eigen::Matrix<T, N, M>> {
-            static Eigen::Matrix<T, N, M> get(T c) { return Eigen::Matrix<T, N, M>::Constant(c); }
-        };
+/// Specialization of identity for eigen matrices.
+template <typename T, int N>
+struct identity_impl< Eigen::Matrix<T, N, N> >
+{
+    static Eigen::Matrix<T, N, N> get() {
+        return Eigen::Matrix<T, N, N>::Identity();
+    }
+};
 
-        /// Specialization of inversion for eigen matrices.
-        template <typename T, int N>
-        struct inverse_impl<Eigen::Matrix<T, N, N>> {
-            static Eigen::Matrix<T, N, N> get(const Eigen::Matrix<T, N, N> &x) { return x.inverse(); }
-        };
+/// Specialization of constant for eigen matrices.
+template <typename T, int N, int M>
+struct constant_impl< Eigen::Matrix<T, N, M> >
+{
+    static Eigen::Matrix<T, N, M> get(T c) {
+        return Eigen::Matrix<T, N, M>::Constant(c);
+    }
+};
 
-    }// namespace math
-}// namespace amgcl
+/// Specialization of inversion for eigen matrices.
+template <typename T, int N>
+struct inverse_impl< Eigen::Matrix<T, N, N> >
+{
+    static Eigen::Matrix<T, N, N> get(const Eigen::Matrix<T, N, N> &x) {
+        return x.inverse();
+    }
+};
+
+} // namespace math
+} // namespace amgcl
 
 namespace Eigen {
 
-    template <class A, class B>
-    bool operator<(const MatrixBase<A> &a, const MatrixBase<B> &b) {
-        return a.trace() < b.trace();
-    }
+template <class A, class B>
+bool operator<(const MatrixBase<A> &a, const MatrixBase<B> &b) {
+    return a.trace() < b.trace();
+}
 
-}// namespace Eigen
+} // namespace Eigen
 
 #endif

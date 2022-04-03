@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -32,28 +32,28 @@ THE SOFTWARE.
  */
 
 namespace amgcl {
-    namespace detail {
+namespace detail {
 
-        template <typename Col, typename Val>
-        void sort_row(Col *col, Val *val, int n) {
-            for (int j = 1; j < n; ++j) {
-                Col c = col[j];
-                Val v = val[j];
+template <typename Col, typename Val>
+void sort_row(Col *col, Val *val, int n) {
+    for(int j = 1; j < n; ++j) {
+        Col c = col[j];
+        Val v = val[j];
 
-                int i = j - 1;
+        int i = j - 1;
 
-                while (i >= 0 && col[i] > c) {
-                    col[i + 1] = col[i];
-                    val[i + 1] = val[i];
-                    i--;
-                }
-
-                col[i + 1] = c;
-                val[i + 1] = v;
-            }
+        while(i >= 0 && col[i] > c) {
+            col[i + 1] = col[i];
+            val[i + 1] = val[i];
+            i--;
         }
 
-    }// namespace detail
-}// namespace amgcl
+        col[i + 1] = c;
+        val[i + 1] = v;
+    }
+}
+
+} // namespace detail
+} // namespace amgcl
 
 #endif

@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -38,56 +38,68 @@ THE SOFTWARE.
 #include <mpi.h>
 
 #include <amgcl/backend/builtin.hpp>
-#include <amgcl/mpi/distributed_matrix.hpp>
-#include <amgcl/mpi/inner_product.hpp>
 #include <amgcl/mpi/util.hpp>
+#include <amgcl/mpi/inner_product.hpp>
+#include <amgcl/mpi/distributed_matrix.hpp>
 
 namespace amgcl {
-    namespace mpi {
+namespace mpi {
 
-        template <class Precond>
-        class block_preconditioner {
-        public:
-            typedef typename Precond::params params;
-            typedef typename Precond::backend_type backend_type;
-            typedef typename backend_type::params backend_params;
+template <class Precond>
+class block_preconditioner {
+    public:
+        typedef typename Precond::params       params;
+        typedef typename Precond::backend_type backend_type;
+        typedef typename backend_type::params  backend_params;
 
-            typedef typename backend_type::value_type value_type;
-            typedef typename backend_type::matrix bmatrix;
-            typedef distributed_matrix<backend_type> matrix;
+        typedef typename backend_type::value_type value_type;
+        typedef typename backend_type::matrix     bmatrix;
+        typedef distributed_matrix<backend_type>  matrix;
 
-            template <class Matrix>
-            block_preconditioner(communicator comm, const Matrix &Astrip, const params &prm = params(),
-                                 const backend_params &bprm = backend_params()) {
-                A = std::make_shared<matrix>(comm, Astrip, backend::rows(Astrip));
-                P = std::make_shared<Precond>(A->local(), prm, bprm);
-                A->set_local(P->system_matrix_ptr());
-                A->move_to_backend(bprm);
-            }
+        template <class Matrix>
+        block_preconditioner(
+                communicator comm,
+                const Matrix &Astrip,
+                const params &prm = params(),
+                const backend_params &bprm = backend_params()
+                )
+        {
+            A = std::make_shared<matrix>(comm, Astrip, backend::rows(Astrip));
+            P = std::make_shared<Precond>(A->local(), prm, bprm);
+            A->set_local(P->system_matrix_ptr());
+            A->move_to_backend(bprm);
+        }
 
-            block_preconditioner(communicator, std::shared_ptr<matrix> A, const params &prm = params(),
-                                 const backend_params &bprm = backend_params())
-                : A(A) {
-                P = std::make_shared<Precond>(A->local(), prm, bprm);
-                A->set_local(P->system_matrix_ptr());
-                A->move_to_backend(bprm);
-            }
+        block_preconditioner(
+                communicator,
+                std::shared_ptr<matrix> A,
+                const params &prm = params(),
+                const backend_params &bprm = backend_params()
+                ) : A(A)
+        {
+            P = std::make_shared<Precond>(A->local(), prm, bprm);
+            A->set_local(P->system_matrix_ptr());
+            A->move_to_backend(bprm);
+        }
 
-            std::shared_ptr<matrix> system_matrix_ptr() const { return A; }
+        std::shared_ptr<matrix> system_matrix_ptr() const {
+            return A;
+        }
 
-            const matrix &system_matrix() const { return *A; }
+        const matrix& system_matrix() const {
+            return *A;
+        }
 
-            template <class Vec1, class Vec2>
-            void apply(const Vec1 &rhs, Vec2 &&x) const {
-                P->apply(rhs, x);
-            }
+        template <class Vec1, class Vec2>
+        void apply(const Vec1 &rhs, Vec2 &&x) const {
+            P->apply(rhs, x);
+        }
+    private:
+        std::shared_ptr<matrix>  A;
+        std::shared_ptr<Precond> P;
+};
 
-        private:
-            std::shared_ptr<matrix> A;
-            std::shared_ptr<Precond> P;
-        };
-
-    }// namespace mpi
-}// namespace amgcl
+} // namespace mpi
+} // namespace amgcl
 
 #endif

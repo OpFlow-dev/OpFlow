@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,97 +31,113 @@ THE SOFTWARE.
  * \brief  Damped Jacobi relaxation scheme.
  */
 
+#include <memory>
 #include <amgcl/backend/interface.hpp>
 #include <amgcl/util.hpp>
-#include <memory>
 
 namespace amgcl {
 
-    /// Smoothers
-    namespace relaxation {
+/// Smoothers
+namespace relaxation {
 
-        /**
+/**
  * \defgroup relaxation
  * \brief Relaxation schemes
  */
 
-        /// Damped Jacobi relaxation.
-        /**
+/// Damped Jacobi relaxation.
+/**
  * \param Backend Backend for temporary structures allocation.
  * \ingroup relaxation
  */
-        template <class Backend>
-        struct damped_jacobi {
-            typedef typename Backend::value_type value_type;
-            typedef typename math::scalar_of<value_type>::type scalar_type;
+template <class Backend>
+struct damped_jacobi {
+    typedef typename Backend::value_type               value_type;
+    typedef typename math::scalar_of<value_type>::type scalar_type;
 
-            /// Relaxation parameters.
-            struct params {
-                /// Damping factor.
-                scalar_type damping;
+    /// Relaxation parameters.
+    struct params {
+        /// Damping factor.
+        scalar_type damping;
 
-                params(scalar_type damping = 0.72) : damping(damping) {}
+        params(scalar_type damping = 0.72) : damping(damping) {}
 
 #ifndef AMGCL_NO_BOOST
-                params(const boost::property_tree::ptree &p) : AMGCL_PARAMS_IMPORT_VALUE(p, damping) {
-                    check_params(p, {"damping"});
-                }
+        params(const boost::property_tree::ptree &p)
+            : AMGCL_PARAMS_IMPORT_VALUE(p, damping)
+        {
+            check_params(p, {"damping"});
+        }
 
-                void get(boost::property_tree::ptree &p, const std::string &path) const {
-                    AMGCL_PARAMS_EXPORT_VALUE(p, path, damping);
-                }
+        void get(boost::property_tree::ptree &p, const std::string &path) const {
+            AMGCL_PARAMS_EXPORT_VALUE(p, path, damping);
+        }
 #endif
-            } prm;
+    } prm;
 
-            std::shared_ptr<typename Backend::matrix_diagonal> dia;
+    std::shared_ptr<typename Backend::matrix_diagonal> dia;
 
-            /// Constructs smoother for the system matrix.
-            /**
+    /// Constructs smoother for the system matrix.
+    /**
      * \param A           The system matrix.
      * \param prm         Relaxation parameters.
      * \param backend_prm Backend parameters.
      */
-            template <class Matrix>
-            damped_jacobi(const Matrix &A, const params &prm, const typename Backend::params &backend_prm)
-                : prm(prm), dia(Backend::copy_vector(diagonal(A, true), backend_prm)) {}
+    template <class Matrix>
+    damped_jacobi(
+            const Matrix &A,
+            const params &prm,
+            const typename Backend::params &backend_prm
+            )
+        : prm(prm), dia( Backend::copy_vector( diagonal(A, true), backend_prm ) )
+    { }
 
-            /// Apply pre-relaxation
-            /**
+    /// Apply pre-relaxation
+    /**
      * \param A   System matrix.
      * \param rhs Right-hand side.
      * \param x   Solution vector.
      * \param tmp Scratch vector.
      * \param prm Relaxation parameters.
      */
-            template <class Matrix, class VectorRHS, class VectorX, class VectorTMP>
-            void apply_pre(const Matrix &A, const VectorRHS &rhs, VectorX &x, VectorTMP &tmp) const {
-                backend::residual(rhs, A, x, tmp);
-                backend::vmul(prm.damping, *dia, tmp, math::identity<scalar_type>(), x);
-            }
+    template <class Matrix, class VectorRHS, class VectorX, class VectorTMP>
+    void apply_pre(
+            const Matrix &A, const VectorRHS &rhs, VectorX &x, VectorTMP &tmp
+            ) const
+    {
+        backend::residual(rhs, A, x, tmp);
+        backend::vmul(prm.damping, *dia, tmp, math::identity<scalar_type>(), x);
+    }
 
-            /// Apply post-relaxation
-            /**
+    /// Apply post-relaxation
+    /**
      * \param A   System matrix.
      * \param rhs Right-hand side.
      * \param x   Solution vector.
      * \param tmp Scratch vector.
      * \param prm Relaxation parameters.
      */
-            template <class Matrix, class VectorRHS, class VectorX, class VectorTMP>
-            void apply_post(const Matrix &A, const VectorRHS &rhs, VectorX &x, VectorTMP &tmp) const {
-                backend::residual(rhs, A, x, tmp);
-                backend::vmul(prm.damping, *dia, tmp, math::identity<scalar_type>(), x);
-            }
+    template <class Matrix, class VectorRHS, class VectorX, class VectorTMP>
+    void apply_post(
+            const Matrix &A, const VectorRHS &rhs, VectorX &x, VectorTMP &tmp
+            ) const
+    {
+        backend::residual(rhs, A, x, tmp);
+        backend::vmul(prm.damping, *dia, tmp, math::identity<scalar_type>(), x);
+    }
 
-            template <class Matrix, class VectorRHS, class VectorX>
-            void apply(const Matrix &, const VectorRHS &rhs, VectorX &x) const {
-                backend::vmul(math::identity<scalar_type>(), *dia, rhs, math::zero<scalar_type>(), x);
-            }
+    template <class Matrix, class VectorRHS, class VectorX>
+    void apply(const Matrix&, const VectorRHS &rhs, VectorX &x) const
+    {
+        backend::vmul(math::identity<scalar_type>(), *dia, rhs, math::zero<scalar_type>(), x);
+    }
 
-            size_t bytes() const { return backend::bytes(*dia); }
-        };
+    size_t bytes() const {
+        return backend::bytes(*dia);
+    }
+};
 
-    }// namespace relaxation
-}// namespace amgcl
+} // namespace relaxation
+} // namespace amgcl
 
 #endif

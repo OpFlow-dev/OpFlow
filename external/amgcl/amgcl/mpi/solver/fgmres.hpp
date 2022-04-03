@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,23 +31,23 @@ THE SOFTWARE.
  * \brief  MPI wrapper for FGMRES iterative method.
  */
 
-#include <amgcl/mpi/inner_product.hpp>
 #include <amgcl/solver/fgmres.hpp>
+#include <amgcl/mpi/inner_product.hpp>
 
 namespace amgcl {
-    namespace mpi {
-        namespace solver {
+namespace mpi {
+namespace solver {
 
-            template <class Backend, class InnerProduct = mpi::inner_product>
-            class fgmres : public amgcl::solver::fgmres<Backend, InnerProduct> {
-                typedef amgcl::solver::fgmres<Backend, InnerProduct> Base;
+template <class Backend, class InnerProduct = mpi::inner_product>
+class fgmres : public amgcl::solver::fgmres<Backend, InnerProduct> {
+    typedef amgcl::solver::fgmres<Backend, InnerProduct> Base;
+    public:
+        using Base::Base;
+};
 
-            public:
-                using Base::Base;
-            };
+} // namespace solver
+} // namespace mpi
+} // namespace amgcl
 
-        }// namespace solver
-    }    // namespace mpi
-}// namespace amgcl
 
 #endif

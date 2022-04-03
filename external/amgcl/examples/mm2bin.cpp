@@ -1,12 +1,12 @@
-#include <complex>
 #include <iostream>
 #include <string>
+#include <complex>
 
-#include <amgcl/io/binary.hpp>
-#include <amgcl/io/mm.hpp>
+#include <boost/program_options.hpp>
 #include <amgcl/util.hpp>
 #include <amgcl/value_type/complex.hpp>
-#include <boost/program_options.hpp>
+#include <amgcl/io/mm.hpp>
+#include <amgcl/io/binary.hpp>
 
 namespace io = amgcl::io;
 namespace po = boost::program_options;
@@ -26,12 +26,13 @@ void convert(amgcl::io::mm_reader &ifile, const std::string &ofile) {
         std::tie(rows, cols) = ifile(ptr, col, val);
 
         precondition(io::write(f, rows), "File I/O error.");
-        precondition(io::write(f, ptr), "File I/O error.");
-        precondition(io::write(f, col), "File I/O error.");
-        precondition(io::write(f, val), "File I/O error.");
+        precondition(io::write(f, ptr),  "File I/O error.");
+        precondition(io::write(f, col),  "File I/O error.");
+        precondition(io::write(f, val),  "File I/O error.");
 
-        std::cout << "Wrote " << rows << " by " << cols << " sparse matrix, " << ptr.back() << " nonzeros"
-                  << std::endl;
+        std::cout
+            << "Wrote " << rows << " by " << cols << " sparse matrix, "
+            << ptr.back() << " nonzeros" << std::endl;
     } else {
         size_t rows, cols;
         std::vector<T> val;
@@ -40,9 +41,11 @@ void convert(amgcl::io::mm_reader &ifile, const std::string &ofile) {
 
         precondition(io::write(f, rows), "File I/O error.");
         precondition(io::write(f, cols), "File I/O error.");
-        precondition(io::write(f, val), "File I/O error.");
+        precondition(io::write(f, val),  "File I/O error.");
 
-        std::cout << "Wrote " << rows << " by " << cols << " dense matrix" << std::endl;
+        std::cout
+            << "Wrote " << rows << " by " << cols << " dense matrix"
+            << std::endl;
     }
 }
 
@@ -50,9 +53,13 @@ void convert(amgcl::io::mm_reader &ifile, const std::string &ofile) {
 int main(int argc, char *argv[]) {
     po::options_description desc("Options");
 
-    desc.add_options()("help,h", "Show this help.")("input,i", po::value<std::string>()->required(),
-                                                    "Input matrix in the MatrixMarket format.")(
-            "output,o", po::value<std::string>()->required(), "Output binary file.");
+    desc.add_options()
+        ("help,h", "Show this help.")
+        ("input,i", po::value<std::string>()->required(),
+             "Input matrix in the MatrixMarket format.")
+        ("output,o", po::value<std::string>()->required(),
+             "Output binary file.")
+        ;
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
