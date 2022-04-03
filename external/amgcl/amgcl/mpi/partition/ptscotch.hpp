@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,169 +34,183 @@ THE SOFTWARE.
 #include <memory>
 
 #include <amgcl/backend/interface.hpp>
+#include <amgcl/value_type/interface.hpp>
+#include <amgcl/mpi/util.hpp>
 #include <amgcl/mpi/distributed_matrix.hpp>
 #include <amgcl/mpi/partition/util.hpp>
-#include <amgcl/mpi/util.hpp>
-#include <amgcl/value_type/interface.hpp>
 
 #include <ptscotch.h>
 
 namespace amgcl {
-    namespace mpi {
-        namespace partition {
+namespace mpi {
+namespace partition {
 
-            template <class Backend>
-            struct ptscotch {
-                typedef typename Backend::value_type value_type;
-                typedef distributed_matrix<Backend> matrix;
+template <class Backend>
+struct ptscotch {
+    typedef typename Backend::value_type value_type;
+    typedef distributed_matrix<Backend>  matrix;
 
-                struct params {
-                    bool shrink;
-                    ptrdiff_t min_per_proc;
-                    int shrink_ratio;
+    struct params {
+        bool      shrink;
+        ptrdiff_t min_per_proc;
+        int       shrink_ratio;
 
-                    params() : shrink(false), min_per_proc(10000), shrink_ratio(8) {}
+        params() :
+            shrink(false), min_per_proc(10000), shrink_ratio(8)
+        {}
 
 #ifndef AMGCL_NO_BOOST
-                    params(const boost::property_tree::ptree &p)
-                        : AMGCL_PARAMS_IMPORT_VALUE(p, shrink), AMGCL_PARAMS_IMPORT_VALUE(p, min_per_proc),
-                          AMGCL_PARAMS_IMPORT_VALUE(p, shrink_ratio) {
-                        check_params(p, {"shrink", "min_per_proc", "shrink_ratio"});
-                    }
+        params(const boost::property_tree::ptree &p)
+            : AMGCL_PARAMS_IMPORT_VALUE(p, shrink),
+              AMGCL_PARAMS_IMPORT_VALUE(p, min_per_proc),
+              AMGCL_PARAMS_IMPORT_VALUE(p, shrink_ratio)
+        {
+            check_params(p, {"shrink", "min_per_proc", "shrink_ratio"});
+        }
 
-                    void get(boost::property_tree::ptree &p, const std::string &path = "") const {
-                        AMGCL_PARAMS_EXPORT_VALUE(p, path, shrink);
-                        AMGCL_PARAMS_EXPORT_VALUE(p, path, min_per_proc);
-                        AMGCL_PARAMS_EXPORT_VALUE(p, path, shrink_ratio);
-                    }
+        void get(
+                boost::property_tree::ptree &p,
+                const std::string &path = ""
+                ) const
+        {
+            AMGCL_PARAMS_EXPORT_VALUE(p, path, shrink);
+            AMGCL_PARAMS_EXPORT_VALUE(p, path, min_per_proc);
+            AMGCL_PARAMS_EXPORT_VALUE(p, path, shrink_ratio);
+        }
 #endif
-                } prm;
+    } prm;
 
-                ptscotch(const params &prm = params()) : prm(prm) {}
+    ptscotch(const params &prm = params()) : prm(prm) {}
 
-                bool is_needed(const matrix &A) const {
-                    if (!prm.shrink) return false;
+    bool is_needed(const matrix &A) const {
+        if (!prm.shrink) return false;
 
-                    communicator comm = A.comm();
-                    ptrdiff_t n = A.loc_rows();
-                    std::vector<ptrdiff_t> row_dom = comm.exclusive_sum(n);
+        communicator comm = A.comm();
+        ptrdiff_t n = A.loc_rows();
+        std::vector<ptrdiff_t> row_dom = comm.exclusive_sum(n);
 
-                    int non_empty = 0;
-                    ptrdiff_t min_n = std::numeric_limits<ptrdiff_t>::max();
-                    for (int i = 0; i < comm.size; ++i) {
-                        ptrdiff_t m = row_dom[i + 1] - row_dom[i];
-                        if (m) {
-                            min_n = std::min(min_n, m);
-                            ++non_empty;
-                        }
-                    }
+        int non_empty = 0;
+        ptrdiff_t min_n = std::numeric_limits<ptrdiff_t>::max();
+        for(int i = 0; i < comm.size; ++i) {
+            ptrdiff_t m = row_dom[i+1] - row_dom[i];
+            if (m) {
+                min_n = std::min(min_n, m);
+                ++non_empty;
+            }
+        }
 
-                    return (non_empty > 1) && (min_n <= prm.min_per_proc);
+        return (non_empty > 1) && (min_n <= prm.min_per_proc);
+    }
+
+    std::shared_ptr<matrix> operator()(const matrix &A, unsigned block_size = 1) const {
+        communicator comm = A.comm();
+        ptrdiff_t n = A.loc_rows();
+        ptrdiff_t row_beg = A.loc_col_shift();
+
+        // Partition the graph.
+        int active = (n > 0);
+        int active_ranks = comm.reduce(MPI_SUM, active);
+        int shrink = prm.shrink ? prm.shrink_ratio : 1;
+
+        SCOTCH_Num npart = std::max(1, active_ranks / shrink);
+
+        if (comm.rank == 0)
+            std::cout << "Partitioning[PT-Scotch] " << active_ranks << " -> " << npart << std::endl;
+
+        std::vector<ptrdiff_t> perm(n);
+        ptrdiff_t col_beg, col_end;
+
+        if (npart == 1) {
+            col_beg = (comm.rank == 0) ? 0 : A.glob_rows();
+            col_end = A.glob_rows();
+
+            for(ptrdiff_t i = 0; i < n; ++i) {
+                perm[i] = row_beg + i;
+            }
+        } else {
+            if (block_size == 1) {
+                std::tie(col_beg, col_end) = partition(A, npart, perm);
+            } else {
+                typedef typename math::scalar_of<value_type>::type scalar;
+                typedef backend::builtin<scalar> sbackend;
+
+                ptrdiff_t np = n / block_size;
+
+                distributed_matrix<sbackend> A_pw(A.comm(),
+                    pointwise_matrix(*A.local(),  block_size),
+                    pointwise_matrix(*A.remote(), block_size)
+                    );
+
+                std::vector<ptrdiff_t> perm_pw(np);
+
+                std::tie(col_beg, col_end) = partition(A_pw, npart, perm_pw);
+
+                col_beg *= block_size;
+                col_end *= block_size;
+
+                for(ptrdiff_t ip = 0; ip < np; ++ip) {
+                    ptrdiff_t i = ip * block_size;
+                    ptrdiff_t j = perm_pw[ip] * block_size;
+
+                    for(unsigned k = 0; k < block_size; ++k)
+                        perm[i + k] = j + k;
                 }
+            }
+        }
 
-                std::shared_ptr<matrix> operator()(const matrix &A, unsigned block_size = 1) const {
-                    communicator comm = A.comm();
-                    ptrdiff_t n = A.loc_rows();
-                    ptrdiff_t row_beg = A.loc_col_shift();
+        return graph_perm_matrix<Backend>(comm, col_beg, col_end, perm);
+    }
 
-                    // Partition the graph.
-                    int active = (n > 0);
-                    int active_ranks = comm.reduce(MPI_SUM, active);
-                    int shrink = prm.shrink ? prm.shrink_ratio : 1;
+    static void check(communicator comm, int ierr) {
+        comm.check(ierr == 0, "SCOTCH error");
+    }
 
-                    SCOTCH_Num npart = std::max(1, active_ranks / shrink);
+    template <class B>
+    std::tuple<ptrdiff_t, ptrdiff_t>
+    partition(const distributed_matrix<B> &A, SCOTCH_Num npart, std::vector<ptrdiff_t> &perm) const {
+        communicator comm = A.comm();
+        ptrdiff_t n = A.loc_rows();
 
-                    if (comm.rank == 0)
-                        std::cout << "Partitioning[PT-Scotch] " << active_ranks << " -> " << npart
-                                  << std::endl;
+        std::vector<SCOTCH_Num> ptr;
+        std::vector<SCOTCH_Num> col;
+        std::vector<SCOTCH_Num> part(n);
+        if (!n) part.reserve(1); // So that part.data() is not NULL
 
-                    std::vector<ptrdiff_t> perm(n);
-                    ptrdiff_t col_beg, col_end;
+        symm_graph(A, ptr, col);
 
-                    if (npart == 1) {
-                        col_beg = (comm.rank == 0) ? 0 : A.glob_rows();
-                        col_end = A.glob_rows();
+        SCOTCH_Dgraph G;
+        check(comm, SCOTCH_dgraphInit(&G, comm));
+        check(comm, SCOTCH_dgraphBuild(&G,
+                    0,          // baseval
+                    n,          // vertlocnbr
+                    n,          // vertlocmax
+                    &ptr[0],    // vertloctab
+                    NULL,       // vendloctab
+                    NULL,       // veloloctab
+                    NULL,       // vlblloctab
+                    ptr.back(), // edgelocnbr
+                    ptr.back(), // edgelocsiz
+                    &col[0],    // edgeloctab
+                    NULL,       // edgegsttab
+                    NULL        // edloloctab
+                    ));
+        check(comm, SCOTCH_dgraphCheck(&G));
 
-                        for (ptrdiff_t i = 0; i < n; ++i) { perm[i] = row_beg + i; }
-                    } else {
-                        if (block_size == 1) {
-                            std::tie(col_beg, col_end) = partition(A, npart, perm);
-                        } else {
-                            typedef typename math::scalar_of<value_type>::type scalar;
-                            typedef backend::builtin<scalar> sbackend;
+        SCOTCH_Strat S;
+        check(comm, SCOTCH_stratInit(&S));
 
-                            ptrdiff_t np = n / block_size;
+        check(comm, SCOTCH_dgraphPart(&G, npart, &S, &part[0]));
 
-                            distributed_matrix<sbackend> A_pw(A.comm(),
-                                                              pointwise_matrix(*A.local(), block_size),
-                                                              pointwise_matrix(*A.remote(), block_size));
+        SCOTCH_stratExit(&S);
+        SCOTCH_dgraphExit(&G);
 
-                            std::vector<ptrdiff_t> perm_pw(np);
+        return graph_perm_index(comm, npart, part, perm);
+    }
+};
 
-                            std::tie(col_beg, col_end) = partition(A_pw, npart, perm_pw);
 
-                            col_beg *= block_size;
-                            col_end *= block_size;
-
-                            for (ptrdiff_t ip = 0; ip < np; ++ip) {
-                                ptrdiff_t i = ip * block_size;
-                                ptrdiff_t j = perm_pw[ip] * block_size;
-
-                                for (unsigned k = 0; k < block_size; ++k) perm[i + k] = j + k;
-                            }
-                        }
-                    }
-
-                    return graph_perm_matrix<Backend>(comm, col_beg, col_end, perm);
-                }
-
-                static void check(communicator comm, int ierr) { comm.check(ierr == 0, "SCOTCH error"); }
-
-                template <class B>
-                std::tuple<ptrdiff_t, ptrdiff_t> partition(const distributed_matrix<B> &A, SCOTCH_Num npart,
-                                                           std::vector<ptrdiff_t> &perm) const {
-                    communicator comm = A.comm();
-                    ptrdiff_t n = A.loc_rows();
-
-                    std::vector<SCOTCH_Num> ptr;
-                    std::vector<SCOTCH_Num> col;
-                    std::vector<SCOTCH_Num> part(n);
-                    if (!n) part.reserve(1);// So that part.data() is not NULL
-
-                    symm_graph(A, ptr, col);
-
-                    SCOTCH_Dgraph G;
-                    check(comm, SCOTCH_dgraphInit(&G, comm));
-                    check(comm, SCOTCH_dgraphBuild(&G,
-                                                   0,         // baseval
-                                                   n,         // vertlocnbr
-                                                   n,         // vertlocmax
-                                                   &ptr[0],   // vertloctab
-                                                   NULL,      // vendloctab
-                                                   NULL,      // veloloctab
-                                                   NULL,      // vlblloctab
-                                                   ptr.back(),// edgelocnbr
-                                                   ptr.back(),// edgelocsiz
-                                                   &col[0],   // edgeloctab
-                                                   NULL,      // edgegsttab
-                                                   NULL       // edloloctab
-                                                   ));
-                    check(comm, SCOTCH_dgraphCheck(&G));
-
-                    SCOTCH_Strat S;
-                    check(comm, SCOTCH_stratInit(&S));
-
-                    check(comm, SCOTCH_dgraphPart(&G, npart, &S, &part[0]));
-
-                    SCOTCH_stratExit(&S);
-                    SCOTCH_dgraphExit(&G);
-
-                    return graph_perm_index(comm, npart, part, perm);
-                }
-            };
-
-        }// namespace partition
-    }    // namespace mpi
-}// namespace amgcl
+} // namespace partition
+} // namespace mpi
+} // namespace amgcl
 
 #endif

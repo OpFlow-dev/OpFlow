@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,56 +39,67 @@ distributed direct solver interface but always works sequentially.
 #include <memory>
 
 #include <Eigen/SparseLU>
-#include <amgcl/adapter/crs_tuple.hpp>
 #include <amgcl/backend/builtin.hpp>
-#include <amgcl/mpi/direct_solver/solver_base.hpp>
-#include <amgcl/mpi/util.hpp>
+#include <amgcl/adapter/crs_tuple.hpp>
 #include <amgcl/solver/eigen.hpp>
+#include <amgcl/mpi/util.hpp>
+#include <amgcl/mpi/direct_solver/solver_base.hpp>
 
 namespace amgcl {
-    namespace mpi {
-        namespace direct {
+namespace mpi {
+namespace direct {
 
-            /// Provides distributed direct solver interface for Skyline LU solver.
-            template <typename value_type>
-            class eigen_splu : public solver_base<value_type, eigen_splu<value_type>> {
-            public:
-                typedef amgcl::solver::EigenSolver<
-                        Eigen::SparseLU<Eigen::SparseMatrix<value_type, Eigen::ColMajor, int>>>
-                        Solver;
-                typedef typename Solver::params params;
-                typedef backend::crs<value_type> build_matrix;
+/// Provides distributed direct solver interface for Skyline LU solver.
+template <typename value_type>
+class eigen_splu : public solver_base< value_type, eigen_splu<value_type> > {
+    public:
+        typedef
+            amgcl::solver::EigenSolver<
+                Eigen::SparseLU<
+                    Eigen::SparseMatrix<value_type, Eigen::ColMajor, int>
+                    >
+                >
+            Solver;
+        typedef typename Solver::params params;
+        typedef backend::crs<value_type> build_matrix;
 
-                /// Constructor.
-                template <class Matrix>
-                eigen_splu(communicator comm, const Matrix &A, const params &prm = params()) : prm(prm) {
-                    static_cast<Base *>(this)->init(comm, A);
-                }
+        /// Constructor.
+        template <class Matrix>
+        eigen_splu(communicator comm, const Matrix &A,
+                const params &prm = params()) : prm(prm)
+        {
+            static_cast<Base*>(this)->init(comm, A);
+        }
 
-                static size_t coarse_enough() { return Base::coarse_enough(); }
+        static size_t coarse_enough() {
+            return Base::coarse_enough();
+        }
 
-                int comm_size(int /*n*/) const { return 1; }
+        int comm_size(int /*n*/) const {
+            return 1;
+        }
 
-                void init(communicator, const build_matrix &A) { S = std::make_shared<Solver>(A, prm); }
+        void init(communicator, const build_matrix &A) {
+            S = std::make_shared<Solver>(A, prm);
+        }
 
-                /// Solves the problem for the given right-hand side.
-                /**
+        /// Solves the problem for the given right-hand side.
+        /**
          * \param rhs The right-hand side.
          * \param x   The solution.
          */
-                template <class Vec1, class Vec2>
-                void solve(const Vec1 &rhs, Vec2 &x) const {
-                    (*S)(rhs, x);
-                }
+        template <class Vec1, class Vec2>
+        void solve(const Vec1 &rhs, Vec2 &x) const {
+            (*S)(rhs, x);
+        }
+    private:
+        typedef solver_base< value_type, eigen_splu<value_type> > Base;
+        params prm;
+        std::shared_ptr<Solver> S;
+};
 
-            private:
-                typedef solver_base<value_type, eigen_splu<value_type>> Base;
-                params prm;
-                std::shared_ptr<Solver> S;
-            };
-
-        }// namespace direct
-    }    // namespace mpi
-}// namespace amgcl
+} // namespace direct
+} // namespace mpi
+} // namespace amgcl
 
 #endif

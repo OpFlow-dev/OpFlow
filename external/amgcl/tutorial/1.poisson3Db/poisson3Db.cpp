@@ -1,11 +1,11 @@
-#include <iostream>
 #include <vector>
+#include <iostream>
 
-#include <amgcl/adapter/crs_tuple.hpp>
-#include <amgcl/amg.hpp>
 #include <amgcl/backend/builtin.hpp>
-#include <amgcl/coarsening/smoothed_aggregation.hpp>
+#include <amgcl/adapter/crs_tuple.hpp>
 #include <amgcl/make_solver.hpp>
+#include <amgcl/amg.hpp>
+#include <amgcl/coarsening/smoothed_aggregation.hpp>
 #include <amgcl/relaxation/spai0.hpp>
 #include <amgcl/solver/bicgstab.hpp>
 
@@ -49,11 +49,15 @@ int main(int argc, char *argv[]) {
 #else
     typedef amgcl::backend::builtin<double> PBackend;
 #endif
-
+    
     typedef amgcl::make_solver<
-            amgcl::amg<PBackend, amgcl::coarsening::smoothed_aggregation, amgcl::relaxation::spai0>,
-            amgcl::solver::bicgstab<SBackend>>
-            Solver;
+        amgcl::amg<
+            PBackend,
+            amgcl::coarsening::smoothed_aggregation,
+            amgcl::relaxation::spai0
+            >,
+        amgcl::solver::bicgstab<SBackend>
+        > Solver;
 
     // Initialize the solver with the system matrix:
     prof.tic("setup");
@@ -74,5 +78,7 @@ int main(int argc, char *argv[]) {
 
     // Output the number of iterations, the relative error,
     // and the profiling data:
-    std::cout << "Iters: " << iters << std::endl << "Error: " << error << std::endl << prof << std::endl;
+    std::cout << "Iters: " << iters << std::endl
+              << "Error: " << error << std::endl
+              << prof << std::endl;
 }

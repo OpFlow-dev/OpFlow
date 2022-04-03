@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,33 +34,39 @@ THE SOFTWARE.
 #include <mpi.h>
 
 #include <amgcl/backend/builtin.hpp>
+#include <amgcl/value_type/interface.hpp>
 #include <amgcl/mpi/util.hpp>
 #include <amgcl/util.hpp>
-#include <amgcl/value_type/interface.hpp>
 
 namespace amgcl {
-    namespace mpi {
+namespace mpi {
 
-        struct inner_product {
-            communicator comm;
+struct inner_product {
+    communicator comm;
 
-            inner_product(communicator comm) : comm(comm) {}
+    inner_product(communicator comm) : comm(comm) {}
 
-            template <class Vec1, class Vec2>
-            typename math::inner_product_impl<typename backend::value_type<Vec1>::type>::return_type
-            operator()(const Vec1 &x, const Vec2 &y) const {
-                typedef typename backend::value_type<Vec1>::type value_type;
-                typedef typename math::inner_product_impl<value_type>::return_type coef_type;
+    template <class Vec1, class Vec2>
+    typename math::inner_product_impl<
+        typename backend::value_type<Vec1>::type
+        >::return_type
+    operator()(const Vec1 &x, const Vec2 &y) const {
+        typedef typename backend::value_type<Vec1>::type value_type;
+        typedef typename math::inner_product_impl<value_type>::return_type coef_type;
 
-                AMGCL_TIC("inner product");
-                coef_type sum = comm.reduce(MPI_SUM, backend::inner_product(x, y));
-                AMGCL_TOC("inner product");
+        AMGCL_TIC("inner product");
+        coef_type sum = comm.reduce(MPI_SUM, backend::inner_product(x, y));
+        AMGCL_TOC("inner product");
 
-                return sum;
-            }
-        };
+        return sum;
+    }
 
-    }// namespace mpi
-}// namespace amgcl
+    int rank() const {
+        return comm.rank;
+    }
+};
+
+} // namespace mpi
+} // namespace amgcl
 
 #endif

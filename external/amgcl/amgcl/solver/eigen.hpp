@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -40,52 +40,69 @@ THE SOFTWARE.
 #include <amgcl/util.hpp>
 
 namespace amgcl {
-    namespace solver {
+namespace solver {
 
-        template <class Solver>
-        class EigenSolver {
-        public:
-            typedef typename Solver::MatrixType MatrixType;
-            typedef typename Solver::Scalar value_type;
+template < class Solver >
+class EigenSolver {
+    public:
+        typedef typename Solver::MatrixType MatrixType;
+        typedef typename Solver::Scalar     value_type;
 
-            typedef amgcl::detail::empty_params params;
+        typedef amgcl::detail::empty_params params;
 
-            static size_t coarse_enough() { return 3000 / math::static_rows<value_type>::value; }
+        static size_t coarse_enough() {
+            return 3000 / math::static_rows<value_type>::value;
+        }
 
-            template <class Matrix>
-            EigenSolver(const Matrix &A, const params & = params()) : n(backend::rows(A)) {
-                typedef typename std::remove_const<typename std::remove_pointer<
-                        typename backend::col_data_impl<Matrix>::type>::type>::type col_type;
+        template <class Matrix>
+        EigenSolver(const Matrix &A, const params& = params())
+            : n( backend::rows(A) )
+        {
+            typedef
+                typename std::remove_const<
+                    typename std::remove_pointer<
+                        typename backend::col_data_impl<Matrix>::type
+                        >::type
+                    >::type
+                col_type;
 
-                typedef typename std::remove_const<typename std::remove_pointer<
-                        typename backend::ptr_data_impl<Matrix>::type>::type>::type ptr_type;
+            typedef
+                typename std::remove_const<
+                    typename std::remove_pointer<
+                        typename backend::ptr_data_impl<Matrix>::type
+                        >::type
+                    >::type
+                ptr_type;
 
-                S.compute(MatrixType(Eigen::MappedSparseMatrix<value_type, Eigen::RowMajor, ptrdiff_t>(
-                        backend::rows(A), backend::cols(A), backend::nonzeros(A),
-                        const_cast<ptr_type *>(backend::ptr_data(A)),
-                        const_cast<col_type *>(backend::col_data(A)),
-                        const_cast<value_type *>(backend::val_data(A)))));
-            }
+            S.compute(
+                    MatrixType(
+                        Eigen::Map<Eigen::SparseMatrix<value_type, Eigen::RowMajor, ptrdiff_t>>(
+                            backend::rows(A), backend::cols(A), backend::nonzeros(A),
+                            const_cast<ptr_type*>(backend::ptr_data(A)),
+                            const_cast<col_type*>(backend::col_data(A)),
+                            const_cast<value_type*>(backend::val_data(A))
+                            )
+                        )
+                    );
+        }
 
-            template <class Vec1, class Vec2>
-            void operator()(const Vec1 &rhs, Vec2 &x) const {
-                Eigen::Map<Eigen::Matrix<value_type, Eigen::Dynamic, 1>> RHS(
-                        const_cast<value_type *>(&rhs[0]), n),
-                        X(&x[0], n);
+        template <class Vec1, class Vec2>
+        void operator()(const Vec1 &rhs, Vec2 &x) const {
+            Eigen::Map< Eigen::Matrix<value_type, Eigen::Dynamic, 1> >
+                RHS(const_cast<value_type*>(&rhs[0]), n), X(&x[0], n);
 
-                X = S.solve(RHS);
-            }
+            X = S.solve(RHS);
+        }
 
-            friend std::ostream &operator<<(std::ostream &os, const EigenSolver &s) {
-                return os << "eigen: " << s.n << " unknowns";
-            }
+        friend std::ostream& operator<<(std::ostream &os, const EigenSolver &s) {
+            return os << "eigen: " << s.n << " unknowns";
+        }
+    private:
+        ptrdiff_t n;
+        Solver S;
+};
 
-        private:
-            ptrdiff_t n;
-            Solver S;
-        };
-
-    }// namespace solver
-}// namespace amgcl
+} // namespace solver
+} // namespace amgcl
 
 #endif

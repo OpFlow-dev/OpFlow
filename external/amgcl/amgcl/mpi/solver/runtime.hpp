@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,23 +31,23 @@ THE SOFTWARE.
  * \brief  Runtime-configurable MPI wrapper around amgcl iterative solvers.
  */
 
-#include <amgcl/mpi/inner_product.hpp>
 #include <amgcl/solver/runtime.hpp>
+#include <amgcl/mpi/inner_product.hpp>
 
 namespace amgcl {
-    namespace runtime {
-        namespace mpi {
-            namespace solver {
+namespace runtime { 
+namespace mpi {
+namespace solver {
 
-                template <class Backend, class InnerProduct = amgcl::mpi::inner_product>
-                struct wrapper : public amgcl::runtime::solver::wrapper<Backend, InnerProduct> {
-                    typedef amgcl::runtime::solver::wrapper<Backend, InnerProduct> Base;
-                    using Base::Base;
-                };
+template <class Backend, class InnerProduct = amgcl::mpi::inner_product>
+struct wrapper : public amgcl::runtime::solver::wrapper<Backend, InnerProduct> {
+    typedef amgcl::runtime::solver::wrapper<Backend, InnerProduct> Base;
+    using Base::Base;
+};
 
-            }// namespace solver
-        }    // namespace mpi
-    }        // namespace runtime
-}// namespace amgcl
+} // namespace solver
+} // namespace mpi
+} // namespace runtime
+} // namespace amgcl
 
 #endif

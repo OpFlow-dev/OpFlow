@@ -4,7 +4,7 @@
 /*
 The MIT License
 
-Copyright (c) 2012-2021 Denis Demidov <dennis.demidov@gmail.com>
+Copyright (c) 2012-2022 Denis Demidov <dennis.demidov@gmail.com>
 Copyright (c) 2016 Mohammad Siahatgar <siahatgar@luis.uni-hannover.de>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -32,38 +32,41 @@ THE SOFTWARE.
  * \brief  Cray energy counter.
  */
 
-#include <amgcl/util.hpp>
 #include <fstream>
+#include <amgcl/util.hpp>
 
 namespace amgcl {
-    namespace perf_counter {
+namespace perf_counter {
 
-        class cray_energy {
-        public:
-            typedef long long value_type;
+class cray_energy {
+    public:
+        typedef long long value_type;
 
-            cray_energy() : f(attribute_path()) {
-                precondition(f, std::string("Failed to open ") + attribute_path());
-            }
+        cray_energy() : f(attribute_path()) {
+            precondition(f, std::string("Failed to open ") + attribute_path());
+        }
 
-            static const char* units() { return "J"; }
+        static const char* units() {
+            return "J";
+        }
 
-            value_type current() {
-                f.clear();
-                f.seekg(0, std::ios::beg);
+        value_type current() {
+            f.clear();
+            f.seekg(0, std::ios::beg);
 
-                value_type v;
-                f >> v;
-                return v;
-            }
+            value_type v;
+            f >> v;
+            return v;
+        }
+    private:
+        static const char* attribute_path() {
+            return "/sys/cray/pm_counters/energy";
+        }
 
-        private:
-            static const char* attribute_path() { return "/sys/cray/pm_counters/energy"; }
+        std::ifstream f;
+};
 
-            std::ifstream f;
-        };
-
-    }// namespace perf_counter
-}// namespace amgcl
+} // namespace perf_counter
+} // namespace amgcl
 
 #endif

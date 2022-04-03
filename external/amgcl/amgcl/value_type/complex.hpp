@@ -35,61 +35,69 @@ THE SOFTWARE.
 #include <amgcl/value_type/interface.hpp>
 
 namespace amgcl {
-    namespace backend {
+namespace backend {
 
-        /// Enable std::complex as a value-type.
-        template <typename T>
-        struct is_builtin_vector<std::vector<std::complex<T>>> : std::true_type {};
+/// Enable std::complex as a value-type.
+template <typename T>
+struct is_builtin_vector< std::vector<std::complex<T> > > : std::true_type {};
 
-    }// namespace backend
+} // namespace backend
 
-    namespace math {
+namespace math {
 
-        /// Specialization that extracts the scalar type of a complex type.
-        template <class T>
-        struct scalar_of<std::complex<T>> {
-            typedef T type;
-        };
+/// Specialization that extracts the scalar type of a complex type.
+template <class T>
+struct scalar_of< std::complex<T> > {
+    typedef T type;
+};
 
-        /// Replace scalar type in the complex type.
-        template <class T, class S>
-        struct replace_scalar<std::complex<T>, S> {
-            typedef std::complex<S> type;
-        };
+/// Replace scalar type in the complex type.
+template <class T, class S>
+struct replace_scalar<std::complex<T>, S> {
+    typedef std::complex<S> type;
+};
 
-        /// Specialization of conjugate transpose for scalar complex arguments.
-        template <typename T>
-        struct adjoint_impl<std::complex<T>> {
-            typedef std::complex<T> return_type;
+/// Specialization of conjugate transpose for scalar complex arguments.
+template <typename T>
+struct adjoint_impl< std::complex<T> >
+{
+    typedef std::complex<T> return_type;
 
-            static std::complex<T> get(std::complex<T> x) { return std::conj(x); }
-        };
+    static std::complex<T> get(std::complex<T> x) {
+        return std::conj(x);
+    }
+};
 
-        /// Default implementation for inner product
-        /** \note Used in adjoint() */
-        template <typename T>
-        struct inner_product_impl<std::complex<T>> {
-            typedef std::complex<T> return_type;
+/// Default implementation for inner product
+/** \note Used in adjoint() */
+template <typename T>
+struct inner_product_impl< std::complex<T> > {
+    typedef std::complex<T> return_type;
 
-            static return_type get(std::complex<T> x, std::complex<T> y) { return x * std::conj(y); }
-        };
+    static return_type get(std::complex<T> x, std::complex<T> y) {
+        return x * std::conj(y);
+    }
+};
 
-        /// Specialization of constant element for complex type.
-        template <typename T>
-        struct constant_impl<std::complex<T>> {
-            static std::complex<T> get(T c) { return std::complex<T>(c, c); }
-        };
+/// Specialization of constant element for complex type.
+template <typename T>
+struct constant_impl< std::complex<T> >
+{
+    static std::complex<T> get(T c) {
+        return std::complex<T>(c, c);
+    }
+};
 
-    }// namespace math
-}// namespace amgcl
+}  // namespace math
+} // namespace amgcl
 
 namespace std {
 
-    template <typename V>
-    bool operator<(const std::complex<V> &a, const std::complex<V> &b) {
-        return std::abs(a) < std::abs(b);
-    }
+template <typename V>
+bool operator<(const std::complex<V> &a, const std::complex<V> &b) {
+    return std::abs(a) < std::abs(b);
+}
 
-}// namespace std
+} // namespace std
 
 #endif /* ENABLE_COMPLEX_HPP */
