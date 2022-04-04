@@ -95,7 +95,7 @@ TEST_F(Intp1DQUICKCenterToCornerTest, DircCheck) {
                      .setLoc(LocOnMesh::Corner)
                      .build();
     v = 1.;
-    auto t = d1IntpCenterToCorner<0, D1QUICK>(v, u);
+    auto t = d1IntpCenterToCorner<0, D1FluxLimiterGen<KappaKernel<KappaScheme::QUICK>>::Op>(v, u);
     t.prepare();
     ASSERT_EQ(t.accessibleRange.start[0], u.accessibleRange.start[0] + 2);
     ASSERT_EQ(t.accessibleRange.end[0], u.accessibleRange.end[0] - 2);
