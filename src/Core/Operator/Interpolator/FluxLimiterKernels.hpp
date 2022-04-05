@@ -27,7 +27,9 @@ namespace OpFlow {
 
     template <KappaScheme s>
     struct KappaKernel {
-        constexpr static auto eval(auto r) {
+        constexpr static auto eval(auto r) { return eval(1., r); }
+
+        constexpr static auto eval(auto slop_u, auto slop_f) {
             double kappa;
             if constexpr (s == KappaScheme::CDS) kappa = 1;
             else if constexpr (s == KappaScheme::QUICK)
@@ -38,43 +40,33 @@ namespace OpFlow {
                 kappa = 0.;
             else
                 kappa = -1.;
-            return (1 + kappa) / 2. * r + (1 - kappa) / 2.;
+            return (1 + kappa) / 2. * slop_f + (1 - kappa) / 2. * slop_u;
         }
     };
 
     // Minmod limiter
     struct MinmodKernel {
-        constexpr static auto eval(auto r) {
-            return std::max(0., std::min(r, 1.));
-        }
+        constexpr static auto eval(auto r) { return std::max(0., std::min(r, 1.)); }
     };
 
     // Superbee limiter
     struct SuperbeeKernel {
-        constexpr static auto eval(auto r) {
-            return std::max({0., std::min(2. * r, 1.), std::min(r, 2.)});
-        }
+        constexpr static auto eval(auto r) { return std::max({0., std::min(2. * r, 1.), std::min(r, 2.)}); }
     };
 
     // MUSCL limiter
     struct MUSCLKernel {
-        constexpr static auto eval(auto r) {
-            return std::max(0., std::min({2 * r, (r + 1) / 2., 2.}));
-        }
+        constexpr static auto eval(auto r) { return std::max(0., std::min({2 * r, (r + 1) / 2., 2.})); }
     };
 
     // Harmonic limiter
     struct HarmonicKernel {
-        static auto eval(auto r) {
-            return (r + std::fabs(r)) / (r + 1);
-        }
+        static auto eval(auto r) { return (r + std::fabs(r)) / (r + 1); }
     };
 
     // van Albada limiter
     struct vanAlbadaKernel {
-        constexpr static auto eval(auto r) {
-            return r * (r + 1) / (r * r + 1);
-        }
+        constexpr static auto eval(auto r) { return r * (r + 1) / (r * r + 1); }
     };
 }// namespace OpFlow
 

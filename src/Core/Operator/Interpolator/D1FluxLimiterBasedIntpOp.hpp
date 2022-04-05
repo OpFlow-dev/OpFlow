@@ -58,6 +58,6 @@ namespace OpFlow {
     // van Albada
     template <std::size_t d, IntpDirection dir>
     using D1Albada = D1FluxLimiterGen<vanAlbadaKernel>::Op<d, dir>;
-}
+}// namespace OpFlow
 
 #endif//OPFLOW_D1FLUXLIMITERBASEDINTPOP_HPP

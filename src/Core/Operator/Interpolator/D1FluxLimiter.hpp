@@ -16,12 +16,25 @@
 #include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
 #include "Core/Macros.hpp"
 #include "Core/Operator/Conditional.hpp"
+#include "DataStructures/StencilPad.hpp"
 #include "Math/Interpolator/Interpolator.hpp"
 
 namespace OpFlow {
     template <typename K>
     concept FluxLimiterKernel = requires(double r) {
-        { K::eval(r) } -> std::same_as<double>;
+        { K::eval(r) }
+        ->std::same_as<double>;
+    };
+
+    template <typename K>
+    concept LinearFluxLimiterKernel
+            = FluxLimiterKernel<K>&& requires(DS::StencilPad<DS::MDIndex<2>> pad, double r) {
+        // should take slop_u & slop_f in a type only support + and * to a number
+        { K::eval(pad, pad) }
+        ->std::same_as<DS::StencilPad<DS::MDIndex<2>>>;
+        // should take normal separate slops instead of ratio
+        { K::eval(r, r) }
+        ->std::same_as<double>;
     };
 
     namespace internal {
@@ -40,8 +53,13 @@ namespace OpFlow {
                 auto y3 = e.evalAt(i);
                 auto slop_u = (y2 - y1) / (x2 - x1);
                 auto slop_f = (y3 - y2) / (x3 - x2);
-                auto r = slop_f / (slop_u + 1e-16);
-                return y2 + e.mesh.dx(d, i[d] - 1) * 0.5 * Kernel::eval(r) * slop_u;
+                // use the linear form as much as possible
+                if constexpr (LinearFluxLimiterKernel<Kernel>)
+                    return y2 + e.mesh.dx(d, i[d] - 1) * 0.5 * Kernel::eval(slop_u, slop_f);
+                else {
+                    auto r = slop_f / (slop_u + 1e-16);
+                    return y2 + e.mesh.dx(d, i[d] - 1) * 0.5 * Kernel::eval(r) * slop_u;
+                }
             }
         };
 
@@ -57,8 +75,12 @@ namespace OpFlow {
                 auto y3 = e.evalAt(i.template next<d>());
                 auto slop_u = (y2 - y1) / (x2 - x1);
                 auto slop_f = (y3 - y2) / (x3 - x2);
-                auto r = slop_f / (slop_u + 1e-16);
-                return y2 + e.mesh.dx(d, i[d]) * 0.5 * Kernel::eval(r) * slop_u;
+                if constexpr (LinearFluxLimiterKernel<Kernel>)
+                    return y2 + e.mesh.dx(d, i[d]) * 0.5 * Kernel::eval(slop_u, slop_f);
+                else {
+                    auto r = slop_f / (slop_u + 1e-16);
+                    return y2 + e.mesh.dx(d, i[d]) * 0.5 * Kernel::eval(r) * slop_u;
+                }
             }
         };
 
@@ -77,8 +99,12 @@ namespace OpFlow {
                 auto y3 = e.evalAt(i.template next<d>());
                 auto slop_u = (y3 - y2) / (x3 - x2);
                 auto slop_f = (y2 - y1) / (x2 - x1);
-                auto r = slop_f / (slop_u + 1e-16);
-                return y2 - e.mesh.dx(d, i[d]) * 0.5 * Kernel::eval(r) * slop_u;
+                if constexpr (LinearFluxLimiterKernel<Kernel>)
+                    return y2 - e.mesh.dx(d, i[d]) * 0.5 * Kernel::eval(slop_u, slop_f);
+                else {
+                    auto r = slop_f / (slop_u + 1e-16);
+                    return y2 - e.mesh.dx(d, i[d]) * 0.5 * Kernel::eval(r) * slop_u;
+                }
             }
         };
 
@@ -94,8 +120,12 @@ namespace OpFlow {
                 auto y3 = e.evalAt(i.template next<d>().template next<d>());
                 auto slop_u = (y3 - y2) / (x3 - x2);
                 auto slop_f = (y2 - y1) / (x2 - x1);
-                auto r = slop_f / (slop_u + 1e-16);
-                return y2 - e.mesh.dx(d, i[d]) * 0.5 * Kernel::eval(r) * slop_u;
+                if constexpr (LinearFluxLimiterKernel<Kernel>)
+                    return y2 - e.mesh.dx(d, i[d]) * 0.5 * Kernel::eval(slop_u, slop_f);
+                else {
+                    auto r = slop_f / (slop_u + 1e-16);
+                    return y2 - e.mesh.dx(d, i[d]) * 0.5 * Kernel::eval(r) * slop_u;
+                }
             }
         };
 
