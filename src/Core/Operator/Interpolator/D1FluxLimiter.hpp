@@ -45,6 +45,23 @@ namespace OpFlow {
             }
         };
 
+        template <FluxLimiterKernel Kernel, std::size_t d>
+        struct D1FluxLimiterUpwindImpl<Kernel, d, IntpDirection::Cor2Cen> {
+            template <CartesianFieldExprType T>
+            OPFLOW_STRONG_INLINE static auto eval(const T& e, auto&& i) {
+                auto x1 = e.mesh.x(d, i[d] - 1);
+                auto x2 = e.mesh.x(d, i[d]);
+                auto x3 = e.mesh.x(d, i[d] + 1);
+                auto y1 = e.evalAt(i.template prev<d>());
+                auto y2 = e.evalAt(i);
+                auto y3 = e.evalAt(i.template next<d>());
+                auto slop_u = (y2 - y1) / (x2 - x1);
+                auto slop_f = (y3 - y2) / (x3 - x2);
+                auto r = slop_f / (slop_u + 1e-16);
+                return y2 + e.mesh.dx(d, i[d]) * 0.5 * Kernel::eval(r) * slop_u;
+            }
+        };
+
         template <FluxLimiterKernel Kernel, std::size_t d, IntpDirection dir>
         struct D1FluxLimiterDownwindImpl;
 
@@ -58,6 +75,23 @@ namespace OpFlow {
                 auto y1 = e.evalAt(i.template prev<d>());
                 auto y2 = e.evalAt(i);
                 auto y3 = e.evalAt(i.template next<d>());
+                auto slop_u = (y3 - y2) / (x3 - x2);
+                auto slop_f = (y2 - y1) / (x2 - x1);
+                auto r = slop_f / (slop_u + 1e-16);
+                return y2 - e.mesh.dx(d, i[d]) * 0.5 * Kernel::eval(r) * slop_u;
+            }
+        };
+
+        template <FluxLimiterKernel Kernel, std::size_t d>
+        struct D1FluxLimiterDownwindImpl<Kernel, d, IntpDirection::Cor2Cen> {
+            template <CartesianFieldExprType T>
+            OPFLOW_STRONG_INLINE static auto eval(const T& e, auto&& i) {
+                auto x1 = e.mesh.x(d, i[d]);
+                auto x2 = e.mesh.x(d, i[d] + 1);
+                auto x3 = e.mesh.x(d, i[d] + 2);
+                auto y1 = e.evalAt(i);
+                auto y2 = e.evalAt(i.template next<d>());
+                auto y3 = e.evalAt(i.template next<d>().template next<d>());
                 auto slop_u = (y3 - y2) / (x3 - x2);
                 auto slop_f = (y2 - y1) / (x2 - x1);
                 auto r = slop_f / (slop_u + 1e-16);
@@ -90,15 +124,45 @@ namespace OpFlow {
                 expr.name = fmt::format("D1Intp<D1FluxLimiter, {}, Cen2Cor>({})", d, expr.arg2.name);
                 expr.loc[d] = LocOnMesh ::Corner;
                 expr.accessibleRange.start[d] += 2;
-                expr.accessibleRange.end[d] -= 2;
+                expr.accessibleRange.end[d] -= 1;
                 expr.localRange.start[d] += 2;
-                expr.localRange.end[d] -= 2;
+                expr.localRange.end[d] -= 1;
                 expr.logicalRange.start[d] += 2;
-                expr.logicalRange.end[d] -= 2;
+                expr.logicalRange.end[d] -= 1;
                 expr.assignableRange.setEmpty();
             }
         };
 
+        template <FluxLimiterKernel Kernel, std::size_t d>
+        struct D1FluxLimiterImpl<Kernel, d, IntpDirection::Cor2Cen> {
+            constexpr static int bc_width = 2;
+
+            template <CartesianFieldExprType T, ExprType U>
+            OPFLOW_STRONG_INLINE static auto couldSafeEval(const U& u, const T& e, auto&& i) {
+                return e.couldEvalAt(i.template prev<d>())
+                       && e.couldEvalAt(i.template next<d>().template next<d>()) && u.couldEvalAt(i);
+            }
+
+            template <CartesianFieldExprType T, ExprType U>
+            OPFLOW_STRONG_INLINE static auto eval(const U& u, const T& e, auto&& i) {
+                return u[i] > 0. ? D1FluxLimiterUpwindImpl<Kernel, d, IntpDirection::Cor2Cen>::eval(e, i)
+                                 : D1FluxLimiterDownwindImpl<Kernel, d, IntpDirection::Cor2Cen>::eval(e, i);
+            }
+
+            template <CartesianFieldExprType T, ExprType U>
+            static void prepare(Expression<D1FluxLimiterImpl, U, T>& expr) {
+                expr.initPropsFrom(expr.arg2);
+                expr.name = fmt::format("D1Intp<D1FluxLimiter, {}, Cor2Cen>({})", d, expr.arg2.name);
+                expr.loc[d] = LocOnMesh ::Center;
+                expr.accessibleRange.start[d] += 1;
+                expr.accessibleRange.end[d] -= 2;
+                expr.localRange.start[d] += 1;
+                expr.localRange.end[d] -= 2;
+                expr.logicalRange.start[d] += 1;
+                expr.logicalRange.end[d] -= 2;
+                expr.assignableRange.setEmpty();
+            }
+        };
     }// namespace internal
 
     template <FluxLimiterKernel Kernel>
