@@ -70,7 +70,7 @@ TEST_F(Intp1DCornerToCenterTest, DircCheck) {
     ASSERT_EQ(t.assignableRange, DS::Range<1>::EmptyRange());
 }
 
-class Intp1DQUICKCenterToCornerTest : public Test {
+class Intp1DFluxLimiterCenterToCornerTest : public Test {
 protected:
     void SetUp() override { m = MeshBuilder<Mesh>().newMesh(10).setMeshOfDim(0, 0., 1.).build(); }
 
@@ -79,7 +79,7 @@ protected:
     Mesh m;
 };
 
-TEST_F(Intp1DQUICKCenterToCornerTest, DircCheck) {
+TEST_F(Intp1DFluxLimiterCenterToCornerTest, RangeCheck) {
     auto u = ExprBuilder<Field>()
                      .setMesh(m)
                      .setBC(0, DimPos::start, BCType::Dirc, 0.)
@@ -98,10 +98,46 @@ TEST_F(Intp1DQUICKCenterToCornerTest, DircCheck) {
     auto t = d1IntpCenterToCorner<0, D1FluxLimiterGen<KappaKernel<KappaScheme::QUICK>>::Op>(v, u);
     t.prepare();
     ASSERT_EQ(t.accessibleRange.start[0], u.accessibleRange.start[0] + 2);
-    ASSERT_EQ(t.accessibleRange.end[0], u.accessibleRange.end[0] - 2);
+    ASSERT_EQ(t.accessibleRange.end[0], u.accessibleRange.end[0] - 1);
     ASSERT_EQ(t.logicalRange.start[0], u.logicalRange.start[0] + 2);
-    ASSERT_EQ(t.logicalRange.end[0], u.logicalRange.end[0] - 2);
+    ASSERT_EQ(t.logicalRange.end[0], u.logicalRange.end[0] - 1);
     ASSERT_EQ(t.localRange.start[0], u.localRange.start[0] + 2);
+    ASSERT_EQ(t.localRange.end[0], u.localRange.end[0] - 1);
+    ASSERT_EQ(t.assignableRange, DS::Range<1>::EmptyRange());
+}
+
+class Intp1DFluxLimiterCornerToCenterTest : public Test {
+protected:
+    void SetUp() override { m = MeshBuilder<Mesh>().newMesh(10).setMeshOfDim(0, 0., 1.).build(); }
+
+    using Mesh = CartesianMesh<Meta::int_<1>>;
+    using Field = CartesianField<Real, Mesh>;
+    Mesh m;
+};
+
+TEST_F(Intp1DFluxLimiterCornerToCenterTest, RangeCheck) {
+    auto u = ExprBuilder<Field>()
+                     .setMesh(m)
+                     .setBC(0, DimPos::start, BCType::Dirc, 0.)
+                     .setBC(0, DimPos::end, BCType::Dirc, 0.)
+                     .setExt(2)
+                     .setLoc(LocOnMesh::Corner)
+                     .build();
+    auto v = ExprBuilder<Field>()
+                     .setMesh(m)
+                     .setBC(0, DimPos::start, BCType::Dirc, 0.)
+                     .setBC(0, DimPos::end, BCType::Dirc, 0.)
+                     .setExt(2)
+                     .setLoc(LocOnMesh::Center)
+                     .build();
+    v = 1.;
+    auto t = d1IntpCornerToCenter<0, D1FluxLimiterGen<KappaKernel<KappaScheme::QUICK>>::Op>(v, u);
+    t.prepare();
+    ASSERT_EQ(t.accessibleRange.start[0], u.accessibleRange.start[0] + 1);
+    ASSERT_EQ(t.accessibleRange.end[0], u.accessibleRange.end[0] - 2);
+    ASSERT_EQ(t.logicalRange.start[0], u.logicalRange.start[0] + 1);
+    ASSERT_EQ(t.logicalRange.end[0], u.logicalRange.end[0] - 2);
+    ASSERT_EQ(t.localRange.start[0], u.localRange.start[0] + 1);
     ASSERT_EQ(t.localRange.end[0], u.localRange.end[0] - 2);
     ASSERT_EQ(t.assignableRange, DS::Range<1>::EmptyRange());
 }
