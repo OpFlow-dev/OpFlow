@@ -25,17 +25,17 @@ namespace OpFlow {
 
     template <typename Derived>
     struct StructuredFieldExpr : MeshBasedFieldExpr<Derived> {
-        std::array<LocOnMesh, internal::StructuredFieldExprTrait<Derived>::dim> loc;
+        mutable std::array<LocOnMesh, internal::StructuredFieldExprTrait<Derived>::dim> loc;
         using RangeType = typename internal::StructuredFieldExprTrait<Derived>::range_type;
         using IndexType = typename internal::StructuredFieldExprTrait<Derived>::index_type;
-        RangeType localRange;           ///< local accessible range, unextended range
-        RangeType assignableRange;      ///< global assignable range
-        RangeType accessibleRange;      ///< global accessible range, unextended range
-        RangeType logicalRange;         ///< logical accessible range, extended range
-        IndexType offset;               ///< index offset for distributed parallelization
-        int padding = 0;                ///< padding width for distributed parallelization
-        std::vector<RangeType> splitMap;///< Map of rank to range for distributed parallelization
-        std::vector<std::pair<int, RangeType>> neighbors;///< Neighbor patches rank & range info
+        mutable RangeType localRange;           ///< local accessible range, unextended range
+        mutable RangeType assignableRange;      ///< global assignable range
+        mutable RangeType accessibleRange;      ///< global accessible range, unextended range
+        mutable RangeType logicalRange;         ///< logical accessible range, extended range
+        mutable IndexType offset;               ///< index offset for distributed parallelization
+        mutable int padding = 0;                ///< padding width for distributed parallelization
+        mutable std::vector<RangeType> splitMap;///< Map of rank to range for distributed parallelization
+        mutable std::vector<std::pair<int, RangeType>> neighbors;///< Neighbor patches rank & range info
 
         StructuredFieldExpr() = default;
         StructuredFieldExpr(const StructuredFieldExpr& other)
@@ -56,7 +56,7 @@ namespace OpFlow {
 
     protected:
         template <StructuredFieldExprType Other>
-        void initPropsFromImpl_StructuredFieldExpr(const Other& other) {
+        void initPropsFromImpl_StructuredFieldExpr(const Other& other) const {
             this->initPropsFromImpl_MeshBasedFieldExpr(other);
             this->loc = other.loc;
             this->localRange = other.localRange;

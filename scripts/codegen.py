@@ -102,7 +102,7 @@ namespace OpFlow {
     struct Expression<Op, Arg> : ResultType<Op, Arg>::type {
         friend Expr<Expression<Op, Arg>>;
         explicit Expression(Arg&& arg1) : arg1(OP_PERFECT_FOWD(arg1)) {}
-        explicit Expression(Arg& arg1) : arg1(arg1) {}
+        explicit Expression(const Arg& arg1) : arg1(arg1) {}
         Expression(const Expression& e) : ResultType<Op, Arg>::type(e), arg1(e.arg1) {}
         Expression(Expression&& e) noexcept : ResultType<Op, Arg>::type(std::move(e)), arg1(e.arg1) {}
 
@@ -129,7 +129,7 @@ struct Expression<Op, {}> : ResultType<Op, {}>::type {{
     Expression(Expression&& e) noexcept : ResultType<Op, {}>::type(std::move(e)), {} {{}}
     
     protected:
-        void prepareImpl_final() {{
+        void prepareImpl_final() const {{
             {}
             Op::prepare(*this);
         }}

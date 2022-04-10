@@ -41,7 +41,7 @@ namespace OpFlow {
         }
 
         template <FieldExprType C, FieldExprType T1, FieldExprType T2>
-        static void prepare(Expression<CondOp, C, T1, T2>& expr) {
+        static void prepare(const Expression<CondOp, C, T1, T2>& expr) {
             expr.initPropsFrom(expr.arg2);
             expr.name = fmt::format("{} ? {} : {}", expr.arg1.name, expr.arg2.name, expr.arg3.name);
             if constexpr (MeshBasedFieldExprType<
@@ -79,7 +79,7 @@ namespace OpFlow {
             }
         }
         template <typename C, FieldExprType T1, FieldExprType T2>
-        static void prepare(Expression<CondOp, ScalarExpr<C>, T1, T2>& expr) {
+        static void prepare(const Expression<CondOp, ScalarExpr<C>, T1, T2>& expr) {
             if constexpr (MeshBasedFieldExprType<T1> && MeshBasedFieldExprType<T2>)
                 OP_ASSERT(expr.arg2.mesh == expr.arg3.mesh);
             expr.initPropsFrom(expr.arg2);

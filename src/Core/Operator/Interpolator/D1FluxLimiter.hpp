@@ -149,7 +149,7 @@ namespace OpFlow {
             }
 
             template <CartesianFieldExprType T, ExprType U>
-            static void prepare(Expression<D1FluxLimiterImpl, U, T>& expr) {
+            static void prepare(const Expression<D1FluxLimiterImpl, U, T>& expr) {
                 OP_ASSERT_MSG(expr.arg2.loc[d] == LocOnMesh::Center,
                               "D1FluxLimiterIntp error: Expression {} located in corner in dimension = {}",
                               expr.arg2.getName(), d);
@@ -183,7 +183,7 @@ namespace OpFlow {
             }
 
             template <CartesianFieldExprType T, ExprType U>
-            static void prepare(Expression<D1FluxLimiterImpl, U, T>& expr) {
+            static void prepare(const Expression<D1FluxLimiterImpl, U, T>& expr) {
                 OP_ASSERT_MSG(expr.arg2.loc[d] == LocOnMesh::Corner,
                               "D1FluxLimiterIntp error: Expression {} located in center in dimension = {}",
                               expr.arg2.getName(), d);

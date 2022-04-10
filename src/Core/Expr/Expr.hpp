@@ -28,7 +28,7 @@ namespace OpFlow {
     struct Expr<Derived, true, true> {
         /// \typedef The result type of the expr
         using type = typename internal::ExprTrait<Derived>::type;
-        std::string name;
+        mutable std::string name;
 
         [[nodiscard]] static constexpr bool isConcrete() { return true; }
         [[maybe_unused]] [[nodiscard]] const auto& getName() const { return name; }
@@ -38,13 +38,15 @@ namespace OpFlow {
         }
 
         /// \brief prepare all meta infos of the expr
-        void prepare() { this->derived().prepareImpl_final(); }
+        void prepare() const { this->derived().prepareImpl_final(); }
 
         bool couldEvalAt(auto&& i) const { return this->derived().couldEvalAtImpl_final(OP_PERFECT_FOWD(i)); }
 
         /// init all props from another expr
         /// \param expr the src expr
-        void initPropsFrom(auto&& expr) { this->derived().initPropsFromImpl_final(OP_PERFECT_FOWD(expr)); }
+        void initPropsFrom(auto&& expr) const {
+            this->derived().initPropsFromImpl_final(OP_PERFECT_FOWD(expr));
+        }
 
         template <typename Other>
                 requires ExprType<Other> || Meta::Numerical<Other> auto& operator=(Other&& other) {
@@ -139,7 +141,7 @@ namespace OpFlow {
     struct Expr<Derived, true, false> {
         /// \typedef The result type of the expr
         using type = typename internal::ExprTrait<Derived>::type;
-        std::string name;
+        mutable std::string name;
 
         [[nodiscard]] static constexpr bool isConcrete() { return false; }
         [[maybe_unused]] [[nodiscard]] const auto& getName() const { return name; }
@@ -149,13 +151,15 @@ namespace OpFlow {
         }
 
         /// \brief prepare all meta infos of the expr
-        void prepare() { this->derived().prepareImpl_final(); }
+        void prepare() const { this->derived().prepareImpl_final(); }
 
         bool couldEvalAt(auto&& i) const { return this->derived().couldEvalAtImpl_final(OP_PERFECT_FOWD(i)); }
 
         /// init all props from another expr
         /// \param expr the src expr
-        void initPropsFrom(auto&& expr) { this->derived().initPropsFromImpl_final(OP_PERFECT_FOWD(expr)); }
+        void initPropsFrom(auto&& expr) const {
+            this->derived().initPropsFromImpl_final(OP_PERFECT_FOWD(expr));
+        }
 
         template <typename Other>
                 requires ExprType<Other> || Meta::Numerical<Other> auto& operator=(Other&& other) {
@@ -242,7 +246,7 @@ namespace OpFlow {
     struct Expr<Derived, false, true> {
         /// \typedef The result type of the expr
         using type = typename internal::ExprTrait<Derived>::type;
-        std::string name;
+        mutable std::string name;
 
         [[nodiscard]] static constexpr bool isConcrete() { return true; }
         [[maybe_unused]] [[nodiscard]] const auto& getName() const { return name; }
@@ -252,13 +256,15 @@ namespace OpFlow {
         }
 
         /// \brief prepare all meta infos of the expr
-        void prepare() { this->derived().prepareImpl_final(); }
+        void prepare() const { this->derived().prepareImpl_final(); }
 
         bool couldEvalAt(auto&& i) const { return this->derived().couldEvalAtImpl_final(OP_PERFECT_FOWD(i)); }
 
         /// init all props from another expr
         /// \param expr the src expr
-        void initPropsFrom(auto&& expr) { this->derived().initPropsFromImpl_final(OP_PERFECT_FOWD(expr)); }
+        void initPropsFrom(auto&& expr) const {
+            this->derived().initPropsFromImpl_final(OP_PERFECT_FOWD(expr));
+        }
 
         auto instantiate() const { return this->derived(); }
 
@@ -277,7 +283,7 @@ namespace OpFlow {
     struct Expr<Derived, false, false> {
         /// \typedef The result type of the expr
         using type = typename internal::ExprTrait<Derived>::type;
-        std::string name;
+        mutable std::string name;
 
         [[nodiscard]] static constexpr bool isConcrete() { return false; }
         [[maybe_unused]] [[nodiscard]] const auto& getName() const { return name; }
@@ -287,13 +293,15 @@ namespace OpFlow {
         }
 
         /// \brief prepare all meta infos of the expr
-        void prepare() { this->derived().prepareImpl_final(); }
+        void prepare() const { this->derived().prepareImpl_final(); }
 
         bool couldEvalAt(auto&& i) const { return this->derived().couldEvalAtImpl_final(OP_PERFECT_FOWD(i)); }
 
         /// init all props from another expr
         /// \param expr the src expr
-        void initPropsFrom(auto&& expr) { this->derived().initPropsFromImpl_final(OP_PERFECT_FOWD(expr)); }
+        void initPropsFrom(auto&& expr) const {
+            this->derived().initPropsFromImpl_final(OP_PERFECT_FOWD(expr));
+        }
 
         auto instantiate() const { return typename internal::ExprTrait<Derived>::type(this->derived()); }
 
@@ -315,9 +323,9 @@ namespace OpFlow {
 
         template <ExprType T>
         struct ExprProxy<T> {
-            // if T is a concrete expr (usually a field), take the ref;
+            // if T is a concrete expr (usually a field), take the const ref;
             // else (usually an expression) take T's copy
-            using type = std::conditional_t<T::isConcrete(), Meta::RealType<T>&, Meta::RealType<T>>;
+            using type = std::conditional_t<T::isConcrete(), const Meta::RealType<T>&, Meta::RealType<T>>;
         };
         template <Meta::Numerical T>
         struct ExprProxy<T> {

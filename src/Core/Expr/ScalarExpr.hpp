@@ -48,7 +48,7 @@ namespace OpFlow {
         void set(const T& t) { val = t; }
 
         static constexpr bool isConcrete() { return true; }
-        void prepareImpl_final() {}
+        void prepareImpl_final() const {}
         template <typename O>
         requires(!std::same_as<O, ScalarExpr>) bool containsImpl_final(const O&) const {
             return false;

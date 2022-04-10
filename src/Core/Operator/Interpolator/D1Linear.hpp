@@ -46,7 +46,7 @@ namespace OpFlow {
         }
 
         template <CartesianFieldExprType T>
-        static void prepare(Expression<D1Linear, T>& expr) {
+        static void prepare(const Expression<D1Linear, T>& expr) {
             if constexpr (dir == IntpDirection::Cen2Cor) {
                 expr.initPropsFrom(expr.arg1);
                 expr.name = fmt::format("D1Intp<D1Linear, {}, Cen2Cor>({})", d, expr.arg1.name);

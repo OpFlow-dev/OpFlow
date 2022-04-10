@@ -17,7 +17,7 @@
         }                                                                                                    \
                                                                                                              \
         template <FieldExprType T1, FieldExprType T2>                                                        \
-        static void prepare(Expression<Name##Op, T1, T2>& expr) {                                            \
+        static void prepare(const Expression<Name##Op, T1, T2>& expr) {                                      \
             if constexpr (MeshBasedFieldExprType<T1> && MeshBasedFieldExprType<T2>)                          \
                 OP_ASSERT(expr.arg1.mesh == expr.arg2.mesh);                                                 \
             if constexpr ((StructuredFieldExprType<T1> && StructuredFieldExprType<T2>)                       \
@@ -58,7 +58,7 @@
             }                                                                                                \
         }                                                                                                    \
         template <typename T1, FieldExprType T2>                                                             \
-        static void prepare(Expression<Name##Op, ScalarExpr<T1>, T2>& expr) {                                \
+        static void prepare(const Expression<Name##Op, ScalarExpr<T1>, T2>& expr) {                          \
             expr.initPropsFrom(expr.arg2);                                                                   \
             expr.name = fmt::format("{} {} {}", expr.arg1.val, #op, expr.arg2.name);                         \
             if constexpr (StructuredFieldExprType<Expression<Name##Op, ScalarExpr<T1>, T2>>)                 \
@@ -70,7 +70,7 @@
             }                                                                                                \
         }                                                                                                    \
         template <FieldExprType T1, typename T2>                                                             \
-        static void prepare(Expression<Name##Op, T1, ScalarExpr<T2>>& expr) {                                \
+        static void prepare(const Expression<Name##Op, T1, ScalarExpr<T2>>& expr) {                          \
             expr.initPropsFrom(expr.arg1);                                                                   \
             expr.name = fmt::format("{} {} {}", expr.arg1.name, #op, expr.arg2.val);                         \
             if constexpr (StructuredFieldExprType<Expression<Name##Op, T1, ScalarExpr<T2>>>)                 \
@@ -191,7 +191,7 @@
         }                                                                                                                             \
                                                                                                                                       \
         template <FieldExprType T1, FieldExprType T2>                                                                                 \
-        static void prepare(Expression<Name##Op, T1, T2>& expr) {                                                                     \
+        static void prepare(const Expression<Name##Op, T1, T2>& expr) {                                                               \
             if constexpr (MeshBasedFieldExprType<T1> && MeshBasedFieldExprType<T2>)                                                   \
                 OP_ASSERT(expr.arg1.mesh == expr.arg2.mesh);                                                                          \
             if constexpr (                                                                                                            \
@@ -233,7 +233,7 @@
             }                                                                                                                         \
         }                                                                                                                             \
         template <typename T1, FieldExprType T2>                                                                                      \
-        static void prepare(Expression<Name##Op, ScalarExpr<T1>, T2>& expr) {                                                         \
+        static void prepare(const Expression<Name##Op, ScalarExpr<T1>, T2>& expr) {                                                   \
             expr.initPropsFrom(expr.arg2);                                                                                            \
             expr.name = fmt::format("{}({}, {})", #func, expr.arg1.val, expr.arg2.name);                                              \
             if constexpr (StructuredFieldExprType<Expression<Name##Op, ScalarExpr<T1>, T2>>)                                          \
@@ -245,7 +245,7 @@
             }                                                                                                                         \
         }                                                                                                                             \
         template <FieldExprType T1, typename T2>                                                                                      \
-        static void prepare(Expression<Name##Op, T1, ScalarExpr<T2>>& expr) {                                                         \
+        static void prepare(const Expression<Name##Op, T1, ScalarExpr<T2>>& expr) {                                                   \
             expr.initPropsFrom(expr.arg1);                                                                                            \
             expr.name = fmt::format("{}({}, {})", #func, expr.arg1.name, expr.arg2.val);                                              \
             if constexpr (StructuredFieldExprType<Expression<Name##Op, T1, ScalarExpr<T2>>>)                                          \

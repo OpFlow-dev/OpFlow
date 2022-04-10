@@ -22,12 +22,12 @@ namespace OpFlow {
 
     template <typename Derived>
     struct SemiStructuredFieldExpr : MeshBasedFieldExpr<Derived> {
-        std::vector<std::vector<typename internal::SemiStructuredFieldExprTrait<Derived>::range_type>>
+        mutable std::vector<std::vector<typename internal::SemiStructuredFieldExprTrait<Derived>::range_type>>
                 localRanges, assignableRanges, accessibleRanges, logicalRanges;
-        std::array<LocOnMesh, internal::SemiStructuredFieldExprTrait<Derived>::dim> loc;
-        std::array<DS::Pair<std::unique_ptr<
-                           BCBase<typename internal::SemiStructuredFieldExprTrait<Derived>::type>>>,
-                   internal::FieldExprTrait<Derived>::dim>
+        mutable std::array<LocOnMesh, internal::SemiStructuredFieldExprTrait<Derived>::dim> loc;
+        mutable std::array<DS::Pair<std::unique_ptr<
+                                   BCBase<typename internal::SemiStructuredFieldExprTrait<Derived>::type>>>,
+                           internal::FieldExprTrait<Derived>::dim>
                 bc;
 
         SemiStructuredFieldExpr() = default;
@@ -61,7 +61,7 @@ namespace OpFlow {
 
     protected:
         template <SemiStructuredFieldExprType Other>
-        void initPropsFromImpl_SemiStructuredFieldExpr(const Other& other) {
+        void initPropsFromImpl_SemiStructuredFieldExpr(const Other& other) const {
             this->initPropsFromImpl_MeshBasedFieldExpr(other);
             this->loc = other.loc;
             this->localRanges = other.localRanges;

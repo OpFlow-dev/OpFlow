@@ -47,7 +47,12 @@ namespace OpFlow::Utils {
                     [&]<int k>(Meta::int_<k>) { streams[k].moveToTime(t) >> std::get<k>(exprs); });
         }
 
-        std::tuple<typename std::add_const<typename OpFlow::internal::ExprProxy<Exprs>::type>::type...> exprs;
+        std::tuple<typename std::conditional_t<
+                RStreamType<Stream>,
+                typename std::conditional_t<Exprs::isConcrete(), Meta::RealType<Exprs>&,
+                                            Meta::RealType<Exprs>>,
+                typename OpFlow::internal::ExprProxy<Exprs>::type>...>
+                exprs;
         std::vector<Stream> streams;
     };
 
@@ -60,7 +65,6 @@ namespace OpFlow::Utils {
     auto makeIOGroup(const std::string& root, unsigned int mode, Exprs&&... es) {
         return IOGroup<Stream, Meta::RealType<Exprs>...>(root, mode, OP_PERFECT_FOWD(es)...);
     }
-
 }// namespace OpFlow::Utils
 
 #endif//OPFLOW_IOGROUP_HPP

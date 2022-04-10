@@ -66,7 +66,7 @@ namespace OpFlow {
         }
 
         template <CartesianFieldExprType E>
-        static inline void prepare(Expression<D1FirstOrderBiasedUpwind, E>& expr) {
+        static inline void prepare(const Expression<D1FirstOrderBiasedUpwind, E>& expr) {
             expr.initPropsFrom(expr.arg1);
             // name
             expr.name = fmt::format("d1<D1FirstOrderBiasedUpwind<{}>>(", d) + expr.arg1.name + ")";
@@ -83,7 +83,7 @@ namespace OpFlow {
             expr.assignableRange.setEmpty();
         }
         template <CartAMRFieldExprType E>
-        static void prepare(Expression<D1FirstOrderBiasedUpwind, E>& expr) {
+        static void prepare(const Expression<D1FirstOrderBiasedUpwind, E>& expr) {
             constexpr auto dim = internal::CartAMRFieldExprTrait<E>::dim;
             expr.initPropsFrom(expr.arg1);
 

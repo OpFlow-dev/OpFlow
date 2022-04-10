@@ -149,7 +149,7 @@ namespace OpFlow {
         auto& initBy(Meta::Numerical auto v) { return *this = v; }
 
     protected:
-        void prepareImpl_final() {}
+        void prepareImpl_final() const {}
         void updateBCImpl_final() {
             if (this->localRanges[0][0] == this->assignableRanges[0][0]) return;
             else {
