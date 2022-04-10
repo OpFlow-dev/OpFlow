@@ -17,7 +17,7 @@
         }                                                                                                    \
                                                                                                              \
         template <FieldExprType T1>                                                                          \
-        static void prepare(Expression<Name##Op, T1>& expr) {                                                \
+        static void prepare(const Expression<Name##Op, T1>& expr) {                                          \
             expr.initPropsFrom(expr.arg1);                                                                   \
             expr.name = fmt::format("{} {}", #op, expr.arg1.name);                                           \
             if constexpr (StructuredFieldExprType<T1>) {                                                     \
@@ -68,7 +68,7 @@
         }                                                                                                    \
                                                                                                              \
         template <FieldExprType T1>                                                                          \
-        static void prepare(Expression<Name##Op, T1>& expr) {                                                \
+        static void prepare(const Expression<Name##Op, T1>& expr) {                                          \
             expr.initPropsFrom(expr.arg1);                                                                   \
             expr.name = fmt::format("{}({})", #func, expr.arg1.name);                                        \
             if constexpr (StructuredFieldExprType<T1>) {                                                     \

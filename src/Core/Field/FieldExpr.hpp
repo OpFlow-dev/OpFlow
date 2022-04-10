@@ -31,7 +31,7 @@ namespace OpFlow {
 
     protected:
         // recurse end
-        void initPropsFromImpl_FieldExpr(auto&& expr) {
+        void initPropsFromImpl_FieldExpr(auto&& expr) const {
             if (this->name.empty()) this->name = expr.getName();
         }
 

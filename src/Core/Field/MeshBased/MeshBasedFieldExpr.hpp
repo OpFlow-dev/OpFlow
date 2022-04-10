@@ -24,7 +24,7 @@ namespace OpFlow {
     struct MeshBasedFieldExpr : FieldExpr<Derived> {
         using MeshType = typename internal::MeshBasedFieldExprTrait<Derived>::mesh_type;
 
-        MeshType mesh;
+        mutable MeshType mesh;
 
         MeshBasedFieldExpr() = default;
         MeshBasedFieldExpr(const MeshBasedFieldExpr& other) : FieldExpr<Derived>(other), mesh(other.mesh) {}
@@ -40,7 +40,7 @@ namespace OpFlow {
 
     protected:
         template <MeshBasedFieldExprType Other>
-        void initPropsFromImpl_MeshBasedFieldExpr(const Other& other) {
+        void initPropsFromImpl_MeshBasedFieldExpr(const Other& other) const {
             this->initPropsFromImpl_FieldExpr(other);
             this->mesh = other.mesh;
         }

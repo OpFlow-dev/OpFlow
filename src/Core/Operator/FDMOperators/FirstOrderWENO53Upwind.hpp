@@ -95,7 +95,7 @@ namespace OpFlow {
         }
 
         template <CartesianFieldExprType E>
-        static void prepare(Expression<D1WENO53Upwind, E>& expr) {
+        static void prepare(const Expression<D1WENO53Upwind, E>& expr) {
             constexpr auto dim = internal::CartesianFieldExprTrait<E>::dim;
             expr.initPropsFrom(expr.arg1);
             // name
@@ -108,7 +108,7 @@ namespace OpFlow {
             expr.assignableRange.setEmpty();
         }
         template <CartAMRFieldExprType E>
-        static void prepare(Expression<D1WENO53Upwind, E>& expr) {
+        static void prepare(const Expression<D1WENO53Upwind, E>& expr) {
             constexpr auto dim = internal::CartesianFieldExprTrait<E>::dim;
             expr.initPropsFrom(expr.arg1);
 

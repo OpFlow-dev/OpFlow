@@ -27,12 +27,12 @@ namespace OpFlow {
 
     protected:
         template <CartesianFieldExprType Other>
-        void initPropsFromImpl_CartesianFieldExpr(const Other& expr) {
+        void initPropsFromImpl_CartesianFieldExpr(const Other& expr) const {
             this->initPropsFromImpl_StructuredFieldExpr(expr);
         }
 
         template <CartesianFieldExprType Other>
-        void initPropsFromImpl_final(const Other& expr) {
+        void initPropsFromImpl_final(const Other& expr) const {
             initPropsFromImpl_CartesianFieldExpr(expr);
         }
     };

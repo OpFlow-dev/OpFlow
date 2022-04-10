@@ -30,7 +30,7 @@ namespace OpFlow {
         }
 
         template <typename E>
-        static void prepare(Expression<IdentityOp, E>& expr) {
+        static void prepare(const Expression<IdentityOp, E>& expr) {
             expr.initPropsFrom(expr.arg1);
             // name
             expr.name = fmt::format("Identity({})", expr.arg1.name);

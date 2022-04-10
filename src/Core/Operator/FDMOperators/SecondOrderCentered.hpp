@@ -184,7 +184,7 @@ namespace OpFlow {
             return ((_r - _c) / _dx_r - (_c - _l) / _dx_l) / _dx_c;
         }
         template <CartesianFieldExprType E>
-        OPFLOW_STRONG_INLINE static void prepare(Expression<D2SecondOrderCentered, E>& expr) {
+        OPFLOW_STRONG_INLINE static void prepare(const Expression<D2SecondOrderCentered, E>& expr) {
             expr.initPropsFrom(expr.arg1);
             // name
             expr.name = fmt::format("d2<D2SecondOrderCentered<{}>>({})", d, expr.arg1.name);
@@ -204,7 +204,7 @@ namespace OpFlow {
         }
 
         template <CartAMRFieldExprType E>
-        OPFLOW_STRONG_INLINE static void prepare(Expression<D2SecondOrderCentered, E>& expr) {
+        OPFLOW_STRONG_INLINE static void prepare(const Expression<D2SecondOrderCentered, E>& expr) {
             constexpr auto dim = internal::CartAMRFieldExprTrait<E>::dim;
             expr.initPropsFrom(expr.arg1);
 

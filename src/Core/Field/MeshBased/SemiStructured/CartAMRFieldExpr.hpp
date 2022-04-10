@@ -22,7 +22,7 @@ namespace OpFlow {
 
     template <typename Derived>
     struct CartAMRFieldExpr : SemiStructuredFieldExpr<Derived> {
-        std::vector<typename internal::CartAMRFieldExprTrait<Derived>::range_type> maxLogicalRanges;
+        mutable std::vector<typename internal::CartAMRFieldExprTrait<Derived>::range_type> maxLogicalRanges;
         CartAMRFieldExpr() = default;
         CartAMRFieldExpr(const CartAMRFieldExpr& other)
             : SemiStructuredFieldExpr<Derived>(other), maxLogicalRanges(other.maxLogicalRanges) {}
@@ -32,13 +32,13 @@ namespace OpFlow {
 
     protected:
         template <CartAMRFieldExprType Other>
-        void initPropsFromImpl_CartAMRFieldExpr(const Other& other) {
+        void initPropsFromImpl_CartAMRFieldExpr(const Other& other) const {
             this->initPropsFromImpl_SemiStructuredFieldExpr(other);
             maxLogicalRanges = other.maxLogicalRanges;
         }
 
         template <CartAMRFieldExprType Other>
-        void initPropsFromImpl_final(const Other& other) {
+        void initPropsFromImpl_final(const Other& other) const {
             initPropsFromImpl_CartAMRFieldExpr(other);
         }
     };

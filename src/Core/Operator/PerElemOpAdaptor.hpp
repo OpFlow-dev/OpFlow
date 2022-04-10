@@ -41,7 +41,7 @@ namespace OpFlow {
         }
 
         template <ExprType E>
-        static void prepare(Expression<UniOpAdaptor, E>& expr) {
+        static void prepare(const Expression<UniOpAdaptor, E>& expr) {
             expr.initPropsFrom(expr.arg1);
             // name
             expr.name = fmt::format("{}({})", Functor.getName().to_string(), expr.arg1.name);
@@ -83,7 +83,7 @@ namespace OpFlow {
         }
 
         template <ExprType E1, ExprType E2>
-        static void prepare(Expression<BinOpAdaptor, E1, E2>& expr) {
+        static void prepare(const Expression<BinOpAdaptor, E1, E2>& expr) {
             expr.initPropsFrom(expr.arg1);
             // name
             expr.name = fmt::format("{}({}, {})", Functor.getName().to_string(), expr.arg1.name,

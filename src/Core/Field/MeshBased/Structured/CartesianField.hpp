@@ -184,7 +184,7 @@ namespace OpFlow {
             this->updatePadding();
             return *this;
         }
-        void prepareImpl_final() {}
+        void prepareImpl_final() const {}
         void updateNeighbors() {
             if (this->splitMap.size() == 1) {
                 // single node mode

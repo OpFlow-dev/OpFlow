@@ -83,7 +83,7 @@ namespace OpFlow {
 
         template <StructuredFieldExprType E, typename T>
         requires(internal::ExprTrait<E>::dim == d) static void prepare(
-                Expression<Convolution, E, ScalarExpr<DS::FixedSizeTensor<T, ns...>>>& expr) {
+                const Expression<Convolution, E, ScalarExpr<DS::FixedSizeTensor<T, ns...>>>& expr) {
             expr.initPropsFrom(expr.arg1);
 
             // name
@@ -103,7 +103,7 @@ namespace OpFlow {
 
         template <CartAMRFieldExprType E, typename T>
         requires(internal::ExprTrait<E>::dim == d) static void prepare(
-                Expression<Convolution, E, ScalarExpr<DS::FixedSizeTensor<T, ns...>>>& expr) {
+                const Expression<Convolution, E, ScalarExpr<DS::FixedSizeTensor<T, ns...>>>& expr) {
             expr.initPropsFrom(expr.arg1);
 
             // name

@@ -80,7 +80,7 @@ namespace OpFlow {
         }
 
         template <CartesianFieldExprType E>
-        static inline void prepare(Expression<D1FirstOrderCenteredUpwind, E>& expr) {
+        static inline void prepare(const Expression<D1FirstOrderCenteredUpwind, E>& expr) {
             // name
             expr.name = fmt::format("d1<D1FirstOrderCenteredUpwind<{}>>(", d) + expr.arg1.name + ")";
 

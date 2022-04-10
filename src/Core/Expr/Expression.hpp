@@ -44,7 +44,7 @@ namespace OpFlow {
             OP_STACK_POP;
             return ret;
         }
-        void prepareImpl_final() { Op::prepare(*this); }
+        void prepareImpl_final() const { Op::prepare(*this); }
         bool containsImpl_final(auto&&...) const { return false; }
     };
 
@@ -67,13 +67,15 @@ namespace OpFlow {
     template <typename Op, ExprType Arg>
     struct Expression<Op, Arg> : ResultType<Op, Arg>::type {
         friend Expr<Expression<Op, Arg>>;
+        // note: cannot use auto&& arg1 here because it shadows ctors
         explicit Expression(Arg&& arg1) : arg1(OP_PERFECT_FOWD(arg1)) {}
         explicit Expression(Arg& arg1) : arg1(arg1) {}
+        explicit Expression(const Arg& arg1) : arg1(arg1) {}
         Expression(const Expression& e) : ResultType<Op, Arg>::type(e), arg1(e.arg1) {}
         Expression(Expression&& e) noexcept : ResultType<Op, Arg>::type(std::move(e)), arg1(e.arg1) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             Op::prepare(*this);
         }
@@ -94,7 +96,7 @@ namespace OpFlow {
             : ResultType<Op, Arg1, Arg2>::type(std::move(e)), arg1(e.arg1), arg2(e.arg2) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             Op::prepare(*this);
@@ -120,7 +122,7 @@ namespace OpFlow {
         }
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
@@ -152,7 +154,7 @@ namespace OpFlow {
               arg3(e.arg3), arg4(e.arg4) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
@@ -186,7 +188,7 @@ namespace OpFlow {
               arg3(e.arg3), arg4(e.arg4), arg5(e.arg5) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
@@ -225,7 +227,7 @@ namespace OpFlow {
               arg2(e.arg2), arg3(e.arg3), arg4(e.arg4), arg5(e.arg5), arg6(e.arg6) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
@@ -268,7 +270,7 @@ namespace OpFlow {
               arg2(e.arg2), arg3(e.arg3), arg4(e.arg4), arg5(e.arg5), arg6(e.arg6), arg7(e.arg7) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
@@ -315,7 +317,7 @@ namespace OpFlow {
               arg7(e.arg7), arg8(e.arg8) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
@@ -364,7 +366,7 @@ namespace OpFlow {
               arg7(e.arg7), arg8(e.arg8), arg9(e.arg9) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
@@ -417,7 +419,7 @@ namespace OpFlow {
               arg7(e.arg7), arg8(e.arg8), arg9(e.arg9), arg10(e.arg10) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
@@ -473,7 +475,7 @@ namespace OpFlow {
               arg7(e.arg7), arg8(e.arg8), arg9(e.arg9), arg10(e.arg10), arg11(e.arg11) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
@@ -534,7 +536,7 @@ namespace OpFlow {
               arg7(e.arg7), arg8(e.arg8), arg9(e.arg9), arg10(e.arg10), arg11(e.arg11), arg12(e.arg12) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
@@ -602,7 +604,7 @@ namespace OpFlow {
               arg13(e.arg13) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
@@ -673,7 +675,7 @@ namespace OpFlow {
               arg13(e.arg13), arg14(e.arg14) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
@@ -747,7 +749,7 @@ namespace OpFlow {
               arg13(e.arg13), arg14(e.arg14), arg15(e.arg15) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
@@ -825,7 +827,7 @@ namespace OpFlow {
               arg13(e.arg13), arg14(e.arg14), arg15(e.arg15), arg16(e.arg16) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
@@ -905,7 +907,7 @@ namespace OpFlow {
               arg13(e.arg13), arg14(e.arg14), arg15(e.arg15), arg16(e.arg16), arg17(e.arg17) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
@@ -992,7 +994,7 @@ namespace OpFlow {
         }
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
@@ -1082,7 +1084,7 @@ namespace OpFlow {
               arg19(e.arg19) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
@@ -1174,7 +1176,7 @@ namespace OpFlow {
               arg19(e.arg19), arg20(e.arg20) {}
 
     protected:
-        void prepareImpl_final() {
+        void prepareImpl_final() const {
             arg1.prepare();
             arg2.prepare();
             arg3.prepare();
