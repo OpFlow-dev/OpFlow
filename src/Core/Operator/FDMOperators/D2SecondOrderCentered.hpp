@@ -10,8 +10,8 @@
 //
 // ----------------------------------------------------------------------------
 
-#ifndef OPFLOW_SECONDORDERCENTERED_HPP
-#define OPFLOW_SECONDORDERCENTERED_HPP
+#ifndef OPFLOW_D2SECONDORDERCENTERED_HPP
+#define OPFLOW_D2SECONDORDERCENTERED_HPP
 
 #include "Core/Field/MeshBased/SemiStructured/CartAMRFieldExprTrait.hpp"
 #include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
@@ -272,4 +272,4 @@ namespace OpFlow {
     }// namespace internal
 
 }// namespace OpFlow
-#endif//OPFLOW_SECONDORDERCENTERED_HPP
+#endif//OPFLOW_D2SECONDORDERCENTERED_HPP

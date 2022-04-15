@@ -81,7 +81,7 @@ with the ``d1IntpCenterToCorner`` operator:
 .. code-block:: cpp
 
     auto conv_xy = [&](auto&& _1, auto&& _2) {
-      return dy<D1FirstOrderCenteredUpwind>(d1IntpCenterToCorner<1>(_1) * d1IntpCenterToCorner<0>(_2));
+      return dy<D1FirstOrderCentered>(d1IntpCenterToCorner<1>(_1) * d1IntpCenterToCorner<0>(_2));
     };
 
 The above code defines a functor doing this calculation. Defining functors for sub-expressions are very useful for
@@ -103,7 +103,7 @@ three implicit solvers for the :math:`u`, :math:`v` and :math:`p` equations:
               return e / dt + conv_xx(u, e) + 0.5 * conv_xy(e, v)
                      == nu * (d2x<D2SecondOrderCentered>(u) + d2y<D2SecondOrderCentered>(u))
                         + 0.5 * nu * (d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e))
-                        - (conv_xx(u, u) + conv_xy(u, v)) - dx<D1FirstOrderCenteredDownwind>(p);
+                        - (conv_xx(u, u) + conv_xy(u, v)) - dx<D1FirstOrderCentered>(p);
             },
             du, solver);
     auto v_handler = makeEqnSolveHandler(
@@ -112,7 +112,7 @@ three implicit solvers for the :math:`u`, :math:`v` and :math:`p` equations:
                      + 0.5 * conv_yx(du, v)
                      == nu * (d2x<D2SecondOrderCentered>(v) + d2y<D2SecondOrderCentered>(v))
                         + 0.5 * nu * (d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e))
-                        - dy<D1FirstOrderCenteredDownwind>(p);
+                        - dy<D1FirstOrderCentered>(p);
             },
             dv, solver);
     poisson_params.staticMat = true; poisson_params.pinValue = true;
@@ -120,7 +120,7 @@ three implicit solvers for the :math:`u`, :math:`v` and :math:`p` equations:
     auto p_handler = makeEqnSolveHandler(
             [&](auto&& e) {
               return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e)
-                     == (dx<D1FirstOrderCenteredUpwind>(du) + dy<D1FirstOrderCenteredUpwind>(dv)) / dt;
+                     == (dx<D1FirstOrderCentered>(du) + dy<D1FirstOrderCentered>(dv)) / dt;
             },
             dp, p_solver);
 
@@ -146,8 +146,8 @@ Finally, we start the main loop:
         u = u + du;
         v = v + dv;
         p_handler.solve();
-        u = u - dt * dx<D1FirstOrderCenteredDownwind>(dp);
-        v = v - dt * dy<D1FirstOrderCenteredDownwind>(dp);
+        u = u - dt * dx<D1FirstOrderCentered>(dp);
+        v = v - dt * dy<D1FirstOrderCentered>(dp);
         p = p + dp;
         uf << Utils::TimeStamp(i) << u; vf << Utils::TimeStamp(i) << v; pf << Utils::TimeStamp(i) << p;
         OP_INFO("Current step {}", i);

@@ -10,8 +10,8 @@
 //
 // ----------------------------------------------------------------------------
 
-#ifndef OPFLOW_FIRSTORDERBIASEDUPWIND_HPP
-#define OPFLOW_FIRSTORDERBIASEDUPWIND_HPP
+#ifndef OPFLOW_D1FIRSTORDERBIASEDUPWIND_HPP
+#define OPFLOW_D1FIRSTORDERBIASEDUPWIND_HPP
 
 #include "Core/Field/MeshBased/SemiStructured/CartAMRFieldExprTrait.hpp"
 #include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
@@ -160,4 +160,4 @@ namespace OpFlow {
 
     }// namespace internal
 }// namespace OpFlow
-#endif//OPFLOW_FIRSTORDERBIASEDUPWIND_HPP
+#endif//OPFLOW_D1FIRSTORDERBIASEDUPWIND_HPP

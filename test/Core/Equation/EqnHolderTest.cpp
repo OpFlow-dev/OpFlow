@@ -68,10 +68,8 @@ protected:
             auto hevi = Math::smoothHeviside(r.getMesh().dx(0, 0) * 8, dist - 0.2);
             return 1. * hevi + (1. - hevi) * 1000;
         });
-        b = dx<D1FirstOrderCenteredUpwind>(dx<D1FirstOrderCenteredDownwind>(p_true)
-                                           / d1IntpCenterToCorner<0>((r)))
-            + dy<D1FirstOrderCenteredUpwind>(dy<D1FirstOrderCenteredDownwind>(p_true)
-                                             / d1IntpCenterToCorner<1>(r));
+        b = dx<D1FirstOrderCentered>(dx<D1FirstOrderCentered>(p_true) / d1IntpCenterToCorner<0>((r)))
+            + dy<D1FirstOrderCentered>(dy<D1FirstOrderCentered>(p_true) / d1IntpCenterToCorner<1>(r));
         p = 0.;
     }
 
@@ -98,10 +96,9 @@ protected:
     auto poisson_eqn() {
         return [&](auto&& e) {
             return b
-                   == dx<D1FirstOrderCenteredUpwind>(dx<D1FirstOrderCenteredDownwind>(e)
-                                                     / d1IntpCenterToCorner<0>((r)))
-                              + dy<D1FirstOrderCenteredUpwind>(dy<D1FirstOrderCenteredDownwind>(e)
-                                                               / d1IntpCenterToCorner<1>(r));
+                   == dx<D1FirstOrderCentered>(dx<D1FirstOrderCentered>(e) / d1IntpCenterToCorner<0>((r)))
+                              + dy<D1FirstOrderCentered>(dy<D1FirstOrderCentered>(e)
+                                                         / d1IntpCenterToCorner<1>(r));
         };
     }
 
@@ -121,17 +118,17 @@ TEST_F(EqnHolderTest, DoubleEqn) {
             std::forward_as_tuple(
                     [&](auto&& e, auto&&) {
                         return b
-                               == dx<D1FirstOrderCenteredUpwind>(dx<D1FirstOrderCenteredDownwind>(e)
-                                                                 / d1IntpCenterToCorner<0>((r)))
-                                          + dy<D1FirstOrderCenteredUpwind>(dy<D1FirstOrderCenteredDownwind>(e)
-                                                                           / d1IntpCenterToCorner<1>(r));
+                               == dx<D1FirstOrderCentered>(dx<D1FirstOrderCentered>(e)
+                                                           / d1IntpCenterToCorner<0>((r)))
+                                          + dy<D1FirstOrderCentered>(dy<D1FirstOrderCentered>(e)
+                                                                     / d1IntpCenterToCorner<1>(r));
                     },
                     [&](auto&&, auto&& e) {
                         return b
-                               == dx<D1FirstOrderCenteredUpwind>(dx<D1FirstOrderCenteredDownwind>(e)
-                                                                 / d1IntpCenterToCorner<0>((r)))
-                                          + dy<D1FirstOrderCenteredUpwind>(dy<D1FirstOrderCenteredDownwind>(e)
-                                                                           / d1IntpCenterToCorner<1>(r));
+                               == dx<D1FirstOrderCentered>(dx<D1FirstOrderCentered>(e)
+                                                           / d1IntpCenterToCorner<0>((r)))
+                                          + dy<D1FirstOrderCentered>(dy<D1FirstOrderCentered>(e)
+                                                                     / d1IntpCenterToCorner<1>(r));
                     }),
             std::forward_as_tuple(p, p));
     ASSERT_EQ(h.getTargetPtr<0>(), &p);
