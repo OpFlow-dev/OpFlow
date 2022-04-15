@@ -141,3 +141,28 @@ TEST_F(Intp1DFluxLimiterCornerToCenterTest, RangeCheck) {
     ASSERT_EQ(t.localRange.end[0], u.localRange.end[0] - 2);
     ASSERT_EQ(t.assignableRange, DS::Range<1>::EmptyRange());
 }
+
+TEST_F(Intp1DFluxLimiterCornerToCenterTest, ValueCheck) {
+    auto u = ExprBuilder<Field>()
+                     .setMesh(m)
+                     .setBC(0, DimPos::start, BCType::Dirc, 0.)
+                     .setBC(0, DimPos::end, BCType::Dirc, 1.)
+                     .setExt(2)
+                     .setLoc(LocOnMesh::Corner)
+                     .build();
+    auto v = ExprBuilder<Field>()
+                     .setMesh(m)
+                     .setBC(0, DimPos::start, BCType::Dirc, 0.)
+                     .setBC(0, DimPos::end, BCType::Dirc, 1.)
+                     .setExt(2)
+                     .setLoc(LocOnMesh::Center)
+                     .build();
+    u.initBy([](auto&& x) { return x[0] * x[0]; });
+    v.initBy([](auto&& x) { return x[0] * x[0]; });
+    auto t = d1IntpCornerToCenter<0, D1QUICK>(-v, u);
+    t.prepare();
+    rangeFor_s(t.accessibleRange, [&](auto&& i) {
+        OP_INFO("t = {}, v = {}, i = {}", t[i], v[i], i);
+        ASSERT_NEAR(t[i], v[i], 1e-10);
+    });
+}

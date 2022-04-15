@@ -37,10 +37,9 @@ protected:
     auto poisson_eqn() {
         return [&](auto&& e) {
             return b
-                   == dx<D1FirstOrderCenteredUpwind>(dx<D1FirstOrderCenteredDownwind>(e)
-                                                     / d1IntpCenterToCorner<0>((r)))
-                              + dy<D1FirstOrderCenteredUpwind>(dy<D1FirstOrderCenteredDownwind>(e)
-                                                               / d1IntpCenterToCorner<1>(r));
+                   == dx<D1FirstOrderCentered>(dx<D1FirstOrderCentered>(e) / d1IntpCenterToCorner<0>((r)))
+                              + dy<D1FirstOrderCentered>(dy<D1FirstOrderCentered>(e)
+                                                         / d1IntpCenterToCorner<1>(r));
         };
     }
 

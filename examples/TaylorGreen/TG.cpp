@@ -48,16 +48,16 @@ int main(int argc, char* argv[]) {
 
     // composite operators
     auto conv_xx = [&](auto&& _1, auto&& _2) {
-      return dx<D1FirstOrderCenteredDownwind>(d1IntpCornerToCenter<0>(_1) * d1IntpCornerToCenter<0>(_2));
+      return dx<D1FirstOrderCentered>(d1IntpCornerToCenter<0>(_1) * d1IntpCornerToCenter<0>(_2));
     };
     auto conv_xy = [&](auto&& _1, auto&& _2) {
-      return dy<D1FirstOrderCenteredUpwind>(d1IntpCenterToCorner<1>(_1) * d1IntpCenterToCorner<0>(_2));
+      return dy<D1FirstOrderCentered>(d1IntpCenterToCorner<1>(_1) * d1IntpCenterToCorner<0>(_2));
     };
     auto conv_yx = [&](auto&& _1, auto&& _2) {
-      return dx<D1FirstOrderCenteredUpwind>(d1IntpCenterToCorner<1>(_1) * d1IntpCenterToCorner<0>(_2));
+      return dx<D1FirstOrderCentered>(d1IntpCenterToCorner<1>(_1) * d1IntpCenterToCorner<0>(_2));
     };
     auto conv_yy = [&](auto&& _1, auto&& _2) {
-      return dy<D1FirstOrderCenteredDownwind>(d1IntpCornerToCenter<1>(_1) * d1IntpCornerToCenter<1>(_2));
+      return dy<D1FirstOrderCentered>(d1IntpCornerToCenter<1>(_1) * d1IntpCornerToCenter<1>(_2));
     };
 
     // solvers
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
               return e / dt + conv_xx(u, e) + 0.5 * conv_xy(e, v)
                      == nu * (d2x<D2SecondOrderCentered>(u) + d2y<D2SecondOrderCentered>(u))
                         + 0.5 * nu * (d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e))
-                        - (conv_xx(u, u) + conv_xy(u, v)) - dx<D1FirstOrderCenteredDownwind>(p);
+                        - (conv_xx(u, u) + conv_xy(u, v)) - dx<D1FirstOrderCentered>(p);
             },
             du, DS::MDRangeMapper<2>{u.assignableRange});
     auto v_handler = makeEqnSolveHandler<Solver>(
@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
                      + 0.5 * conv_yx(du, v)
                      == nu * (d2x<D2SecondOrderCentered>(v) + d2y<D2SecondOrderCentered>(v))
                         + 0.5 * nu * (d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e))
-                        - dy<D1FirstOrderCenteredDownwind>(p);
+                        - dy<D1FirstOrderCentered>(p);
             },
             dv, DS::MDRangeMapper<2>{v.assignableRange});
 
@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
     auto p_handler = makeEqnSolveHandler<Solver>(
             [&](auto&& e) {
               return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e)
-                     == (dx<D1FirstOrderCenteredUpwind>(du) + dy<D1FirstOrderCenteredUpwind>(dv)) / dt;
+                     == (dx<D1FirstOrderCentered>(du) + dy<D1FirstOrderCentered>(dv)) / dt;
             },
             dp, DS::MDRangeMapper<2>{p.assignableRange}, p_param);
 
@@ -110,8 +110,8 @@ int main(int argc, char* argv[]) {
         u = u + du;
         v = v + dv;
         p_handler->solve();
-        u = u - dt * dx<D1FirstOrderCenteredDownwind>(dp);
-        v = v - dt * dy<D1FirstOrderCenteredDownwind>(dp);
+        u = u - dt * dx<D1FirstOrderCentered>(dp);
+        v = v - dt * dy<D1FirstOrderCentered>(dp);
         p = p + dp;
         auto ave_p = rangeReduce(p.assignableRange, [](auto&& a, auto&& b) { return a + b; }, [&](auto&& idx) { return p[idx]; }) / p.assignableRange.count();
         p = p - ave_p;

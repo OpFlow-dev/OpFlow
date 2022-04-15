@@ -10,33 +10,35 @@
 //
 // ----------------------------------------------------------------------------
 
-#ifndef OPFLOW_FIRSTORDERCENTERBIASEDDOWNWIND_HPP
-#define OPFLOW_FIRSTORDERCENTERBIASEDDOWNWIND_HPP
+#ifndef OPFLOW_FIRSTORDERCENTEREDSTAGGERED_HPP
+#define OPFLOW_FIRSTORDERCENTEREDSTAGGERED_HPP
 
 #include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
 #include "DataStructures/Range/Ranges.hpp"
 
 namespace OpFlow {
     template <std::size_t d>
-    struct D1FirstOrderCenteredDownwind {
+    struct D1FirstOrderCentered {
         constexpr static auto bc_width = 1;
 
         template <CartesianFieldExprType E>
         OPFLOW_STRONG_INLINE static auto couldSafeEval(const E& e, auto&& i) {
-            return e.couldEvalAt(i) && e.couldEvalAt(i.template prev<d>());
+            return e.loc[d] == LocOnMesh::Center ? e.couldEvalAt(i) && e.couldEvalAt(i.template prev<d>())
+                                                 : e.couldEvalAt(i) && e.couldEvalAt(i.template next<d>());
         }
 
         template <CartesianFieldExprType E, typename I>
         OPFLOW_STRONG_INLINE static auto eval(const E& e, I i) {
-            return (e.evalAt(i) - e.evalAt(i.template prev<d>()))
-                   / (e.loc[d] == LocOnMesh::Corner ? e.mesh.dx(d, i[d] - 1)
-                                                    : (e.mesh.dx(d, i[d] - 1) + e.mesh.dx(d, i[d])) * 0.5);
+            return e.loc[d] == LocOnMesh::Center
+                           ? (e.evalAt(i) - e.evalAt(i.template prev<d>()))
+                                     / (e.mesh.dx(d, i[d] - 1) + e.mesh.dx(d, i[d])) * 2
+                           : (e.evalAt(i.template next<d>()) - e.evalAt(i)) / (e.mesh.dx(d, i[d]));
         }
 
         template <CartesianFieldExprType E>
-        static inline void prepare(const Expression<D1FirstOrderCenteredDownwind, E>& expr) {
+        static inline void prepare(const Expression<D1FirstOrderCentered, E>& expr) {
             // name
-            expr.name = fmt::format("d1<D1FirstOrderCenteredDownwind<{}>>(", d) + expr.arg1.name + ")";
+            expr.name = fmt::format("d1<D1FirstOrderCentered<{}>>(", d) + expr.arg1.name + ")";
 
             // mesh
             expr.mesh = expr.arg1.mesh.getView();
@@ -52,6 +54,11 @@ namespace OpFlow {
                 expr.accessibleRange.start[d]++;
                 expr.localRange.start[d]++;
                 expr.logicalRange.start[d]++;
+            } else {
+                // corner case
+                expr.accessibleRange.end[d]--;
+                expr.localRange.end[d]--;
+                expr.logicalRange.end[d]--;
             }
             // make the result expr read-only
             expr.assignableRange.setEmpty();
@@ -59,17 +66,17 @@ namespace OpFlow {
     };
 
     template <std::size_t d, CartesianFieldExprType T>
-    struct ResultType<D1FirstOrderCenteredDownwind<d>, T> {
-        using type = CartesianFieldExpr<Expression<D1FirstOrderCenteredDownwind<d>, T>>;
-        using core_type = Expression<D1FirstOrderCenteredDownwind<d>, T>;
+    struct ResultType<D1FirstOrderCentered<d>, T> {
+        using type = CartesianFieldExpr<Expression<D1FirstOrderCentered<d>, T>>;
+        using core_type = Expression<D1FirstOrderCentered<d>, T>;
     };
 
     namespace internal {
         template <std::size_t d, CartesianFieldExprType T>
-        struct ExprTrait<Expression<D1FirstOrderCenteredDownwind<d>, T>> {
+        struct ExprTrait<Expression<D1FirstOrderCentered<d>, T>> {
             static constexpr int dim = CartesianFieldExprTrait<T>::dim;
             static constexpr int bc_width
-                    = D1FirstOrderCenteredDownwind<d>::bc_width + CartesianFieldExprTrait<T>::bc_width;
+                    = D1FirstOrderCentered<d>::bc_width + CartesianFieldExprTrait<T>::bc_width;
             static constexpr int access_flag = 0;
             using type = typename CartesianFieldExprTrait<T>::type;
             template <typename Other>
@@ -84,4 +91,4 @@ namespace OpFlow {
         };
     }// namespace internal
 }// namespace OpFlow
-#endif//OPFLOW_FIRSTORDERCENTERBIASEDDOWNWIND_HPP
+#endif//OPFLOW_FIRSTORDERCENTEREDSTAGGERED_HPP

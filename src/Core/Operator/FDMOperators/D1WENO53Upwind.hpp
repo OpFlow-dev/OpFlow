@@ -10,8 +10,8 @@
 //
 //  ----------------------------------------------------------------------------
 
-#ifndef OPFLOW_FIRSTORDERWENO53UPWIND_HPP
-#define OPFLOW_FIRSTORDERWENO53UPWIND_HPP
+#ifndef OPFLOW_D1WENO53UPWIND_HPP
+#define OPFLOW_D1WENO53UPWIND_HPP
 
 #include "Core/Expr/Expression.hpp"
 #include "Core/Field/MeshBased/SemiStructured/CartAMRFieldExprTrait.hpp"
@@ -182,4 +182,4 @@ namespace OpFlow {
     }// namespace internal
 }// namespace OpFlow
 
-#endif//OPFLOW_FIRSTORDERWENO53UPWIND_HPP
+#endif//OPFLOW_D1WENO53UPWIND_HPP

@@ -57,31 +57,31 @@ int main(int argc, char* argv[]) {
 
     // composite operators
     auto conv_xx = [&](auto&& _1, auto&& _2) {
-        return dx<D1FirstOrderCenteredDownwind>(d1IntpCornerToCenter<0>(_1) * d1IntpCornerToCenter<0>(_2));
+        return dx<D1FirstOrderCentered>(d1IntpCornerToCenter<0>(_1) * d1IntpCornerToCenter<0>(_2));
     };
     auto conv_xy = [&](auto&& _1, auto&& _2) {
-        return dy<D1FirstOrderCenteredUpwind>(d1IntpCenterToCorner<1>(_1) * d1IntpCenterToCorner<0>(_2));
+        return dy<D1FirstOrderCentered>(d1IntpCenterToCorner<1>(_1) * d1IntpCenterToCorner<0>(_2));
     };
     auto conv_xz = [&](auto&& _1, auto&& _2) {
-        return dz<D1FirstOrderCenteredUpwind>(d1IntpCenterToCorner<2>(_1) * d1IntpCenterToCorner<0>(_2));
+        return dz<D1FirstOrderCentered>(d1IntpCenterToCorner<2>(_1) * d1IntpCenterToCorner<0>(_2));
     };
     auto conv_yx = [&](auto&& _1, auto&& _2) {
-        return dx<D1FirstOrderCenteredUpwind>(d1IntpCenterToCorner<1>(_1) * d1IntpCenterToCorner<0>(_2));
+        return dx<D1FirstOrderCentered>(d1IntpCenterToCorner<1>(_1) * d1IntpCenterToCorner<0>(_2));
     };
     auto conv_yy = [&](auto&& _1, auto&& _2) {
-        return dy<D1FirstOrderCenteredDownwind>(d1IntpCornerToCenter<1>(_1) * d1IntpCornerToCenter<1>(_2));
+        return dy<D1FirstOrderCentered>(d1IntpCornerToCenter<1>(_1) * d1IntpCornerToCenter<1>(_2));
     };
     auto conv_yz = [&](auto&& _1, auto&& _2) {
-        return dz<D1FirstOrderCenteredUpwind>(d1IntpCenterToCorner<2>(_1) * d1IntpCenterToCorner<1>(_2));
+        return dz<D1FirstOrderCentered>(d1IntpCenterToCorner<2>(_1) * d1IntpCenterToCorner<1>(_2));
     };
     auto conv_zx = [&](auto&& _1, auto&& _2) {
-        return dx<D1FirstOrderCenteredUpwind>(d1IntpCenterToCorner<2>(_1) * d1IntpCenterToCorner<0>(_2));
+        return dx<D1FirstOrderCentered>(d1IntpCenterToCorner<2>(_1) * d1IntpCenterToCorner<0>(_2));
     };
     auto conv_zy = [&](auto&& _1, auto&& _2) {
-        return dy<D1FirstOrderCenteredUpwind>(d1IntpCenterToCorner<2>(_1) * d1IntpCenterToCorner<1>(_2));
+        return dy<D1FirstOrderCentered>(d1IntpCenterToCorner<2>(_1) * d1IntpCenterToCorner<1>(_2));
     };
     auto conv_zz = [&](auto&& _1, auto&& _2) {
-        return dz<D1FirstOrderCenteredDownwind>(d1IntpCornerToCenter<2>(_1) * d1IntpCornerToCenter<2>(_2));
+        return dz<D1FirstOrderCentered>(d1IntpCornerToCenter<2>(_1) * d1IntpCornerToCenter<2>(_2));
     };
     auto laplace = [&](auto&& _1) {
         return d2x<D2SecondOrderCentered>(_1) + d2y<D2SecondOrderCentered>(_1)
@@ -107,14 +107,14 @@ int main(int argc, char* argv[]) {
                 return e / dt + conv_xx(u, e) + 0.5 * conv_xy(e, v) + 0.5 * conv_xz(e, w)
                        == nu * laplace(u) + 0.5 * nu * laplace(e)
                                   - (conv_xx(u, u) + conv_xy(u, v) + conv_xz(u, w))
-                                  - dx<D1FirstOrderCenteredDownwind>(p);
+                                  - dx<D1FirstOrderCentered>(p);
             },
             du, solver);
     auto v_handler = makeEqnSolveHandler(
             [&](auto&& e) {
                 return e / dt + conv_yy(v, e) + conv_yy(v, v) + conv_yx(u, v) + conv_yz(v, w)
                                + 0.5 * conv_yx(u, e) + 0.5 * conv_yx(du, v) + 0.5 * conv_yz(e, w)
-                       == nu * laplace(v) + 0.5 * nu * laplace(e) - dy<D1FirstOrderCenteredDownwind>(p);
+                       == nu * laplace(v) + 0.5 * nu * laplace(e) - dy<D1FirstOrderCentered>(p);
             },
             dv, solver);
     auto w_handler = makeEqnSolveHandler(
@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
                 return e / dt + 0.5 * conv_zx(u, e) + 0.5 * conv_zy(v, e) + conv_zz(w, e)
                        == nu * laplace(w) + 0.5 * nu * laplace(e) - conv_zx(u, w) - conv_zy(v, w)
                                   - conv_zz(w, w) - 0.5 * conv_zx(du, w) - 0.5 * conv_zy(dv, w)
-                                  - dz<D1FirstOrderCenteredDownwind>(p);
+                                  - dz<D1FirstOrderCentered>(p);
             },
             dw, solver);
     poisson_params.staticMat = true;
@@ -132,8 +132,8 @@ int main(int argc, char* argv[]) {
     auto p_handler = makeEqnSolveHandler(
             [&](auto&& e) {
                 return laplace(e) * -1.0
-                       == (dx<D1FirstOrderCenteredUpwind>(du) + dy<D1FirstOrderCenteredUpwind>(dv)
-                           + dz<D1FirstOrderCenteredUpwind>(dw))
+                       == (dx<D1FirstOrderCentered>(du) + dy<D1FirstOrderCentered>(dv)
+                           + dz<D1FirstOrderCentered>(dw))
                                   / -dt;
             },
             dp, p_solver);
@@ -153,9 +153,9 @@ int main(int argc, char* argv[]) {
         v = v + dv;
         w = w + dw;
         p_handler->solve();
-        u = u - dt * dx<D1FirstOrderCenteredDownwind>(dp);
-        v = v - dt * dy<D1FirstOrderCenteredDownwind>(dp);
-        w = w - dt * dz<D1FirstOrderCenteredDownwind>(dp);
+        u = u - dt * dx<D1FirstOrderCentered>(dp);
+        v = v - dt * dy<D1FirstOrderCentered>(dp);
+        w = w - dt * dz<D1FirstOrderCentered>(dp);
         p = p + dp;
         uf << Utils::TimeStamp(i) << u;
         vf << Utils::TimeStamp(i) << v;

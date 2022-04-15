@@ -16,11 +16,11 @@ Arithmetic  FDM                             Interpolator            Logical
 =========== =============================== ======================= ======================
 Add         D1FirstOrderBiasedDownwind      D1IntpCenterToCorner    And
 Mul         D1FirstOrderBiasedUpwind        D1IntpCornerToCenter    Or
-Sub         D1FirstOrderCenteredDownwind    IndexShifter            Not
-Div         D1FirstOrderCenteredUpwind      IndexShifter1D          BitXor
-Mod         D1WENO53Upwind                                          BitAnd
-Pow         D1WENO53Downwind                                        BitOr
-Neg         D2SecondOrderCentered                                   GreaterThan
+Sub         D1FirstOrderCentered            IndexShifter            Not
+Div         D1WENO53Upwind                  IndexShifter1D          BitXor
+Mod         D1WENO53Downwind                                        BitAnd
+Pow         D2SecondOrderCentered                                   BitOr
+Neg                                                                 GreaterThan
 Pos                                                                 GreaterThanOrEqual
 Sqrt                                                                LessThan
 Min                                                                 LessThanOrEqual
