@@ -68,6 +68,13 @@ namespace OpFlow {
     struct vanAlbadaKernel {
         constexpr static auto eval(auto r) { return r * (r + 1) / (r * r + 1); }
     };
+
+    // Koren's limited CUI scheme
+    struct KorenLimitedCUIKernel {
+        constexpr static auto eval(auto r) {
+            return std::max({0., std::min({2 * r, 2. / 3 * r + 1. / 3., 2.})});
+        }
+    };
 }// namespace OpFlow
 
 #endif//OPFLOW_FLUXLIMITERKERNELS_HPP
