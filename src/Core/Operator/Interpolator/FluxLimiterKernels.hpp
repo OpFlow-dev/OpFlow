@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <ratio>
 
 namespace OpFlow {
     enum class KappaScheme {
@@ -69,12 +70,70 @@ namespace OpFlow {
         constexpr static auto eval(auto r) { return r * (r + 1) / (r * r + 1); }
     };
 
-    // Koren's limited CUI scheme
-    struct KorenLimitedCUIKernel {
+    // Symmetric piecewise-linear (SPL) schemes
+    /// SPL-min limiter
+    /// \tparam M M param
+    /// \tparam Kappa kappa param
+    template <Meta::StdRatio M, Meta::StdRatio Kappa>
+    struct SPLMinKernel {
+        static constexpr double m = M::num / M::den;
+        static constexpr double kappa = Kappa::num / Kappa::den;
+
         constexpr static auto eval(auto r) {
-            return std::max({0., std::min({2 * r, 2. / 3 * r + 1. / 3., 2.})});
+            return std::max({0., std::min({m * r, 0.5 * (1 + kappa) * r + 0.5 * (1 - kappa),
+                                           0.5 * (1 - kappa) * r + 0.5 * (1 + kappa), m})});
         }
     };
+
+    /// SPL-max limiter
+    /// \tparam M M param
+    /// \tparam Kappa kappa param
+    template <Meta::StdRatio M, Meta::StdRatio Kappa>
+    struct SPLMaxKernel {
+        static constexpr double m = M::num / M::den;
+        static constexpr double kappa = Kappa::num / Kappa::den;
+
+        constexpr static auto eval(auto r) {
+            return std::max({0., std::min({m * r,
+                                           std::max({0.5 * (1 + kappa) * r + 0.5 * (1 - kappa),
+                                                     0.5 * (1 - kappa) * r + 0.5 * (1 + kappa)}),
+                                           m})});
+        }
+    };
+
+    // UMIST limiter
+    using UMISTKernel = SPLMinKernel<std::ratio<2, 1>, std::ratio<1, 2>>;
+
+    // SPL-1/3 limiter
+    using SPL13Kernel = SPLMinKernel<std::ratio<2, 1>, std::ratio<1, 3>>;
+
+    // SPL-max-1/2 limiter
+    using SPLMax12Kernel = SPLMaxKernel<std::ratio<2, 1>, std::ratio<1, 2>>;
+
+    // SPL-max-1/3 limiter
+    using SPLMax13Kernel = SPLMaxKernel<std::ratio<2, 1>, std::ratio<1, 3>>;
+
+    // Generalized piecewise-linear (GPL) schemes
+    template <Meta::StdRatio M, Meta::StdRatio Alpha, Meta::StdRatio Kappa>
+    struct GPLKappaKernel {
+        static constexpr double m = M::num / M::den;
+        static constexpr double alpha = Alpha::num / Alpha::den;
+        static constexpr double kappa = Kappa::num / Kappa::den;
+
+        constexpr static auto eval(auto r) {
+            return std::max({0., std::min({(2 + alpha) * r, 0.5 * (1 + kappa) * r + 0.5 * (1 - kappa), m})});
+        }
+    };
+
+    // Koren's limited CUI scheme
+    using KorenLimitedCUIKernel = GPLKappaKernel<std::ratio<2, 1>, std::ratio<0, 1>, std::ratio<1, 3>>;
+
+    // SMART scheme
+    using SMARTKernel = GPLKappaKernel<std::ratio<4, 1>, std::ratio<0, 1>, std::ratio<1, 2>>;
+
+    // Chakravarthy-Osher limiters
+    // BSOU scheme
+    using BSOUKernel = GPLKappaKernel<std::ratio<1, 1>, std::ratio<0, 1>, std::ratio<-1, 1>>;
 }// namespace OpFlow
 
 #endif//OPFLOW_FLUXLIMITERKERNELS_HPP
