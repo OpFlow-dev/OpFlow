@@ -81,6 +81,15 @@ namespace OpFlow::Meta {
     concept WeakIntegral = std::integral<typename std::remove_cvref<T>::type>;
 
     template <typename T>
+    concept StdRatio = requires {
+        { T::num }
+        ->std::convertible_to<int>;
+        { T::den }
+        ->std::convertible_to<int>;
+        typename T::type;
+    };
+
+    template <typename T>
     struct TypeWrapper {
         using type = T;
     };
