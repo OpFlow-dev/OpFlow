@@ -21,13 +21,16 @@ cmake_minimum_required(VERSION 3.13)
 # ----------------------------------------------------------------------------
 include(cmake/utils.cmake)
 include(cmake/ide.cmake)
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/external/morse_cmake/modules")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+include(GetGitRevisionDescription)
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+string(SUBSTRING ${GIT_SHA1} 0 -1 SHORT_SHA1)
+git_local_changes(GIT_CHANGE)
 
 opflow_extract_version()
 
 project(opflow VERSION ${OPFLOW_VERSION} LANGUAGES C CXX)
-message(STATUS "Build opflow: ${OPFLOW_VERSION}")
+message(STATUS "Build opflow: ${OPFLOW_VERSION} - ${SHORT_SHA1} - ${GIT_CHANGE}")
 
 include(GNUInstallDirs)
 
@@ -159,6 +162,8 @@ message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
 # ----------------------------------------------------------------------------
 add_library(opflow INTERFACE)
 add_library(opflow::opflow ALIAS opflow)
+
+target_compile_definitions(opflow INTERFACE OPFLOW_VERSION="${OPFLOW_VERSION}-${SHORT_SHA1}-${GIT_CHANGE}")
 
 target_include_directories(opflow INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"

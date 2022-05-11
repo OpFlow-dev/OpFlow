@@ -16,10 +16,15 @@
 #ifdef OPFLOW_WITH_MPI
 #include <mpi.h>
 #endif
+#include <iostream>
 #include <omp.h>
 
 #include "Core/Parallel/ParallelInfo.hpp"
 #include "Core/Parallel/ParallelPlan.hpp"
+
+#ifndef OPFLOW_VERSION
+#define OPFLOW_VERSION ""
+#endif
 
 namespace OpFlow {
     void static inline InitEnvironment(int* argc, char*** argv) {
@@ -72,5 +77,11 @@ namespace OpFlow {
         return 0;
 #endif
     }
+
+    inline constexpr std::string_view OPFLOW_VERSION_STR = std::string_view(OPFLOW_VERSION);
+
+    inline static void printVersion() { std::cout << "OpFlow version: " << OPFLOW_VERSION_STR << std::endl; }
+
+    inline static auto getVersionStr() { return std::string(OPFLOW_VERSION_STR); }
 }// namespace OpFlow
 #endif//OPFLOW_ENVIRONMENT_HPP
