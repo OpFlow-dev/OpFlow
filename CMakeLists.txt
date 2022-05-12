@@ -24,13 +24,14 @@ include(cmake/ide.cmake)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
-string(SUBSTRING ${GIT_SHA1} 0 -1 SHORT_SHA1)
+string(SUBSTRING ${GIT_SHA1} 0 8 SHORT_SHA1)
 git_local_changes(GIT_CHANGE)
 
 opflow_extract_version()
 
 project(opflow VERSION ${OPFLOW_VERSION} LANGUAGES C CXX)
-message(STATUS "Build opflow: ${OPFLOW_VERSION} - ${SHORT_SHA1} - ${GIT_CHANGE}")
+set(OPFLOW_VERSION_STRING "${OPFLOW_VERSION} - ${SHORT_SHA1} - ${GIT_CHANGE}")
+message(STATUS "Build opflow: ${OPFLOW_VERSION_STRING}")
 
 include(GNUInstallDirs)
 
@@ -163,11 +164,13 @@ message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
 add_library(opflow INTERFACE)
 add_library(opflow::opflow ALIAS opflow)
 
-target_compile_definitions(opflow INTERFACE OPFLOW_VERSION="${OPFLOW_VERSION}-${SHORT_SHA1}-${GIT_CHANGE}")
+# Create & include the version header
+configure_file(${CMAKE_CURRENT_LIST_DIR}/cmake/Version.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/Version.hpp @ONLY)
 
 target_include_directories(opflow INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/src>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/src>")
 
@@ -521,6 +524,7 @@ if (OPFLOW_INSTALL)
     # ----------------------------------------------------------------------------
     install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/ DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
     install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/src/ DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/src")
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Version.hpp DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
     install(
             TARGETS opflow
             EXPORT opflow

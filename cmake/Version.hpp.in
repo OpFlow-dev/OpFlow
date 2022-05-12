@@ -1,0 +1,5 @@
+#include <string_view>
+
+namespace OpFlow::internal {
+    inline constexpr static auto OPFLOW_VERSION_STRING = std::string_view {"@OPFLOW_VERSION_STRING@"};
+}
