@@ -68,6 +68,16 @@ namespace OpFlow {
             : CartesianFieldExpr<CartesianField<D, M, C>>(std::move(other)), data(std::move(other.data)),
               initialized(true), bc(std::move(other.bc)), ext_width(std::move(other.ext_width)) {}
 
+        CartesianField& operator=(const CartesianField& other) {
+            assignImpl_final(other);
+            return *this;
+        }
+
+        CartesianField& operator=(CartesianField&& other) noexcept {
+            assignImpl_final(std::move(other));
+            return *this;
+        }
+
         template <BasicArithOp Op = BasicArithOp::Eq>
         auto& assignImpl_final(const CartesianField& other) {
             if (!initialized) {
