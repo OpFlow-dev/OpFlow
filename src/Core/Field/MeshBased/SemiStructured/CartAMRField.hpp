@@ -56,6 +56,16 @@ namespace OpFlow {
             : CartAMRFieldExpr<CartAMRField<D, M, C>>(std::move(other)), data(std::move(other.data)),
               offset(std::move(other.offset)) {}
 
+        CartAMRField& operator=(const CartAMRField& other) {
+            assignImpl_final(other);
+            return *this;
+        }
+
+        CartAMRField& operator=(CartAMRField&& other) noexcept {
+            assignImpl_final(std::move(other));
+            return *this;
+        }
+
         template <BasicArithOp Op = BasicArithOp::Eq>
         auto& assignImpl_final(const CartAMRField& other) {
             if (this != &other) {
