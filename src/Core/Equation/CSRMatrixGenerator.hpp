@@ -78,6 +78,9 @@ namespace OpFlow {
                 } else {
                     for (const auto& [key, v] : currentStencil.pad) {
                         auto idx = mapper(key);
+                        OP_ASSERT_MSG(!std::isnan(v),
+                                      "CSRMatrixGenerator: {}'s stencil pad at {} of {}'s value is nan",
+                                      target->getName(), i, key);
                         coo[r * stencil_size + count++] = m_tuple {r, idx, v};
                     }
                     mat.rhs[r] = -currentStencil.bias;
