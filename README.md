@@ -1,7 +1,6 @@
 <div align="center">
-  <img width="800px" src="https://github.com/OpFlow-dev/OpFlow/blob/master/doc/assets/opflow_banner_slice.png" alt="OpFlow banner">
+  <img width="800px" src="doc/assets/opflow_banner_slice.png" alt="OpFlow banner">
   <h3> <a href="https://opflow.cc/"> HomePage </a> | <a href="https://opflow.cc/doc"> Document </a> </h3>
-
 </div>
 
 [![Latest Release](https://img.shields.io/github/v/release/OpFlow-dev/OpFlow?color=blue&label=Latest%20Release)](https://github.com/OpFlow-dev/OpFlow/releases/latest)
@@ -32,11 +31,10 @@ OpFlow makes the algorithm, data structure and execution scheduler fully decoupl
   looping over each element on the front stage.
 
 ## Examples
-
-<a href="https://github.com/OpFlow-dev/OpFlow/blob/master/examples/CONV1D/CONV1D.cpp"><img src="https://github.com/OpFlow-dev/OpFlow/blob/master/doc/03_Examples/assets/weno.gif" height="192px"></a>
-<a href="https://github.com/OpFlow-dev/OpFlow/blob/master/examples/FTCS2D/FTCS-OMP.cpp"> <img src="https://github.com/OpFlow-dev/OpFlow/blob/master/doc/03_Examples/assets/heattransfer.gif" height="192px"></a>
-<a href="https://github.com/OpFlow-dev/OpFlow/blob/master/examples/LidDriven/LidDriven2D.cpp"><img src="https://github.com/OpFlow-dev/OpFlow/blob/master/doc/03_Examples/assets/liddriven.gif" height="192px"></a>
-<a href="https://github.com/OpFlow-dev/OpFlow/blob/amr/examples/LevelSet/AMRLS.cpp"><img src="https://github.com/OpFlow-dev/OpFlow/blob/master/doc/03_Examples/assets/amrls.gif" height="192px"></a>
+[<img src="doc/03_Examples/assets/weno.gif" height="192px">](examples/CONV1D/CONV1D.cpp)
+[<img src="doc/03_Examples/assets/heattransfer.gif" height="192px">](examples/FTCS2D/FTCS-OMP.cpp)
+[<img src="doc/03_Examples/assets/liddriven.gif" height="192px">](examples/LidDriven/LidDriven2D.cpp)
+[<img src="doc/03_Examples/assets/amrls.gif" height="192px">](examples/LevelSet/AMRLS.cpp)
 
 ## Quick start
 
