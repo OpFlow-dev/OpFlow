@@ -48,6 +48,43 @@ namespace OpFlow::Meta {
         using type = P1;
     };
 
+    template <typename... Ts>
+    struct firstOf_impl;
+
+    template <typename T, typename... Ts>
+    struct firstOf_impl<T, Ts...> {
+        using type = T;
+    };
+
+    template <typename... T>
+    struct firstOf {
+        using type = typename firstOf_impl<T...>::type;
+    };
+
+    template <typename... Ts>
+    using firstOf_t = typename firstOf_impl<Ts...>::type;
+
+    template <typename... T>
+    struct lastOf_impl;
+
+    template <typename T, typename U, typename... Ts>
+    struct lastOf_impl<T, U, Ts...> {
+        using type = typename lastOf_impl<U, Ts...>::type;
+    };
+
+    template <typename T>
+    struct lastOf_impl<T> {
+        using type = T;
+    };
+
+    template <typename... T>
+    struct lastOf {
+        using type = typename lastOf_impl<T...>::type;
+    };
+
+    template <typename... T>
+    using lastOf_t = typename lastOf_impl<T...>::type;
+
     template <typename T>
     struct packedType;
 

@@ -14,6 +14,7 @@
 #define OPFLOW_IOGROUP_HPP
 
 #include "Utils/RandomStringGenerator.hpp"
+#include "Utils/Writers/Streams.hpp"
 #include <tuple>
 
 namespace OpFlow::Utils {
@@ -29,7 +30,8 @@ namespace OpFlow::Utils {
         IOGroup(const IOGroup&) = default;
         IOGroup(IOGroup&&) noexcept = default;
 
-        explicit IOGroup(const std::string& root, unsigned int mode, Exprs&... es) : exprs(es...) {
+        explicit IOGroup(const std::string& root, unsigned int mode, Exprs&... es)
+            : root(root), mode(mode), exprs((es)...) {
             Meta::static_for<sizeof...(Exprs)>([&]<int k>(Meta::int_<k>) {
                 std::string name = std::get<k>(exprs).getName();
                 if (name.empty() || name.size() > 8) {
@@ -44,10 +46,17 @@ namespace OpFlow::Utils {
         }
 
         void dump(const TimeStamp& t) override {
-            if constexpr (WStreamType<Stream>)
-                Meta::static_for<sizeof...(Exprs)>(
-                        [&]<int k>(Meta::int_<k>) { streams[k] << t << std::get<k>(exprs); });
-            else {
+            if constexpr (WStreamType<Stream>) {
+                if (allInOne) {
+                    [&]<int... Is>(std::integer_sequence<int, Is...>) {
+                        streams.back().dumpMultiple(std::get<Is>(exprs)...);
+                    }
+                    (std::make_integer_sequence<int, sizeof...(Exprs)>());
+                } else {
+                    Meta::static_for<sizeof...(Exprs)>(
+                            [&]<int k>(Meta::int_<k>) { streams[k] << t << std::get<k>(exprs); });
+                }
+            } else {
                 OP_CRITICAL("IOGroup: stream not writable.");
                 OP_ABORT;
             }
@@ -63,6 +72,18 @@ namespace OpFlow::Utils {
             }
         }
 
+        void setAllInOne(bool o) {
+            allInOne = o;
+            if (allInOne) {
+                if (streams.size() == sizeof...(Exprs)) {
+                    if constexpr (RStreamType<Stream> && WStreamType<Stream>)
+                        streams.emplace_back(root + "AllInOne" + Stream::commonSuffix(), mode);
+                    else
+                        streams.template emplace_back(root + "AllInOne" + Stream::commonSuffix());
+                }
+            }
+        }
+
         std::tuple<typename std::conditional_t<
                 RStreamType<Stream>,
                 typename std::conditional_t<Exprs::isConcrete(), Meta::RealType<Exprs>&,
@@ -70,6 +91,9 @@ namespace OpFlow::Utils {
                 typename OpFlow::internal::ExprProxy<Exprs>::type>...>
                 exprs;
         std::vector<Stream> streams;
+        bool allInOne = false;
+        std::string root;
+        unsigned int mode;
     };
 
     template <typename Stream, ExprType... Exprs>
