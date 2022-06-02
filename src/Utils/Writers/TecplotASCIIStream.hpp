@@ -91,11 +91,78 @@ namespace OpFlow::Utils {
             return *this;
         }
 
+        template <CartesianFieldExprType... Ts>
+        auto& dumpMultiple(const Ts&... fs) {
+            auto fs_tuple = std::make_tuple(&fs...);
+            constexpr auto dim = OpFlow::internal::CartesianFieldExprTrait<Meta::firstOf_t<Ts...>>::dim;
+            (fs.prepare(), ...);
+            auto getName = [&](auto&& f) {
+                static int count = 0;
+                std::string name = f.getName();
+                if (name.empty()) name = fmt::format("unnamed{}", count++);
+                auto ptr = std::remove(name.begin(), name.end(), ' ');
+                name.erase(ptr, name.end());
+                return name;
+            };
+            if (of.tellp() == 0) {
+                of << fmt::format("TITLE = \"Solution of AllInOne\"\n");
+                if constexpr (dim == 1)
+                    of << (fmt::format("VARIABLES = {}", R"("X")") + ...
+                           + fmt::format(",\"{}\"", getName(fs)))
+                       << "\n";
+                else if constexpr (dim == 2)
+                    of << (fmt::format("VARIABLES = {}", R"("X", "Y")") + ...
+                           + fmt::format(",\"{}\"", getName(fs)))
+                       << "\n";
+                else if constexpr (dim == 3)
+                    of << (fmt::format("VARIABLES = {}", R"("X", "Y", "Z")") + ...
+                           + fmt::format(",\"{}\"", getName(fs)))
+                       << "\n";
+            }
+            of << "ZONE\n";
+            of << "ZONETYPE = ORDERED DATAPACKING = BLOCK\n";
+            auto range = dumpLogicalRange ? maxCommonRange(fs.logicalRange...)
+                                          : maxCommonRange(fs.localRange...);
+
+            if constexpr (dim == 1) of << fmt::format("I = {}\n", range.end[0] - range.start[0]);
+            else if constexpr (dim == 2)
+                of << fmt::format("I = {} J = {}\n", range.end[0] - range.start[0],
+                                  range.end[1] - range.start[1]);
+            else if constexpr (dim == 3)
+                of << fmt::format("I = {} J = {} K = {}\n", range.end[0] - range.start[0],
+                                  range.end[1] - range.start[1], range.end[2] - range.start[2]);
+            of << std::scientific << std::setprecision(10);
+            of << fmt::format("SOLUTIONTIME = {}\n", time.time);
+            if (!writeMesh) {
+                if constexpr (dim == 1) of << "VARSHARELIST=([1]=1)\n";
+                else
+                    of << fmt::format("VARSHARELIST=([1-{}]=1)\n", dim);
+            } else {
+                auto m = std::get<0>(fs_tuple)->getMesh();
+                const auto& loc = std::get<0>(fs_tuple)->loc;
+                for (auto k = 0; k < dim; ++k) {
+                    if (loc[k] == LocOnMesh::Corner)
+                        rangeFor_s(range, [&](auto&& i) { of << m.x(k, i) << "\n"; });
+                    else
+                        rangeFor_s(range, [&](auto&& i) {
+                            of << Math::mid(m.x(k, i[k]), m.x(k, i[k] + 1)) << "\n";
+                        });
+                }
+            }
+            Meta::static_for<sizeof...(fs)>([&]<int k>(Meta::int_<k>) {
+                rangeFor_s(range, [&](auto&& i) { of << std::get<k>(fs_tuple)->evalAt(i) << "\n"; });
+            });
+
+            of.flush();
+            writeMesh = _alwaysWriteMesh;
+            return *this;
+        }
+
     private:
         std::string path;
         std::ofstream of;
         TimeStamp time {};
-        bool writeMesh = true, _alwaysWriteMesh = false;
+        bool writeMesh = true, _alwaysWriteMesh = false, dumpLogicalRange = false;
     };
 }// namespace OpFlow::Utils
 #endif//OPFLOW_TECPLOTASCIISTREAM_HPP

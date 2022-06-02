@@ -65,9 +65,14 @@ namespace OpFlow::Utils {
             constexpr bool isDouble
                     = std::is_same_v<typename OpFlow::internal::CartesianFieldExprTrait<T>::elem_type,
                                      double>;
-            std::string title = fmt::format("TITLE = \"Solution of {}\"", f.name);
-            std::string var_list
-                    = (dim == 2) ? fmt::format("X,Y,{}", f.getName()) : fmt::format("X,Y,Z,{}", f.getName());
+            f.prepare();
+            std::string name = f.getName();
+            {
+                auto ptr = std::remove(name.begin(), name.end(), ' ');
+                name.erase(ptr, name.end());
+            }
+            std::string title = fmt::format("TITLE = \"Solution of {}\"", name);
+            std::string var_list = (dim == 2) ? fmt::format("X,Y,{}", name) : fmt::format("X,Y,Z,{}", name);
             std::string filename = path;
             int file_format = 0,                 // 0: Tecplot binary (.plt), 1: Tecplot subzone (.szplt)
                     file_type = 0,               // 0: full, 1: grid, 2: solution
@@ -84,7 +89,7 @@ namespace OpFlow::Utils {
             }
             tecfil142(&id);
 
-            std::string zone_title = f.getName();
+            std::string zone_title = name;
             auto range = dumpLogicalRange ? f.logicalRange : f.localRange;
             int zone_type = 0, imax = range.end[0] - range.start[0],
                 jmax = (dim >= 2) ? range.end[1] - range.start[1] : 1,
@@ -126,6 +131,92 @@ namespace OpFlow::Utils {
                 int N = 1;
                 auto var = f[i];
                 tecdat142(&N, (void*) &var, &is_double);
+            });
+
+            return *this;
+        }
+
+        template <CartesianFieldExprType... Ts>
+        auto& dumpMultiple(const Ts&... fs) {
+            constexpr auto dim = OpFlow::internal::CartesianFieldExprTrait<Meta::firstOf_t<Ts...>>::dim;
+            constexpr bool isDouble = std::is_same_v<
+                    typename OpFlow::internal::CartesianFieldExprTrait<Meta::firstOf_t<Ts...>>::elem_type,
+                    double>;
+            auto fs_tuple = std::make_tuple(&fs...);
+            (fs.prepare(), ...);
+            auto getName = [&](auto&& f) {
+                static int count = 0;
+                std::string name = f.getName();
+                if (name.empty()) name = fmt::format("unnamed{}", count++);
+                auto ptr = std::remove(name.begin(), name.end(), ' ');
+                name.erase(ptr, name.end());
+                return name;
+            };
+            std::string title = fmt::format("TITLE = \"Solution of all fields\"");
+            std::string var_list = (dim == 2) ? ("X,Y" + ... + fmt::format(",{}", getName(fs)))
+                                              : ("X,Y,Z" + ... + fmt::format(",{}", getName(fs)));
+            std::string filename = path;
+            int file_format = 0,                 // 0: Tecplot binary (.plt), 1: Tecplot subzone (.szplt)
+                    file_type = 0,               // 0: full, 1: grid, 2: solution
+                    debug = 0,                   // 0: no-debug, 1: debug
+                    is_double = isDouble ? 1 : 0;// 0: f32, 1: f64
+            int stat;
+            if (!initialized) {
+                std::filesystem::path dir = path;
+                std::string parent_dir = dir.parent_path().string();
+                stat = tecini142(title.c_str(), var_list.c_str(), filename.c_str(), parent_dir.c_str(),
+                                 &file_format, &file_type, &debug, &is_double);
+                OP_ASSERT_MSG(stat == 0, "TecplotBinaryStream: File init failed {}", filename);
+                initialized = true;
+            }
+            tecfil142(&id);
+
+            std::string zone_title = "allinone";
+            auto range = dumpLogicalRange ? maxCommonRange(fs.logicalRange...)
+                                          : maxCommonRange(fs.localRange...);
+            int zone_type = 0, imax = range.end[0] - range.start[0],
+                jmax = (dim >= 2) ? range.end[1] - range.start[1] : 1,
+                kmax = (dim >= 3) ? range.end[2] - range.start[2] : 1, icellmax = 0, jcellmax = 0,
+                kcellmax = 0, strandID = 1, parentZone = 0, isBlock = 1, dummy = 0;
+            std::vector<int> passive_var(dim + sizeof...(fs), 0), share(dim + sizeof...(fs), 1);
+            share.back() = 0;
+
+            if (writeMesh) {
+                teczne142(zone_title.c_str(), &zone_type, &imax, &jmax, &kmax, &icellmax, &jcellmax,
+                          &kcellmax, &time.time, &strandID, &parentZone, &isBlock, &dummy, &dummy, &dummy,
+                          &dummy, &dummy, passive_var.data(), nullptr, nullptr, &dummy);
+                auto m = std::get<0>(fs_tuple)->getMesh();
+                const auto& loc = (fs.loc, ...);
+                for (auto k = 0; k < dim; ++k) {
+                    std::vector<double> xs;
+                    if (loc[k] == LocOnMesh::Corner) {
+                        for (int iter = range.start[k]; iter < range.end[k]; ++iter) {
+                            xs.push_back(m.x(k, iter));
+                        }
+                    } else {
+                        for (int iter = range.start[k]; iter < range.end[k]; ++iter) {
+                            xs.push_back(Math::mid(m.x(k, iter), m.x(k, iter + 1)));
+                        }
+                    }
+                    rangeFor_s(range, [&](auto&& i) {
+                        int N = 1;
+                        int db = 1;
+                        tecdat142(&N, (void*) (&xs[i[k] - range.start[k]]), &db);
+                    });
+                }
+                writeMesh = _alwaysWriteMesh;
+            } else {
+                teczne142(zone_title.c_str(), &zone_type, &imax, &jmax, &kmax, &icellmax, &jcellmax,
+                          &kcellmax, &time.time, &strandID, &parentZone, &isBlock, &dummy, &dummy, &dummy,
+                          &dummy, &dummy, passive_var.data(), nullptr, share.data(), &dummy);
+            }
+
+            Meta::static_for<sizeof...(fs)>([&]<int k>(Meta::int_<k>) {
+                rangeFor_s(range, [&](auto&& i) {
+                    int N = 1;
+                    auto var = std::get<k>(fs_tuple)->operator[](i);
+                    tecdat142(&N, (void*) &var, &is_double);
+                });
             });
 
             return *this;

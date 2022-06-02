@@ -288,6 +288,37 @@ namespace OpFlow::DS {
         }
     }
 
+    template <std::size_t dim1, std::size_t dim2>
+    constexpr auto maxCommonRange(const Range<dim1>& a, const Range<dim2>& b) {
+        if constexpr (dim1 != dim2) {
+            static_assert(dim1 == 0 || dim2 == 0, OP_ERRMSG_DIM_MISMATCH);
+            if constexpr (dim1 == 0) return b;
+            else
+                return a;
+        } else {
+            static_assert(dim1 == dim2, OP_ERRMSG_DIM_MISMATCH);
+            constexpr auto dim = dim1;
+            Range<dim> ret;
+            for (std::size_t i = 0; i < dim; ++i) {
+                ret.start[i] = std::max(a.start[i], b.start[i]);
+                ret.end[i] = std::min(a.end[i], b.end[i]);
+                OP_ASSERT(a.stride[i] == b.stride[i]);
+                if (ret.end[i] < ret.start[i]) return Range<dim> {};
+            }
+            return Range<dim> {ret.start, ret.end};
+        }
+    }
+
+    template <std::size_t dim>
+    constexpr auto maxCommonRange(const std::vector<Range<dim>>& r) {
+        if constexpr (dim == 0) return r[0];
+        else {
+            Range<dim> ret = r[0];
+            for (auto i = 1; i < r.size(); ++i) { ret = maxCommonRange(ret, r[i]); }
+            return ret;
+        }
+    }
+
     template <std::size_t dim, Meta::BracketIndexable T>
     constexpr auto inRange(const Range<dim>& r, const T& t) {
         auto ret = true;

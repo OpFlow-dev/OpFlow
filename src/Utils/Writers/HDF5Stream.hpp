@@ -131,6 +131,11 @@ namespace OpFlow::Utils {
         template <CartesianFieldExprType T>
         H5Stream& operator<<(const T& f);
 
+        template <CartesianFieldExprType... Ts>
+        H5Stream& dumpMultiple(const Ts&... fs) {
+            return (*this << ... << fs);
+        }
+
         // field readers
         template <CartesianFieldType T>
         H5Stream& operator>>(T& f);
