@@ -163,6 +163,7 @@ namespace OpFlow::Utils {
         using elem_type = typename OpFlow::internal::ExprTrait<T>::elem_type;
 
         if (!group_inited) *this << TimeStamp(0);
+        f.prepare();
 
         // write mesh (only the master worker does this)
         if (write_mesh) {

@@ -132,3 +132,27 @@ TEST(IOGroupTest, AllInOne) {
 
     ASSERT_TRUE(true);
 }
+
+TEST(IOGroupTest, Expression) {
+    using Mesh = CartesianMesh<Meta::int_<2>>;
+    using Field = CartesianField<double, Mesh>;
+
+    auto m = MeshBuilder<Mesh>().newMesh(10, 10).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
+
+    auto u = ExprBuilder<Field>()
+                     .setName("u")
+                     .setMesh(m)
+                     .setLoc({LocOnMesh::Center, LocOnMesh::Center})
+                     .build();
+    auto v = u;
+    v.name = "v";
+
+    u = 2;
+    v = 1;
+
+    auto group = Utils::makeIOGroup<Utils::TecplotBinaryStream>("./", u - v);
+    group.setAllInOne(true);
+    group.dump(Utils::TimeStamp(0.));
+
+    ASSERT_TRUE(true);
+}
