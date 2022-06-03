@@ -30,13 +30,15 @@ namespace OpFlow::Utils {
         IOGroup(const IOGroup&) = default;
         IOGroup(IOGroup&&) noexcept = default;
 
-        explicit IOGroup(const std::string& root, unsigned int mode, Exprs&... es)
-            : root(root), mode(mode), exprs((es)...) {
+        explicit IOGroup(const std::string& root, unsigned int mode, auto&&... es)
+            : root(root), mode(mode), exprs(OP_PERFECT_FOWD(es)...) {
             Meta::static_for<sizeof...(Exprs)>([&]<int k>(Meta::int_<k>) {
-                std::string name = std::get<k>(exprs).getName();
-                if (name.empty() || name.size() > 8) {
+                auto& e = std::get<k>(exprs);
+                e.prepare();
+                std::string name = e.getName();
+                if (name.empty() || name.size() > 20) {
                     name = random_name(4);
-                    std::get<k>(exprs).name = "data";
+                    e.name = "data";
                 }
                 if constexpr (RStreamType<Stream> && WStreamType<Stream>)
                     streams.emplace_back(root + name + Stream::commonSuffix(), mode);
@@ -48,7 +50,7 @@ namespace OpFlow::Utils {
         void dump(const TimeStamp& t) override {
             if constexpr (WStreamType<Stream>) {
                 if (allInOne) {
-                    [&]<int... Is>(std::integer_sequence<int, Is...>) {
+                    [&, this]<int... Is>(std::integer_sequence<int, Is...>) {
                         streams.back().dumpMultiple(std::get<Is>(exprs)...);
                     }
                     (std::make_integer_sequence<int, sizeof...(Exprs)>());
@@ -64,8 +66,11 @@ namespace OpFlow::Utils {
 
         void read(const TimeStamp& t) override {
             if constexpr (RStreamType<Stream>)
-                Meta::static_for<sizeof...(Exprs)>(
-                        [&]<int k>(Meta::int_<k>) { streams[k].moveToTime(t) >> std::get<k>(exprs); });
+                Meta::static_for<sizeof...(Exprs)>([&]<int k>(Meta::int_<k>) {
+                    // there may be temporal expressions for output
+                    if constexpr (Meta::RealType<decltype(std::get<k>(exprs))>::isConcrete())
+                        streams[k].moveToTime(t) >> std::get<k>(exprs);
+                });
             else {
                 OP_CRITICAL("IOGroup: stream not readable.");
                 OP_ABORT;
@@ -74,7 +79,7 @@ namespace OpFlow::Utils {
 
         void setAllInOne(bool o) {
             allInOne = o;
-            if (allInOne) {
+            if (allInOne && sizeof...(Exprs) > 1) {
                 if (streams.size() == sizeof...(Exprs)) {
                     if constexpr (RStreamType<Stream> && WStreamType<Stream>)
                         streams.emplace_back(root + "AllInOne" + Stream::commonSuffix(), mode);
@@ -88,7 +93,8 @@ namespace OpFlow::Utils {
                 RStreamType<Stream>,
                 typename std::conditional_t<Exprs::isConcrete(), Meta::RealType<Exprs>&,
                                             Meta::RealType<Exprs>>,
-                typename OpFlow::internal::ExprProxy<Exprs>::type>...>
+                typename std::conditional_t<Exprs::isConcrete(), const Meta::RealType<Exprs>&,
+                                            Meta::RealType<Exprs>>>...>
                 exprs;
         std::vector<Stream> streams;
         bool allInOne = false;
@@ -98,6 +104,7 @@ namespace OpFlow::Utils {
 
     template <typename Stream, ExprType... Exprs>
     auto makeIOGroup(const std::string& root, Exprs&&... es) {
+        //static_assert((Meta::RealType<Exprs>::isConcrete() &&...));
         return IOGroup<Stream, Meta::RealType<Exprs>...>(root, StreamOut, OP_PERFECT_FOWD(es)...);
     }
 
