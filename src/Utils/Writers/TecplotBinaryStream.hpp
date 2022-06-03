@@ -176,8 +176,8 @@ namespace OpFlow::Utils {
                 tecfil142(&id);
 
                 std::string zone_title = "allinone";
-                auto range = dumpLogicalRange ? maxCommonRange(fs.logicalRange...)
-                                              : maxCommonRange(fs.localRange...);
+                auto range = dumpLogicalRange ? maxCommonRange(std::vector {fs.logicalRange...})
+                                              : maxCommonRange(std::vector {fs.localRange...});
                 int zone_type = 0, imax = range.end[0] - range.start[0],
                     jmax = (dim >= 2) ? range.end[1] - range.start[1] : 1,
                     kmax = (dim >= 3) ? range.end[2] - range.start[2] : 1, icellmax = 0, jcellmax = 0,
