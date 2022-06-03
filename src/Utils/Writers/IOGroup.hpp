@@ -22,6 +22,7 @@ namespace OpFlow::Utils {
         virtual ~IOGroupInterface() = default;
         virtual void dump(const TimeStamp& t) = 0;
         virtual void read(const TimeStamp& t) {};
+        virtual void setAllInOne(bool o) = 0;
     };
 
     template <typename Stream, typename... Exprs>
@@ -77,7 +78,7 @@ namespace OpFlow::Utils {
             }
         }
 
-        void setAllInOne(bool o) {
+        void setAllInOne(bool o) override {
             allInOne = o;
             if (allInOne && sizeof...(Exprs) > 1) {
                 if (streams.size() == sizeof...(Exprs)) {
