@@ -126,8 +126,8 @@ namespace OpFlow::Utils {
                 }
                 of << "ZONE\n";
                 of << "ZONETYPE = ORDERED DATAPACKING = BLOCK\n";
-                auto range = dumpLogicalRange ? maxCommonRange(fs.logicalRange...)
-                                              : maxCommonRange(fs.localRange...);
+                auto range = dumpLogicalRange ? maxCommonRange(std::vector {fs.logicalRange...})
+                                              : maxCommonRange(std::vector {fs.localRange...});
 
                 if constexpr (dim == 1) of << fmt::format("I = {}\n", range.end[0] - range.start[0]);
                 else if constexpr (dim == 2)
