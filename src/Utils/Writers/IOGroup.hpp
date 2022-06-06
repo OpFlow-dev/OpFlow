@@ -63,6 +63,7 @@ namespace OpFlow::Utils {
             if (!inited) init();
             if constexpr (WStreamType<Stream>) {
                 if (allInOne) {
+                    streams.back() << t;
                     [&, this]<int... Is>(std::integer_sequence<int, Is...>) {
                         streams.back().dumpMultiple(std::get<Is>(exprs)...);
                     }
