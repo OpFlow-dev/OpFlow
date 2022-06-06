@@ -183,8 +183,8 @@ namespace OpFlow::Utils {
                     jmax = (dim >= 2) ? range.end[1] - range.start[1] : 1,
                     kmax = (dim >= 3) ? range.end[2] - range.start[2] : 1, icellmax = 0, jcellmax = 0,
                     kcellmax = 0, strandID = 1, parentZone = 0, isBlock = 1, dummy = 0;
-                std::vector<int> passive_var(dim + sizeof...(fs), 0), share(dim + sizeof...(fs), 1);
-                share.back() = 0;
+                std::vector<int> passive_var(dim + sizeof...(fs), 0), share(dim + sizeof...(fs), 0);
+                for (int i = 0; i < dim; ++i) share[i] = 1;
 
                 if (writeMesh) {
                     teczne142(zone_title.c_str(), &zone_type, &imax, &jmax, &kmax, &icellmax, &jcellmax,
@@ -211,9 +211,11 @@ namespace OpFlow::Utils {
                     }
                     writeMesh = _alwaysWriteMesh;
                 } else {
-                    teczne142(zone_title.c_str(), &zone_type, &imax, &jmax, &kmax, &icellmax, &jcellmax,
-                              &kcellmax, &time.time, &strandID, &parentZone, &isBlock, &dummy, &dummy, &dummy,
-                              &dummy, &dummy, passive_var.data(), nullptr, share.data(), &dummy);
+                    stat = teczne142(zone_title.c_str(), &zone_type, &imax, &jmax, &kmax, &icellmax,
+                                     &jcellmax, &kcellmax, &time.time, &strandID, &parentZone, &isBlock,
+                                     &dummy, &dummy, &dummy, &dummy, &dummy, passive_var.data(), nullptr,
+                                     share.data(), &dummy);
+                    OP_ASSERT_MSG(stat == 0, "TecplotBinaryStream: Zone init failed {}", zone_title);
                 }
 
                 Meta::static_for<sizeof...(fs)>([&]<int k>(Meta::int_<k>) {
