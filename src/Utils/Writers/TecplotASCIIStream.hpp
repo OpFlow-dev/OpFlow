@@ -107,6 +107,7 @@ namespace OpFlow::Utils {
                     if (name.empty()) name = fmt::format("unnamed{}", count++);
                     auto ptr = std::remove(name.begin(), name.end(), ' ');
                     name.erase(ptr, name.end());
+                    std::replace(name.begin(), name.end(), ',', '_');
                     return name;
                 };
                 if (of.tellp() == 0) {
