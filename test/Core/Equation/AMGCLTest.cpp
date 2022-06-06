@@ -48,6 +48,6 @@ TEST(AMGCLTest, Mat1) {
         PSolver solver(*A, p.p, p.bp);
         solver(rhs, x);
 
-        ASSERT_DOUBLE_EQ(x[0], -0.3749999999999963);
+        ASSERT_NEAR(x[0], -0.375, 1e-10);
     }
 }

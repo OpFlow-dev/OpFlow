@@ -32,23 +32,35 @@ namespace OpFlow::Utils {
         IOGroup(IOGroup&&) noexcept = default;
 
         explicit IOGroup(const std::string& root, unsigned int mode, auto&&... es)
-            : root(root), mode(mode), exprs(OP_PERFECT_FOWD(es)...) {
-            Meta::static_for<sizeof...(Exprs)>([&]<int k>(Meta::int_<k>) {
-                auto& e = std::get<k>(exprs);
-                e.prepare();
-                std::string name = e.getName();
-                if (name.empty() || name.size() > 20) {
-                    name = random_name(4);
-                    e.name = "data";
-                }
+            : root(root), mode(mode), exprs(OP_PERFECT_FOWD(es)...) {}
+
+        void init() {
+            if (inited) return;
+            if (allInOne && sizeof...(Exprs) > 1) {
                 if constexpr (RStreamType<Stream> && WStreamType<Stream>)
-                    streams.emplace_back(root + name + Stream::commonSuffix(), mode);
+                    streams.emplace_back(root + "AllInOne" + Stream::commonSuffix(), mode);
                 else
-                    streams.template emplace_back(root + name + Stream::commonSuffix());
-            });
+                    streams.template emplace_back(root + "AllInOne" + Stream::commonSuffix());
+            } else {
+                Meta::static_for<sizeof...(Exprs)>([&]<int k>(Meta::int_<k>) {
+                    auto& e = std::get<k>(exprs);
+                    e.prepare();
+                    std::string name = e.getName();
+                    if (name.empty() || name.size() > 20) {
+                        name = random_name(4);
+                        e.name = "data";
+                    }
+                    if constexpr (RStreamType<Stream> && WStreamType<Stream>)
+                        streams.emplace_back(root + name + Stream::commonSuffix(), mode);
+                    else
+                        streams.template emplace_back(root + name + Stream::commonSuffix());
+                });
+            }
+            inited = true;
         }
 
         void dump(const TimeStamp& t) override {
+            if (!inited) init();
             if constexpr (WStreamType<Stream>) {
                 if (allInOne) {
                     [&, this]<int... Is>(std::integer_sequence<int, Is...>) {
@@ -66,6 +78,7 @@ namespace OpFlow::Utils {
         }
 
         void read(const TimeStamp& t) override {
+            if (!inited) init();
             if constexpr (RStreamType<Stream>)
                 Meta::static_for<sizeof...(Exprs)>([&]<int k>(Meta::int_<k>) {
                     // there may be temporal expressions for output
@@ -78,17 +91,7 @@ namespace OpFlow::Utils {
             }
         }
 
-        void setAllInOne(bool o) override {
-            allInOne = o;
-            if (allInOne && sizeof...(Exprs) > 1) {
-                if (streams.size() == sizeof...(Exprs)) {
-                    if constexpr (RStreamType<Stream> && WStreamType<Stream>)
-                        streams.emplace_back(root + "AllInOne" + Stream::commonSuffix(), mode);
-                    else
-                        streams.template emplace_back(root + "AllInOne" + Stream::commonSuffix());
-                }
-            }
-        }
+        void setAllInOne(bool o) override { allInOne = o; }
 
         std::tuple<typename std::conditional_t<
                 RStreamType<Stream>,
@@ -101,6 +104,7 @@ namespace OpFlow::Utils {
         bool allInOne = false;
         std::string root;
         unsigned int mode;
+        bool inited = false;
     };
 
     template <typename Stream, ExprType... Exprs>
