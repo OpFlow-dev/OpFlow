@@ -66,7 +66,7 @@ namespace OpFlow {
             auto [iters, error] = (*solver)(mat.rhs, x);
             if (verbose) { OP_INFO("AMGCL report: iter = {}, relerr = {}", iters, error); }
             solve_counter++;
-            return EqnSolveState {iters, error};
+            return EqnSolveState {(int) iters, error};
         }
 
     private:
