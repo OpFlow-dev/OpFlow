@@ -53,7 +53,7 @@ namespace OpFlow {
             this->init();
         }
 
-        ~HYPREEqnSolveHandler() {
+        ~HYPREEqnSolveHandler() override {
             HYPRE_StructMatrixDestroy(A);
             HYPRE_StructVectorDestroy(b);
             HYPRE_StructVectorDestroy(x);
@@ -185,7 +185,7 @@ namespace OpFlow {
             target->updatePadding();
         }
 
-        void solve() override {
+        EqnSolveState solve() override {
             if (firstRun) {
                 generateAb();
                 initx();
@@ -202,8 +202,8 @@ namespace OpFlow {
                 solver.setup(A, b, x);
                 solver.solve(A, b, x);
             }
-            OP_DEBUG("Res: {}", solver.getFinalRes());
             returnValues();
+            return EqnSolveState(solver.getIterNum(), solver.getFinalRes());
         }
 
         F eqn_getter;
@@ -235,7 +235,7 @@ namespace OpFlow {
             : getter(getter), target(&target), solver(s) {
             this->init();
         }
-        ~HYPREEqnSolveHandler() { deallocHYPRE(); }
+        ~HYPREEqnSolveHandler() override { deallocHYPRE(); }
 
         void init() override {
             stencilField = std::make_unique<StencilField<T>>(target->getStencilField());
@@ -425,7 +425,7 @@ namespace OpFlow {
             }
         }
 
-        void solve() override {
+        EqnSolveState solve() override {
             allocHYPRE();
             generateAb();
             initx();
@@ -455,9 +455,9 @@ namespace OpFlow {
             solver.setup(A, b, x);
             solver.solve(A, b, x);
             returnValues();
-            OP_INFO("Iter = {}, Res = {}", solver.getIterNum(), solver.getFinalRes());
             //deallocHYPRE();
             delete[] rfactors;
+            return EqnSolveState(solver.getIterNum(), solver.getFinalRes());
         }
 
         F getter;
