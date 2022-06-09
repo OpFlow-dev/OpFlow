@@ -19,6 +19,7 @@
 #include <amgcl/mpi/distributed_matrix.hpp>
 #include <amgcl/mpi/make_solver.hpp>
 #endif
+#include "EqnSolveHandler.hpp"
 #include <optional>
 #include <tuple>
 
@@ -28,8 +29,8 @@ namespace OpFlow {
         constexpr static bool _enable_mpi = !requires { typename Solver::col_type; };
 
         // the static solver which performs a fresh solve on each invoke
-        static void solve(const DS::CSRMatrix& mat, std::vector<D>& x, typename Solver::params p,
-                          typename Solver::backend_params bp, bool verbose = false) {
+        static EqnSolveState solve(const DS::CSRMatrix& mat, std::vector<D>& x, typename Solver::params p,
+                                   typename Solver::backend_params bp, bool verbose = false) {
             int rows = mat.row.size() - 1;
             std::unique_ptr<Solver> solver;
 #if defined(OPFLOW_WITH_MPI)
@@ -54,16 +55,18 @@ namespace OpFlow {
             double error;
             std::tie(iters, error) = (*solver)(mat.rhs, x);
             if (verbose) { OP_INFO("AMGCL report: iter = {}, relerr = {}", iters, error); }
+            return {iters, error};
         }
 
         // the dynamic solver which tries to reuse the built preconditioner before
-        void solve_dy(const DS::CSRMatrix& mat, std::vector<D>& x, typename Solver::params p,
-                      typename Solver::backend_params bp, bool verbose = false) {
+        EqnSolveState solve_dy(const DS::CSRMatrix& mat, std::vector<D>& x, typename Solver::params p,
+                               typename Solver::backend_params bp, bool verbose = false) {
             rebuild_solver(mat, p, bp);
             OP_ASSERT_MSG(solver, "AMGCLBackend: solver not initialized.");
             auto [iters, error] = (*solver)(mat.rhs, x);
             if (verbose) { OP_INFO("AMGCL report: iter = {}, relerr = {}", iters, error); }
             solve_counter++;
+            return {iters, error};
         }
 
     private:

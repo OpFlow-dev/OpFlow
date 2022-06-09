@@ -35,39 +35,39 @@
 namespace OpFlow {
     template <StructSolverType type = StructSolverType::GMRES,
               StructSolverType pType = StructSolverType::None, typename F, StructuredFieldExprType T>
-    void Solve(const F& func, T&& target, StructSolverParams<type> params = StructSolverParams<type> {},
+    auto Solve(const F& func, T&& target, StructSolverParams<type> params = StructSolverParams<type> {},
                StructSolverParams<pType> precParams = StructSolverParams<pType> {}) {
         auto solver = PrecondStructSolver<type, pType>(params, precParams);
         auto handler = makeEqnSolveHandler(func, target, solver);
-        handler->solve();
+        return handler->solve();
     }
 
     template <SemiStructSolverType type = SemiStructSolverType::FAC,
               SemiStructSolverType pType = SemiStructSolverType::None, typename F,
               SemiStructuredFieldExprType T>
-    void Solve(const F& func, T&& target,
+    auto Solve(const F& func, T&& target,
                SemiStructSolverParams<type> params = SemiStructSolverParams<type> {},
                SemiStructSolverParams<pType> precParams = SemiStructSolverParams<pType> {}) {
         if constexpr (pType != SemiStructSolverType::None) {
             auto solver = PrecondSemiStructSolver<type, pType>(params, precParams);
             auto handler = makeEqnSolveHandler(func, target, solver);
-            handler->solve();
+            return handler->solve();
         } else {
             auto solver = SemiStructSolver<type>(params);
             auto handler = HYPREEqnSolveHandler<Meta::RealType<F>, Meta::RealType<T>, SemiStructSolver<type>>(
                     func, target, solver);
-            handler.solve();
+            return handler.solve();
         }
     }
 
     template <typename S, typename F, FieldExprType T>
-    void Solve(F&& func, T&& target, auto&& indexer, IJSolverParams<S> params = IJSolverParams<S> {}) {
+    auto Solve(F&& func, T&& target, auto&& indexer, IJSolverParams<S> params = IJSolverParams<S> {}) {
         auto handler = makeEqnSolveHandler(func, target, indexer, params);
-        handler->solve();
+        return handler->solve();
     }
 
     template <typename S>
-    void SolveEqns(auto&&... fs) {
+    auto SolveEqns(auto&&... fs) {
         auto t = std::forward_as_tuple(OP_PERFECT_FOWD(fs)...);
         auto&& [getters, rest1] = Meta::tuple_split<sizeof...(fs) / 2 - 1>(t);
         auto&& [targets, rest2] = Meta::tuple_split<sizeof...(fs) / 2 - 1>(rest1);
@@ -83,7 +83,7 @@ namespace OpFlow {
             of << mat.toString(false);
         }
         std::vector<Real> x(mat.rhs.size());
-        AMGCLBackend<S, Real>::solve(mat, x, params[0].p, params[0].bp, params[0].verbose);
+        auto state = AMGCLBackend<S, Real>::solve(mat, x, params[0].p, params[0].bp, params[0].verbose);
         Meta::static_for<decltype(st_holder)::size>([&]<int i>(Meta::int_<i>) {
             auto target = eqn_holder.template getTargetPtr<i>();
             rangeFor(target->assignableRange, [&](auto&& k) {
@@ -91,6 +91,7 @@ namespace OpFlow {
             });
             target->updatePadding();
         });
+        return state;
     }
 }// namespace OpFlow
 #endif

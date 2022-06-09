@@ -75,7 +75,7 @@ namespace OpFlow {
             : mapper(mapper), params(params) {
             this->eqn_holder = std::make_unique<eqn_holder_type>(std::move(eqn_holder));
             this->st_holder = std::make_unique<st_holder_type>(*this->eqn_holder);
-            init();
+            AMGCLEqnSolveHandler::init();
         }
 
         void init() override {
@@ -104,25 +104,29 @@ namespace OpFlow {
             });
         }
 
-        void solve() override {
+        EqnSolveState solve() override {
+            EqnSolveState state;
             if (firstRun) {
                 generateAb();
                 initx();
-                if (staticMat) solver.solve_dy(mat, x, params[0].p, params[0].bp, params[0].verbose);
+                if (staticMat) state = solver.solve_dy(mat, x, params[0].p, params[0].bp, params[0].verbose);
                 else
-                    AMGCLBackend<S, Real>::solve(mat, x, params[0].p, params[0].bp, params[0].verbose);
+                    state = AMGCLBackend<S, Real>::solve(mat, x, params[0].p, params[0].bp,
+                                                         params[0].verbose);
                 firstRun = false;
             } else {
                 initx();
                 if (staticMat) {
                     generateb();
-                    solver.solve_dy(mat, x, params[0].p, params[0].bp, params[0].verbose);
+                    state = solver.solve_dy(mat, x, params[0].p, params[0].bp, params[0].verbose);
                 } else {
                     generateAb();
-                    AMGCLBackend<S, Real>::solve(mat, x, params[0].p, params[0].bp, params[0].verbose);
+                    state = AMGCLBackend<S, Real>::solve(mat, x, params[0].p, params[0].bp,
+                                                         params[0].verbose);
                 }
             }
             returnValues();
+            return state;
         }
     };
 

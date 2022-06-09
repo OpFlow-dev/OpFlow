@@ -14,11 +14,21 @@
 #define OPFLOW_EQNSOLVEHANDLER_HPP
 
 namespace OpFlow {
+    struct EqnSolveState {
+        int niter = 0;
+        double relerr = 0, abserr = 0;
+        EqnSolveState() = default;
+        explicit EqnSolveState(int n) : niter(n) {}
+        explicit EqnSolveState(double e) : relerr(e) {}
+        EqnSolveState(int n, double e) : niter(n), relerr(e) {}
+        EqnSolveState(int n, double e, double a) : niter(n), relerr(e), abserr(a) {}
+    };
+
     // abstract interface for all equation solve handler
     struct EqnSolveHandler {
         virtual ~EqnSolveHandler() = default;
         virtual void init() = 0;
-        virtual void solve() = 0;
+        virtual EqnSolveState solve() = 0;
         virtual void generateAb() {};
     };
 }// namespace OpFlow
