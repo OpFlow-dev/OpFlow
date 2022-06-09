@@ -55,7 +55,7 @@ namespace OpFlow {
             double error;
             std::tie(iters, error) = (*solver)(mat.rhs, x);
             if (verbose) { OP_INFO("AMGCL report: iter = {}, relerr = {}", iters, error); }
-            return {iters, error};
+            return EqnSolveState {iters, error};
         }
 
         // the dynamic solver which tries to reuse the built preconditioner before
@@ -66,7 +66,7 @@ namespace OpFlow {
             auto [iters, error] = (*solver)(mat.rhs, x);
             if (verbose) { OP_INFO("AMGCL report: iter = {}, relerr = {}", iters, error); }
             solve_counter++;
-            return {iters, error};
+            return EqnSolveState {iters, error};
         }
 
     private:
