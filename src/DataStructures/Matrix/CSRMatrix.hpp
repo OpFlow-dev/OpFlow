@@ -108,9 +108,9 @@ namespace OpFlow::DS {
                 std::string ret = "";
                 for (int irow = 0; irow < mat_size; ++irow) {
                     for (int icol = 0; icol < mat_size; ++icol) {
-                        ret += fmt::format("{:> } ", mat(irow, icol));
+                        ret += fmt::format("{:>6.2f} ", mat(irow, icol));
                     }
-                    ret += fmt::format("rhs[{}] = {:> }\n", irow, rhs[irow]);
+                    ret += fmt::format("rhs[{}] = {:>6.2f}\n", irow, rhs[irow]);
                 }
                 return ret;
             }

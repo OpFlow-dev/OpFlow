@@ -63,16 +63,13 @@ namespace OpFlow {
             DS::DenseVector<m_tuple> coo;
             coo.resize(local_range.count() * stencil_size);
             mat.resize(local_range.count(), stencil_size);
+            auto r_last = mapper(local_range.last(), iTarget);
             rangeFor(local_range, [&](auto&& i) {
                 auto r = mapper(i, iTarget);// r is the local rank
                 auto currentStencil = uniEqn.evalAt(i);
                 int count = 0;
-                if (pinValue && r == 0) {
-                    coo[r * stencil_size] = m_tuple {
-                            0,
-                            mapper(DS::ColoredIndex<typename decltype(local_range)::base_index_type> {
-                                    i, iTarget}),
-                            1};
+                if (pinValue && r == r_last) {
+                    coo[r * stencil_size] = m_tuple {r_last, r_last, 1};
                     mat.rhs[r] = 0.;
                     count++;
                 } else {
@@ -131,10 +128,11 @@ namespace OpFlow {
             auto local_range = DS::commonRange(target->assignableRange, target->localRange);
 
             std::vector<Real> rhs(local_range.count());
+            auto r_last = mapper(local_range.last(), iTarget);
             rangeFor(local_range, [&](auto&& i) {
                 auto r = mapper(i, iTarget);// r is the local rank
                 auto currentStencil = uniEqn.evalAt(i);
-                if (pinValue && r == 0) {
+                if (pinValue && r == r_last) {
                     rhs[r] = 0.;
                 } else {
                     rhs[r] = -currentStencil.bias;
