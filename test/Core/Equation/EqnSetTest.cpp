@@ -102,7 +102,6 @@ TEST_F(EqnSetTest, SimplePoisson_2Eqn) {
         if (std::isnan(p[k]) || std::isnan(p_true[k])) {
             OP_INFO("p[{}] = {}, p2[{}] = {}, p_true[{}] = {}", k, p[k], k, p2[k], k, p_true[k]);
         }
-        OP_INFO("{}", k);
         ASSERT_NEAR(p[k], p_true[k], std::abs(1e-10 * p_true[k]));
         ASSERT_NEAR(p2[k], p[k], std::abs(1e-10 * p[k]));
     });
@@ -138,6 +137,8 @@ TEST_F(EqnSetTest, SimplePoisson_Neum_2Eqn) {
     std::vector<IJSolverParams<PSolver>> params(2);
     params[0].pinValue = true;
     params[1].pinValue = true;
+    params[0].p.solver.tol = 1e-20;
+    params[1].p.solver.tol = 1e-20;
 
     SolveEqns<PSolver>(
             [&](auto&& e, auto&&) {
