@@ -69,7 +69,11 @@ namespace OpFlow {
                 auto currentStencil = uniEqn.evalAt(i);
                 int count = 0;
                 if (pinValue && r == r_last) {
-                    coo[r * stencil_size] = m_tuple {r_last, r_last, 1};
+                    coo[r * stencil_size] = m_tuple {
+                            r_last,
+                            mapper(DS::ColoredIndex<typename decltype(local_range)::base_index_type> {
+                                    i, iTarget}),
+                            1};
                     mat.rhs[r] = 0.;
                     count++;
                 } else {
