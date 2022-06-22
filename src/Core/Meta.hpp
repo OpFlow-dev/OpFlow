@@ -48,42 +48,22 @@ namespace OpFlow::Meta {
         using type = P1;
     };
 
-    template <typename... Ts>
-    struct firstOf_impl;
-
-    template <typename T, typename... Ts>
-    struct firstOf_impl<T, Ts...> {
-        using type = T;
-    };
-
     template <typename... T>
     struct firstOf {
-        using type = typename firstOf_impl<T...>::type;
+        using type = typename std::tuple_element<0, std::tuple<T...>>::type;
     };
 
     template <typename... Ts>
-    using firstOf_t = typename firstOf_impl<Ts...>::type;
-
-    template <typename... T>
-    struct lastOf_impl;
-
-    template <typename T, typename U, typename... Ts>
-    struct lastOf_impl<T, U, Ts...> {
-        using type = typename lastOf_impl<U, Ts...>::type;
-    };
-
-    template <typename T>
-    struct lastOf_impl<T> {
-        using type = T;
-    };
+    using firstOf_t = typename firstOf<Ts...>::type;
 
     template <typename... T>
     struct lastOf {
-        using type = typename lastOf_impl<T...>::type;
+        // last type in the type list
+        using type = typename std::tuple_element<sizeof...(T) - 1, std::tuple<T...>>::type;
     };
 
     template <typename... T>
-    using lastOf_t = typename lastOf_impl<T...>::type;
+    using lastOf_t = typename lastOf<T...>::type;
 
     template <typename T>
     struct packedType;
@@ -119,10 +99,8 @@ namespace OpFlow::Meta {
 
     template <typename T>
     concept StdRatio = requires {
-        { T::num }
-        ->std::convertible_to<int>;
-        { T::den }
-        ->std::convertible_to<int>;
+        { T::num } -> std::convertible_to<int>;
+        { T::den } -> std::convertible_to<int>;
         typename T::type;
     };
 
@@ -167,15 +145,15 @@ namespace OpFlow::Meta {
     struct make_integer_seq_impl;
 
     template <typename T, T start, T end, T step>
-            requires(step > 0 && start < end)
-            || (step<0 && start> end) struct make_integer_seq_impl<T, start, end, step> {
+    requires(step > 0 && start < end)
+            || (step < 0 && start > end) struct make_integer_seq_impl<T, start, end, step> {
         using type = typename integer_seq_cat<
                 T, std::integer_sequence<T, start>,
                 typename make_integer_seq_impl<T, start + step, end, step>::type>::type;
     };
 
     template <typename T, T start, T end, T step>
-            requires(step > 0 && start >= end)
+    requires(step > 0 && start >= end)
             || (step < 0 && start <= end) struct make_integer_seq_impl<T, start, end, step> {
         using type = std::integer_sequence<T>;
     };
