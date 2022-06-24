@@ -117,29 +117,39 @@ namespace OpFlow {
 #define OP_TODO(X) OP_WARN("TODO: {}", X)
 
 #define OP_ABORT                                                                                             \
-    OP_DUMPSTACK;                                                                                            \
-    OP_CRITICAL("Aborting.");                                                                                \
-    std::abort()
+    do {                                                                                                     \
+        OP_DUMPSTACK;                                                                                        \
+        OP_CRITICAL("Aborting.");                                                                            \
+        std::abort();                                                                                         \
+    } while (0)
 
 #ifndef NDEBUG
 #define OP_ASSERT(X)                                                                                         \
-    if (!(X)) {                                                                                              \
-        OP_ERROR("Assertion {} failed.", #X);                                                                \
-        OP_ABORT;                                                                                            \
-    }
+    do {                                                                                                     \
+        if (!(X)) {                                                                                          \
+            OP_ERROR("Assertion {} failed.", #X);                                                            \
+            OP_ABORT;                                                                                        \
+        }                                                                                                    \
+    } while (0)
 #define OP_ASSERT_MSG(X, ...)                                                                                \
-    if (!(X)) {                                                                                              \
-        OP_ERROR("Assertion {} failed.", #X);                                                                \
-        OP_ERROR(__VA_ARGS__);                                                                               \
-        OP_ABORT;                                                                                            \
-    }
+    do {                                                                                                     \
+        if (!(X)) {                                                                                          \
+            OP_ERROR("Assertion {} failed.", #X);                                                            \
+            OP_ERROR(__VA_ARGS__);                                                                           \
+            OP_ABORT;                                                                                        \
+        }                                                                                                    \
+    } while (0)
 #define OP_EXPECT(X)                                                                                         \
-    if (!(X)) { OP_WARN("Expectation {} failed.", #X); }
+    do {                                                                                                     \
+        if (!(X)) { OP_WARN("Expectation {} failed.", #X); }                                                 \
+    } while (0)
 #define OP_EXPECT_MSG(X, ...)                                                                                \
-    if (!(X)) {                                                                                              \
-        OP_WARN("Expectation {} failed.", #X);                                                               \
-        OP_WARN(__VA_ARGS__);                                                                                \
-    }
+    do {                                                                                                     \
+        if (!(X)) {                                                                                          \
+            OP_WARN("Expectation {} failed.", #X);                                                           \
+            OP_WARN(__VA_ARGS__);                                                                            \
+        }                                                                                                    \
+    } while (0)
 #else
 #define OP_ASSERT(X)
 #define OP_EXPECT(X)

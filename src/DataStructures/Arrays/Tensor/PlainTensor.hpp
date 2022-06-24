@@ -137,7 +137,7 @@ namespace OpFlow::DS {
         template <typename OtherScalar>
         requires(!std::is_same_v<Scalar, OtherScalar>) auto&
         operator=(const PlainTensor<OtherScalar, d>& other) {
-            OP_ASSERT(other.raw())// assign to an empty tensor is an error
+            OP_ASSERT(other.raw());// assign to an empty tensor is an error
             if (!data) {
                 reShape(other);
             } else {
@@ -149,7 +149,7 @@ namespace OpFlow::DS {
 
         auto& operator=(const PlainTensor& other) {
             if (this == &other) return *this;
-            OP_ASSERT(other.raw())
+            OP_ASSERT(other.raw());
             if (data == nullptr) {
                 reShape(other);
             } else {
