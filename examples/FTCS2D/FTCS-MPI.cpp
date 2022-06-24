@@ -12,7 +12,7 @@ int main(int argc, char** argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    constexpr auto n = 1025;
+    constexpr auto n = 65;
     auto mesh = MeshBuilder<Mesh>().newMesh(n, n).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
     auto info = makeParallelInfo();
     setGlobalParallelInfo(info);
@@ -26,6 +26,7 @@ int main(int argc, char** argv) {
                      .setBC(1, DimPos::start, BCType::Dirc, 1.)
                      .setBC(1, DimPos::end, BCType::Dirc, 1.)
                      .setLoc(std::array {LocOnMesh ::Center, LocOnMesh ::Center})
+                     .setExt(1)
                      .setPadding(1)
                      .setSplitStrategy(strategy)
                      .build();
