@@ -406,6 +406,9 @@ foreach (
         target_compile_definitions(opflow INTERFACE ${OPFLOW_OPTION})
     endif ()
 endforeach ()
+if (OPFLOW_WITH_MPI)
+    target_compile_definitions(opflow INTERFACE OPFLOW_DISTRIBUTE_MODEL_MPI)
+endif ()
 
 if (OPFLOW_NO_EXCEPTIONS AND NOT MSVC)
     target_compile_options(opflow INTERFACE -fno-exceptions)
