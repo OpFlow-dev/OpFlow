@@ -34,6 +34,9 @@ namespace OpFlow {
 
     template <typename T>
     concept ScalarExprType = Meta::isTemplateInstance<ScalarExpr, T>::value;
+
+    template <typename T>
+    concept GeneralExprType = (Meta::Numerical<T> || std::is_convertible_v<T, bool>) || ExprType<T>;
 }// namespace OpFlow
 
 #endif//OPFLOW_SCALAREXPRTRAIT_HPP
