@@ -57,5 +57,19 @@ namespace OpFlow {
         bool containsImpl_final(const ScalarExpr& t) const { return this == &t; }
         bool couldEvalAtImpl_final(auto&&) const { return true; }
     };
+
+    namespace Meta {
+        template <typename T>
+        using warp_if_scalar_t = std::conditional_t<(Meta::Numerical<T> || std::is_convertible_v<T, bool>),
+                                                    ScalarExpr<Meta::RealType<T>>, T>;
+
+        template <typename T>
+        auto forward_unless_scalar(T&& t) -> decltype(auto) {
+            if constexpr ((Meta::Numerical<T> || std::is_convertible_v<T, bool>) )
+                return ScalarExpr<Meta::RealType<T>> {std::forward<T>(t)};
+            else
+                return std::forward<T>(t);
+        }
+    }// namespace Meta
 }// namespace OpFlow
 #endif//OPFLOW_SCALAREXPR_HPP

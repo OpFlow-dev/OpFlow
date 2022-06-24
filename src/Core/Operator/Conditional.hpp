@@ -20,7 +20,6 @@
 #include "Core/Operator/Operator.hpp"
 
 namespace OpFlow {
-    template <std::size_t bc_width = 0>
     struct CondOp {
         template <ExprType C, ExprType T1, ExprType T2>
         OPFLOW_STRONG_INLINE static auto couldSafeEval(const C& c, const T1& t1, const T2& t2, auto&& i) {
@@ -78,6 +77,7 @@ namespace OpFlow {
                 }
             }
         }
+
         template <typename C, FieldExprType T1, FieldExprType T2>
         static void prepare(const Expression<CondOp, ScalarExpr<C>, T1, T2>& expr) {
             if constexpr (MeshBasedFieldExprType<T1> && MeshBasedFieldExprType<T2>)
@@ -101,51 +101,87 @@ namespace OpFlow {
                 }
             }
         }
+
+        template <typename C, FieldExprType T1, Meta::Numerical T2>
+        static void prepare(const Expression<CondOp, C, T1, ScalarExpr<T2>>& expr) {
+            expr.initPropsFrom(expr.arg2);
+            if constexpr (ScalarExprType<C>) {
+                if (expr.arg1.get()) {
+                    expr.name = expr.arg2.name;
+                } else
+                    expr.name = fmt::format("{}", expr.arg3.get());
+            } else
+                expr.name = fmt::format("{} ? {} : {}", expr.arg1.name, expr.arg2.name, expr.arg3.get());
+        }
+
+        template <typename C, Meta::Numerical T1, FieldExprType T2>
+        static void prepare(const Expression<CondOp, C, ScalarExpr<T1>, T2>& expr) {
+            expr.initPropsFrom(expr.arg3);
+            if constexpr (ScalarExprType<C>) {
+                if (expr.arg1.get()) {
+                    expr.name = fmt::format("{}", expr.arg2.get());
+                } else
+                    expr.name = expr.arg3.name;
+            } else
+                expr.name = fmt::format("{} ? {} : {}", expr.arg1.name, expr.arg2.get(), expr.arg3.name);
+        }
     };
 
-    template <std::size_t w, FieldExprType C, FieldExprType T, FieldExprType U>
-    struct ResultType<CondOp<w>, C, T, U> {
-        using type = typename internal::FieldExprTrait<T>::template twin_type<Expression<CondOp<w>, C, T, U>>;
-        using core_type = Expression<CondOp<w>, C, T, U>;
+    template <FieldExprType C, FieldExprType T, FieldExprType U>
+    struct ResultType<CondOp, C, T, U> {
+        using type = typename internal::FieldExprTrait<T>::template twin_type<Expression<CondOp, C, T, U>>;
+        using core_type = Expression<CondOp, C, T, U>;
     };
 
-    template <std::size_t w, typename C, FieldExprType T, FieldExprType U>
-    struct ResultType<CondOp<w>, ScalarExpr<C>, T, U> {
+    template <FieldExprType C, FieldExprType T, Meta::Numerical U>
+    struct ResultType<CondOp, C, T, ScalarExpr<U>> {
         using type = typename internal::FieldExprTrait<T>::template twin_type<
-                Expression<CondOp<w>, ScalarExpr<C>, T, U>>;
-        using core_type = Expression<CondOp<w>, ScalarExpr<C>, T, U>;
+                Expression<CondOp, C, T, ScalarExpr<U>>>;
+        using core_type = Expression<CondOp, C, T, ScalarExpr<U>>;
+    };
+
+    template <FieldExprType C, Meta::Numerical T, FieldExprType U>
+    struct ResultType<CondOp, C, ScalarExpr<T>, U> {
+        using type = typename internal::FieldExprTrait<T>::template twin_type<
+                Expression<CondOp, C, ScalarExpr<T>, U>>;
+        using core_type = Expression<CondOp, C, ScalarExpr<T>, U>;
+    };
+
+    template <typename C, FieldExprType T, FieldExprType U>
+    struct ResultType<CondOp, ScalarExpr<C>, T, U> {
+        using type = typename internal::FieldExprTrait<T>::template twin_type<
+                Expression<CondOp, ScalarExpr<C>, T, U>>;
+        using core_type = Expression<CondOp, ScalarExpr<C>, T, U>;
+    };
+
+    template <typename C, FieldExprType T, Meta::Numerical U>
+    struct ResultType<CondOp, ScalarExpr<C>, T, ScalarExpr<U>> {
+        using type = typename internal::FieldExprTrait<T>::template twin_type<
+                Expression<CondOp, ScalarExpr<C>, T, ScalarExpr<U>>>;
+        using core_type = Expression<CondOp, ScalarExpr<C>, T, ScalarExpr<U>>;
+    };
+
+    template <typename C, Meta::Numerical T, FieldExprType U>
+    struct ResultType<CondOp, ScalarExpr<C>, ScalarExpr<T>, U> {
+        using type = typename internal::FieldExprTrait<T>::template twin_type<
+                Expression<CondOp, ScalarExpr<C>, ScalarExpr<T>, U>>;
+        using core_type = Expression<CondOp, ScalarExpr<C>, ScalarExpr<T>, U>;
     };
 
     namespace internal {
-        template <std::size_t w, FieldExprType C, FieldExprType T, FieldExprType U>
-        struct ExprTrait<Expression<CondOp<w>, C, T, U>> : ExprTrait<T> {
-            static constexpr int bc_width = std::max(
-                    {FieldExprTrait<C>::bc_width, FieldExprTrait<T>::bc_width, FieldExprTrait<U>::bc_width});
+        template <ExprType C, ExprType T, ExprType U>
+        struct ExprTrait<Expression<CondOp, C, T, U>>
+            : ExprTrait<std::conditional_t<FieldExprType<T>, T, U>> {
             static constexpr int access_flag = 0;
-            using mesh_type = typename ViewOrVoid<T>::type;
-        };
-        template <std::size_t w, typename C, FieldExprType T, FieldExprType U>
-        struct ExprTrait<Expression<CondOp<w>, ScalarExpr<C>, T, U>> : ExprTrait<T> {
-            static constexpr int bc_width
-                    = std::max({CartesianFieldExprTrait<T>::bc_width, CartesianFieldExprTrait<U>::bc_width});
-            static constexpr int access_flag = 0;
-            using mesh_type = typename ViewOrVoid<T>::type;
+            using mesh_type = typename ViewOrVoid<std::conditional_t<FieldExprType<T>, T, U>>::type;
         };
     }// namespace internal
 
-    template <FieldExprType C, FieldExprType T, FieldExprType U>
+    template <GeneralExprType C, GeneralExprType T, GeneralExprType U>
     auto conditional(C&& c, T&& t, U&& u) {
-        constexpr std::size_t w
-                = std::max({internal::FieldExprTrait<C>::bc_width, internal::FieldExprTrait<T>::bc_width,
-                            internal::FieldExprTrait<U>::bc_width});
-        return makeExpression<CondOp<w>>(OP_PERFECT_FOWD(c), OP_PERFECT_FOWD(t), OP_PERFECT_FOWD(u));
-    }
-    template <typename C, FieldExprType T, FieldExprType U>
-    requires(!ExprType<C>) auto conditional(C&& c, T&& t, U&& u) {
-        constexpr std::size_t w
-                = std::max({internal::FieldExprTrait<T>::bc_width, internal::FieldExprTrait<U>::bc_width});
-        // here c must be kept rather than directly return t or u because c's value may change during exec
-        return makeExpression<CondOp<w>>(ScalarExpr<C>(c), OP_PERFECT_FOWD(t), OP_PERFECT_FOWD(u));
+        return makeExpression<CondOp>(Meta::forward_unless_scalar(OP_PERFECT_FOWD(c)),
+                                      Meta::forward_unless_scalar(OP_PERFECT_FOWD(t)),
+                                      Meta::forward_unless_scalar(OP_PERFECT_FOWD(u)));
     }
 }// namespace OpFlow
 #endif//OPFLOW_CONDITIONAL_HPP
