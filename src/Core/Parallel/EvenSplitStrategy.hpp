@@ -146,7 +146,7 @@ namespace OpFlow {
                 }
                 return ret;
 #else
-                OP_ERROR("Distributed parallel mode enabled without MPI library. Abort.")
+                OP_ERROR("Distributed parallel mode enabled without MPI library. Abort.");
                 OP_ABORT;
 #endif
             }
@@ -181,7 +181,7 @@ namespace OpFlow {
                 }
                 return ret;
 #else
-                OP_ERROR("Distributed parallel mode enabled without MPI library. Abort.")
+                OP_ERROR("Distributed parallel mode enabled without MPI library. Abort.");
                 OP_ABORT;
 #endif
             }
