@@ -61,7 +61,18 @@ namespace OpFlow {
 
         void init_comm_stencils() {
             Meta::static_for<size>([&]<int i>(Meta::int_<i>) {
-                comm_stencils[i] = getEqnExpr<i>()[getTargetPtr<i>()->getLocalWritableRange().center()];
+                auto st_start = getEqnExpr<i>()[getTargetPtr<i>()->getLocalWritableRange().first()];
+                auto st_end = getEqnExpr<i>()[getTargetPtr<i>()->getLocalWritableRange().last()];
+                auto st_center = getEqnExpr<i>()[getTargetPtr<i>()->getLocalWritableRange().center()];
+                if (st_start.pad.size()
+                    == std::max({st_start.pad.size(), st_end.pad.size(), st_center.pad.size()})) {
+                    comm_stencils[i] = st_start;
+                } else if (st_end.pad.size()
+                           == std::max({st_start.pad.size(), st_end.pad.size(), st_center.pad.size()})) {
+                    comm_stencils[i] = st_end;
+                } else {
+                    comm_stencils[i] = st_center;
+                }
             });
         }
     };
