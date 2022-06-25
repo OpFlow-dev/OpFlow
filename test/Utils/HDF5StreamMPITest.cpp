@@ -89,7 +89,10 @@ TEST_F(H5RWMPITest, ReadAtTime) {
             v.logicalRange.toString(), v.accessibleRange.toString(), v.localRange.toString(), v.padding);
     OP_INFO("localReadableRange = {}", u.getLocalReadableRange().toString());
 
-    rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) { OP_INFO("{}", i); ASSERT_EQ(v.evalAt(i), u.evalAt(i)); });
+    rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) {
+        OP_INFO("{}", i);
+        ASSERT_EQ(v.evalAt(i), u.evalAt(i));
+    });
 }
 
 TEST_F(H5RWMPITest, ReadAfterWriteInEqualDim) {

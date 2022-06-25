@@ -54,6 +54,15 @@ namespace OpFlow {
         auto getOffset() const { return this->offset; }
         void updatePadding() { this->derived().updatePaddingImpl_final(); }
 
+        auto getLocalReadableRange() const {
+            return DS::commonRange(this->localRange.getInnerRange(-padding), this->logicalRange);
+        }
+        auto getLocalWritableRange() const {
+            return DS::commonRange(this->localRange, this->assignableRange);
+        }
+        auto getGlobalReadableRange() const { return this->logicalRange; }
+        auto getGlobalWritableRange() const { return this->assignableRange; }
+
     protected:
         template <StructuredFieldExprType Other>
         void initPropsFromImpl_StructuredFieldExpr(const Other& other) const {
