@@ -7,10 +7,7 @@ int main(int argc, char** argv) {
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<Real, Mesh>;
 
-    InitEnvironment(&argc, &argv);
-    int rank, nproc;
-    MPI_Comm_size(MPI_COMM_WORLD, &nproc);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    EnvironmentGardian _(&argc, &argv);
 
     constexpr auto n = 65;
     auto mesh = MeshBuilder<Mesh>().newMesh(n, n).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
@@ -30,6 +27,7 @@ int main(int argc, char** argv) {
                      .setPadding(1)
                      .setSplitStrategy(strategy)
                      .build();
+    u = 0;
 
     const Real dt = 0.1 / Math::pow2(n - 1), alpha = 1.0;
     Utils::H5Stream uf("./sol.h5");
@@ -37,9 +35,9 @@ int main(int argc, char** argv) {
     uf << Utils::TimeStamp(0.) << u;
     auto t0 = std::chrono::system_clock::now();
     for (auto i = 1; i <= 50000; ++i) {
-        if (i % 100 == 0) OP_MPI_MASTER_INFO("Current step {}", i);
+        if (i % 1000 == 0) OP_MPI_MASTER_INFO("Current step {}", i);
         u = u + dt * alpha * (d2x<D2SecondOrderCentered>(u) + d2y<D2SecondOrderCentered>(u));
-        if (i % 1000 == 0) uf << Utils::TimeStamp(i * dt) << u;
+        if (i % 10000 == 0) uf << Utils::TimeStamp(i * dt) << u;
     }
     auto t1 = std::chrono::system_clock::now();
     OP_MPI_MASTER_INFO("Elapsed time: {}ms",
@@ -49,6 +47,5 @@ int main(int argc, char** argv) {
         OP_INFO("Center val: {}", u.evalAt(DS::MDIndex<2> {n / 2, n / 2}));
     uf.close();
 
-    FinalizeEnvironment();
     return 0;
 }
