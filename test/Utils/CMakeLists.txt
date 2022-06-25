@@ -13,6 +13,7 @@
 project(OpFlow_Utils_Tests)
 
 add_gmock(HDF5StreamTest ${CMAKE_CURRENT_LIST_DIR}/HDF5StreamTest.cpp)
+add_gmock_mpi(HDF5StreamMPITest 4 ${CMAKE_CURRENT_LIST_DIR}/HDF5StreamMPITest.cpp)
 
 add_gmock(TecplotStreamTest ${CMAKE_CURRENT_LIST_DIR}/TecplotStreamTest.cpp)
 
