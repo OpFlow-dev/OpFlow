@@ -234,8 +234,7 @@ namespace OpFlow::Utils {
             auto mem_space = H5Screate_simple(OpFlow::internal::ExprTrait<T>::dim, h_extends, NULL);
             auto file_space = H5Dget_space(dataset);
             hsize_t offset[dim];
-            // opflow uses column major layout, hdf5 uses row major layout
-            for (auto i = 0; i < dim; ++i) offset[i] = f.localRange.start[dim - i - 1];
+            for (auto i = 0; i < dim; ++i) offset[i] = f.localRange.start[i];
             H5Sselect_hyperslab(file_space, H5S_SELECT_SET, offset, NULL, h_extends, NULL);
             auto plist_id = H5Pcreate(H5P_DATASET_XFER);
             H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_INDEPENDENT);
@@ -299,8 +298,7 @@ namespace OpFlow::Utils {
         auto mem_space = H5Screate_simple(OpFlow::internal::ExprTrait<T>::dim, h_extends, NULL);
         auto file_space = H5Dget_space(dataset);
         hsize_t offset[dim];
-        // opflow uses column major layout, hdf5 uses row major layout
-        for (auto i = 0; i < dim; ++i) offset[i] = f.localRange.start[dim - i - 1];
+        for (auto i = 0; i < dim; ++i) offset[i] = f.localRange.start[i];
         H5Sselect_hyperslab(file_space, H5S_SELECT_SET, offset, NULL, h_extends, NULL);
         auto plist_id = H5Pcreate(H5P_DATASET_XFER);
         H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_INDEPENDENT);
