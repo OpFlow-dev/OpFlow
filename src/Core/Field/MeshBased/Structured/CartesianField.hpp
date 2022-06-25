@@ -555,8 +555,7 @@ namespace OpFlow {
         }
 
         template <typename Other>
-            requires(!std::same_as<Other, CartesianField>) bool
-        containsImpl_final(const Other& o) const {
+        requires(!std::same_as<Other, CartesianField>) bool containsImpl_final(const Other& o) const {
             return false;
         }
 
@@ -639,13 +638,10 @@ namespace OpFlow {
 
         // set a functor bc
         template <typename F>
-            requires requires(F f) {
-                         {
-                             f(std::declval<
-                                     typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>())
-                             } -> std::convertible_to<
-                                     typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
-                     }
+        requires requires(F f) {
+            { f(std::declval<typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>()) }
+            ->std::convertible_to<typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
+        }
         auto& setBC(int d, DimPos pos, BCType type, F&& functor) {
             OP_ASSERT(d < dim);
             auto& targetBC = pos == DimPos::start ? f.bc[d].start : f.bc[d].end;

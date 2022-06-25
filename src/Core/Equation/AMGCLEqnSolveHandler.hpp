@@ -102,11 +102,23 @@ namespace OpFlow {
         }
 
         void returnValues() {
+            std::array<int, size> offsets;
+            offsets[0] = 0;
+            Meta::static_for<1, size>([&]<int i>(Meta::int_<i>) {
+                offsets[i] = offsets[i - 1]
+                             + eqn_holder->template getTargetPtr<i>()->getLocalWritableRange().count();
+            });
             Meta::static_for<size>([&]<int i>(Meta::int_<i>) {
                 auto target = eqn_holder->template getTargetPtr<i>();
-                rangeFor(target->assignableRange, [&](auto&& k) {
-                    (*target)[k] = x[mapper(DS::ColoredIndex<Meta::RealType<decltype(k)>> {k, i})];
-                });
+                DS::MDRangeMapper local_mapper {target->getLocalWritableRange()};
+                rangeFor(target->getLocalWritableRange(),
+                         [&](auto&& k) { (*target)[k] = x[local_mapper(k) + offsets[i]]; });
+            });
+#ifdef OPFLOW_WITH_MPI
+            MPI_Barrier(MPI_COMM_WORLD);
+#endif
+            Meta::static_for<size>([&]<int i>(Meta::int_<i>) {
+                auto target = eqn_holder->template getTargetPtr<i>();
                 target->updatePadding();
             });
         }
@@ -116,6 +128,7 @@ namespace OpFlow {
             if (firstRun) {
                 generateAb();
                 initx();
+                OP_INFO("Generate matrix and rhs");
                 if (staticMat) state = solver.solve_dy(mat, x, params[0].p, params[0].bp, params[0].verbose);
                 else
                     state = AMGCLBackend<S, Real>::solve(mat, x, params[0].p, params[0].bp,
