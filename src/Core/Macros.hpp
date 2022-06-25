@@ -51,8 +51,19 @@
 
 #include "spdlog/spdlog.h"
 
+#ifdef OPFLOW_WITH_MPI
+#include <mpi.h>
+namespace OpFlow {
+    inline static int getWorkerId(MPI_Comm comm);
+}
+#define SPD_AUGMENTED_LOG(X, ...)                                                                            \
+    spdlog::X(fmt::format("[{}:{}@{}][Rank{}] ", __FILENAME__, __FUNCTION__, __LINE__,                       \
+                          OpFlow::getWorkerId(MPI_COMM_WORLD))                                               \
+              + fmt::format(__VA_ARGS__))
+#else
 #define SPD_AUGMENTED_LOG(X, ...)                                                                            \
     spdlog::X(fmt::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__) + fmt::format(__VA_ARGS__))
+#endif
 
 #ifndef OP_DEBUGLEVEL
 #define OP_DEBUGLEVEL 1
@@ -120,7 +131,7 @@ namespace OpFlow {
     do {                                                                                                     \
         OP_DUMPSTACK;                                                                                        \
         OP_CRITICAL("Aborting.");                                                                            \
-        std::abort();                                                                                        \
+        std::exit(1);                                                                                        \
     } while (0)
 
 #ifndef NDEBUG

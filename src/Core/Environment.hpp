@@ -62,9 +62,9 @@ namespace OpFlow {
     }
 
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
-    inline static auto getWorkerId(MPI_Comm comm = MPI_COMM_WORLD) {
+    inline static int getWorkerId(MPI_Comm comm = MPI_COMM_WORLD) {
 #else
-    inline static auto getWorkerId() {
+    inline static int getWorkerId() {
 #endif
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
         int rank;
