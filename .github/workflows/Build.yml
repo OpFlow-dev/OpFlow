@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-11]
+        os: [ubuntu-20.04, macos-12]
         compiler: [clang, gcc]
         mpi: [ON, OFF]
         mode: [Debug, Release]
