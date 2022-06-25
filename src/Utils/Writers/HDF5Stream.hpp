@@ -320,6 +320,7 @@ namespace OpFlow::Utils {
         // close everything
         H5Dclose(dataset);
         H5Sclose(dataspace);
+        f.updatePadding();
 #else
         OP_MPI_MASTER_WARN("H5Stream not enabled.");
 #endif
