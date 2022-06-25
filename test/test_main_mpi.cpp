@@ -19,7 +19,12 @@ int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
 
     // Initialize MPI
+    // Note: MPI_Finalize is called by the framework. We can only invoke the MPI_Init function here.
     OpFlow::InitEnvironment(&argc, &argv);
+    auto info = OpFlow::makeParallelInfo();
+    setGlobalParallelInfo(info);
+    setGlobalParallelPlan(
+            makeParallelPlan(OpFlow::getGlobalParallelInfo(), OpFlow::ParallelIdentifier::DistributeMem));
 
     // Add object that will finalize MPI on exit; Google Test owns this pointer
     ::testing::AddGlobalTestEnvironment(new GTestMPIListener::MPIEnvironment);
