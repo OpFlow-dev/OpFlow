@@ -542,22 +542,21 @@ namespace OpFlow {
             return 0;
         }
         const auto& evalAtImpl_final(const index_type& i) const {
-            OP_ASSERT_MSG(DS::inRange(DS::commonRange(this->logicalRange,
-                                                      this->localRange.getInnerRange(-this->padding)),
-                                      i),
-                          "CartesianField cannot eval at {}: out of range", i);
+            OP_ASSERT_MSG(DS::inRange(this->getLocalReadableRange(), i),
+                          "Cannot eval {} at {}: out of range {}", this->getName(), i,
+                          this->getLocalReadableRange().toString());
             return data[i - this->offset];
         }
         auto& evalAtImpl_final(const index_type& i) {
-            OP_ASSERT_MSG(DS::inRange(DS::commonRange(this->logicalRange,
-                                                      this->localRange.getInnerRange(-this->padding)),
-                                      i),
-                          "CartesianField cannot eval at {}: out of range", i);
+            OP_ASSERT_MSG(DS::inRange(this->getLocalReadableRange(), i),
+                          "Cannot eval {} at {}: out of range {}", this->getName(), i,
+                          this->getLocalWritableRange().toString());
             return data[i - this->offset];
         }
 
         template <typename Other>
-        requires(!std::same_as<Other, CartesianField>) bool containsImpl_final(const Other& o) const {
+            requires(!std::same_as<Other, CartesianField>) bool
+        containsImpl_final(const Other& o) const {
             return false;
         }
 
@@ -640,10 +639,13 @@ namespace OpFlow {
 
         // set a functor bc
         template <typename F>
-        requires requires(F f) {
-            { f(std::declval<typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>()) }
-            ->std::convertible_to<typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
-        }
+            requires requires(F f) {
+                         {
+                             f(std::declval<
+                                     typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>())
+                             } -> std::convertible_to<
+                                     typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
+                     }
         auto& setBC(int d, DimPos pos, BCType type, F&& functor) {
             OP_ASSERT(d < dim);
             auto& targetBC = pos == DimPos::start ? f.bc[d].start : f.bc[d].end;
