@@ -75,6 +75,20 @@ namespace OpFlow {
 #endif
     }
 
+#if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
+    inline static int getWorkerCount(MPI_Comm comm = MPI_COMM_WORLD) {
+#else
+    inline static int getWorkerCount() {
+#endif
+#if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
+        int size;
+        MPI_Comm_size(comm, &size);
+        return size;
+#else
+        return 1;
+#endif
+    }
+
     inline static void printVersion() {
         std::cout << "OpFlow version: " << internal::OPFLOW_VERSION_STRING << std::endl;
     }
