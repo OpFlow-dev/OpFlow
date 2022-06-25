@@ -47,5 +47,6 @@ add_gmock(PeriodicEqnTest ${CMAKE_CURRENT_LIST_DIR}/Equation/PeriodicEqnTest.cpp
 add_gmock(AMGCLTest ${CMAKE_CURRENT_LIST_DIR}/Equation/AMGCLTest.cpp)
 add_gmock(EqnHolderTest ${CMAKE_CURRENT_LIST_DIR}/Equation/EqnHolderTest.cpp)
 add_gmock(CSRMatrixGeneratorTest ${CMAKE_CURRENT_LIST_DIR}/Equation/CSRMatrixGeneratorTest.cpp)
+add_gmock_mpi(CSRMatrixGeneratorMPITest 4 ${CMAKE_CURRENT_LIST_DIR}/Equation/CSRMatrixGeneratorMPITest.cpp)
 add_gmock(EqnSetTest ${CMAKE_CURRENT_LIST_DIR}/Equation/EqnSetTest.cpp)
 add_gmock_mpi(AMGCLMPITest 4 ${CMAKE_CURRENT_LIST_DIR}/Equation/AMGCLMPITest.cpp)
