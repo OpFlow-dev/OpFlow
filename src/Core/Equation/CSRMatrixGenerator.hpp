@@ -15,6 +15,7 @@
 
 #include "Core/Equation/StencilHolder.hpp"
 #include "Core/Meta.hpp"
+#include "DataStructures/Index/LinearMapper/MDRangeMapper.hpp"
 #include "DataStructures/Matrix/CSRMatrix.hpp"
 #include <vector>
 
@@ -49,7 +50,8 @@ namespace OpFlow {
             auto target = s.template getTargetPtr<iTarget>();
             auto commStencil = s.comm_stencils[iTarget];
             auto& uniEqn = s.template getEqnExpr<iTarget>();
-            auto local_range = DS::commonRange(target->assignableRange, target->localRange);
+            auto local_range = target->getLocalWritableRange();
+            DS::MDRangeMapper local_mapper(local_range);
             // prepare: evaluate the common stencil & pre-fill the arrays
             int stencil_size = commStencil.pad.size() * 1.5;
 
@@ -63,18 +65,19 @@ namespace OpFlow {
             DS::DenseVector<m_tuple> coo;
             coo.resize(local_range.count() * stencil_size);
             mat.resize(local_range.count(), stencil_size);
-            auto r_last = mapper(local_range.last(), iTarget);
+            auto r_last = mapper(target->getGlobalWritableRange().last(), iTarget);
             rangeFor(local_range, [&](auto&& i) {
-                auto r = mapper(i, iTarget);// r is the local rank
+                auto r = mapper(i, iTarget);// r is the rank of i in the target scope
+                auto r_local = local_mapper(i);// r_local is the rank of i in the block scope
                 auto currentStencil = uniEqn.evalAt(i);
                 int count = 0;
                 if (pinValue && r == r_last) {
-                    coo[r * stencil_size] = m_tuple {
+                    coo[r_local * stencil_size] = m_tuple {
                             r_last,
                             mapper(DS::ColoredIndex<typename decltype(local_range)::base_index_type> {
                                     i, iTarget}),
                             1};
-                    mat.rhs[r] = 0.;
+                    mat.rhs[r_local] = 0.;
                     count++;
                 } else {
                     for (const auto& [key, v] : currentStencil.pad) {
@@ -82,12 +85,12 @@ namespace OpFlow {
                         OP_ASSERT_MSG(!std::isnan(v),
                                       "CSRMatrixGenerator: {}'s stencil pad at {} of {}'s value is nan",
                                       target->getName(), i, key);
-                        coo[r * stencil_size + count++] = m_tuple {r, idx, v};
+                        coo[r_local * stencil_size + count++] = m_tuple {r, idx, v};
                     }
-                    mat.rhs[r] = -currentStencil.bias;
+                    mat.rhs[r_local] = -currentStencil.bias;
                 }
                 for (; count < stencil_size; ++count)
-                    coo[r * stencil_size + count]
+                    coo[r_local * stencil_size + count]
                             = m_tuple {std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), 0.};
             });
             tbb::global_control globalControl(tbb::detail::d1::global_control::max_allowed_parallelism,
