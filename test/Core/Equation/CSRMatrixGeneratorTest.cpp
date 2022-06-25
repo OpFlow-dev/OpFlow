@@ -137,22 +137,25 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson_Periodic) {
 
     auto eqn = makeEqnHolder(std::forward_as_tuple(simple_poisson()), std::forward_as_tuple(p));
     auto st = makeStencilHolder(eqn);
-    auto mat = CSRMatrixGenerator::generate<0>(st, DS::ColoredMDRangeMapper<2> {p.assignableRange}, false);
+    auto mat = CSRMatrixGenerator::generate<0>(st, DS::ColoredMDRangeMapper<2> {p.assignableRange}, true);
 
-    std::vector<int> ptr {0, 1, 5, 9, 12, 16, 21, 26, 30, 34, 39, 44, 48, 51, 55, 59, 62},
-            col {0,  0,  1, 2,  5,  1,  2, 3,  6,  2, 3,  7,  0,  4,  5,  8,  1,  4,  5,  6, 9,
-                 2,  5,  6, 7,  10, 3,  6, 7,  11, 4, 8,  9,  12, 5,  8,  9,  10, 13, 6,  9, 10,
-                 11, 14, 7, 10, 11, 15, 8, 12, 13, 9, 12, 13, 14, 10, 13, 14, 15, 11, 14, 15};
-    std::vector<double> val {1,  -1, 3,  -1, -1, -1, 3,  -1, -1, -1, 2,  -1, -1, 3,  -1, -1,
-                             -1, -1, 4,  -1, -1, -1, -1, 4,  -1, -1, -1, -1, 3,  -1, -1, 3,
-                             -1, -1, -1, -1, 4,  -1, -1, -1, -1, 4,  -1, -1, -1, -1, 3,  -1,
-                             -1, 2,  -1, -1, -1, 3,  -1, -1, -1, 3,  -1, -1, -1, 2},
-            rhs {0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+    std::vector<int> ptr {0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 76},
+            col {0, 1, 3,  4,  12, 0, 1, 2,  5,  13, 1, 2,  3,  6,  14, 0, 2,  3,  7,  15,
+                 0, 4, 5,  7,  8,  1, 4, 5,  6,  9,  2, 5,  6,  7,  10, 3, 4,  6,  7,  11,
+                 4, 8, 9,  11, 12, 5, 8, 9,  10, 13, 6, 9,  10, 11, 14, 7, 8,  10, 11, 15,
+                 0, 8, 12, 13, 15, 1, 9, 12, 13, 14, 2, 10, 13, 14, 15, 15};
+    std::vector<double> val {4,  -1, -1, -1, -1, -1, 4,  -1, -1, -1, -1, 4,  -1, -1, -1, -1, -1, 4,  -1, -1,
+                             -1, 4,  -1, -1, -1, -1, -1, 4,  -1, -1, -1, -1, 4,  -1, -1, -1, -1, -1, 4,  -1,
+                             -1, 4,  -1, -1, -1, -1, -1, 4,  -1, -1, -1, -1, 4,  -1, -1, -1, -1, -1, 4,  -1,
+                             -1, -1, 4,  -1, -1, -1, -1, -1, 4,  -1, -1, -1, -1, 4,  -1, 1},
+            rhs {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0};
 
-    //for (int i = 0; i < ptr.size(); ++i) { ASSERT_EQ(ptr[i], mat.row[i]); }
-    //for (int i = 0; i < col.size(); ++i) { ASSERT_EQ(col[i], mat.col[i]); }
-    //for (int i = 0; i < val.size(); ++i) { ASSERT_DOUBLE_EQ(val[i], mat.val[i]); }
-    //for (int i = 0; i < rhs.size(); ++i) { ASSERT_DOUBLE_EQ(rhs[i], mat.rhs[i]); }
+    OP_INFO("{}", mat.toString());
+
+    for (int i = 0; i < ptr.size(); ++i) { ASSERT_EQ(ptr[i], mat.row[i]); }
+    for (int i = 0; i < col.size(); ++i) { ASSERT_EQ(col[i], mat.col[i]); }
+    for (int i = 0; i < val.size(); ++i) { ASSERT_DOUBLE_EQ(val[i], mat.val[i]); }
+    for (int i = 0; i < rhs.size(); ++i) { ASSERT_DOUBLE_EQ(rhs[i], mat.rhs[i]); }
     ASSERT_TRUE(true);
 }
 
