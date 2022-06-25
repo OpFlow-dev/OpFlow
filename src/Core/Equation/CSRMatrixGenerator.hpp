@@ -67,7 +67,7 @@ namespace OpFlow {
             mat.resize(local_range.count(), stencil_size);
             auto r_last = mapper(target->getGlobalWritableRange().last(), iTarget);
             rangeFor(local_range, [&](auto&& i) {
-                auto r = mapper(i, iTarget);// r is the rank of i in the target scope
+                auto r = mapper(i, iTarget);   // r is the rank of i in the target scope
                 auto r_local = local_mapper(i);// r_local is the rank of i in the block scope
                 auto currentStencil = uniEqn.evalAt(i);
                 int count = 0;

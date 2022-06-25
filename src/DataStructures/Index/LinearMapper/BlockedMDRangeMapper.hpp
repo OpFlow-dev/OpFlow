@@ -22,7 +22,9 @@ namespace OpFlow::DS {
     template <std::size_t d>
     struct BlockedMDRangeMapper {
         BlockedMDRangeMapper() = default;
-        explicit BlockedMDRangeMapper(const std::vector<Range<d>>& ranges) : _ranges(ranges) { calculateMultiplier(); }
+        explicit BlockedMDRangeMapper(const std::vector<Range<d>>& ranges) : _ranges(ranges) {
+            calculateMultiplier();
+        }
 
         int operator()(const MDIndex<d>& idx) const {
             // we assume the _ranges are listed by column-major sequence
@@ -40,7 +42,8 @@ namespace OpFlow::DS {
                 block_rank *= _split[i].size() - 1;
                 block_rank += block_idx[i];
             }
-            OP_ASSERT_MSG(block_rank < _ranges.size(), "Block rank {} out of range {}", block_rank, _ranges.size());
+            OP_ASSERT_MSG(block_rank < _ranges.size(), "Block rank {} out of range {}", block_rank,
+                          _ranges.size());
             const auto& _r = _ranges[block_rank];
             OP_ASSERT_MSG(inRange(_r, idx), "BlockedMDRangeMapper Error: index {} not in blocked range {}",
                           idx, _r.toString());

@@ -61,7 +61,7 @@ namespace OpFlow {
 
         void init_comm_stencils() {
             Meta::static_for<size>([&]<int i>(Meta::int_<i>) {
-                comm_stencils[i] = getEqnExpr<i>()[getTargetPtr<i>()->assignableRange.center()];
+                comm_stencils[i] = getEqnExpr<i>()[getTargetPtr<i>()->getLocalWritableRange().center()];
             });
         }
     };
