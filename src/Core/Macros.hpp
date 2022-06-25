@@ -120,7 +120,7 @@ namespace OpFlow {
     do {                                                                                                     \
         OP_DUMPSTACK;                                                                                        \
         OP_CRITICAL("Aborting.");                                                                            \
-        std::abort();                                                                                         \
+        std::abort();                                                                                        \
     } while (0)
 
 #ifndef NDEBUG
