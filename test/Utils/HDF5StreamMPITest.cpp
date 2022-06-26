@@ -47,7 +47,8 @@ public:
 
 TEST_F(H5RWMPITest, WriteToFile) {
     u[DS::MDIndex<2> {1, 1}] = 1.;
-    Utils::H5Stream stream("./u.h5");
+    std::string filename = fmt::format("./u.wrf.mpi{}.h5", getWorkerCount());
+    Utils::H5Stream stream(filename);
     stream << u;
     ASSERT_TRUE(true);
 }
@@ -57,14 +58,16 @@ TEST_F(H5RWMPITest, ReadAfterWrite) {
     // Therefore, we need to close the stream before reading.
     if (DS::inRange(u.getLocalWritableRange(), DS::MDIndex<2> {2, 2})) u[DS::MDIndex<2>(2, 2)] = 2.;
     u.updatePadding();
+    std::string filename = fmt::format("./u.raw.mpi{}.h5", getWorkerCount());
+
     {
-        Utils::H5Stream stream("./u.h5");
+        Utils::H5Stream stream(filename);
         stream << u;
     }
 
     auto v = u;
     v = 0.;
-    Utils::H5Stream istream("./u.h5", StreamIn);
+    Utils::H5Stream istream(filename, StreamIn);
     istream >> v;
     rangeFor_s(u.getLocalReadableRange(), [&](auto i) {
         if (u[i] != v[i]) OP_ERROR("NOT EQUAL AT {}", i);
@@ -73,8 +76,10 @@ TEST_F(H5RWMPITest, ReadAfterWrite) {
 }
 
 TEST_F(H5RWMPITest, ReadAtTime) {
+    std::string filename = fmt::format("./u.rat.mpi{}.h5", getWorkerCount());
+
     {
-        Utils::H5Stream stream("./u_rat.h5");
+        Utils::H5Stream stream(filename);
         if (DS::inRange(u.getLocalWritableRange(), DS::MDIndex<2>(2, 2))) { u[DS::MDIndex<2>(2, 2)] = 2.; }
         Utils::TimeStamp t0(0);
         stream << t0 << u;
@@ -86,7 +91,7 @@ TEST_F(H5RWMPITest, ReadAtTime) {
 
     auto v = u;
     v = 0.;
-    Utils::H5Stream istream("./u_rat.h5", StreamIn);
+    Utils::H5Stream istream(filename, StreamIn);
     istream.moveToTime(Utils::TimeStamp(1));
     istream >> v;
 
@@ -97,13 +102,15 @@ TEST_F(H5RWMPITest, ReadAfterWriteInEqualDim) {
     auto map = DS::MDRangeMapper<2> {u.accessibleRange};
     rangeFor(u.getLocalWritableRange(), [&](auto&& i) { u[i] = map(i); });
     u.updatePadding();
-    Utils::H5Stream stream("./u_ieq.h5");
+    std::string filename = fmt::format("./u.ieq.mpi{}.h5", getWorkerCount());
+
+    Utils::H5Stream stream(filename);
     stream << u;
     stream.close();
 
     auto v = u;
     v = 0.;
-    Utils::H5Stream istream("./u_ieq.h5", StreamIn);
+    Utils::H5Stream istream(filename, StreamIn);
     istream >> v;
     istream.close();
     rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) { ASSERT_EQ(v.evalAt(i), u.evalAt(i)); });

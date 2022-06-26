@@ -44,7 +44,7 @@ public:
 
 TEST_F(H5RWTest, WriteToFile) {
     u[DS::MDIndex<2> {1, 1}] = 1.;
-    Utils::H5Stream stream("./u.h5");
+    Utils::H5Stream stream("./u.wtf.h5");
     stream << u;
     ASSERT_TRUE(true);
 }
@@ -54,13 +54,13 @@ TEST_F(H5RWTest, ReadAfterWrite) {
     // Therefore, we need to close the stream before reading.
     {
         u[DS::MDIndex<2>(2, 2)] = 2.;
-        Utils::H5Stream stream("./u.h5");
+        Utils::H5Stream stream("./u.raw.h5");
         stream << u;
     }
 
     auto v = u;
     v = 0.;
-    Utils::H5Stream istream("./u.h5", StreamIn);
+    Utils::H5Stream istream("./u.raw.h5", StreamIn);
     istream >> v;
     ASSERT_EQ(v.evalAt(DS::MDIndex<2>(2, 2)), u.evalAt(DS::MDIndex<2>(2, 2)));
 }
@@ -68,7 +68,7 @@ TEST_F(H5RWTest, ReadAfterWrite) {
 TEST_F(H5RWTest, ReadAtTime) {
     {
         u[DS::MDIndex<2>(2, 2)] = 2.;
-        Utils::H5Stream stream("./u_rat.h5");
+        Utils::H5Stream stream("./u.rat.h5");
         Utils::TimeStamp t0(0);
         stream << t0 << u;
         Utils::TimeStamp t1(1);
@@ -78,7 +78,7 @@ TEST_F(H5RWTest, ReadAtTime) {
 
     auto v = u;
     v = 0.;
-    Utils::H5Stream istream("./u_rat.h5", StreamIn);
+    Utils::H5Stream istream("./u.rat.h5", StreamIn);
     istream.moveToTime(Utils::TimeStamp(1));
     istream >> v;
     ASSERT_EQ(v.evalAt(DS::MDIndex<2>(3, 3)), u.evalAt(DS::MDIndex<2>(3, 3)));
@@ -87,13 +87,13 @@ TEST_F(H5RWTest, ReadAtTime) {
 TEST_F(H5RWTest, ReadAfterWriteInEqualDim) {
     auto map = DS::MDRangeMapper<2> {u.accessibleRange};
     rangeFor(u.assignableRange, [&](auto&& i) { u[i] = map(i); });
-    Utils::H5Stream stream("./u_ieq.h5");
+    Utils::H5Stream stream("./u.ieq.h5");
     stream << u;
     stream.close();
 
     auto v = u;
     v = 0.;
-    Utils::H5Stream istream("./u_ieq.h5", StreamIn);
+    Utils::H5Stream istream("./u.ieq.h5", StreamIn);
     istream >> v;
     istream.close();
     ASSERT_EQ(v.evalAt(DS::MDIndex<2>(2, 2)), u.evalAt(DS::MDIndex<2>(2, 2)));
