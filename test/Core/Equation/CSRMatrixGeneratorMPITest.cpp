@@ -86,6 +86,12 @@ protected:
         return [&](auto&& e) { return 1.0 == d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e); };
     }
 
+    auto simple_helmholtz() {
+        return [&](auto&& e) {
+            return 1.0 == e + d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e);
+        };
+    }
+
     static void assert_mat_eq(const DS::CSRMatrix& mat1, const DS::CSRMatrix& mat2) {
         ASSERT_EQ(mat1.row.size(), mat2.row.size());
         ASSERT_EQ(mat1.col.size(), mat2.col.size());
@@ -100,7 +106,7 @@ protected:
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<Real, Mesh>;
     Mesh m;
-    Field p, r, b;
+    Field p, r, b, u;
     std::shared_ptr<AbstractSplitStrategy<Field>> strategy;
 };
 
@@ -335,5 +341,50 @@ TEST_F(CSRMatrixGeneratorMPITest, SimplePoisson_Neum_2Eqn) {
     }
     for (int i = mat.rhs.size() / 2, j = 0; i < mat.rhs.size(); ++i, ++j) {
         ASSERT_DOUBLE_EQ(mat.rhs[i], mat.rhs[j]);
+    }
+}
+
+TEST_F(CSRMatrixGeneratorMPITest, XFaceHelmholtz) {
+    u = ExprBuilder<Field>()
+                .setMesh(m)
+                .setName("u")
+                .setBC(0, DimPos::start, BCType::Dirc, 0.)
+                .setBC(0, DimPos::end, BCType::Dirc, 0.)
+                .setBC(1, DimPos::start, BCType::Dirc, 0.)
+                .setBC(1, DimPos::end, BCType::Dirc, 0.)
+                .setExt(1)
+                .setPadding(1)
+                .setSplitStrategy(strategy)
+                .setLoc({LocOnMesh::Corner, LocOnMesh::Center})
+                .build();
+
+    auto eqn = makeEqnHolder(std::forward_as_tuple(simple_helmholtz()), std::forward_as_tuple(u));
+    auto st = makeStencilHolder(eqn);
+    auto mapper = DS::BlockedMDRangeMapper<2>(u.getLocalWritableRange());
+    auto mat = CSRMatrixGenerator::generate<0>(st, mapper, false);
+    OP_INFO("u.localRange = {}", u.localRange.toString());
+
+    auto mat_global = gather_mat(mat);
+    OP_MPI_MASTER_INFO("\n{}", mat_global.toString());
+
+    if (getWorkerId() == 0) {
+        auto u_local = ExprBuilder<Field>()
+                               .setMesh(m)
+                               .setName("u")
+                               .setBC(0, DimPos::start, BCType::Dirc, 0.)
+                               .setBC(0, DimPos::end, BCType::Dirc, 0.)
+                               .setBC(1, DimPos::start, BCType::Dirc, 0.)
+                               .setBC(1, DimPos::end, BCType::Dirc, 0.)
+                               .setExt(1)
+                               .setLoc({LocOnMesh::Corner, LocOnMesh::Center})
+                               .build();
+        auto eqn_local
+                = makeEqnHolder(std::forward_as_tuple(simple_helmholtz()), std::forward_as_tuple(u_local));
+        auto st_local = makeStencilHolder(eqn_local);
+        auto mat_local = CSRMatrixGenerator::generate<0>(st_local, mapper, false);
+        OP_MPI_MASTER_INFO("\n{}", mat_local.toString());
+        assert_mat_eq(mat_global, mat_local);
+    } else {
+        ASSERT_TRUE(true);
     }
 }
