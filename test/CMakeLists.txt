@@ -73,8 +73,15 @@ function(add_gmock_mpi testname proccount testfile)
             set(proccount ${MPIEXEC_MAX_NUMPROCS})
         endif ()
         if (NOT ${testname} STREQUAL "UniTests")
-            add_test(NAME ${testname} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${proccount}
-                    ${MPIEXEC_PREFLAGS} ${CMAKE_CURRENT_BINARY_DIR}/${testname} ${MPIEXEC_POSTFLAGS})
+            if (proccount GREATER 1)
+                foreach (proc RANGE 1 ${proccount})
+                    add_test(NAME ${testname}_${proc} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${proc}
+                            ${MPIEXEC_PREFLAGS} ${CMAKE_CURRENT_BINARY_DIR}/${testname} ${MPIEXEC_POSTFLAGS})
+                endforeach ()
+            else ()
+                add_test(NAME ${testname} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${proccount}
+                        ${MPIEXEC_PREFLAGS} ${CMAKE_CURRENT_BINARY_DIR}/${testname} ${MPIEXEC_POSTFLAGS})
+            endif ()
         endif ()
         if (${CMAKE_BUILD_TYPE} STREQUAL "Debug" AND OPFLOW_ENABLE_COVERAGE)
             target_link_libraries(${testname} gcov)
