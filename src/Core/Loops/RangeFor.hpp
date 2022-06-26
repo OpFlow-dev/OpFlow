@@ -115,5 +115,17 @@ namespace OpFlow {
             std::abort();
         }
     }
+
+#ifdef OPFLOW_WITH_MPI
+    template <typename R, typename ReOp, typename F>
+    auto globalReduce(const R& range, ReOp&& op, F&& func) {
+        auto local_result = rangeReduce(range, op, func);
+        std::vector<decltype(local_result)> results(getWorkerCount());
+        results[getWorkerId()] = local_result;
+        static_assert(std::is_trivially_copyable_v<decltype(local_result)>, "local_result must be trivially copyable");
+        MPI_Alltoall(results.data(), sizeof(decltype(local_result)), MPI_BYTE, results.data(), sizeof(decltype(local_result)), MPI_BYTE, MPI_COMM_WORLD);
+        return std::reduce(results.begin(), results.end(), decltype(local_result){}, op);
+    }
+#endif
 }// namespace OpFlow
 #endif//OPFLOW_RANGEFOR_HPP
