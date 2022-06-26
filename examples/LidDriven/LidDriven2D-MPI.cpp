@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<Real, Mesh>;
 
-    InitEnvironment(&argc, &argv);
+    EnvironmentGardian _(&argc, &argv);
     auto info = makeParallelInfo();
     setGlobalParallelInfo(info);
     setGlobalParallelPlan(makeParallelPlan(getGlobalParallelInfo(), ParallelIdentifier::DistributeMem));
@@ -31,7 +31,8 @@ int main(int argc, char* argv[]) {
                            .setBC(0, DimPos::end, BCType::Dirc, 0.)
                            .setBC(1, DimPos::start, BCType::Dirc, 0.)
                            .setBC(1, DimPos::end, BCType::Dirc, 0.)
-                           .setPadding(1)
+                           .setPadding(2)
+                           .setExt(1)
                            .setSplitStrategy(strategy);
     auto u = builder.setName("u")
                      .setBC(1, DimPos::end, BCType::Dirc, 1.)
@@ -138,6 +139,5 @@ int main(int argc, char* argv[]) {
     OP_MPI_MASTER_INFO("Elapsed time: {}ms",
                        std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count());
 
-    FinalizeEnvironment();
     return 0;
 }
