@@ -25,6 +25,31 @@ namespace OpFlow::DS {
         explicit BlockedMDRangeMapper(const std::vector<Range<d>>& ranges) : _ranges(ranges) {
             calculateMultiplier();
         }
+        explicit BlockedMDRangeMapper(const Range<d>& range) {
+#ifdef OPFLOW_WITH_MPI
+            if (getWorkerCount() > 0) {
+                _ranges.resize(getWorkerCount());
+                _ranges[getWorkerId()] = range;
+                std::vector<std::array<int, d>> _starts(_ranges.size()), _ends(_ranges.size()), _strides(_ranges.size());
+                _starts[getWorkerId()] = range.start;
+                _ends[getWorkerId()] = range.end;
+                _strides[getWorkerId()] = range.stride;
+                MPI_Allgather(MPI_IN_PLACE, d, MPI_INT, _starts.data(), d, MPI_INT, MPI_COMM_WORLD);
+                MPI_Allgather(MPI_IN_PLACE, d, MPI_INT, _ends.data(), d, MPI_INT, MPI_COMM_WORLD);
+                MPI_Allgather(MPI_IN_PLACE, d, MPI_INT, _strides.data(), d, MPI_INT, MPI_COMM_WORLD);
+                for (int i = 0; i < _ranges.size(); ++i) {
+                    _ranges[i] = Range<d>(_starts[i], _ends[i], _strides[i]);
+                }
+            } else {
+                _ranges.resize(1);
+                _ranges[0] = range;
+            }
+#else
+            _ranges.resize(1);
+            _ranges[0] = range;
+#endif
+            calculateMultiplier();
+        }
 
         int operator()(const MDIndex<d>& idx) const {
             // we assume the _ranges are listed by column-major sequence
