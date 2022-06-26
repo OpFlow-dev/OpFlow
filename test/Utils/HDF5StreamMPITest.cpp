@@ -55,8 +55,9 @@ TEST_F(H5RWMPITest, WriteToFile) {
 TEST_F(H5RWMPITest, ReadAfterWrite) {
     // Note: A HDF5 file cannot be hold by multiple streams at the same time.
     // Therefore, we need to close the stream before reading.
+    if (DS::inRange(u.getLocalWritableRange(), DS::MDIndex<2> {2, 2})) u[DS::MDIndex<2>(2, 2)] = 2.;
+    u.updatePadding();
     {
-        u[DS::MDIndex<2>(2, 2)] = 2.;
         Utils::H5Stream stream("./u.h5");
         stream << u;
     }
@@ -65,7 +66,10 @@ TEST_F(H5RWMPITest, ReadAfterWrite) {
     v = 0.;
     Utils::H5Stream istream("./u.h5", StreamIn);
     istream >> v;
-    ASSERT_EQ(v.evalAt(DS::MDIndex<2>(2, 2)), u.evalAt(DS::MDIndex<2>(2, 2)));
+    rangeFor_s(u.getLocalReadableRange(), [&](auto i) {
+        if (u[i] != v[i]) OP_ERROR("NOT EQUAL AT {}", i);
+        ASSERT_EQ(u[i], v[i]);
+    });
 }
 
 TEST_F(H5RWMPITest, ReadAtTime) {
@@ -85,12 +89,8 @@ TEST_F(H5RWMPITest, ReadAtTime) {
     Utils::H5Stream istream("./u_rat.h5", StreamIn);
     istream.moveToTime(Utils::TimeStamp(1));
     istream >> v;
-    OP_INFO("logicalRange = {}, accessibleRange = {}, localRange = {}, padding = {}",
-            v.logicalRange.toString(), v.accessibleRange.toString(), v.localRange.toString(), v.padding);
-    OP_INFO("localReadableRange = {}", u.getLocalReadableRange().toString());
 
     rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) {
-        OP_INFO("{}", i);
         ASSERT_EQ(v.evalAt(i), u.evalAt(i));
     });
 }
@@ -108,7 +108,5 @@ TEST_F(H5RWMPITest, ReadAfterWriteInEqualDim) {
     Utils::H5Stream istream("./u_ieq.h5", StreamIn);
     istream >> v;
     istream.close();
-    OP_INFO("logicalRange = {}, localRange = {}, padding = {}", v.logicalRange.toString(),
-            v.localRange.toString(), v.padding);
     rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) { ASSERT_EQ(v.evalAt(i), u.evalAt(i)); });
 }
