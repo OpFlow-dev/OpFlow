@@ -90,9 +90,7 @@ TEST_F(H5RWMPITest, ReadAtTime) {
     istream.moveToTime(Utils::TimeStamp(1));
     istream >> v;
 
-    rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) {
-        ASSERT_EQ(v.evalAt(i), u.evalAt(i));
-    });
+    rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) { ASSERT_EQ(v.evalAt(i), u.evalAt(i)); });
 }
 
 TEST_F(H5RWMPITest, ReadAfterWriteInEqualDim) {
