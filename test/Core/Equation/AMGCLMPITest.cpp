@@ -115,3 +115,21 @@ TEST_F(AMGCLMPITest, AMGCLUnifiedSolveGMRES) {
                   params);
     ASSERT_TRUE(check_solution(2e-8));
 }
+
+TEST_F(AMGCLMPITest, AMGCLHandlerSolveGMRES) {
+    this->reset_case(0.5, 0.5);
+    using DBackend = amgcl::backend::builtin<double>;
+    using Solver = amgcl::mpi::make_solver<
+            amgcl::mpi::amg<DBackend, amgcl::mpi::coarsening::smoothed_aggregation<DBackend>,
+                            amgcl::mpi::relaxation::spai0<DBackend>>,
+            amgcl::mpi::solver::gmres<DBackend>>;
+    IJSolverParams<Solver> params;
+    params.verbose = true;
+    OP_INFO("Solve poisson equation with AMGCL");
+    auto handler = makeEqnSolveHandler<Solver>(poisson_eqn(), p,
+                                               DS::BlockedMDRangeMapper<2> {strategy->getSplitMap(
+                                                       p.getMesh().getRange(), getGlobalParallelPlan())},
+                                               params);
+    handler->solve();
+    ASSERT_TRUE(check_solution(2e-8));
+}
