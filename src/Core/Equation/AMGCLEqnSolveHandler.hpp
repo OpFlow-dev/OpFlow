@@ -88,8 +88,11 @@ namespace OpFlow {
         void generateAb() override {
             mat = CSRMatrixGenerator::generate(*st_holder, mapper, pin);
             if (params[0].dumpPath) {
-                OP_INFO("Dump mat to {}", params[0].dumpPath.value());
+#ifdef OPFLOW_WITH_MPI
+                std::ofstream of(params[0].dumpPath.value() + fmt::format(".rank{}", getWorkerId()));
+#else
                 std::ofstream of(params[0].dumpPath.value());
+#endif
                 of << mat.toString(true);
             }
         }
@@ -128,7 +131,6 @@ namespace OpFlow {
             if (firstRun) {
                 generateAb();
                 initx();
-                OP_INFO("Generate matrix and rhs");
                 if (staticMat) state = solver.solve_dy(mat, x, params[0].p, params[0].bp, params[0].verbose);
                 else
                     state = AMGCLBackend<S, Real>::solve(mat, x, params[0].p, params[0].bp,
