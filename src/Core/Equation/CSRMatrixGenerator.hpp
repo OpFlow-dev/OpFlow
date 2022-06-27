@@ -51,6 +51,8 @@ namespace OpFlow {
             auto commStencil = s.comm_stencils[iTarget];
             auto& uniEqn = s.template getEqnExpr<iTarget>();
             auto local_range = target->getLocalWritableRange();
+            // shortcut for empty range case
+            if (local_range.empty()) return mat;
             DS::MDRangeMapper local_mapper(local_range);
             // prepare: evaluate the common stencil & pre-fill the arrays
             int stencil_size = commStencil.pad.size() * 1.5;
