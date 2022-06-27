@@ -388,3 +388,48 @@ TEST_F(CSRMatrixGeneratorMPITest, XFaceHelmholtz) {
         ASSERT_TRUE(true);
     }
 }
+
+TEST_F(CSRMatrixGeneratorMPITest, XFaceHelmholtz_Periodic) {
+    u = ExprBuilder<Field>()
+                .setMesh(m)
+                .setName("u")
+                .setBC(0, DimPos::start, BCType::Periodic, 0.)
+                .setBC(0, DimPos::end, BCType::Periodic, 0.)
+                .setBC(1, DimPos::start, BCType::Periodic, 0.)
+                .setBC(1, DimPos::end, BCType::Periodic, 0.)
+                .setExt(1)
+                .setPadding(1)
+                .setSplitStrategy(strategy)
+                .setLoc({LocOnMesh::Corner, LocOnMesh::Center})
+                .build();
+    
+    auto eqn = makeEqnHolder(std::forward_as_tuple(simple_helmholtz()), std::forward_as_tuple(u));
+    auto st = makeStencilHolder(eqn);
+    auto mapper = DS::BlockedMDRangeMapper<2>(u.getLocalWritableRange());
+    auto mat = CSRMatrixGenerator::generate<0>(st, mapper, false);
+    OP_INFO("u.localRange = {}", u.localRange.toString());
+
+    auto mat_global = gather_mat(mat);
+    OP_MPI_MASTER_INFO("\n{}", mat_global.toString());
+
+    if (getWorkerId() == 0) {
+        auto u_local = ExprBuilder<Field>()
+                               .setMesh(m)
+                               .setName("u")
+                               .setBC(0, DimPos::start, BCType::Periodic, 0.)
+                               .setBC(0, DimPos::end, BCType::Periodic, 0.)
+                               .setBC(1, DimPos::start, BCType::Periodic, 0.)
+                               .setBC(1, DimPos::end, BCType::Periodic, 0.)
+                               .setExt(1)
+                               .setLoc({LocOnMesh::Corner, LocOnMesh::Center})
+                               .build();
+        auto eqn_local
+                = makeEqnHolder(std::forward_as_tuple(simple_helmholtz()), std::forward_as_tuple(u_local));
+        auto st_local = makeStencilHolder(eqn_local);
+        auto mat_local = CSRMatrixGenerator::generate<0>(st_local, mapper, false);
+        OP_MPI_MASTER_INFO("\n{}", mat_local.toString());
+        assert_mat_eq(mat_global, mat_local);
+    } else {
+        ASSERT_TRUE(true);
+    }
+}
