@@ -28,20 +28,41 @@ namespace OpFlow::DS {
         explicit ColoredBlockedMDRangeMapper(const std::vector<Range<dim>>& r, auto&&... rs)
             : ranges({r, rs...}) {
             init_mappers();
+            init_offset();
+        }
+
+        explicit ColoredBlockedMDRangeMapper(const Range<dim>& r, auto&&... rs) : localRanges({r, rs...}) {
+#ifdef OPFLOW_WITH_MPI
+            init_mappers_mpi();
+#else
+            ranges.resize(1);
+            ranges[0] = localRanges;
+            init_mappers();
+#endif
+            init_offset();
+        }
+
+    private:
+        void init_offset() {
+            // note: offset begins with index 1, which is due to that the color starts with 1
+            offset.resize(mappers.size() + 1);
+            offset[0] = offset[1] = 0;
+            for (int i = 2; i < offset.size(); ++i) { offset[i] = offset[i - 1] + mappers[i - 2].count(); }
         }
 
         void init_mappers() {
-            // note: offset begins with index 1, which is due to that the color starts with 1
-            offset.resize(ranges.size() + 1);
-            offset[0] = offset[1] = 0;
-            for (int i = 2; i < offset.size(); ++i) {
-                int counts = 0;
-                for (const auto& r : ranges[i - 2]) { counts += r.count(); }
-                offset[i] = offset[i - 1] + counts;
-            }
             for (const auto& r : ranges) { mappers.template emplace_back(r); }
         }
 
+        void init_mappers_mpi() {
+#ifdef OPFLOW_WITH_MPI
+            for (const auto& r : localRanges) { mappers.template emplace_back(r); }
+#else
+            init_mappers();
+#endif
+        }
+
+    public:
         auto operator()(const ColoredIndex<MDIndex<dim>>& idx) const {
             return mappers[idx.color](idx) + offset[idx.color + 1];
         }
@@ -49,6 +70,7 @@ namespace OpFlow::DS {
         auto operator()(const MDIndex<dim>& idx, int i) const { return mappers[i](idx); }
 
         std::vector<std::vector<Range<dim>>> ranges;
+        std::vector<Range<dim>> localRanges;
         std::vector<BlockedMDRangeMapper<dim>> mappers;
         std::vector<int> offset;
     };
