@@ -27,7 +27,7 @@ namespace OpFlow::DS {
         }
         explicit BlockedMDRangeMapper(const Range<d>& range) {
 #ifdef OPFLOW_WITH_MPI
-            if (getWorkerCount() > 0) {
+            if (getWorkerCount() > 1) {
                 _ranges.resize(getWorkerCount());
                 _ranges[getWorkerId()] = range;
                 std::vector<std::array<int, d>> _starts(_ranges.size()), _ends(_ranges.size()),
@@ -78,6 +78,8 @@ namespace OpFlow::DS {
             return ret;
         }
 
+        int count() const { return _offset.back(); }
+
         int operator()(const ColoredIndex<MDIndex<d>>& idx) const {
             // todo: color is ignored here. check this out
             return this->operator()(MDIndex<d> {idx});
@@ -92,9 +94,9 @@ namespace OpFlow::DS {
             {
                 auto end = std::remove_if(_ranges.begin(), _ranges.end(),
                                        [](const Range<d>& r) { return r.empty(); });
-                _ranges.erase(end);
+                _ranges.erase(end, _ranges.end());
             }
-            _offset.resize(_ranges.size());
+            _offset.resize(_ranges.size() + 1);
             _offset[0] = 0;
             for (auto i = 1; i < _offset.size(); ++i) {
                 _offset[i] = _offset[i - 1] + _ranges[i - 1].count();

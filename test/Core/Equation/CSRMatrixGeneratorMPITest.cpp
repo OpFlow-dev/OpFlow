@@ -126,10 +126,8 @@ TEST_F(CSRMatrixGeneratorMPITest, SimplePoisson) {
 
     auto eqn = makeEqnHolder(std::forward_as_tuple(simple_poisson()), std::forward_as_tuple(p));
     auto st = makeStencilHolder(eqn);
-    auto mat = CSRMatrixGenerator::generate<0>(st,
-                                               DS::BlockedMDRangeMapper<2>(strategy->getSplitMap(
-                                                       p.getMesh().getRange(), getGlobalParallelPlan())),
-                                               false);
+    auto mapper = DS::BlockedMDRangeMapper<2> {p.getLocalWritableRange()};
+    auto mat = CSRMatrixGenerator::generate<0>(st, mapper, false);
     auto mat_global = gather_mat(mat);
 
     if (getWorkerId() == 0) {
@@ -146,11 +144,7 @@ TEST_F(CSRMatrixGeneratorMPITest, SimplePoisson) {
         auto eqn_local
                 = makeEqnHolder(std::forward_as_tuple(simple_poisson()), std::forward_as_tuple(p_local));
         auto st_local = makeStencilHolder(eqn_local);
-        auto mat_local = CSRMatrixGenerator::generate<0>(
-                st_local,
-                DS::BlockedMDRangeMapper<2>(
-                        strategy->getSplitMap(p_local.getMesh().getRange(), getGlobalParallelPlan())),
-                false);
+        auto mat_local = CSRMatrixGenerator::generate<0>(st_local, mapper, false);
 
         assert_mat_eq(mat_global, mat_local);
     } else {
@@ -174,10 +168,8 @@ TEST_F(CSRMatrixGeneratorMPITest, SimplePoisson_Neum) {
 
     auto eqn = makeEqnHolder(std::forward_as_tuple(simple_poisson()), std::forward_as_tuple(p));
     auto st = makeStencilHolder(eqn);
-    auto mat = CSRMatrixGenerator::generate<0>(st,
-                                               DS::BlockedMDRangeMapper<2>(strategy->getSplitMap(
-                                                       p.getMesh().getRange(), getGlobalParallelPlan())),
-                                               true);
+    auto mapper = DS::BlockedMDRangeMapper<2> {p.getLocalWritableRange()};
+    auto mat = CSRMatrixGenerator::generate<0>(st, mapper, true);
 
     auto mat_global = gather_mat(mat);
 
@@ -195,11 +187,7 @@ TEST_F(CSRMatrixGeneratorMPITest, SimplePoisson_Neum) {
         auto eqn_local
                 = makeEqnHolder(std::forward_as_tuple(simple_poisson()), std::forward_as_tuple(p_local));
         auto st_local = makeStencilHolder(eqn_local);
-        auto mat_local
-                = CSRMatrixGenerator::generate<0>(st_local,
-                                                  DS::BlockedMDRangeMapper<2>(strategy->getSplitMap(
-                                                          p.getMesh().getRange(), getGlobalParallelPlan())),
-                                                  true);
+        auto mat_local = CSRMatrixGenerator::generate<0>(st_local, mapper, true);
         assert_mat_eq(mat_global, mat_local);
     } else {
         ASSERT_TRUE(true);
@@ -222,10 +210,8 @@ TEST_F(CSRMatrixGeneratorMPITest, SimplePoisson_Periodic) {
 
     auto eqn = makeEqnHolder(std::forward_as_tuple(simple_poisson()), std::forward_as_tuple(p));
     auto st = makeStencilHolder(eqn);
-    auto mat = CSRMatrixGenerator::generate<0>(st,
-                                               DS::BlockedMDRangeMapper<2>(strategy->getSplitMap(
-                                                       p.getMesh().getRange(), getGlobalParallelPlan())),
-                                               true);
+    auto mapper = DS::BlockedMDRangeMapper<2> {p.getLocalWritableRange()};
+    auto mat = CSRMatrixGenerator::generate<0>(st, mapper, true);
 
     auto mat_global = gather_mat(mat);
 
@@ -243,11 +229,7 @@ TEST_F(CSRMatrixGeneratorMPITest, SimplePoisson_Periodic) {
         auto eqn_local
                 = makeEqnHolder(std::forward_as_tuple(simple_poisson()), std::forward_as_tuple(p_local));
         auto st_local = makeStencilHolder(eqn_local);
-        auto mat_local
-                = CSRMatrixGenerator::generate<0>(st_local,
-                                                  DS::BlockedMDRangeMapper<2>(strategy->getSplitMap(
-                                                          p.getMesh().getRange(), getGlobalParallelPlan())),
-                                                  true);
+        auto mat_local = CSRMatrixGenerator::generate<0>(st_local, mapper, true);
         assert_mat_eq(mat_global, mat_local);
     } else {
         ASSERT_TRUE(true);
@@ -278,9 +260,7 @@ TEST_F(CSRMatrixGeneratorMPITest, SimplePoisson_2Eqn) {
                     }),
             std::forward_as_tuple(p, p));
     auto st = makeStencilHolder(eqn);
-    DS::ColoredBlockedMDRangeMapper<2> mapper {
-            strategy->getSplitMap(p.getMesh().getRange(), getGlobalParallelPlan()),
-            strategy->getSplitMap(p.getMesh().getRange(), getGlobalParallelPlan())};
+    DS::ColoredBlockedMDRangeMapper<2> mapper {p.getLocalWritableRange(), p.getLocalWritableRange()};
     std::vector<bool> pin {false, false};
 
     auto mat = CSRMatrixGenerator::generate(st, mapper, pin);
@@ -323,9 +303,7 @@ TEST_F(CSRMatrixGeneratorMPITest, SimplePoisson_Neum_2Eqn) {
                     }),
             std::forward_as_tuple(p, p));
     auto st = makeStencilHolder(eqn);
-    DS::ColoredBlockedMDRangeMapper<2> mapper {
-            strategy->getSplitMap(p.getMesh().getRange(), getGlobalParallelPlan()),
-            strategy->getSplitMap(p.getMesh().getRange(), getGlobalParallelPlan())};
+    DS::ColoredBlockedMDRangeMapper<2> mapper {p.getLocalWritableRange(), p.getLocalWritableRange()};
     std::vector<bool> pin {true, true};
 
     auto mat = CSRMatrixGenerator::generate(st, mapper, pin);
@@ -362,10 +340,8 @@ TEST_F(CSRMatrixGeneratorMPITest, XFaceHelmholtz) {
     auto st = makeStencilHolder(eqn);
     auto mapper = DS::BlockedMDRangeMapper<2>(u.getLocalWritableRange());
     auto mat = CSRMatrixGenerator::generate<0>(st, mapper, false);
-    OP_INFO("u.localRange = {}", u.localRange.toString());
 
     auto mat_global = gather_mat(mat);
-    OP_MPI_MASTER_INFO("\n{}", mat_global.toString());
 
     if (getWorkerId() == 0) {
         auto u_local = ExprBuilder<Field>()
@@ -382,7 +358,6 @@ TEST_F(CSRMatrixGeneratorMPITest, XFaceHelmholtz) {
                 = makeEqnHolder(std::forward_as_tuple(simple_helmholtz()), std::forward_as_tuple(u_local));
         auto st_local = makeStencilHolder(eqn_local);
         auto mat_local = CSRMatrixGenerator::generate<0>(st_local, mapper, false);
-        OP_MPI_MASTER_INFO("\n{}", mat_local.toString());
         assert_mat_eq(mat_global, mat_local);
     } else {
         ASSERT_TRUE(true);
@@ -402,15 +377,13 @@ TEST_F(CSRMatrixGeneratorMPITest, XFaceHelmholtz_Periodic) {
                 .setSplitStrategy(strategy)
                 .setLoc({LocOnMesh::Corner, LocOnMesh::Center})
                 .build();
-    
+
     auto eqn = makeEqnHolder(std::forward_as_tuple(simple_helmholtz()), std::forward_as_tuple(u));
     auto st = makeStencilHolder(eqn);
     auto mapper = DS::BlockedMDRangeMapper<2>(u.getLocalWritableRange());
     auto mat = CSRMatrixGenerator::generate<0>(st, mapper, false);
-    OP_INFO("u.localRange = {}", u.localRange.toString());
 
     auto mat_global = gather_mat(mat);
-    OP_MPI_MASTER_INFO("\n{}", mat_global.toString());
 
     if (getWorkerId() == 0) {
         auto u_local = ExprBuilder<Field>()
@@ -427,7 +400,6 @@ TEST_F(CSRMatrixGeneratorMPITest, XFaceHelmholtz_Periodic) {
                 = makeEqnHolder(std::forward_as_tuple(simple_helmholtz()), std::forward_as_tuple(u_local));
         auto st_local = makeStencilHolder(eqn_local);
         auto mat_local = CSRMatrixGenerator::generate<0>(st_local, mapper, false);
-        OP_MPI_MASTER_INFO("\n{}", mat_local.toString());
         assert_mat_eq(mat_global, mat_local);
     } else {
         ASSERT_TRUE(true);
