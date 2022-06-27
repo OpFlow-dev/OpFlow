@@ -201,20 +201,51 @@ namespace OpFlow {
                 this->neighbors.clear();
             } else {
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
-                // todo: periodic bc
-                int rank;
-                MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+                int rank = getWorkerId();
                 this->neighbors.clear();
+                std::array<bool, dim> is_periodic;
+                for (int d = 0; d < dim; ++d) {
+                    is_periodic[d] = this->bc[d].start->getBCType() == BCType::Periodic;
+                }
+                int range_count = Math::int_pow(3, std::count(is_periodic.begin(), is_periodic.end(), true));
                 for (auto i = 0; i < this->splitMap.size(); ++i) {
-                    if (i == rank) continue;
-                    // test if two range intersect
-                    auto padded_my_range = this->localRange.getInnerRange(-this->padding);
-                    auto padded_other_range = this->splitMap[i].getInnerRange(-this->padding);
-                    auto p_my_intersect_other = DS::commonRange(padded_my_range, this->splitMap[i]);
-                    auto p_other_intersect_my = DS::commonRange(padded_other_range, this->localRange);
-                    OP_ASSERT(p_my_intersect_other.count() == p_other_intersect_my.count());
-                    if (p_my_intersect_other.count() > 0) {
-                        this->neighbors.emplace_back(i, this->splitMap[i]);
+                    //if (i == rank) continue;
+
+                    std::vector<typename internal::ExprTrait<CartesianField>::range_type> test_ranges;
+                    auto mesh_range_extends = this->mesh.getRange().getExtends();
+                    for (int k = 0; k < range_count; ++k) {
+                        auto r = this->splitMap[i];
+                        for (int d = 0; d < dim; ++d) {
+                            int direction
+                                    = (k % Math::int_pow(3, d + 1)) / Math::int_pow(3, d) - 1;// -1, 0, 1
+                            switch (direction) {
+                                case -1:
+                                    r.start[d] -= mesh_range_extends[d] - 1;
+                                    r.end[d] -= mesh_range_extends[d] - 1;
+                                    break;
+                                default:
+                                case 0:
+                                    break;
+                                case 1:
+                                    r.start[d] += mesh_range_extends[d] - 1;
+                                    r.end[d] += mesh_range_extends[d] - 1;
+                                    break;
+                            }
+                        }
+                        if (!(i == rank && r == this->localRange))
+                            test_ranges.template emplace_back(std::move(r));
+                    }
+                    // test all shifted ranges
+                    for (auto& r : test_ranges) {
+                        auto send_range = DS::commonRange(this->localRange, r.getInnerRange(-this->padding));
+                        auto recv_range = DS::commonRange(this->localRange.getInnerRange(-this->padding), r);
+                        if (send_range.count() > 0) {
+                            OP_DEBUG("local range = {}, other range = {}, send range = {}, recv range = {}",
+                                    this->localRange.toString(), r.toString(), send_range.toString(),
+                                    recv_range.toString());
+                            this->neighbors.emplace_back(i, send_range, recv_range);
+                            //break;
+                        }
                     }
                 }
 #else
@@ -496,22 +527,25 @@ namespace OpFlow {
                 std::vector<std::vector<D>> send_buff, recv_buff;
                 std::vector<MPI_Request> requests;
                 auto padded_my_range = this->localRange.getInnerRange(-this->padding);
-                for (const auto& [other_rank, range] : this->neighbors) {
+                for (const auto& [other_rank, send_range, recv_range] : this->neighbors) {
                     // calculate the intersect range to be send
-                    auto send_range = DS::commonRange(range.getInnerRange(-this->padding), this->localRange);
                     // pack data into send buffer
                     send_buff.emplace_back();
                     requests.emplace_back();
-                    rangeFor_s(send_range, [&](auto&& i) { send_buff.back().push_back(this->evalAt(i)); });
+                    rangeFor_s(send_range, [&](auto&& i) {
+                        OP_DEBUG("Send {} = {}", i, this->operator()(i));
+                        send_buff.back().push_back(this->evalAt(i));
+                    });
+                    OP_DEBUG("Send range {} from rank {} to rank {}", send_range.toString(), rank, other_rank);
                     MPI_Isend(send_buff.back().data(), send_buff.back().size() * sizeof(D) / sizeof(char),
                               MPI_CHAR, other_rank, rank, MPI_COMM_WORLD, &requests.back());
 
                     // calculate the intersect range to be received
-                    auto recv_range = DS::commonRange(range, this->localRange.getInnerRange(-this->padding));
                     recv_buff.emplace_back();
                     requests.emplace_back();
                     recv_buff.back().resize(recv_range.count());
                     // issue receive request
+                    OP_DEBUG("Recv range {} from rank {} to rank {}", recv_range.toString(), other_rank, rank);
                     MPI_Irecv(recv_buff.back().data(), recv_buff.back().size() * sizeof(D) / sizeof(char),
                               MPI_CHAR, other_rank, other_rank, MPI_COMM_WORLD, &requests.back());
                 }
@@ -525,10 +559,13 @@ namespace OpFlow {
                 }
                 // unpack receive buffer
                 auto recv_iter = recv_buff.begin();
-                for (const auto& [other_rank, range] : this->neighbors) {
+                for (const auto& [other_rank, send_range, recv_range] : this->neighbors) {
                     auto _iter = recv_iter->begin();
-                    auto recv_range = DS::commonRange(this->localRange.getInnerRange(-this->padding), range);
-                    rangeFor_s(recv_range, [&](auto&& i) { this->operator()(i) = *_iter++; });
+                    OP_DEBUG("Unpacking range {}", recv_range.toString());
+                    rangeFor_s(recv_range, [&](auto&& i) {
+                        OP_DEBUG("Unpack {} = {}", i, *_iter);
+                        this->operator()(i) = *_iter++;
+                    });
                     ++recv_iter;
                 }
 #else
@@ -555,7 +592,8 @@ namespace OpFlow {
         }
 
         template <typename Other>
-        requires(!std::same_as<Other, CartesianField>) bool containsImpl_final(const Other& o) const {
+            requires(!std::same_as<Other, CartesianField>) bool
+        containsImpl_final(const Other& o) const {
             return false;
         }
 
@@ -638,10 +676,13 @@ namespace OpFlow {
 
         // set a functor bc
         template <typename F>
-        requires requires(F f) {
-            { f(std::declval<typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>()) }
-            ->std::convertible_to<typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
-        }
+            requires requires(F f) {
+                         {
+                             f(std::declval<
+                                     typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>())
+                             } -> std::convertible_to<
+                                     typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
+                     }
         auto& setBC(int d, DimPos pos, BCType type, F&& functor) {
             OP_ASSERT(d < dim);
             auto& targetBC = pos == DimPos::start ? f.bc[d].start : f.bc[d].end;
