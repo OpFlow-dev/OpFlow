@@ -30,7 +30,8 @@ namespace OpFlow::DS {
             if (getWorkerCount() > 0) {
                 _ranges.resize(getWorkerCount());
                 _ranges[getWorkerId()] = range;
-                std::vector<std::array<int, d>> _starts(_ranges.size()), _ends(_ranges.size()), _strides(_ranges.size());
+                std::vector<std::array<int, d>> _starts(_ranges.size()), _ends(_ranges.size()),
+                        _strides(_ranges.size());
                 _starts[getWorkerId()] = range.start;
                 _ends[getWorkerId()] = range.end;
                 _strides[getWorkerId()] = range.stride;
@@ -87,6 +88,12 @@ namespace OpFlow::DS {
 
     private:
         void calculateMultiplier() {
+            // remove all empty ranges as they are not numbered
+            {
+                auto end = std::remove_if(_ranges.begin(), _ranges.end(),
+                                       [](const Range<d>& r) { return r.empty(); });
+                _ranges.erase(end);
+            }
             _offset.resize(_ranges.size());
             _offset[0] = 0;
             for (auto i = 1; i < _offset.size(); ++i) {
