@@ -20,3 +20,6 @@ add_gmock(MDIndexTest ${CMAKE_CURRENT_SOURCE_DIR}/Index/MDIndexTest.cpp)
 
 # StencilPad
 add_gmock(StencilPadTest ${CMAKE_CURRENT_LIST_DIR}/StencilPadTest.cpp)
+
+# Mappers
+add_gmock(BlockedMDRangeMapperTest ${CMAKE_CURRENT_LIST_DIR}/Index/BlockedMDRangeMapperTest.cpp)
