@@ -78,14 +78,40 @@ namespace OpFlow::DS {
 
         [[nodiscard]] std::string toString() const {
             std::string ret;
-            for (int i : row) ret += fmt::format("{}, ", i);
-            ret += "\n";
-            for (int i : col) ret += fmt::format("{}, ", i);
-            ret += "\n";
-            for (double i : val) ret += fmt::format("{}, ", i);
-            ret += "\n";
-            for (double i : rhs) ret += fmt::format("{}, ", i);
-            ret += "\n";
+            int max_nnz_per_row = 0;
+            int max_rank_width = 0, max_col_width = 0, max_val_width = 0;
+            for (int i = 0; i < row.size() - 1; ++i) {
+                max_nnz_per_row = std::max(max_nnz_per_row, int(row[i + 1] - row[i]));
+            }
+            for (auto r : row) {
+                max_rank_width = std::max(max_rank_width, (int) fmt::formatted_size("{}", r));
+            }
+            for (auto c : col) {
+                max_col_width = std::max(max_col_width, (int) fmt::formatted_size("{}", c));
+            }
+            for (auto v : val) {
+                max_val_width = std::max(max_val_width, (int) fmt::formatted_size("{}", v));
+            }
+            std::string row_fmt = fmt::format("{{:>{}}}", max_rank_width);
+            std::string col_fmt = fmt::format("{{:>{}}}", max_col_width);
+            std::string val_fmt = fmt::format("{{:>{}}}", std::min(max_val_width, 10));
+            // note: we have to keep these temporary format strings, because fmt::runtime requires the format string to exist
+            std::string fmt_str_1 = fmt::format("row {}: [{}, {}] ", row_fmt, col_fmt, val_fmt);
+            std::string fmt_str_2 = fmt::format("[{}, {}] ", col_fmt, val_fmt);
+            std::string fmt_str_3 = fmt::format("rhs: {}\n", val_fmt);
+            auto fmt_1 = fmt::runtime(fmt_str_1);
+            auto fmt_2 = fmt::runtime(fmt_str_2);
+            auto fmt_3 = fmt::runtime(fmt_str_3);
+            for (int irow = 0; irow < row.size() - 1; ++irow) {
+                ret += fmt::format(fmt_1, irow, col[row[irow]], val[row[irow]]);
+                for (int icol = row[irow] + 1; icol < row[irow + 1]; ++icol) {
+                    ret += fmt::format(fmt_2, col[icol], val[icol]);
+                }
+                for (int icol = row[irow + 1]; icol < row[irow] + max_nnz_per_row; ++icol) {
+                    ret += std::string(fmt::formatted_size(fmt_2, 0, 1.0), ' ');
+                }
+                ret += fmt::format(fmt_3, rhs[irow]);
+            }
             return ret;
         }
 
