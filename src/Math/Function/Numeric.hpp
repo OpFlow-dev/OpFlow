@@ -93,9 +93,9 @@ namespace OpFlow::Math {
         return std::max(d, -d) > eps ? 0. : 1. / 2. / eps * (1 + std::cos(d * PI / eps));
     }
 
-    inline constexpr auto int_pow(int a, int n) {
+    inline constexpr auto int_pow(int a, unsigned int n) {
         auto ret = 1;
-        for (auto i = 0; i < n; ++i) ret *= a;
+        for (unsigned int i = 0; i < n; ++i) ret *= a;
         return ret;
     }
 
