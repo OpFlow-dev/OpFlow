@@ -92,25 +92,16 @@ namespace OpFlow::DS {
             for (auto v : val) {
                 max_val_width = std::max(max_val_width, (int) fmt::formatted_size("{}", v));
             }
-            std::string row_fmt = fmt::format("{{:>{}}}", max_rank_width);
-            std::string col_fmt = fmt::format("{{:>{}}}", max_col_width);
-            std::string val_fmt = fmt::format("{{:>{}}}", std::min(max_val_width, 10));
-            // note: we have to keep these temporary format strings, because fmt::runtime requires the format string to exist
-            std::string fmt_str_1 = fmt::format("row {}: [{}, {}] ", row_fmt, col_fmt, val_fmt);
-            std::string fmt_str_2 = fmt::format("[{}, {}] ", col_fmt, val_fmt);
-            std::string fmt_str_3 = fmt::format("rhs: {}\n", val_fmt);
-            auto fmt_1 = fmt::runtime(fmt_str_1);
-            auto fmt_2 = fmt::runtime(fmt_str_2);
-            auto fmt_3 = fmt::runtime(fmt_str_3);
+            max_val_width = std::min(max_val_width, 10);
             for (int irow = 0; irow < row.size() - 1; ++irow) {
-                ret += fmt::format(fmt_1, irow, col[row[irow]], val[row[irow]]);
+                ret += fmt::format("row {:>{}}: [{:>{}}, {:> {}.4E}] ", irow, max_rank_width, col[row[irow]], max_col_width, val[row[irow]], max_val_width);
                 for (int icol = row[irow] + 1; icol < row[irow + 1]; ++icol) {
-                    ret += fmt::format(fmt_2, col[icol], val[icol]);
+                    ret += fmt::format("[{:>{}}, {:> {}.4E}] ", col[icol], max_col_width, val[icol], max_val_width);
                 }
                 for (int icol = row[irow + 1]; icol < row[irow] + max_nnz_per_row; ++icol) {
-                    ret += std::string(fmt::formatted_size(fmt_2, 0, 1.0), ' ');
+                    ret += std::string(fmt::formatted_size("[{:>{}}, {:> {}.4E}] ", 0, max_col_width, 1.0, max_val_width), ' ');
                 }
-                ret += fmt::format(fmt_3, rhs[irow]);
+                ret += fmt::format("rhs: {:> {}.4E}\n", rhs[irow], max_val_width);
             }
             return ret;
         }
