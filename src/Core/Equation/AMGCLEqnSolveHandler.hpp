@@ -93,7 +93,7 @@ namespace OpFlow {
 #else
                 std::ofstream of(params[0].dumpPath.value());
 #endif
-                of << mat.toString(true);
+                of << mat.toString();
             }
         }
 
