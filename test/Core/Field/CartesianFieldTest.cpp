@@ -156,3 +156,23 @@ TEST_F(CartesianFieldTest, BuildAfterDeclear) {
     v = u;
     rangeFor_s(v.assignableRange, [&](auto&& i) { ASSERT_DOUBLE_EQ(v[i], u[i]); });
 }
+
+TEST_F(CartesianFieldTest, CenterPeriodicValueCheck) {
+    auto u = ExprBuilder<Field2>()
+                     .setMesh(m2)
+                     .setBC(0, OpFlow::DimPos::start, OpFlow::BCType::Periodic)
+                     .setBC(0, OpFlow::DimPos::end, OpFlow::BCType::Periodic)
+                     .setBC(1, OpFlow::DimPos::start, OpFlow::BCType::Periodic)
+                     .setBC(1, OpFlow::DimPos::end, OpFlow::BCType::Periodic)
+                     .setLoc({LocOnMesh::Center, LocOnMesh::Center})
+                     .setExt(1)
+                     .build();
+    rangeFor_s(u.getLocalWritableRange(), [&](auto&& i) {
+        u[i] = i[1] * 10 + i[0];
+    });
+    u.updatePadding();
+    rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) {
+        if (u[i] != (i[1] + 10) % 10 * 10 + (i[0] + 10) % 10) OP_ERROR("Not equal at {}", i);
+        ASSERT_DOUBLE_EQ(u[i], (i[1] + 10) % 10 * 10 + (i[0] + 10) % 10);
+    });
+}
