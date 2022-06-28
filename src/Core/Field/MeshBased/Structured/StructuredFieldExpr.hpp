@@ -27,6 +27,7 @@ namespace OpFlow {
         struct NeighborInfo {
             int rank;
             R send_range, recv_range;
+            int shift_code;
         };
     }
 

@@ -209,7 +209,6 @@ namespace OpFlow {
                 }
                 int range_count = Math::int_pow(3, std::count(is_periodic.begin(), is_periodic.end(), true));
                 for (auto i = 0; i < this->splitMap.size(); ++i) {
-                    std::vector<typename internal::ExprTrait<CartesianField>::range_type> test_ranges;
                     auto mesh_range_extends = this->mesh.getRange().getExtends();
                     for (int k = 0; k < range_count; ++k) {
                         auto r = this->splitMap[i];
@@ -230,23 +229,23 @@ namespace OpFlow {
                                     break;
                             }
                         }
-                        if (!(i == rank && r == this->localRange))
-                            test_ranges.template emplace_back(std::move(r));
-                    }
-                    // test all shifted ranges
-                    for (auto& r : test_ranges) {
-                        auto send_range = DS::commonRange(this->localRange, r.getInnerRange(-this->padding));
-                        auto recv_range = DS::commonRange(this->localRange.getInnerRange(-this->padding), r);
-                        if (send_range.count() > 0) {
-                            this->neighbors.emplace_back(i, send_range, recv_range);
+                        if (!(i == rank && r == this->localRange)) {
+                            auto send_range
+                                    = DS::commonRange(this->localRange, r.getInnerRange(-this->padding));
+                            auto recv_range
+                                    = DS::commonRange(this->localRange.getInnerRange(-this->padding), r);
+                            if (send_range.count() > 0) {
+                                this->neighbors.emplace_back(i, send_range, recv_range, k);
+                            }
                         }
                     }
-                }
 #else
                 OP_CRITICAL("MPI not provided.");
 #endif
+                }
             }
         }
+
         void updatePaddingImpl_final() {
             // step 0: update dirc bc for corner case
             for (int i = 0; i < dim; ++i) {
@@ -492,8 +491,7 @@ namespace OpFlow {
             }
 
             // step 2: update paddings by MPI communication
-            auto plan = getGlobalParallelPlan();
-            if (plan.singleNodeMode()) {
+            if (this->splitMap.size() == 1) {// no MPI or local field
                 // update along periodic dims
                 for (int i = 0; i < dim; ++i) {
                     if (this->bc[i].start && this->bc[i].start->getBCType() == BCType::Periodic) {
@@ -521,7 +519,9 @@ namespace OpFlow {
                 std::vector<std::vector<D>> send_buff, recv_buff;
                 std::vector<MPI_Request> requests;
                 auto padded_my_range = this->localRange.getInnerRange(-this->padding);
-                for (const auto& [other_rank, send_range, recv_range] : this->neighbors) {
+                auto mesh_range_extends = this->mesh.getRange().getExtends();
+
+                for (const auto& [other_rank, send_range, recv_range, code] : this->neighbors) {
                     // calculate the intersect range to be send
                     // pack data into send buffer
                     send_buff.emplace_back();
@@ -530,18 +530,43 @@ namespace OpFlow {
                         OP_DEBUG("Send {} = {}", i, this->operator()(i));
                         send_buff.back().push_back(this->evalAt(i));
                     });
-                    OP_DEBUG("Send range {} from rank {} to rank {}", send_range.toString(), rank, other_rank);
+                    OP_DEBUG("Send range {} from rank {} to rank {}", send_range.toString(), rank,
+                             other_rank);
+                    auto o_recv_range = send_range;
+                    // inverse the shift to get the recv range on the receiver side
+                    for (int d = 0; d < dim; ++d) {
+                        int direction
+                                = (code % Math::int_pow(3, d + 1)) / Math::int_pow(3, d);// 0, 1(+), 2(-)
+                        switch (direction) {
+                            case 1:
+                                o_recv_range.start[d] -= mesh_range_extends[d] - 1;
+                                o_recv_range.end[d] -= mesh_range_extends[d] - 1;
+                                break;
+                            default:
+                            case 0:
+                                break;
+                            case 2:
+                                o_recv_range.start[d] += mesh_range_extends[d] - 1;
+                                o_recv_range.end[d] += mesh_range_extends[d] - 1;
+                                break;
+                        }
+                    }
                     MPI_Isend(send_buff.back().data(), send_buff.back().size() * sizeof(D) / sizeof(char),
-                              MPI_CHAR, other_rank, rank, MPI_COMM_WORLD, &requests.back());
+                              MPI_CHAR, other_rank,
+                              std::hash<Meta::RealType<decltype(o_recv_range)>> {}(o_recv_range) % (1 << 24),
+                              MPI_COMM_WORLD, &requests.back());
 
                     // calculate the intersect range to be received
                     recv_buff.emplace_back();
                     requests.emplace_back();
                     recv_buff.back().resize(recv_range.count());
                     // issue receive request
-                    OP_DEBUG("Recv range {} from rank {} to rank {}", recv_range.toString(), other_rank, rank);
+                    OP_DEBUG("Recv range {} from rank {} to rank {}", recv_range.toString(), other_rank,
+                             rank);
                     MPI_Irecv(recv_buff.back().data(), recv_buff.back().size() * sizeof(D) / sizeof(char),
-                              MPI_CHAR, other_rank, other_rank, MPI_COMM_WORLD, &requests.back());
+                              MPI_CHAR, other_rank,
+                              std::hash<Meta::RealType<decltype(recv_range)>> {}(recv_range) % (1 << 24),
+                              MPI_COMM_WORLD, &requests.back());
                 }
                 // wait all communication done
                 std::vector<MPI_Status> status(requests.size());
@@ -553,7 +578,7 @@ namespace OpFlow {
                 }
                 // unpack receive buffer
                 auto recv_iter = recv_buff.begin();
-                for (const auto& [other_rank, send_range, recv_range] : this->neighbors) {
+                for (const auto& [other_rank, send_range, recv_range, code] : this->neighbors) {
                     auto _iter = recv_iter->begin();
                     OP_DEBUG("Unpacking range {}", recv_range.toString());
                     rangeFor_s(recv_range, [&](auto&& i) {
@@ -563,7 +588,7 @@ namespace OpFlow {
                     ++recv_iter;
                 }
 #else
-                OP_CRITICAL("MPI not provided.");
+            OP_CRITICAL("MPI not provided.");
 #endif
             }
         }
