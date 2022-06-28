@@ -10,8 +10,8 @@
 //
 //  ----------------------------------------------------------------------------
 
-#include <gmock/gmock.h>
 #include <OpFlow>
+#include <gmock/gmock.h>
 
 using namespace OpFlow;
 using namespace testing;
@@ -58,13 +58,11 @@ TEST_F(BlockedMDRangeMapperTest, XFaceMap) {
     info.nodeInfo.node_count = 3;
     auto plan = makeParallelPlan(info, ParallelIdentifier::DistributeMem);
     auto splitMap = strategy->getSplitMap(m.getRange(), plan);
-    for (const auto& m : splitMap) {
-        ranges.push_back(DS::commonRange(m, u.getLocalWritableRange()));
-    }
+    for (const auto& m : splitMap) { ranges.push_back(DS::commonRange(m, u.getLocalWritableRange())); }
     auto mapper = DS::BlockedMDRangeMapper<2>(ranges);
     // Block 2
-    ASSERT_EQ(mapper(DS::MDIndex<2>{1, 0}), 0);
+    ASSERT_EQ(mapper(DS::MDIndex<2> {1, 0}), 0);
     // Block 3
-    ASSERT_EQ(mapper(DS::MDIndex<2>{2, 0}), 4);
-    ASSERT_EQ(mapper(DS::MDIndex<2>{3, 0}), 5);
+    ASSERT_EQ(mapper(DS::MDIndex<2> {2, 0}), 4);
+    ASSERT_EQ(mapper(DS::MDIndex<2> {3, 0}), 5);
 }
