@@ -167,9 +167,7 @@ TEST_F(CartesianFieldTest, CenterPeriodicValueCheck) {
                      .setLoc({LocOnMesh::Center, LocOnMesh::Center})
                      .setExt(1)
                      .build();
-    rangeFor_s(u.getLocalWritableRange(), [&](auto&& i) {
-        u[i] = i[1] * 10 + i[0];
-    });
+    rangeFor_s(u.getLocalWritableRange(), [&](auto&& i) { u[i] = i[1] * 10 + i[0]; });
     u.updatePadding();
     rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) {
         if (u[i] != (i[1] + 10) % 10 * 10 + (i[0] + 10) % 10) OP_ERROR("Not equal at {}", i);

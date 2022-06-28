@@ -52,14 +52,6 @@ endif ()
 # ----------------------------------------------------------------------------
 # Compiler config
 # ----------------------------------------------------------------------------
-if (NOT CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 20)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-elseif (CMAKE_CXX_STANDARD LESS 20)
-    message(WARNING "OpFlow needs C++20 to compile. Changing the standard to C++20.")
-    set(CMAKE_CXX_STANDARD 20)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif ()
 if (NOT CMAKE_C_STANDARD)
     set(CMAKE_C_STANDARD 11)
     set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -175,6 +167,16 @@ target_include_directories(opflow INTERFACE
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/src>")
 
 # ----------------------------------------------------------------------------
+# Compile options
+# ----------------------------------------------------------------------------
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag(-std=c++20 c++20support)
+if (NOT c++20support)
+    message(FATAL_ERROR "OpFlow requires C++20 to compile.")
+endif ()
+target_compile_options(opflow INTERFACE -std=c++20)
+
+# ----------------------------------------------------------------------------
 # Use fmt package
 # ----------------------------------------------------------------------------
 if (OPFLOW_INSTALL)
@@ -260,7 +262,7 @@ if (OPFLOW_WITH_OPENMP)
     endif ()
     if (CMAKE_C_COMPILER_ID MATCHES "Clang")
         set(OpenMP_C "${CMAKE_C_COMPILER}")
-        set(OpenMP_C_FLAGS "-fopenmp=libomp -Wno-unused-command-line-argument")
+        set(OpenMP_C_FLAGS "-fopenmp=libomp -Wno-unused-command-line-argument -Wno-deprecated-pragma")
         set(OpenMP_C_LIB_NAMES "omp")
         set(OpenMP_omp_LIBRARY ${OpenMP_C_LIB_NAMES})
     endif ()

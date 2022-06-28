@@ -101,36 +101,34 @@ TEST_P(CartesianFieldMPITest, WithExtRangeCheck) {
 }
 
 TEST_F(CartesianFieldMPITest, PeriodicValueCheck) {
-    auto u = ExprBuilder<Field>().setMesh(m)
-        .setBC(0, OpFlow::DimPos::start, OpFlow::BCType::Periodic)
-        .setBC(0, OpFlow::DimPos::end, OpFlow::BCType::Periodic)
-        .setBC(1, OpFlow::DimPos::start, OpFlow::BCType::Periodic)
-        .setBC(1, OpFlow::DimPos::end, OpFlow::BCType::Periodic)
-        .setPadding(1)
-        .setExt(1)
-        .setSplitStrategy(strategy)
-        .setLoc({LocOnMesh::Center, LocOnMesh::Center})
-        .build();
-    auto u_local = ExprBuilder<Field>().setMesh(m)
+    auto u = ExprBuilder<Field>()
+                     .setMesh(m)
                      .setBC(0, OpFlow::DimPos::start, OpFlow::BCType::Periodic)
                      .setBC(0, OpFlow::DimPos::end, OpFlow::BCType::Periodic)
                      .setBC(1, OpFlow::DimPos::start, OpFlow::BCType::Periodic)
                      .setBC(1, OpFlow::DimPos::end, OpFlow::BCType::Periodic)
+                     .setPadding(1)
                      .setExt(1)
+                     .setSplitStrategy(strategy)
                      .setLoc({LocOnMesh::Center, LocOnMesh::Center})
                      .build();
+    auto u_local = ExprBuilder<Field>()
+                           .setMesh(m)
+                           .setBC(0, OpFlow::DimPos::start, OpFlow::BCType::Periodic)
+                           .setBC(0, OpFlow::DimPos::end, OpFlow::BCType::Periodic)
+                           .setBC(1, OpFlow::DimPos::start, OpFlow::BCType::Periodic)
+                           .setBC(1, OpFlow::DimPos::end, OpFlow::BCType::Periodic)
+                           .setExt(1)
+                           .setLoc({LocOnMesh::Center, LocOnMesh::Center})
+                           .build();
 
     auto mapper = DS::MDRangeMapper<2>(u.assignableRange);
-    rangeFor_s(u.getLocalWritableRange(), [&](auto&& i) {
-        u[i] = mapper(i);
-    });
-    rangeFor_s(u_local.getLocalWritableRange(), [&](auto&& i) {
-        u_local[i] = mapper(i);
-    });
+    rangeFor_s(u.getLocalWritableRange(), [&](auto&& i) { u[i] = mapper(i); });
+    rangeFor_s(u_local.getLocalWritableRange(), [&](auto&& i) { u_local[i] = mapper(i); });
     u.updatePadding();
     u_local.updatePadding();
     rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) {
-        if (getWorkerId() == 1){
+        if (getWorkerId() == 1) {
             if (u[i] != u_local[i]) OP_INFO("Not equal at {} {} != {}", i, u[i], u_local[i]);
             ASSERT_EQ(u[i], u_local[i]);
         }

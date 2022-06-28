@@ -93,7 +93,7 @@ namespace OpFlow::DS {
             // remove all empty ranges as they are not numbered
             {
                 auto end = std::remove_if(_ranges.begin(), _ranges.end(),
-                                       [](const Range<d>& r) { return r.empty(); });
+                                          [](const Range<d>& r) { return r.empty(); });
                 _ranges.erase(end, _ranges.end());
             }
             _offset.resize(_ranges.size() + 1);

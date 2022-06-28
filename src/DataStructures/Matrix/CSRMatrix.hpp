@@ -94,12 +94,16 @@ namespace OpFlow::DS {
             }
             max_val_width = std::min(max_val_width, 10);
             for (int irow = 0; irow < row.size() - 1; ++irow) {
-                ret += fmt::format("row {:>{}}: [{:>{}}, {:> {}.4E}] ", irow, max_rank_width, col[row[irow]], max_col_width, val[row[irow]], max_val_width);
+                ret += fmt::format("row {:>{}}: [{:>{}}, {:> {}.4E}] ", irow, max_rank_width, col[row[irow]],
+                                   max_col_width, val[row[irow]], max_val_width);
                 for (int icol = row[irow] + 1; icol < row[irow + 1]; ++icol) {
-                    ret += fmt::format("[{:>{}}, {:> {}.4E}] ", col[icol], max_col_width, val[icol], max_val_width);
+                    ret += fmt::format("[{:>{}}, {:> {}.4E}] ", col[icol], max_col_width, val[icol],
+                                       max_val_width);
                 }
                 for (int icol = row[irow + 1]; icol < row[irow] + max_nnz_per_row; ++icol) {
-                    ret += std::string(fmt::formatted_size("[{:>{}}, {:> {}.4E}] ", 0, max_col_width, 1.0, max_val_width), ' ');
+                    ret += std::string(fmt::formatted_size("[{:>{}}, {:> {}.4E}] ", 0, max_col_width, 1.0,
+                                                           max_val_width),
+                                       ' ');
                 }
                 ret += fmt::format("rhs: {:> {}.4E}\n", rhs[irow], max_val_width);
             }
