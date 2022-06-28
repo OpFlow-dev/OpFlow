@@ -16,9 +16,11 @@
 #include "Core/Macros.hpp"
 #include "DataStructures/Index/MDIndex.hpp"
 #include "Utils/Serializer/STDContainers.hpp"
+#include "Utils/xxHash.hpp"
 #include <array>
 #include <concepts>
 #include <cstddef>
+#include <functional>
 #include <oneapi/tbb/detail/_range_common.h>
 #include <vector>
 
@@ -221,10 +223,8 @@ namespace OpFlow::DS {
     };
 
     template <typename T>
-    concept isRange = requires {
-        T::dim;
-    }
-    &&std::is_same_v<std::remove_cvref_t<T>, Range<T::dim>>;
+    concept isRange = requires { T::dim; } && std::is_same_v < std::remove_cvref_t<T>,
+    Range < T::dim >> ;
 
     template <std::size_t dim1, std::size_t dim2>
     constexpr auto commonRange(const Range<dim1>& a, const Range<dim2>& b) {
@@ -327,4 +327,20 @@ namespace OpFlow::DS {
     }
 
 }// namespace OpFlow::DS
+
+namespace std {
+    template <std::size_t dim>
+    struct hash<OpFlow::DS::Range<dim>> {
+    public:
+        std::size_t operator()(const OpFlow::DS::Range<dim>& r) const noexcept {
+            std::array<int, 3 * dim> arr;
+            for (std::size_t i = 0; i < dim; ++i) {
+                arr[i] = r.start[i];
+                arr[i + dim] = r.end[i];
+                arr[i + 2 * dim] = r.stride[i];
+            }
+            return XXHash64::hash(arr.data(), sizeof(arr), 0);
+        }
+    };
+}// namespace std
 #endif//OPFLOW_RANGES_HPP
