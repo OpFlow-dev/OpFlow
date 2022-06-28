@@ -194,7 +194,9 @@ namespace OpFlow {
             this->updatePadding();
             return *this;
         }
+
         void prepareImpl_final() const {}
+
         void updateNeighbors() {
             if (this->splitMap.size() == 1) {
                 // single node mode
@@ -239,10 +241,10 @@ namespace OpFlow {
                             }
                         }
                     }
+                }
 #else
                 OP_CRITICAL("MPI not provided.");
 #endif
-                }
             }
         }
 
@@ -588,7 +590,7 @@ namespace OpFlow {
                     ++recv_iter;
                 }
 #else
-            OP_CRITICAL("MPI not provided.");
+                OP_CRITICAL("MPI not provided.");
 #endif
             }
         }
