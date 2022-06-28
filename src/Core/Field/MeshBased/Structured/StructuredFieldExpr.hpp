@@ -25,11 +25,14 @@ namespace OpFlow {
     namespace internal {
         template <typename R>
         struct NeighborInfo {
+            NeighborInfo() = default;
+            NeighborInfo(int rank, R send, R recv, int code)
+                : rank(rank), send_range(std::move(send)), recv_range(std::move(recv)), shift_code(code) {}
             int rank;
             R send_range, recv_range;
             int shift_code;
         };
-    }
+    }// namespace internal
 
     template <typename Derived>
     struct StructuredFieldExpr : MeshBasedFieldExpr<Derived> {
@@ -43,7 +46,8 @@ namespace OpFlow {
         mutable IndexType offset;               ///< index offset for distributed parallelization
         mutable int padding = 0;                ///< padding width for distributed parallelization
         mutable std::vector<RangeType> splitMap;///< Map of rank to range for distributed parallelization
-        mutable std::vector<internal::NeighborInfo<RangeType>> neighbors;///< Neighbor patches rank & range info
+        mutable std::vector<internal::NeighborInfo<RangeType>>
+                neighbors;///< Neighbor patches rank & range info
 
         StructuredFieldExpr() = default;
         StructuredFieldExpr(const StructuredFieldExpr& other)
