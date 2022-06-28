@@ -51,7 +51,7 @@ TEST_P(CartesianFieldMPITest, RangeCheck) {
     else
         builder.setBC(1, DimPos::end, bcs[3], 0.);
 
-    auto u = builder.setLoc(locs).setPadding(1).setSplitStrategy(strategy).build();
+    auto u = builder.setLoc(locs).setPadding(1).setExt(1).setSplitStrategy(strategy).build();
 
     auto mr = strategy->splitRange(m.getRange(), getGlobalParallelPlan());
     // mpi only affect localRange

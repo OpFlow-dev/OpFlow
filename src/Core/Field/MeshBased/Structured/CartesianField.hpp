@@ -209,17 +209,15 @@ namespace OpFlow {
                 }
                 int range_count = Math::int_pow(3, std::count(is_periodic.begin(), is_periodic.end(), true));
                 for (auto i = 0; i < this->splitMap.size(); ++i) {
-                    //if (i == rank) continue;
-
                     std::vector<typename internal::ExprTrait<CartesianField>::range_type> test_ranges;
                     auto mesh_range_extends = this->mesh.getRange().getExtends();
                     for (int k = 0; k < range_count; ++k) {
                         auto r = this->splitMap[i];
                         for (int d = 0; d < dim; ++d) {
                             int direction
-                                    = (k % Math::int_pow(3, d + 1)) / Math::int_pow(3, d) - 1;// -1, 0, 1
+                                    = (k % Math::int_pow(3, d + 1)) / Math::int_pow(3, d);// 0, 1(+), 2(-)
                             switch (direction) {
-                                case -1:
+                                case 2:
                                     r.start[d] -= mesh_range_extends[d] - 1;
                                     r.end[d] -= mesh_range_extends[d] - 1;
                                     break;
@@ -240,11 +238,7 @@ namespace OpFlow {
                         auto send_range = DS::commonRange(this->localRange, r.getInnerRange(-this->padding));
                         auto recv_range = DS::commonRange(this->localRange.getInnerRange(-this->padding), r);
                         if (send_range.count() > 0) {
-                            OP_DEBUG("local range = {}, other range = {}, send range = {}, recv range = {}",
-                                    this->localRange.toString(), r.toString(), send_range.toString(),
-                                    recv_range.toString());
                             this->neighbors.emplace_back(i, send_range, recv_range);
-                            //break;
                         }
                     }
                 }
