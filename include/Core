@@ -19,6 +19,7 @@
 
 // Interfaces
 #include "Core/Interfaces/Stringifiable.hpp"
+#include "Core/Interfaces/Serializable.hpp"
 
 // Mesh
 #include "Core/Mesh/MeshBase.hpp"
