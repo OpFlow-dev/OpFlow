@@ -10,8 +10,8 @@
 //
 // ----------------------------------------------------------------------------
 
-#ifndef OPFLOW_SERIALIZABLE_HPP
-#define OPFLOW_SERIALIZABLE_HPP
+#ifndef OPFLOW_STRINGIFIABLE_HPP
+#define OPFLOW_STRINGIFIABLE_HPP
 
 #include "Core/Macros.hpp"
 #include "Core/Meta.hpp"
@@ -21,7 +21,7 @@
 
 namespace OpFlow {
 
-    struct SerializableObj {
+    struct StringifiableObj {
     public:
         [[nodiscard]] std::string toString() const { return this->toString(0, ""); }
         [[nodiscard]] std::string toString(int n) const { return this->toString(n, "\t"); }
@@ -31,16 +31,16 @@ namespace OpFlow {
     };
 
     template <typename T>
-    concept Serializable = std::is_base_of_v<SerializableObj, T>;
+    concept Stringifiable = std::is_base_of_v<StringifiableObj, T>;
 }// namespace OpFlow
 
 namespace fmt {
     template <typename T>
-    requires std::derived_from<T, OpFlow::SerializableObj> struct formatter<T> : formatter<std::string> {
+    requires std::derived_from<T, OpFlow::StringifiableObj> struct formatter<T> : formatter<std::string> {
         template <typename FormatCtx>
-        auto format(const OpFlow::SerializableObj& a, FormatCtx& ctx) {
+        auto format(const OpFlow::StringifiableObj& a, FormatCtx& ctx) {
             return fmt::formatter<std::string>::format(a.toString(), ctx);
         }
     };
 }// namespace fmt
-#endif//OPFLOW_SERIALIZABLE_HPP
+#endif//OPFLOW_STRINGIFIABLE_HPP

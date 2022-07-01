@@ -13,7 +13,7 @@
 #ifndef OPFLOW_LEVELMDINDEX_HPP
 #define OPFLOW_LEVELMDINDEX_HPP
 
-#include "Core/Interfaces/Serializable.hpp"
+#include "Core/Interfaces/Stringifiable.hpp"
 #include "DataStructures/Index/MDIndex.hpp"
 #include "Math/Function/Numeric.hpp"
 #include "Utils/xxHash.hpp"
@@ -21,7 +21,7 @@
 
 namespace OpFlow::DS {
     template <std::size_t d>
-    struct LevelMDIndex : public SerializableObj {
+    struct LevelMDIndex : public StringifiableObj {
         std::array<int, d> idx;
         int l = 0, p = 0;
 
