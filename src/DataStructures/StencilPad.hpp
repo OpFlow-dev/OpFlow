@@ -14,7 +14,7 @@
 #define OPFLOW_STENCILPAD_HPP
 
 #include "Core/BasicDataTypes.hpp"
-#include "Core/Interfaces/Serializable.hpp"
+#include "Core/Interfaces/Stringifiable.hpp"
 #include "Core/Meta.hpp"
 #include <algorithm>
 #include <unordered_map>
@@ -125,7 +125,7 @@ namespace OpFlow::DS {
     };
 
     template <typename Idx, template <typename...> typename map_impl = fake_map>
-    struct StencilPad : public SerializableObj {
+    struct StencilPad : public StringifiableObj {
         map_impl<Idx, Real> pad {};
         Real bias = 0.;
 

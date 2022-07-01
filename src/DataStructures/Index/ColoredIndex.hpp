@@ -13,7 +13,7 @@
 #ifndef OPFLOW_COLOREDINDEX_HPP
 #define OPFLOW_COLOREDINDEX_HPP
 
-#include "Core/Interfaces/Serializable.hpp"
+#include "Core/Interfaces/Stringifiable.hpp"
 #include "DataStructures/Index/LevelMDIndex.hpp"
 #include "DataStructures/Index/MDIndex.hpp"
 #include "fmt/format.h"
@@ -24,7 +24,7 @@ namespace OpFlow::DS {
     struct ColoredIndex;
 
     template <std::size_t d>
-    struct ColoredIndex<MDIndex<d>> : public SerializableObj {
+    struct ColoredIndex<MDIndex<d>> : public StringifiableObj {
     protected:
         std::array<int, d> idx;
 
@@ -142,7 +142,7 @@ namespace OpFlow::DS {
     };
 
     template <std::size_t d>
-    struct ColoredIndex<LevelMDIndex<d>> : public SerializableObj {
+    struct ColoredIndex<LevelMDIndex<d>> : public StringifiableObj {
         std::array<int, d> idx;
         int l = 0, p = 0, color = 0;
 

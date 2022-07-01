@@ -13,7 +13,7 @@
 #ifndef OPFLOW_MDINDEX_HPP
 #define OPFLOW_MDINDEX_HPP
 
-#include "Core/Interfaces/Serializable.hpp"
+#include "Core/Interfaces/Stringifiable.hpp"
 #include "Core/Macros.hpp"
 #include "Utils/xxHash.hpp"
 #include "fmt/format.h"
@@ -28,7 +28,7 @@
 namespace OpFlow::DS {
 
     template <std::size_t d>
-    struct MDIndex : public SerializableObj {
+    struct MDIndex : public StringifiableObj {
     protected:
         std::array<int, d> idx;
 
