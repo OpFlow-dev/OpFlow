@@ -518,20 +518,40 @@ namespace OpFlow {
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
                 int rank;
                 MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+                // one of the following pairs of buffer is used
                 std::vector<std::vector<D>> send_buff, recv_buff;
+                std::vector<std::vector<std::byte>> send_buff_byte, recv_buff_byte;
+                std::vector<std::vector<int>> send_buff_offsets, recv_buff_offsets;
                 std::vector<MPI_Request> requests;
                 auto padded_my_range = this->localRange.getInnerRange(-this->padding);
                 auto mesh_range_extends = this->mesh.getRange().getExtends();
 
                 for (const auto& [other_rank, send_range, recv_range, code] : this->neighbors) {
                     // calculate the intersect range to be send
-                    // pack data into send buffer
-                    send_buff.emplace_back();
-                    requests.emplace_back();
-                    rangeFor_s(send_range, [&](auto&& i) {
-                        OP_DEBUG("Send {} = {}", i, this->operator()(i));
-                        send_buff.back().push_back(this->evalAt(i));
-                    });
+                    if constexpr (std::is_trivial_v<D> && std::is_standard_layout_v<D>) {
+                        // pack data into send buffer
+                        send_buff.emplace_back();
+                        requests.emplace_back();
+                        rangeFor_s(send_range, [&](auto&& i) {
+                            OP_DEBUG("Send {} = {}", i, this->operator()(i));
+                            send_buff.back().push_back(this->evalAt(i));
+                        });
+                    } else if constexpr (Serializable<D>) {
+                        // pack data into send buffer
+                        send_buff_byte.emplace_back();
+                        send_buff_offsets.emplace_back();
+                        send_buff_offsets.back().push_back(0);
+                        requests.emplace_back();
+                        rangeFor_s(send_range, [&](auto&& i) {
+                            OP_DEBUG("Send {} = {}", i, this->operator()(i));
+                            std::vector<std::byte> tmp = this->operator()(i).serialize();
+                            send_buff_byte.back().insert(send_buff_byte.back().end(), tmp.begin(), tmp.end());
+                            send_buff_offsets.back().push_back((int) send_buff_byte.back().size());
+                        });
+                    } else {
+                        OP_ERROR("Datatype cannot be serialized.");
+                        OP_ABORT;
+                    }
                     OP_DEBUG("Send range {} from rank {} to rank {}", send_range.toString(), rank,
                              other_rank);
                     auto o_recv_range = send_range;
@@ -553,22 +573,45 @@ namespace OpFlow {
                                 break;
                         }
                     }
-                    MPI_Isend(send_buff.back().data(), send_buff.back().size() * sizeof(D) / sizeof(char),
-                              MPI_CHAR, other_rank,
-                              std::hash<Meta::RealType<decltype(o_recv_range)>> {}(o_recv_range) % (1 << 24),
-                              MPI_COMM_WORLD, &requests.back());
+                    if constexpr (std::is_trivial_v<D> && std::is_standard_layout_v<D>)
+                        MPI_Isend(send_buff.back().data(), send_buff.back().size() * sizeof(D) / sizeof(char),
+                                  MPI_CHAR, other_rank,
+                                  std::hash<Meta::RealType<decltype(o_recv_range)>> {}(o_recv_range)
+                                          % (1 << 24),
+                                  MPI_COMM_WORLD, &requests.back());
+                    else if constexpr (Serializable<D>) {
+                        MPI_Isend(send_buff_offsets.back().data(), send_buff_offsets.back().size(), MPI_INT,
+                                  other_rank, rank, MPI_COMM_WORLD, &requests.back());
+                        requests.template emplace_back();
+                        MPI_Isend(send_buff_byte.back().data(), send_buff_byte.back().size(), MPI_BYTE,
+                                  other_rank,
+                                  std::hash<Meta::RealType<decltype(o_recv_range)>> {}(o_recv_range)
+                                          % (1 << 24),
+                                  MPI_COMM_WORLD, &requests.back());
+                    }
 
                     // calculate the intersect range to be received
-                    recv_buff.emplace_back();
                     requests.emplace_back();
-                    recv_buff.back().resize(recv_range.count());
                     // issue receive request
                     OP_DEBUG("Recv range {} from rank {} to rank {}", recv_range.toString(), other_rank,
                              rank);
-                    MPI_Irecv(recv_buff.back().data(), recv_buff.back().size() * sizeof(D) / sizeof(char),
-                              MPI_CHAR, other_rank,
-                              std::hash<Meta::RealType<decltype(recv_range)>> {}(recv_range) % (1 << 24),
-                              MPI_COMM_WORLD, &requests.back());
+                    if constexpr (std::is_trivial_v<D> && std::is_standard_layout_v<D>) {
+                        recv_buff.emplace_back();
+                        recv_buff.back().resize(recv_range.count());
+                        MPI_Irecv(recv_buff.back().data(), recv_buff.back().size() * sizeof(D) / sizeof(char),
+                                  MPI_CHAR, other_rank,
+                                  std::hash<Meta::RealType<decltype(recv_range)>> {}(recv_range) % (1 << 24),
+                                  MPI_COMM_WORLD, &requests.back());
+                    } else if constexpr (Serializable<D>) {
+                        recv_buff_offsets.emplace_back(recv_range.count() + 1);
+                        MPI_Recv(recv_buff_offsets.back().data(), recv_buff_offsets.back().size(), MPI_INT,
+                                 other_rank, other_rank, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                        recv_buff_byte.emplace_back(recv_buff_offsets.back().back());
+                        MPI_Irecv(recv_buff_byte.back().data(), recv_buff_byte.back().size(), MPI_BYTE,
+                                  other_rank,
+                                  std::hash<Meta::RealType<decltype(recv_range)>> {}(recv_range) % (1 << 24),
+                                  MPI_COMM_WORLD, &requests.back());
+                    }
                 }
                 // wait all communication done
                 std::vector<MPI_Status> status(requests.size());
@@ -579,15 +622,33 @@ namespace OpFlow {
                         OP_CRITICAL("Field {}'s updatePadding failed.", this->getName());
                 }
                 // unpack receive buffer
-                auto recv_iter = recv_buff.begin();
-                for (const auto& [other_rank, send_range, recv_range, code] : this->neighbors) {
-                    auto _iter = recv_iter->begin();
-                    OP_DEBUG("Unpacking range {}", recv_range.toString());
-                    rangeFor_s(recv_range, [&](auto&& i) {
-                        OP_DEBUG("Unpack {} = {}", i, *_iter);
-                        this->operator()(i) = *_iter++;
-                    });
-                    ++recv_iter;
+                if constexpr (std::is_trivial_v<D> && std::is_standard_layout_v<D>) {
+                    auto recv_iter = recv_buff.begin();
+                    for (const auto& [other_rank, send_range, recv_range, code] : this->neighbors) {
+                        auto _iter = recv_iter->begin();
+                        OP_DEBUG("Unpacking range {}", recv_range.toString());
+                        rangeFor_s(recv_range, [&](auto&& i) {
+                            OP_DEBUG("Unpack {} = {}", i, *_iter);
+                            this->operator()(i) = *_iter++;
+                        });
+                        ++recv_iter;
+                    }
+                } else if constexpr (Serializable<D>) {
+                    auto recv_iter = recv_buff_byte.begin();
+                    auto recv_offset_iter = recv_buff_offsets.begin();
+                    for (const auto& [other_rank, send_range, recv_range, code] : this->neighbors) {
+                        auto _iter = recv_iter->begin();
+                        auto _offset_iter = recv_offset_iter->begin();
+                        OP_DEBUG("Unpacking range {}", recv_range.toString());
+                        rangeFor_s(recv_range, [&](auto&& i) {
+                            OP_DEBUG("Unpack {} = {}", i, *_iter);
+                            this->operator()(i).deserialize(_iter + *_offset_iter,
+                                                            *(_offset_iter + 1) - *_offset_iter);
+                            _offset_iter++;
+                        });
+                        ++recv_iter;
+                        ++recv_offset_iter;
+                    }
                 }
 #else
                 OP_CRITICAL("MPI not provided.");
