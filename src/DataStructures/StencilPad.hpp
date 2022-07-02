@@ -15,6 +15,7 @@
 
 #include "Core/BasicDataTypes.hpp"
 #include "Core/Interfaces/Stringifiable.hpp"
+#include "Core/Interfaces/Serializable.hpp"
 #include "Core/Meta.hpp"
 #include <algorithm>
 #include <unordered_map>
@@ -125,11 +126,39 @@ namespace OpFlow::DS {
     };
 
     template <typename Idx, template <typename...> typename map_impl = fake_map>
-    struct StencilPad : public StringifiableObj {
+    struct StencilPad : public StringifiableObj, SerializableObj {
         map_impl<Idx, Real> pad {};
         Real bias = 0.;
 
         StencilPad() = default;
+        [[nodiscard]] std::vector<std::byte> serialize() const override {
+            std::vector<std::byte> ret;
+            ret.resize(sizeof(int) + pad.size() * (sizeof(Idx) + sizeof(Real)) + sizeof(Real));
+            std::byte* ptr = ret.data();
+            *(int*)ptr = pad.size();
+            int i = 0;
+            for (const auto& [k, v] : pad) {
+                *(Idx*)(ptr + sizeof(int) + i * (sizeof(Idx) + sizeof(Real))) = k;
+                *(Real*)(ptr + sizeof(int) + i * (sizeof(Idx) + sizeof(Real)) + sizeof(Idx)) = v;
+                i++;
+            }
+            *(Real*)(ptr + sizeof(int) + pad.size() * (sizeof(Idx) + sizeof(Real))) = bias;
+            return ret;
+        }
+
+        void deserialize(const std::byte* data, std::size_t size) override {
+            const std::byte* ptr = data;
+            int size_ = *(int*)ptr;
+            ptr += sizeof(int);
+            pad.clear();
+            for (int i = 0; i < size_; ++i) {
+                Idx k = *(Idx*)(ptr + i * (sizeof(Idx) + sizeof(Real)));
+                Real v = *(Real*)(ptr + i * (sizeof(Idx) + sizeof(Real)) + sizeof(Idx));
+                pad[k] = v;
+            }
+            bias = *(Real*)(ptr + size_ * (sizeof(Idx) + sizeof(Real)));
+        }
+
         explicit StencilPad(Real b) : bias(b) {}
 
         [[nodiscard]] std::string toString(int n, const std::string& prefix) const override {
