@@ -128,10 +128,39 @@ TEST_F(CartesianFieldMPITest, PeriodicValueCheck) {
     u.updatePadding();
     u_local.updatePadding();
     rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) {
-        if (getWorkerId() == 1) {
-            if (u[i] != u_local[i]) OP_INFO("Not equal at {} {} != {}", i, u[i], u_local[i]);
-            ASSERT_EQ(u[i], u_local[i]);
+        if (u[i] != u_local[i]) OP_INFO("Not equal at {} {} != {}", i, u[i], u_local[i]);
+        ASSERT_EQ(u[i], u_local[i]);
+    });
+}
+
+TEST_F(CartesianFieldMPITest, Serializable_PeriodicValueCheck) {
+    class Int : public virtual SerializableObj {
+    public:
+        int i = 0;
+        Int() = default;
+        explicit Int(int i) : i(i) {}
+        [[nodiscard]] std::vector<std::byte> serialize() const override {
+            return {reinterpret_cast<const std::byte*>(&i), reinterpret_cast<const std::byte*>(&i + 1)};
         }
+        void deserialize(const std::byte* data, std::size_t size) override {
+            std::memcpy(&i, data, sizeof(i));
+        }
+    };
+    auto s = std::make_shared<EvenSplitStrategy<CartesianField<Int, Mesh>>>();
+    auto u = ExprBuilder<CartesianField<Int, Mesh>>()
+                     .setMesh(m)
+                     .setPadding(1)
+                     .setName("uInt")
+                     .setLoc({LocOnMesh::Center, LocOnMesh::Center})
+                     .setSplitStrategy(s)
+                     .build();
+
+    auto mapper = DS::MDRangeMapper<2>(u.assignableRange);
+    rangeFor_s(u.getLocalWritableRange(), [&](auto&& i) { u[i] = Int {mapper(i)}; });
+    u.updatePadding();
+    rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) {
+        if (u[i].i != mapper(i)) OP_INFO("Not equal at {} {} != {}", i, u[i].i, mapper(i));
+        ASSERT_EQ(u[i].i, mapper(i));
     });
 }
 
