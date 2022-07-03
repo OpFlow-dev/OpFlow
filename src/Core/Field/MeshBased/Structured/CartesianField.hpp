@@ -207,7 +207,7 @@ namespace OpFlow {
                 this->neighbors.clear();
                 std::array<bool, dim> is_periodic;
                 for (int d = 0; d < dim; ++d) {
-                    is_periodic[d] = this->bc[d].start->getBCType() == BCType::Periodic;
+                    is_periodic[d] = this->bc[d].start && this->bc[d].start->getBCType() == BCType::Periodic;
                 }
                 int range_count = Math::int_pow(3, std::count(is_periodic.begin(), is_periodic.end(), true));
                 for (auto i = 0; i < this->splitMap.size(); ++i) {
@@ -268,227 +268,242 @@ namespace OpFlow {
             // start/end record the start/end index of last padding operation
             // the latter padding op pads the outer range of the former padding zone
             std::array<int, dim> start, end;
-            for (int i = 0; i < dim; ++i) {
-                // lower side
-                if (this->localRange.start[i] == this->accessibleRange.start[i] && this->bc[i].start
-                    && this->bc[i].start->getBCType() != BCType::Periodic) {
-                    start[i] = this->logicalRange.start[i];
-                    // current padding zone
-                    auto r = this->localRange;
-                    for (int j = 0; j < i; ++j) {
-                        r.start[j] = start[j];
-                        r.end[j] = end[j];
-                    }
-                    r.start[i] = start[i];
-                    r.end[i] = this->localRange.start[i];
-                    if (this->loc[i] == LocOnMesh::Corner) {
-                        switch (this->bc[i].start->getBCType()) {
-                            case BCType::Dirc:
-                                // mid-point rule
-                                rangeFor(r, [&](auto&& idx) {
-                                    auto bc_v = this->bc[i].start->evalAt(idx);
-                                    auto mirror_idx = idx;
-                                    mirror_idx[i] = 2 * this->localRange.start[i] - idx[i];
-                                    this->operator()(idx) = Math::Interpolator1D::intp(
-                                            this->mesh.x(i, this->localRange.start[i]), bc_v,
-                                            this->mesh.x(i, mirror_idx[i]), this->evalAt(mirror_idx),
-                                            this->mesh.x(i, idx[i]));
-                                });
-                                break;
-                            case BCType::Neum:
-                                // mid-diff = bc
-                                rangeFor(r, [&](auto&& idx) {
-                                    auto bc_v = this->bc[i].start->evalAt(idx);
-                                    auto mirror_idx = idx;
-                                    mirror_idx[i] = 2 * this->localRange.start[i] - idx[i];
-                                    this->operator()(idx)
-                                            = this->evalAt(mirror_idx)
-                                              + bc_v * (this->mesh.x(i, idx) - this->mesh.x(i, mirror_idx));
-                                });
-                                break;
-                            case BCType::Symm:
-                                rangeFor(r, [&](auto&& idx) {
-                                    auto mirror_idx = idx;
-                                    mirror_idx[i] = 2 * this->localRange.start[i] - idx[i];
-                                    this->operator()(idx) = this->evalAt(mirror_idx);
-                                });
-                                break;
-                            case BCType::ASymm:
-                                rangeFor(r, [&](auto&& idx) {
-                                    auto mirror_idx = idx;
-                                    mirror_idx[i] = 2 * this->localRange.start[i] - idx[i];
-                                    this->operator()(idx) = -this->evalAt(mirror_idx);
-                                });
-                                break;
-                            default:
-                                OP_ERROR("Cannot handle current bc padding: bc type {}",
-                                         this->bc[i].start->getTypeName());
-                                OP_ABORT;
+            if constexpr (requires(D v) {
+                              { v + v }
+                              ->std::same_as<D>;
+                              { v - v }
+                              ->std::same_as<D>;
+                              { v * 1.0 }
+                              ->std::same_as<D>;
+                              { v / 1.0 }
+                              ->std::same_as<D>;
+                          }) {
+                for (int i = 0; i < dim; ++i) {
+                    // lower side
+                    if (this->localRange.start[i] == this->accessibleRange.start[i] && this->bc[i].start
+                        && this->bc[i].start->getBCType() != BCType::Periodic) {
+                        start[i] = this->logicalRange.start[i];
+                        // current padding zone
+                        auto r = this->localRange;
+                        for (int j = 0; j < i; ++j) {
+                            r.start[j] = start[j];
+                            r.end[j] = end[j];
+                        }
+                        r.start[i] = start[i];
+                        r.end[i] = this->localRange.start[i];
+                        if (this->loc[i] == LocOnMesh::Corner) {
+                            switch (this->bc[i].start->getBCType()) {
+                                case BCType::Dirc:
+                                    // mid-point rule
+                                    rangeFor(r, [&](auto&& idx) {
+                                        auto bc_v = this->bc[i].start->evalAt(idx);
+                                        auto mirror_idx = idx;
+                                        mirror_idx[i] = 2 * this->localRange.start[i] - idx[i];
+                                        this->operator()(idx) = Math::Interpolator1D::intp(
+                                                this->mesh.x(i, this->localRange.start[i]), bc_v,
+                                                this->mesh.x(i, mirror_idx[i]), this->evalAt(mirror_idx),
+                                                this->mesh.x(i, idx[i]));
+                                    });
+                                    break;
+                                case BCType::Neum:
+                                    // mid-diff = bc
+                                    rangeFor(r, [&](auto&& idx) {
+                                        auto bc_v = this->bc[i].start->evalAt(idx);
+                                        auto mirror_idx = idx;
+                                        mirror_idx[i] = 2 * this->localRange.start[i] - idx[i];
+                                        this->operator()(idx) = this->evalAt(mirror_idx)
+                                                                + bc_v
+                                                                          * (this->mesh.x(i, idx)
+                                                                             - this->mesh.x(i, mirror_idx));
+                                    });
+                                    break;
+                                case BCType::Symm:
+                                    rangeFor(r, [&](auto&& idx) {
+                                        auto mirror_idx = idx;
+                                        mirror_idx[i] = 2 * this->localRange.start[i] - idx[i];
+                                        this->operator()(idx) = this->evalAt(mirror_idx);
+                                    });
+                                    break;
+                                case BCType::ASymm:
+                                    rangeFor(r, [&](auto&& idx) {
+                                        auto mirror_idx = idx;
+                                        mirror_idx[i] = 2 * this->localRange.start[i] - idx[i];
+                                        this->operator()(idx) = -this->evalAt(mirror_idx);
+                                    });
+                                    break;
+                                default:
+                                    OP_ERROR("Cannot handle current bc padding: bc type {}",
+                                             this->bc[i].start->getTypeName());
+                                    OP_ABORT;
+                            }
+                        } else {
+                            // center case
+                            switch (this->bc[i].start->getBCType()) {
+                                case BCType::Dirc:
+                                    // mid-point rule
+                                    rangeFor(r, [&](auto&& idx) {
+                                        auto bc_v = this->bc[i].start->evalAt(idx);
+                                        auto mirror_idx = idx;
+                                        mirror_idx[i] = 2 * this->localRange.start[i] - 1 - idx[i];
+                                        this->operator()(idx) = Math::Interpolator1D::intp(
+                                                this->mesh.x(i, this->localRange.start[i]), bc_v,
+                                                this->mesh.x(i, mirror_idx[i])
+                                                        + this->mesh.dx(i, mirror_idx) / 2.,
+                                                this->evalAt(mirror_idx),
+                                                this->mesh.x(i, idx[i]) + this->mesh.dx(i, idx) / 2.);
+                                    });
+                                    break;
+                                case BCType::Neum:
+                                    // mid-diff = bc
+                                    rangeFor(r, [&](auto&& idx) {
+                                        auto bc_v = this->bc[i].start->evalAt(idx);
+                                        auto mirror_idx = idx;
+                                        mirror_idx[i] = 2 * this->localRange.start[i] - 1 - idx[i];
+                                        this->operator()(idx)
+                                                = this->evalAt(mirror_idx)
+                                                  + bc_v
+                                                            * (this->mesh.x(i, idx)
+                                                               + this->mesh.dx(i, idx) / 2.
+                                                               - this->mesh.x(i, mirror_idx)
+                                                               - this->mesh.dx(i, mirror_idx) / 2.);
+                                    });
+                                    break;
+                                case BCType::Symm:
+                                    rangeFor(r, [&](auto&& idx) {
+                                        auto mirror_idx = idx;
+                                        mirror_idx[i] = 2 * this->localRange.start[i] - 1 - idx[i];
+                                        this->operator()(idx) = this->evalAt(mirror_idx);
+                                    });
+                                    break;
+                                case BCType::ASymm:
+                                    rangeFor(r, [&](auto&& idx) {
+                                        auto mirror_idx = idx;
+                                        mirror_idx[i] = 2 * this->localRange.start[i] - 1 - idx[i];
+                                        this->operator()(idx) = -this->evalAt(mirror_idx);
+                                    });
+                                    break;
+                                default:
+                                    OP_ERROR("Cannot handle current bc padding: bc type {}",
+                                             this->bc[i].start->getTypeName());
+                                    OP_ABORT;
+                            }
                         }
                     } else {
-                        // center case
-                        switch (this->bc[i].start->getBCType()) {
-                            case BCType::Dirc:
-                                // mid-point rule
-                                rangeFor(r, [&](auto&& idx) {
-                                    auto bc_v = this->bc[i].start->evalAt(idx);
-                                    auto mirror_idx = idx;
-                                    mirror_idx[i] = 2 * this->localRange.start[i] - 1 - idx[i];
-                                    this->operator()(idx) = Math::Interpolator1D::intp(
-                                            this->mesh.x(i, this->localRange.start[i]), bc_v,
-                                            this->mesh.x(i, mirror_idx[i])
-                                                    + this->mesh.dx(i, mirror_idx) / 2.,
-                                            this->evalAt(mirror_idx),
-                                            this->mesh.x(i, idx[i]) + this->mesh.dx(i, idx) / 2.);
-                                });
-                                break;
-                            case BCType::Neum:
-                                // mid-diff = bc
-                                rangeFor(r, [&](auto&& idx) {
-                                    auto bc_v = this->bc[i].start->evalAt(idx);
-                                    auto mirror_idx = idx;
-                                    mirror_idx[i] = 2 * this->localRange.start[i] - 1 - idx[i];
-                                    this->operator()(idx)
-                                            = this->evalAt(mirror_idx)
-                                              + bc_v
-                                                        * (this->mesh.x(i, idx) + this->mesh.dx(i, idx) / 2.
-                                                           - this->mesh.x(i, mirror_idx)
-                                                           - this->mesh.dx(i, mirror_idx) / 2.);
-                                });
-                                break;
-                            case BCType::Symm:
-                                rangeFor(r, [&](auto&& idx) {
-                                    auto mirror_idx = idx;
-                                    mirror_idx[i] = 2 * this->localRange.start[i] - 1 - idx[i];
-                                    this->operator()(idx) = this->evalAt(mirror_idx);
-                                });
-                                break;
-                            case BCType::ASymm:
-                                rangeFor(r, [&](auto&& idx) {
-                                    auto mirror_idx = idx;
-                                    mirror_idx[i] = 2 * this->localRange.start[i] - 1 - idx[i];
-                                    this->operator()(idx) = -this->evalAt(mirror_idx);
-                                });
-                                break;
-                            default:
-                                OP_ERROR("Cannot handle current bc padding: bc type {}",
-                                         this->bc[i].start->getTypeName());
-                                OP_ABORT;
-                        }
+                        start[i] = this->localRange.start[i];
                     }
-                } else {
-                    start[i] = this->localRange.start[i];
-                }
 
-                // upper side
-                if (this->localRange.end[i] == this->accessibleRange.end[i] && this->bc[i].end
-                    && this->bc[i].end->getBCType() != BCType::Periodic) {
-                    end[i] = this->logicalRange.end[i];
-                    // current padding zone
-                    auto r = this->localRange;
-                    for (int j = 0; j < i; ++j) {
-                        r.start[j] = start[j];
-                        r.end[j] = end[j];
-                    }
-                    r.start[i] = this->localRange.end[i];
-                    r.end[i] = this->logicalRange.end[i];
-                    if (this->loc[i] == LocOnMesh::Corner) {
-                        switch (this->bc[i].end->getBCType()) {
-                            case BCType::Dirc:
-                                // mid-point rule
-                                rangeFor(r, [&](auto&& idx) {
-                                    auto bc_v = this->bc[i].end->evalAt(idx);
-                                    auto mirror_idx = idx;
-                                    mirror_idx[i] = 2 * this->localRange.end[i] - 2 - idx[i];
-                                    this->operator()(idx) = Math::Interpolator1D::intp(
-                                            this->mesh.x(i, this->localRange.end[i] - 1), bc_v,
-                                            this->mesh.x(i, mirror_idx[i]), this->evalAt(mirror_idx),
-                                            this->mesh.x(i, idx[i]));
-                                });
-                                break;
-                            case BCType::Neum:
-                                // mid-diff = bc
-                                rangeFor(r, [&](auto&& idx) {
-                                    auto bc_v = this->bc[i].end->evalAt(idx);
-                                    auto mirror_idx = idx;
-                                    mirror_idx[i] = 2 * this->localRange.end[i] - 2 - idx[i];
-                                    this->operator()(idx)
-                                            = this->evalAt(mirror_idx)
-                                              + bc_v * (this->mesh.x(i, idx) - this->mesh.x(i, mirror_idx));
-                                });
-                                break;
-                            case BCType::Symm:
-                                rangeFor(r, [&](auto&& idx) {
-                                    auto mirror_idx = idx;
-                                    mirror_idx[i] = 2 * this->localRange.end[i] - 2 - idx[i];
-                                    this->operator()(idx) = this->evalAt(mirror_idx);
-                                });
-                                break;
-                            case BCType::ASymm:
-                                rangeFor(r, [&](auto&& idx) {
-                                    auto mirror_idx = idx;
-                                    mirror_idx[i] = 2 * this->localRange.end[i] - 2 - idx[i];
-                                    this->operator()(idx) = -this->evalAt(mirror_idx);
-                                });
-                                break;
-                            default:
-                                OP_ERROR("Cannot handle current bc padding: bc type {}",
-                                         this->bc[i].end->getTypeName());
-                                OP_ABORT;
+                    // upper side
+                    if (this->localRange.end[i] == this->accessibleRange.end[i] && this->bc[i].end
+                        && this->bc[i].end->getBCType() != BCType::Periodic) {
+                        end[i] = this->logicalRange.end[i];
+                        // current padding zone
+                        auto r = this->localRange;
+                        for (int j = 0; j < i; ++j) {
+                            r.start[j] = start[j];
+                            r.end[j] = end[j];
+                        }
+                        r.start[i] = this->localRange.end[i];
+                        r.end[i] = this->logicalRange.end[i];
+                        if (this->loc[i] == LocOnMesh::Corner) {
+                            switch (this->bc[i].end->getBCType()) {
+                                case BCType::Dirc:
+                                    // mid-point rule
+                                    rangeFor(r, [&](auto&& idx) {
+                                        auto bc_v = this->bc[i].end->evalAt(idx);
+                                        auto mirror_idx = idx;
+                                        mirror_idx[i] = 2 * this->localRange.end[i] - 2 - idx[i];
+                                        this->operator()(idx) = Math::Interpolator1D::intp(
+                                                this->mesh.x(i, this->localRange.end[i] - 1), bc_v,
+                                                this->mesh.x(i, mirror_idx[i]), this->evalAt(mirror_idx),
+                                                this->mesh.x(i, idx[i]));
+                                    });
+                                    break;
+                                case BCType::Neum:
+                                    // mid-diff = bc
+                                    rangeFor(r, [&](auto&& idx) {
+                                        auto bc_v = this->bc[i].end->evalAt(idx);
+                                        auto mirror_idx = idx;
+                                        mirror_idx[i] = 2 * this->localRange.end[i] - 2 - idx[i];
+                                        this->operator()(idx) = this->evalAt(mirror_idx)
+                                                                + bc_v
+                                                                          * (this->mesh.x(i, idx)
+                                                                             - this->mesh.x(i, mirror_idx));
+                                    });
+                                    break;
+                                case BCType::Symm:
+                                    rangeFor(r, [&](auto&& idx) {
+                                        auto mirror_idx = idx;
+                                        mirror_idx[i] = 2 * this->localRange.end[i] - 2 - idx[i];
+                                        this->operator()(idx) = this->evalAt(mirror_idx);
+                                    });
+                                    break;
+                                case BCType::ASymm:
+                                    rangeFor(r, [&](auto&& idx) {
+                                        auto mirror_idx = idx;
+                                        mirror_idx[i] = 2 * this->localRange.end[i] - 2 - idx[i];
+                                        this->operator()(idx) = -this->evalAt(mirror_idx);
+                                    });
+                                    break;
+                                default:
+                                    OP_ERROR("Cannot handle current bc padding: bc type {}",
+                                             this->bc[i].end->getTypeName());
+                                    OP_ABORT;
+                            }
+                        } else {
+                            // center case
+                            switch (this->bc[i].end->getBCType()) {
+                                case BCType::Dirc:
+                                    // mid-point rule
+                                    rangeFor(r, [&](auto&& idx) {
+                                        auto bc_v = this->bc[i].end->evalAt(idx);
+                                        auto mirror_idx = idx;
+                                        mirror_idx[i] = 2 * this->localRange.end[i] - 1 - idx[i];
+                                        this->operator()(idx) = Math::Interpolator1D::intp(
+                                                this->mesh.x(i, this->localRange.end[i]), bc_v,
+                                                this->mesh.x(i, mirror_idx[i])
+                                                        + this->mesh.dx(i, mirror_idx) / 2.,
+                                                this->evalAt(mirror_idx),
+                                                this->mesh.x(i, idx[i]) + this->mesh.dx(i, idx) / 2.);
+                                    });
+                                    break;
+                                case BCType::Neum:
+                                    // mid-diff = bc
+                                    rangeFor(r, [&](auto&& idx) {
+                                        auto bc_v = this->bc[i].end->evalAt(idx);
+                                        auto mirror_idx = idx;
+                                        mirror_idx[i] = 2 * this->localRange.end[i] - 1 - idx[i];
+                                        this->operator()(idx)
+                                                = this->evalAt(mirror_idx)
+                                                  + bc_v
+                                                            * (this->mesh.x(i, idx)
+                                                               + this->mesh.dx(i, idx) / 2.
+                                                               - this->mesh.x(i, mirror_idx)
+                                                               - this->mesh.dx(i, mirror_idx) / 2.);
+                                    });
+                                    break;
+                                case BCType::Symm:
+                                    rangeFor(r, [&](auto&& idx) {
+                                        auto mirror_idx = idx;
+                                        mirror_idx[i] = 2 * this->localRange.end[i] - 1 - idx[i];
+                                        this->operator()(idx) = this->evalAt(mirror_idx);
+                                    });
+                                    break;
+                                case BCType::ASymm:
+                                    rangeFor(r, [&](auto&& idx) {
+                                        auto mirror_idx = idx;
+                                        mirror_idx[i] = 2 * this->localRange.end[i] - 1 - idx[i];
+                                        this->operator()(idx) = -this->evalAt(mirror_idx);
+                                    });
+                                    break;
+                                default:
+                                    OP_ERROR("Cannot handle current bc padding: bc type {}",
+                                             this->bc[i].end->getTypeName());
+                                    OP_ABORT;
+                            }
                         }
                     } else {
-                        // center case
-                        switch (this->bc[i].end->getBCType()) {
-                            case BCType::Dirc:
-                                // mid-point rule
-                                rangeFor(r, [&](auto&& idx) {
-                                    auto bc_v = this->bc[i].end->evalAt(idx);
-                                    auto mirror_idx = idx;
-                                    mirror_idx[i] = 2 * this->localRange.end[i] - 1 - idx[i];
-                                    this->operator()(idx) = Math::Interpolator1D::intp(
-                                            this->mesh.x(i, this->localRange.end[i]), bc_v,
-                                            this->mesh.x(i, mirror_idx[i])
-                                                    + this->mesh.dx(i, mirror_idx) / 2.,
-                                            this->evalAt(mirror_idx),
-                                            this->mesh.x(i, idx[i]) + this->mesh.dx(i, idx) / 2.);
-                                });
-                                break;
-                            case BCType::Neum:
-                                // mid-diff = bc
-                                rangeFor(r, [&](auto&& idx) {
-                                    auto bc_v = this->bc[i].end->evalAt(idx);
-                                    auto mirror_idx = idx;
-                                    mirror_idx[i] = 2 * this->localRange.end[i] - 1 - idx[i];
-                                    this->operator()(idx)
-                                            = this->evalAt(mirror_idx)
-                                              + bc_v
-                                                        * (this->mesh.x(i, idx) + this->mesh.dx(i, idx) / 2.
-                                                           - this->mesh.x(i, mirror_idx)
-                                                           - this->mesh.dx(i, mirror_idx) / 2.);
-                                });
-                                break;
-                            case BCType::Symm:
-                                rangeFor(r, [&](auto&& idx) {
-                                    auto mirror_idx = idx;
-                                    mirror_idx[i] = 2 * this->localRange.end[i] - 1 - idx[i];
-                                    this->operator()(idx) = this->evalAt(mirror_idx);
-                                });
-                                break;
-                            case BCType::ASymm:
-                                rangeFor(r, [&](auto&& idx) {
-                                    auto mirror_idx = idx;
-                                    mirror_idx[i] = 2 * this->localRange.end[i] - 1 - idx[i];
-                                    this->operator()(idx) = -this->evalAt(mirror_idx);
-                                });
-                                break;
-                            default:
-                                OP_ERROR("Cannot handle current bc padding: bc type {}",
-                                         this->bc[i].end->getTypeName());
-                                OP_ABORT;
-                        }
+                        end[i] = this->localRange.end[i];
                     }
-                } else {
-                    end[i] = this->localRange.end[i];
                 }
             }
 
@@ -641,8 +656,8 @@ namespace OpFlow {
                         auto _offset_iter = recv_offset_iter->begin();
                         OP_DEBUG("Unpacking range {}", recv_range.toString());
                         rangeFor_s(recv_range, [&](auto&& i) {
-                            OP_DEBUG("Unpack {} = {}", i, *_iter);
-                            this->operator()(i).deserialize(_iter + *_offset_iter,
+                            //OP_INFO("Unpack {} = {}", i, *(char*)&*_iter);
+                            this->operator()(i).deserialize(&(*_iter) + *_offset_iter,
                                                             *(_offset_iter + 1) - *_offset_iter);
                             _offset_iter++;
                         });
