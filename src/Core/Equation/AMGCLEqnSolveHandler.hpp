@@ -116,12 +116,6 @@ namespace OpFlow {
                 DS::MDRangeMapper local_mapper {target->getLocalWritableRange()};
                 rangeFor(target->getLocalWritableRange(),
                          [&](auto&& k) { (*target)[k] = x[local_mapper(k) + offsets[i]]; });
-            });
-#ifdef OPFLOW_WITH_MPI
-            MPI_Barrier(MPI_COMM_WORLD);
-#endif
-            Meta::static_for<size>([&]<int i>(Meta::int_<i>) {
-                auto target = eqn_holder->template getTargetPtr<i>();
                 target->updatePadding();
             });
         }
