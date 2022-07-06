@@ -25,10 +25,16 @@ namespace OpFlow {
         static auto generate(S& s, M&& mapper, const std::vector<bool>& pin_flags) {
             DS::CSRMatrix csr;
 
-            Meta::static_for<S::size>([&]<int i>(Meta::int_<i>) {
-                DS::CSRMatrix m = generate<i>(s, mapper, pin_flags[i]);
-                csr.append(m);
-            });
+            if (getGlobalParallelPlan().shared_memory_workers_count == 1)
+                Meta::static_for<S::size>([&]<int i>(Meta::int_<i>) {
+                    DS::CSRMatrix m = generate_s<i>(s, mapper, pin_flags[i]);
+                    csr.append(m);
+                });
+            else
+                Meta::static_for<S::size>([&]<int i>(Meta::int_<i>) {
+                    DS::CSRMatrix m = generate<i>(s, mapper, pin_flags[i]);
+                    csr.append(m);
+                });
 
             return csr;
         }
@@ -125,6 +131,64 @@ namespace OpFlow {
             oneapi::tbb::parallel_for(0, (int) coo.size(), [&](int i) { mat.col[i] = coo[i].c; });
             oneapi::tbb::parallel_for(0, (int) coo.size(), [&](int i) { mat.val[i] = coo[i].v; });
             mat.trim(coo.size());
+
+            return mat;
+        }
+
+        template <std::size_t iTarget, typename S>
+        static auto generate_s(S& s, auto&& mapper, bool pinValue) {
+            DS::CSRMatrix mat;
+            auto target = s.template getTargetPtr<iTarget>();
+            auto commStencil = s.comm_stencils[iTarget];
+            auto& uniEqn = s.template getEqnExpr<iTarget>();
+            auto local_range = target->getLocalWritableRange();
+            // shortcut for empty range case
+            if (local_range.empty()) return mat;
+            DS::MDRangeMapper local_mapper(local_range);
+            // prepare: evaluate the common stencil & pre-fill the arrays
+            int stencil_size = commStencil.pad.size() * 1.5;
+
+            std::vector<ptrdiff_t> row, col;
+            std::vector<Real> val;
+            row.push_back(0);
+
+            auto r_last = mapper(target->getGlobalWritableRange().last(), iTarget);
+            rangeFor_s(local_range, [&](auto&& i) {
+                auto r = mapper(i, iTarget);   // r is the rank of i in the target scope
+                auto r_local = local_mapper(i);// r_local is the rank of i in the block scope
+                auto currentStencil = uniEqn.evalAt(i);
+                if (pinValue && r == r_last) {
+                    row.push_back(row.back() + 1);
+                    col.push_back(mapper(
+                            DS::ColoredIndex<typename decltype(local_range)::base_index_type> {i, iTarget}));
+                    val.push_back(1.);
+                    mat.rhs.push_back(0);
+                } else {
+                    row.push_back(currentStencil.pad.size() + row.back());
+                    // presort pad
+                    std::vector<std::pair<int, Real>> pad;
+                    for (const auto& [key, v] : currentStencil.pad) {
+                        auto idx = mapper(key);
+                        OP_ASSERT_MSG(!std::isnan(v),
+                                      "CSRMatrixGenerator: {}'s stencil pad at {} of {}'s value is nan",
+                                      target->getName(), i, key);
+                        pad.push_back({idx, v});
+                    }
+                    std::sort(pad.begin(), pad.end(),
+                              [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; });
+                    for (const auto& [key, v] : pad) {
+                        col.push_back(key);
+                        val.push_back(v);
+                    }
+                    mat.rhs.push_back(-currentStencil.bias);
+                }
+            });
+            mat.row.resize(row.size());
+            mat.col.resize(col.size());
+            mat.val.resize(val.size());
+            std::copy(row.begin(), row.end(), mat.row.begin());
+            std::copy(col.begin(), col.end(), mat.col.begin());
+            std::copy(val.begin(), val.end(), mat.val.begin());
 
             return mat;
         }
