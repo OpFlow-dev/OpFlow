@@ -122,26 +122,46 @@ namespace OpFlow {
 
         EqnSolveState solve() override {
             EqnSolveState state;
+            amgcl::profiler<> prof("AMGCLEqnSolveHandler");
             if (firstRun) {
+                prof.tic("Generate Ab");
                 generateAb();
+                prof.toc("Generate Ab");
+                prof.tic("Init x");
                 initx();
+                prof.toc("Init x");
+                prof.tic("Solve");
                 if (staticMat) state = solver.solve_dy(mat, x, params[0].p, params[0].bp, params[0].verbose);
                 else
                     state = AMGCLBackend<S, Real>::solve(mat, x, params[0].p, params[0].bp,
                                                          params[0].verbose);
+                prof.toc("Solve");
                 firstRun = false;
             } else {
+                prof.tic("Init x");
                 initx();
+                prof.toc("Init x");
                 if (staticMat) {
+                    prof.tic("Generate b");
                     generateb();
+                    prof.toc("Generate b");
+                    prof.tic("Solve");
                     state = solver.solve_dy(mat, x, params[0].p, params[0].bp, params[0].verbose);
+                    prof.toc("Solve");
                 } else {
+                    prof.tic("Generate Ab");
                     generateAb();
+                    prof.toc("Generate Ab");
+                    prof.tic("Solve");
                     state = AMGCLBackend<S, Real>::solve(mat, x, params[0].p, params[0].bp,
                                                          params[0].verbose);
+                    prof.toc("Solve");
                 }
             }
+            prof.tic("Return values");
             returnValues();
+            prof.toc("Return values");
+            if (params[0].profile && getWorkerId() == 0) { std::cout << prof << std::endl; }
             return state;
         }
     };
