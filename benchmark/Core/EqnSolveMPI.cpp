@@ -59,22 +59,19 @@ public:
 #else
     typedef amgcl::backend::builtin<double> PBackend;
 #endif
-    typedef amgcl::make_solver<
-            amgcl::amg<PBackend, amgcl::coarsening::smoothed_aggregation, amgcl::relaxation::spai0>,
-            amgcl::solver::bicgstab<SBackend>>
+    typedef amgcl::mpi::make_solver<
+            amgcl::mpi::amg<PBackend, amgcl::mpi::coarsening::smoothed_aggregation<PBackend>,
+                            amgcl::mpi::relaxation::spai0<PBackend>>,
+            amgcl::mpi::solver::bicgstab<SBackend>>
             Solver;
     IJSolverParams<Solver> params;
     std::unique_ptr<EqnSolveHandler> handler;
 };
 
 BENCHMARK_DEFINE_F(AMGCLEqnSolveBench, matgen)(benchmark::State& state) {
-    auto _handler = makeEqnSolveHandler<Solver>(
-            [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; },
-            *u, DS::BlockedMDRangeMapper<2> {u->getLocalWritableRange()}, params);
-
     while (state.KeepRunning()) {
         auto start = std::chrono::high_resolution_clock::now();
-        _handler->generateAb();
+        handler->generateAb();
         auto end = std::chrono::high_resolution_clock::now();
         state.SetIterationTime(gatherTime(start, end));
     }
@@ -83,7 +80,7 @@ BENCHMARK_DEFINE_F(AMGCLEqnSolveBench, matgen)(benchmark::State& state) {
 BENCHMARK_DEFINE_F(AMGCLEqnSolveBench, solve)(benchmark::State& state) {
     params.p.solver.maxiter = 10;
     params.p.solver.tol = 1e-50;
-    params.staticMat = true;
+    params.staticMat = false;
     handler = makeEqnSolveHandler<Solver>(
             [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; },
             *u, DS::BlockedMDRangeMapper<2> {u->getLocalWritableRange()}, params);
@@ -102,7 +99,7 @@ BENCHMARK_DEFINE_F(AMGCLEqnSolveBench, solve)(benchmark::State& state) {
 BENCHMARK_DEFINE_F(AMGCLEqnSolveBench, dy_solve)(benchmark::State& state) {
     params.p.solver.maxiter = 10;
     params.p.solver.tol = 1e-50;
-    params.staticMat = false;
+    params.staticMat = true;
     *u = 0;
     handler = makeEqnSolveHandler<Solver>(
             [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; },
@@ -119,7 +116,7 @@ BENCHMARK_DEFINE_F(AMGCLEqnSolveBench, dy_solve)(benchmark::State& state) {
 }
 
 static void EqnSolve_2d_Params(benchmark::internal::Benchmark* b) {
-    for (auto i = 8; i <= 1 << 12; i *= 2) b->Args({i + 1});
+    for (auto i = 4; i <= 1 << 8; i *= 2) b->Args({i + 1});
 }
 
 BENCHMARK_REGISTER_F(AMGCLEqnSolveBench, matgen)

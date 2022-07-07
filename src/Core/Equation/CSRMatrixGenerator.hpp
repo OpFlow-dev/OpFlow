@@ -204,8 +204,8 @@ namespace OpFlow {
             std::vector<Real> rhs(local_range.count());
             auto r_last = mapper(local_range.last(), iTarget);
             rangeFor(local_range, [&](auto&& i) {
-                auto r = mapper(i, iTarget);// r is the rank of i in the target scope
-                auto r_local = local_mapper(i); // r_local is the rank of i in the block scope
+                auto r = mapper(i, iTarget);   // r is the rank of i in the target scope
+                auto r_local = local_mapper(i);// r_local is the rank of i in the block scope
                 auto currentStencil = uniEqn.evalAt(i);
                 if (pinValue && r == r_last) {
                     rhs[r_local] = 0.;
