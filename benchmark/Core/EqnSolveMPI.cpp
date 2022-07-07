@@ -24,22 +24,24 @@ public:
         auto n = state.range(0);
         auto m = MeshBuilder<Mesh>().newMesh(n, n).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
         std::shared_ptr<AbstractSplitStrategy<Field>> s = std::make_shared<EvenSplitStrategy<Field>>();
-        u = ExprBuilder<Field>()
-                    .setMesh(m)
-                    .setLoc(std::array {LocOnMesh::Center, LocOnMesh::Center})
-                    .setBC(0, DimPos::start, BCType::Dirc, 0.)
-                    .setBC(0, DimPos::end, BCType::Dirc, 0.)
-                    .setBC(1, DimPos::start, BCType::Dirc, 0.)
-                    .setBC(1, DimPos::end, BCType::Dirc, 0.)
-                    .setExt(1)
-                    .setPadding(1)
-                    .setSplitStrategy(s)
-                    .build();
+        u = std::make_shared<Field>(ExprBuilder<Field>()
+                                            .setMesh(m)
+                                            .setLoc(std::array {LocOnMesh::Center, LocOnMesh::Center})
+                                            .setBC(0, DimPos::start, BCType::Dirc, 0.)
+                                            .setBC(0, DimPos::end, BCType::Dirc, 0.)
+                                            .setBC(1, DimPos::start, BCType::Dirc, 0.)
+                                            .setBC(1, DimPos::end, BCType::Dirc, 0.)
+                                            .setExt(1)
+                                            .setPadding(1)
+                                            .setSplitStrategy(s)
+                                            .build());
+        params.p.solver.tol = 1e-16;
+        params.p.solver.maxiter = 100;
         handler = makeEqnSolveHandler<Solver>(
                 [&](auto&& e) {
                     return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0;
                 },
-                u, DS::BlockedMDRangeMapper<2> {u.getLocalWritableRange()}, params);
+                *u, DS::BlockedMDRangeMapper<2> {u->getLocalWritableRange()}, params);
     }
 
     auto gatherTime(const auto& start, const auto& end) {
@@ -50,7 +52,7 @@ public:
         return t;
     }
 
-    Field u;
+    std::shared_ptr<Field> u;
     typedef amgcl::backend::builtin<double> SBackend;
 #ifdef MIXED_PRECISION
     typedef amgcl::backend::builtin<float> PBackend;
@@ -66,43 +68,49 @@ public:
 };
 
 BENCHMARK_DEFINE_F(AMGCLEqnSolveBench, matgen)(benchmark::State& state) {
+    auto _handler = makeEqnSolveHandler<Solver>(
+            [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; },
+            *u, DS::BlockedMDRangeMapper<2> {u->getLocalWritableRange()}, params);
+
     while (state.KeepRunning()) {
         auto start = std::chrono::high_resolution_clock::now();
-        handler->generateAb();
+        _handler->generateAb();
         auto end = std::chrono::high_resolution_clock::now();
         state.SetIterationTime(gatherTime(start, end));
     }
 }
 
 BENCHMARK_DEFINE_F(AMGCLEqnSolveBench, solve)(benchmark::State& state) {
-    params.p.solver.maxiter = 100;
-    params.p.solver.tol = 1e-10;
+    params.p.solver.maxiter = 10;
+    params.p.solver.tol = 1e-50;
     params.staticMat = true;
     handler = makeEqnSolveHandler<Solver>(
-            [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; }, u,
-            DS::BlockedMDRangeMapper<2> {u.getLocalWritableRange()}, params);
+            [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; },
+            *u, DS::BlockedMDRangeMapper<2> {u->getLocalWritableRange()}, params);
     auto [iter, err, abserr] = handler->solve();
 
     while (state.KeepRunning()) {
-        u = 0.;
+        *u = 0.;
         auto start = std::chrono::high_resolution_clock::now();
         handler->solve();
         auto end = std::chrono::high_resolution_clock::now();
+        benchmark::DoNotOptimize(handler);
         state.SetIterationTime(gatherTime(start, end));
     }
 }
 
 BENCHMARK_DEFINE_F(AMGCLEqnSolveBench, dy_solve)(benchmark::State& state) {
-    params.p.solver.maxiter = 100;
-    params.p.solver.tol = 1e-10;
+    params.p.solver.maxiter = 10;
+    params.p.solver.tol = 1e-50;
     params.staticMat = false;
+    *u = 0;
     handler = makeEqnSolveHandler<Solver>(
-            [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; }, u,
-            DS::BlockedMDRangeMapper<2> {u.getLocalWritableRange()}, params);
+            [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; },
+            *u, DS::BlockedMDRangeMapper<2> {u->getLocalWritableRange()}, params);
     auto [iter, err, abserr] = handler->solve();
 
     while (state.KeepRunning()) {
-        u = 0.;
+        *u = 0.;
         auto start = std::chrono::high_resolution_clock::now();
         handler->solve();
         auto end = std::chrono::high_resolution_clock::now();
@@ -111,7 +119,7 @@ BENCHMARK_DEFINE_F(AMGCLEqnSolveBench, dy_solve)(benchmark::State& state) {
 }
 
 static void EqnSolve_2d_Params(benchmark::internal::Benchmark* b) {
-    for (auto i = 8; i <= 1 << 10; i *= 2) b->Args({i + 1});
+    for (auto i = 8; i <= 1 << 12; i *= 2) b->Args({i + 1});
 }
 
 BENCHMARK_REGISTER_F(AMGCLEqnSolveBench, matgen)
@@ -139,8 +147,19 @@ public:
 
 int main(int argc, char** argv) {
     OpFlow::EnvironmentGardian _(&argc, &argv);
+    auto info = makeParallelInfo();
+    int max_thread = 0;
+    if (argc > 1) {
+        max_thread = std::stoi(argv[1]);
+        if (max_thread > 0) info.threadInfo.thread_count = max_thread;
+    }
+    setGlobalParallelPlan(
+            makeParallelPlan(info, ParallelIdentifier::DistributeMem | ParallelIdentifier::SharedMem));
+    OP_MPI_MASTER_INFO("Run with {} procs each with {} threads",
+                       getGlobalParallelPlan().distributed_workers_count,
+                       getGlobalParallelPlan().shared_memory_workers_count);
     ::benchmark::Initialize(&argc, argv);
-    if (::benchmark::ReportUnrecognizedArguments(argc, argv)) return 1;
+    //if (::benchmark::ReportUnrecognizedArguments(argc, argv)) return 1;
     if (getWorkerId() == 0)
         // root process will use a reporter from the usual set provided by
         // ::benchmark
