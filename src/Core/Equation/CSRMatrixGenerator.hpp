@@ -198,17 +198,19 @@ namespace OpFlow {
             auto target = s.template getTargetPtr<iTarget>();
             auto commStencil = s.comm_stencils[iTarget];
             auto& uniEqn = s.template getEqnExpr<iTarget>();
-            auto local_range = DS::commonRange(target->assignableRange, target->localRange);
+            auto local_range = target->getLocalWritableRange();
+            DS::MDRangeMapper local_mapper(local_range);
 
             std::vector<Real> rhs(local_range.count());
             auto r_last = mapper(local_range.last(), iTarget);
             rangeFor(local_range, [&](auto&& i) {
-                auto r = mapper(i, iTarget);// r is the local rank
+                auto r = mapper(i, iTarget);// r is the rank of i in the target scope
+                auto r_local = local_mapper(i); // r_local is the rank of i in the block scope
                 auto currentStencil = uniEqn.evalAt(i);
                 if (pinValue && r == r_last) {
-                    rhs[r] = 0.;
+                    rhs[r_local] = 0.;
                 } else {
-                    rhs[r] = -currentStencil.bias;
+                    rhs[r_local] = -currentStencil.bias;
                 }
             });
 
