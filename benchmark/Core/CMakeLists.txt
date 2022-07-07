@@ -25,3 +25,5 @@ add_bench(LaplaceOp LaplaceOp.cpp)
 add_bench(EqnSolve EqnSolve.cpp)
 
 add_bench(EqnSet EqnSet.cpp)
+
+add_bench_mpi(EqnSolveMPI EqnSolveMPI.cpp)

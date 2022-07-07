@@ -25,6 +25,15 @@ function(add_bench name)
     add_dependencies(AllBenchmarks BENCH_${name})
 endfunction()
 
+function(add_bench_mpi name)
+    if (OPFLOW_WITH_MPI)
+        add_executable(BENCH_${name} EXCLUDE_FROM_ALL ${ARGN})
+        target_link_libraries(BENCH_${name} opflow::opflow benchmark::benchmark)
+        target_compile_definitions(BENCH_${name} PUBLIC OPFLOW_DISTRIBUTE_MODEL_MPI)
+        add_dependencies(AllBenchmarks BENCH_${name})
+    endif ()
+endfunction()
+
 add_subdirectory(Core)
 add_subdirectory(DataStructure)
 
