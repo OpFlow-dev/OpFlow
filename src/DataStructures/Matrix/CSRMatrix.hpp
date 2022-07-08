@@ -72,6 +72,19 @@ namespace OpFlow::DS {
                                       [&](int k) { val[base_col + k] = mat.val[k]; });
         }
 
+        void append_s(const CSRMatrix& mat) {
+            int base_row = row.size(), base_rhs = rhs.size(), offset = row.back();
+            row.resize(row.size() + mat.row.size() - 1);
+            rhs.resize(rhs.size() + mat.rhs.size());
+            for (int i = 0; i < mat.row.size() - 1; ++i) row[base_row + i] = mat.row[i + 1] + offset;
+            for (int i = 0; i < mat.rhs.size(); ++i) rhs[base_rhs + i] = mat.rhs[i];
+            int base_col = col.size();
+            col.resize(col.size() + mat.col.size());
+            val.resize(val.size() + mat.val.size());
+            for (int i = 0; i < mat.col.size(); ++i) col[base_col + i] = mat.col[i];
+            for (int i = 0; i < mat.val.size(); ++i) val[base_col + i] = mat.val[i];
+        }
+
         void update_rhs(int from, const std::vector<Real>& r) {
             std::copy(r.begin(), r.end(), rhs.begin() + from);
         }

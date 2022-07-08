@@ -28,7 +28,7 @@ namespace OpFlow {
             if (getGlobalParallelPlan().shared_memory_workers_count == 1)
                 Meta::static_for<S::size>([&]<int i>(Meta::int_<i>) {
                     DS::CSRMatrix m = generate_s<i>(s, mapper, pin_flags[i]);
-                    csr.append(m);
+                    csr.append_s(m);
                 });
             else
                 Meta::static_for<S::size>([&]<int i>(Meta::int_<i>) {
