@@ -245,7 +245,7 @@ BENCHMARK_DEFINE_F(AMGCLEqnSolveBench, dy_solve)(benchmark::State& state) {
 }
 
 static void EqnSolve_2d_Params(benchmark::internal::Benchmark* b) {
-    for (auto i = 4; i <= 1 << 12; i *= 2) b->Args({i + 1});
+    for (auto i = 32; i <= 1 << 12; i *= 2) b->Args({i + 1});
 }
 
 BENCHMARK_REGISTER_F(AMGCLEqnSolveBench, matgen)
