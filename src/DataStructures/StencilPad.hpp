@@ -21,10 +21,10 @@
 #include <unordered_map>
 
 namespace OpFlow::DS {
-    template <typename K, typename V>
+    template <std::size_t max_size, typename K, typename V>
     struct fake_map {
     private:
-        std::array<std::pair<K, V>, 20> val;
+        std::array<std::pair<K, V>, max_size> val;
 
         int _size = 0;
 
@@ -68,6 +68,9 @@ namespace OpFlow::DS {
                 }
             }
             if (pos == -1) {
+#ifndef NDEBUG
+                OP_ASSERT_MSG(_size < max_size, "fake map error: Map is full");
+#endif
                 val[_size].first = key;
                 _size++;
                 return val[_size - 1].second;
@@ -125,7 +128,10 @@ namespace OpFlow::DS {
         }
     };
 
-    template <typename Idx, template <typename...> typename map_impl = fake_map>
+    template <typename K, typename V>
+    using fake_map_default = fake_map<10, K, V>;
+
+    template <typename Idx, template <typename...> typename map_impl = fake_map_default>
     struct StencilPad : public StringifiableObj, SerializableObj {
         map_impl<Idx, Real> pad {};
         Real bias = 0.;

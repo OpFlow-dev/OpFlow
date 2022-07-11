@@ -40,7 +40,7 @@ namespace OpFlow {
                 Meta::RealType<decltype(std::declval<typename targets_type::template target_type<i>*>()
                                                 ->template getStencilField<std::unordered_map>(i))>,
                 Meta::RealType<decltype(std::declval<typename targets_type::template target_type<i>*>()
-                                                ->template getStencilField<DS::fake_map>(i))>>;
+                                                ->template getStencilField<DS::fake_map_default>(i))>>;
 
         template <int i, typename Is>
         struct getter_helper;
@@ -62,7 +62,7 @@ namespace OpFlow {
                 if constexpr (size == 1)
                     this->st_fields.push_back((std::make_shared<st_field_type<i>>(
                             std::any_cast<typename targets_type::template target_type<i>*>(this->targets[i])
-                                    ->template getStencilField<DS::fake_map>(i))));
+                                    ->template getStencilField<DS::fake_map_default>(i))));
                 else
                     this->st_fields.push_back((std::make_shared<st_field_type<i>>(
                             std::any_cast<typename targets_type::template target_type<i>*>(this->targets[i])
@@ -102,7 +102,7 @@ namespace OpFlow {
         if constexpr (sizeof...(Ts) == 1)
             return EqnHolder<EquationSet<decltype(std::declval<Meta::RealType<Fs>>()(
                                      std::declval<Meta::RealType<Ts>&>()
-                                             .template getStencilField<DS::fake_map>(Ints)...))...>,
+                                             .template getStencilField<DS::fake_map_default>(Ints)...))...>,
                              TargetSet<Meta::RealType<Ts>...>>(getters, targets);
         else
             return EqnHolder<EquationSet<decltype(std::declval<Meta::RealType<Fs>>()(
@@ -116,7 +116,7 @@ namespace OpFlow {
         if constexpr (sizeof...(Ts) == 1)
             return EqnHolder<EquationSet<decltype(std::declval<Meta::RealType<Fs>>()(
                                      std::declval<Meta::RealType<Ts>&>()
-                                             .template getStencilField<DS::fake_map>(Ints)...))...>,
+                                             .template getStencilField<DS::fake_map_default>(Ints)...))...>,
                              TargetSet<Meta::RealType<Ts>...>>(getters, targets);
         else
             return EqnHolder<EquationSet<decltype(std::declval<Meta::RealType<Fs>&>()(

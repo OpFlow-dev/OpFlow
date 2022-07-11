@@ -67,7 +67,7 @@ public:
 };
 
 BENCHMARK_DEFINE_F(StencilPadBench, FakeMap_5P)(benchmark::State& st) {
-    auto su = u.template getStencilField<DS::fake_map>();
+    auto su = u.template getStencilField<DS::fake_map_default>();
 
     for (auto _ : st) {
         rangeFor_s(u.assignableRange, [&](auto&& i) {
@@ -78,7 +78,7 @@ BENCHMARK_DEFINE_F(StencilPadBench, FakeMap_5P)(benchmark::State& st) {
 }
 
 BENCHMARK_DEFINE_F(StencilPadBench, FakeMap_9P)(benchmark::State& st) {
-    auto su = u.template getStencilField<DS::fake_map>();
+    auto su = u.template getStencilField<DS::fake_map_default>();
 
     for (auto _ : st) {
         rangeFor_s(u.assignableRange, [&](auto&& i) {
@@ -93,7 +93,7 @@ BENCHMARK_DEFINE_F(StencilPadBench, FakeMap_9P)(benchmark::State& st) {
 }
 
 BENCHMARK_DEFINE_F(StencilPadBench, FakeMap_7P)(benchmark::State& st) {
-    auto su = u3.template getStencilField<DS::fake_map>();
+    auto su = u3.template getStencilField<DS::fake_map_default>();
 
     for (auto _ : st) {
         rangeFor_s(u3.assignableRange, [&](auto&& i) {
@@ -105,7 +105,7 @@ BENCHMARK_DEFINE_F(StencilPadBench, FakeMap_7P)(benchmark::State& st) {
 }
 
 BENCHMARK_DEFINE_F(StencilPadBench, FakeMap_27P)(benchmark::State& st) {
-    auto su = u3.template getStencilField<DS::fake_map>();
+    auto su = u3.template getStencilField<DS::fake_map_default>();
 
     for (auto _ : st) {
         rangeFor_s(u3.assignableRange, [&](auto&& i) {
