@@ -20,7 +20,7 @@
 #include "DataStructures/StencilPad.hpp"
 
 namespace OpFlow {
-    template <typename T, template <typename...> typename map_impl = DS::fake_map>
+    template <typename T, template <typename...> typename map_impl = DS::fake_map_default>
     struct StencilField;
 
     namespace internal {
