@@ -21,8 +21,9 @@ namespace OpFlow::Utils {
     struct IOGroupInterface {
         virtual ~IOGroupInterface() = default;
         virtual void dump(const TimeStamp& t) = 0;
-        virtual void read(const TimeStamp& t) {};
+        virtual void read(const TimeStamp& t) {}
         virtual void setAllInOne(bool o) = 0;
+        virtual void fixedMesh() {}
     };
 
     template <typename Stream, typename... Exprs>
@@ -93,6 +94,12 @@ namespace OpFlow::Utils {
         }
 
         void setAllInOne(bool o) override { allInOne = o; }
+
+        void fixedMesh() override {
+            if constexpr (requires(Stream s) { s.fixedMesh(); }) {
+                for (auto& s : streams) s.fixedMesh();
+            }
+        }
 
         std::tuple<typename std::conditional_t<
                 RStreamType<Stream>,
