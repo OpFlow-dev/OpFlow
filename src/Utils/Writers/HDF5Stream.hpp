@@ -142,7 +142,10 @@ namespace OpFlow::Utils {
 
         void fixedMeshImpl() { fixed_mesh = true; }
 
-        void dumpToSeparateFileImpl() { separate_file = true; }
+        void dumpToSeparateFileImpl() {
+            separate_file = true;
+            if (fixed_mesh) fixed_mesh = false;
+        }
 
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
         void setMPIComm(MPI_Comm comm) { mpi_comm = comm; }

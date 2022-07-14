@@ -45,9 +45,12 @@ namespace OpFlow::Utils {
 
         std::string static commonSuffix() { return ".tec"; }
 
-        void fixedMeshImpl() { _alwaysWriteMesh = false; }
+        void fixedMeshImpl() { fixed_mesh = false; }
 
-        void dumpToSeparateFileImpl() { separate_file = true; }
+        void dumpToSeparateFileImpl() {
+            separate_file = true;
+            if (!fixed_mesh) fixed_mesh = true;
+        }
 
         void reOpen(const std::string& new_path) {
             of.close();
@@ -107,7 +110,7 @@ namespace OpFlow::Utils {
             rangeFor_s(f.localRange, [&](auto&& i) { of << f.evalAt(i) << "\n"; });
 
             of.flush();
-            if (!separate_file) writeMesh = _alwaysWriteMesh;
+            if (!separate_file) writeMesh = fixed_mesh;
             if (separate_file) close();
             return *this;
         }
@@ -189,7 +192,7 @@ namespace OpFlow::Utils {
                 });
 
                 of.flush();
-                if (!separate_file) writeMesh = _alwaysWriteMesh;
+                if (!separate_file) writeMesh = fixed_mesh;
                 if (separate_file) close();
                 return *this;
             }
@@ -199,7 +202,7 @@ namespace OpFlow::Utils {
         std::string path;
         std::ofstream of;
         TimeStamp time {};
-        bool writeMesh = true, _alwaysWriteMesh = true, dumpLogicalRange = false, separate_file = false;
+        bool writeMesh = true, fixed_mesh = true, dumpLogicalRange = false, separate_file = false;
     };
 }// namespace OpFlow::Utils
 #endif//OPFLOW_TECPLOTASCIISTREAM_HPP
