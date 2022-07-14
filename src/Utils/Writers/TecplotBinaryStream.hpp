@@ -36,7 +36,9 @@ namespace OpFlow::Utils {
             id = new_global_id();
             OP_ASSERT_MSG(id < 11, "TecplotBinaryStream: more than 10 streams are not supported.");
         }
-        ~TecplotBinaryStream() {
+        ~TecplotBinaryStream() { close(); }
+
+        void close() {
             if (initialized) {
                 tecfil142(&id);
                 tecend142();
@@ -51,7 +53,10 @@ namespace OpFlow::Utils {
 
         std::string static commonSuffix() { return ".plt"; }
 
-        void alwaysWriteMesh(bool o) { _alwaysWriteMesh = o; }
+        void fixedMeshImpl() { _alwaysWriteMesh = false; }
+
+        void dumpToSeparateFileImpl() { separate_file = true; }
+
         void useLogicalRange(bool o) { dumpLogicalRange = o; }
 
         static int new_global_id() {
@@ -74,6 +79,13 @@ namespace OpFlow::Utils {
             std::string title = fmt::format("TITLE = \"Solution of {}\"", name);
             std::string var_list = (dim == 2) ? fmt::format("X,Y,{}", name) : fmt::format("X,Y,Z,{}", name);
             std::string filename = path;
+            if (separate_file) {
+                // add time stamp between filename and extension
+                std::string ext = std::filesystem::path(path).extension();
+                filename.erase(filename.end() - ext.size(), filename.end());
+                filename += fmt::format("_{:.6f}", time.time);
+                filename += ext;
+            }
             int file_format = 0,                 // 0: Tecplot binary (.plt), 1: Tecplot subzone (.szplt)
                     file_type = 0,               // 0: full, 1: grid, 2: solution
                     debug = 0,                   // 0: no-debug, 1: debug
@@ -121,7 +133,7 @@ namespace OpFlow::Utils {
                         tecdat142(&N, (void*) (&xs[i[k] - range.start[k]]), &db);
                     });
                 }
-                writeMesh = _alwaysWriteMesh;
+                if (!separate_file) writeMesh = _alwaysWriteMesh;
             } else {
                 teczne142(zone_title.c_str(), &zone_type, &imax, &jmax, &kmax, &icellmax, &jcellmax,
                           &kcellmax, &time.time, &strandID, &parentZone, &isBlock, &dummy, &dummy, &dummy,
@@ -133,6 +145,7 @@ namespace OpFlow::Utils {
                 tecdat142(&N, (void*) &var, &is_double);
             });
 
+            if (separate_file) close();
             return *this;
         }
 
@@ -161,6 +174,13 @@ namespace OpFlow::Utils {
                 std::string var_list = (dim == 2) ? ("X,Y" + ... + fmt::format(",{}", getName(fs)))
                                                   : ("X,Y,Z" + ... + fmt::format(",{}", getName(fs)));
                 std::string filename = path;
+                if (separate_file) {
+                    // add time stamp between filename and extension
+                    std::string ext = std::filesystem::path(path).extension();
+                    filename.erase(filename.end() - ext.size(), filename.end());
+                    filename += fmt::format("_{:.6f}", time.time);
+                    filename += ext;
+                }
                 int file_format = 0,                 // 0: Tecplot binary (.plt), 1: Tecplot subzone (.szplt)
                         file_type = 0,               // 0: full, 1: grid, 2: solution
                         debug = 0,                   // 0: no-debug, 1: debug
@@ -209,7 +229,7 @@ namespace OpFlow::Utils {
                             tecdat142(&N, (void*) (&xs[i[k] - range.start[k]]), &db);
                         });
                     }
-                    writeMesh = _alwaysWriteMesh;
+                    if (!separate_file) writeMesh = _alwaysWriteMesh;
                 } else {
                     stat = teczne142(zone_title.c_str(), &zone_type, &imax, &jmax, &kmax, &icellmax,
                                      &jcellmax, &kcellmax, &time.time, &strandID, &parentZone, &isBlock,
@@ -226,6 +246,7 @@ namespace OpFlow::Utils {
                     });
                 });
 
+                if (separate_file) close();
                 return *this;
             }
         }
@@ -233,7 +254,7 @@ namespace OpFlow::Utils {
     private:
         std::string path;
         TimeStamp time {};
-        bool writeMesh = true, _alwaysWriteMesh = false, dumpLogicalRange = false;
+        bool writeMesh = true, _alwaysWriteMesh = true, dumpLogicalRange = false, separate_file = false;
         bool initialized = false;
         int id;
     };

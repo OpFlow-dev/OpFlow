@@ -17,7 +17,14 @@
 
 namespace OpFlow::Utils {
     template <typename Derived>
-    struct FieldStream : Stream<Derived> {};
+    struct FieldStream : Stream<Derived> {
+        void fixedMesh() { this->derived().fixedMeshImpl(); }
+
+        void dumpToSeparateFile() { this->derived().dumpToSeparateFileImpl(); }
+
+    private:
+        DEFINE_CRTP_HELPERS(Derived)
+    };
 }// namespace OpFlow::Utils
 
 #endif//OPFLOW_FIELDSTREAM_HPP

@@ -37,6 +37,32 @@ TEST(IOGroupTest, SingleField) {
     ASSERT_EQ((u[DS::MDIndex<2> {0, 0}]), 2);
 }
 
+TEST(IOGroupTest, SeparateFile) {
+    using Mesh = CartesianMesh<Meta::int_<2>>;
+    using Field = CartesianField<double, Mesh>;
+
+    auto m = MeshBuilder<Mesh>().newMesh(10, 10).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
+
+    auto u = ExprBuilder<Field>()
+                     .setName("u")
+                     .setMesh(m)
+                     .setLoc({LocOnMesh::Center, LocOnMesh::Center})
+                     .build();
+
+    u = 2;
+
+    auto group = Utils::makeIOGroup<Utils::H5Stream>("./", StreamOut, u);
+    group.dumpToSeparateFile();
+    group.dump(Utils::TimeStamp(0.));
+    u = 1;
+    group.dump(Utils::TimeStamp(1.));
+    u = 0;
+    Utils::H5Stream readstream(fmt::format("./u_{:.6f}.h5", 0.), StreamIn);
+    readstream >> u;
+
+    ASSERT_EQ((u[DS::MDIndex<2> {0, 0}]), 2);
+}
+
 TEST(IOGroupTest, DoubleField) {
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<double, Mesh>;
@@ -55,6 +81,9 @@ TEST(IOGroupTest, DoubleField) {
     v = 1;
 
     auto group = Utils::makeIOGroup<Utils::H5Stream>("./a", StreamIn | StreamOut, u, v);
+    static_assert(
+            requires(Utils::H5Stream s) { s.fixedMesh(); }, "H5Stream must have fixedMesh()");
+    group.fixedMesh();
     group.dump(Utils::TimeStamp(1.));
     u = 1;
     v = 2;

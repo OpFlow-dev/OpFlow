@@ -49,6 +49,15 @@ TEST_F(H5RWTest, WriteToFile) {
     ASSERT_TRUE(true);
 }
 
+TEST_F(H5RWTest, SeparateFile) {
+    u[DS::MDIndex<2> {1, 1}] = 1.;
+    Utils::H5Stream stream("./u.sf.h5");
+    stream.dumpToSeparateFile();
+    stream << Utils::TimeStamp(1e-4) << u << Utils::TimeStamp(1000.) << u;
+    ASSERT_TRUE(std::filesystem::exists(fmt::format("./u.sf_{:.6f}.h5", 1e-4))
+                && std::filesystem::exists(fmt::format("./u.sf_{:.6f}.h5", 1000.)));
+}
+
 TEST_F(H5RWTest, ReadAfterWrite) {
     // Note: A HDF5 file cannot be hold by multiple streams at the same time.
     // Therefore, we need to close the stream before reading.

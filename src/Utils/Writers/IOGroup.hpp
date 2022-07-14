@@ -24,6 +24,7 @@ namespace OpFlow::Utils {
         virtual void read(const TimeStamp& t) {}
         virtual void setAllInOne(bool o) = 0;
         virtual void fixedMesh() {}
+        virtual void dumpToSeparateFile() {}
     };
 
     template <typename Stream, typename... Exprs>
@@ -56,6 +57,22 @@ namespace OpFlow::Utils {
                     else
                         streams.template emplace_back(root + name + Stream::commonSuffix());
                 });
+            }
+            if (fixed_mesh) {
+                if constexpr (requires(Stream s) { s.fixedMesh(); }) {
+                    for (auto& s : streams) s.fixedMesh();
+                } else {
+                    OP_CRITICAL("IOGroup: stream does not support fixed mesh.");
+                    OP_ABORT;
+                }
+            }
+            if (separate_file) {
+                if constexpr (requires(Stream s) { s.dumpToSeparateFile(); }) {
+                    for (auto& s : streams) s.dumpToSeparateFile();
+                } else {
+                    OP_CRITICAL("IOGroup: stream does not support dump to separate file.");
+                    OP_ABORT;
+                }
             }
             inited = true;
         }
@@ -95,11 +112,9 @@ namespace OpFlow::Utils {
 
         void setAllInOne(bool o) override { allInOne = o; }
 
-        void fixedMesh() override {
-            if constexpr (requires(Stream s) { s.fixedMesh(); }) {
-                for (auto& s : streams) s.fixedMesh();
-            }
-        }
+        void fixedMesh() override { fixed_mesh = true; }
+
+        void dumpToSeparateFile() override { separate_file = true; }
 
         std::tuple<typename std::conditional_t<
                 RStreamType<Stream>,
@@ -109,7 +124,7 @@ namespace OpFlow::Utils {
                                             Meta::RealType<Exprs>>>...>
                 exprs;
         std::vector<Stream> streams;
-        bool allInOne = false;
+        bool allInOne = false, fixed_mesh = false, separate_file = false;
         std::string root;
         unsigned int mode;
         bool inited = false;
