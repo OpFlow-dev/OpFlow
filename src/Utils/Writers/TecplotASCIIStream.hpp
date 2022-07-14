@@ -16,6 +16,7 @@
 #include "Core/Field/MeshBased/Structured/CartesianField.hpp"
 #include "Utils/Writers/FieldStream.hpp"
 #include "fmt/format.h"
+#include <filesystem>
 #include <fstream>
 #include <string>
 
@@ -40,14 +41,32 @@ namespace OpFlow::Utils {
             return *this;
         }
 
+        void close() { of.close(); }
+
         std::string static commonSuffix() { return ".tec"; }
 
-        void alwaysWriteMesh(bool o) { _alwaysWriteMesh = o; }
+        void fixedMeshImpl() { _alwaysWriteMesh = false; }
+
+        void dumpToSeparateFileImpl() { separate_file = true; }
+
+        void reOpen(const std::string& new_path) {
+            of.close();
+            of.open(new_path, std::ofstream::out | std::ofstream::ate);
+        }
 
         template <CartesianFieldExprType T>
         auto& operator<<(const T& f) {
             constexpr auto dim = OpFlow::internal::CartesianFieldExprTrait<T>::dim;
             f.prepare();
+            if (separate_file) {
+                // add time stamp between filename and extension
+                std::string filename = path;
+                std::string ext = std::filesystem::path(path).extension();
+                filename.erase(filename.end() - ext.size(), filename.end());
+                filename += fmt::format("_{:.6f}", time.time);
+                filename += ext;
+                reOpen(filename);
+            }
             if (of.tellp() == 0) {
                 of << fmt::format("TITLE = \"Solution of {} \"\n", f.name);
                 if constexpr (dim == 1) of << fmt::format("VARIABLES = {}, \"{}\"\n", R"("X")", f.name);
@@ -88,7 +107,8 @@ namespace OpFlow::Utils {
             rangeFor_s(f.localRange, [&](auto&& i) { of << f.evalAt(i) << "\n"; });
 
             of.flush();
-            writeMesh = _alwaysWriteMesh;
+            if (!separate_file) writeMesh = _alwaysWriteMesh;
+            if (separate_file) close();
             return *this;
         }
 
@@ -110,6 +130,15 @@ namespace OpFlow::Utils {
                     std::replace(name.begin(), name.end(), ',', '_');
                     return name;
                 };
+                if (separate_file) {
+                    // add time stamp between filename and extension
+                    std::string filename = path;
+                    std::string ext = std::filesystem::path(path).extension();
+                    filename.erase(filename.end() - ext.size(), filename.end());
+                    filename += fmt::format("_{:.6f}", time.time);
+                    filename += ext;
+                    reOpen(filename);
+                }
                 if (of.tellp() == 0) {
                     of << fmt::format("TITLE = \"Solution of AllInOne\"\n");
                     if constexpr (dim == 1)
@@ -160,7 +189,8 @@ namespace OpFlow::Utils {
                 });
 
                 of.flush();
-                writeMesh = _alwaysWriteMesh;
+                if (!separate_file) writeMesh = _alwaysWriteMesh;
+                if (separate_file) close();
                 return *this;
             }
         }
@@ -169,7 +199,7 @@ namespace OpFlow::Utils {
         std::string path;
         std::ofstream of;
         TimeStamp time {};
-        bool writeMesh = true, _alwaysWriteMesh = false, dumpLogicalRange = false;
+        bool writeMesh = true, _alwaysWriteMesh = true, dumpLogicalRange = false, separate_file = false;
     };
 }// namespace OpFlow::Utils
 #endif//OPFLOW_TECPLOTASCIISTREAM_HPP

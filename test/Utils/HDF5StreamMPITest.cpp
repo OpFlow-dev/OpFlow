@@ -46,11 +46,20 @@ public:
 };
 
 TEST_F(H5RWMPITest, WriteToFile) {
-    u[DS::MDIndex<2> {1, 1}] = 1.;
+    u = 1.;
     std::string filename = fmt::format("./u.wrf.mpi{}.h5", getWorkerCount());
     Utils::H5Stream stream(filename);
     stream << u;
     ASSERT_TRUE(true);
+}
+
+TEST_F(H5RWMPITest, SeparateFile) {
+    u = 1.;
+    Utils::H5Stream stream(fmt::format("./u.sf.mpi{}.h5", getWorkerCount()));
+    stream.dumpToSeparateFile();
+    stream << Utils::TimeStamp(1e-4) << u << Utils::TimeStamp(1000.) << u;
+    ASSERT_TRUE(std::filesystem::exists(fmt::format("./u.sf.mpi{}_{:.6f}.h5", getWorkerCount(), 1e-4))
+                && std::filesystem::exists(fmt::format("./u.sf.mpi{}_{:.6f}.h5", getWorkerCount(), 1000.)));
 }
 
 TEST_F(H5RWMPITest, ReadAfterWrite) {

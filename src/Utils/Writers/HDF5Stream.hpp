@@ -46,7 +46,7 @@ namespace OpFlow::Utils {
 #endif
               time(other.time), first_run(other.first_run), file_inited(other.file_inited),
               group_inited(other.group_inited), fixed_mesh(other.fixed_mesh), write_mesh(other.write_mesh),
-              mode(other.mode)
+              mode(other.mode), separate_file(other.separate_file)
 #ifdef OPFLOW_WITH_MPI
               ,
               mpi_comm(other.mpi_comm)
@@ -58,8 +58,21 @@ namespace OpFlow::Utils {
         ~H5Stream() { close(); }
         explicit H5Stream(const std::filesystem::path& path, unsigned int mode = StreamOut)
             : path(path.string()), mode(mode) {
+            open();
+        }
+
+        void open() {
 #ifdef OPFLOW_WITH_HDF5
-            OP_ASSERT_MSG(!path.filename().empty(), "H5Stream error: File name is empty");
+            OP_ASSERT_MSG(!std::filesystem::path(path).filename().empty(),
+                          "H5Stream error: File name is empty");
+            std::string filename = path;
+            if (separate_file) {
+                // add time stamp between filename and extension
+                std::string ext = std::filesystem::path(path).extension();
+                filename.erase(filename.end() - ext.size(), filename.end());
+                filename += fmt::format("_{:.6f}", time.time);
+                filename += ext;
+            }
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
             MPI_Info info = MPI_INFO_NULL;
             auto fapl_id = H5Pcreate(H5P_FILE_ACCESS);
@@ -69,9 +82,9 @@ namespace OpFlow::Utils {
             auto fcpl_id = H5P_DEFAULT;
             auto fapl_id = H5P_DEFAULT;
 #endif
-            if (mode & StreamOut) file = H5Fcreate(this->path.c_str(), H5F_ACC_TRUNC, fcpl_id, fapl_id);
+            if (mode & StreamOut) file = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, fcpl_id, fapl_id);
             else
-                file = H5Fopen(this->path.c_str(), H5F_ACC_RDONLY, fapl_id);
+                file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, fapl_id);
             H5Pclose(fapl_id);
             file_inited = true;
 #else
@@ -90,6 +103,7 @@ namespace OpFlow::Utils {
                 }
                 H5Fclose(file);
                 file_inited = false;
+                first_run = true;
             }
 #ifdef OPFLOW_WITH_MPI
             MPI_Barrier(mpi_comm);
@@ -102,6 +116,10 @@ namespace OpFlow::Utils {
         auto& operator<<(const TimeStamp& t) {
             time = t;
 #ifdef OPFLOW_WITH_HDF5
+            if (separate_file) {
+                close();
+                open();
+            }
             // create a new group
             if (!first_run) {
                 H5Gclose(current_group);
@@ -121,7 +139,10 @@ namespace OpFlow::Utils {
             time = t;
             return *this;
         }
-        void fixedMesh() { fixed_mesh = true; }
+
+        void fixedMeshImpl() { fixed_mesh = true; }
+
+        void dumpToSeparateFileImpl() { separate_file = true; }
 
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
         void setMPIComm(MPI_Comm comm) { mpi_comm = comm; }
@@ -149,7 +170,7 @@ namespace OpFlow::Utils {
 #endif
         TimeStamp time {0};
         bool first_run = true, file_inited = false, group_inited = false, fixed_mesh = false,
-             write_mesh = true;
+             write_mesh = true, separate_file = false;
         unsigned int mode;
 #ifdef OPFLOW_WITH_MPI
         MPI_Comm mpi_comm = MPI_COMM_WORLD;
@@ -254,6 +275,7 @@ namespace OpFlow::Utils {
 #else
         OP_MPI_MASTER_WARN("H5Stream not enabled.");
 #endif
+        if (separate_file) close();
         return *this;
     }
 
