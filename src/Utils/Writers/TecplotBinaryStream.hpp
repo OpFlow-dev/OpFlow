@@ -53,9 +53,12 @@ namespace OpFlow::Utils {
 
         std::string static commonSuffix() { return ".plt"; }
 
-        void fixedMeshImpl() { _alwaysWriteMesh = false; }
+        void fixedMeshImpl() { fixed_mesh = false; }
 
-        void dumpToSeparateFileImpl() { separate_file = true; }
+        void dumpToSeparateFileImpl() {
+            separate_file = true;
+            if (!fixed_mesh) fixed_mesh = true;
+        }
 
         void useLogicalRange(bool o) { dumpLogicalRange = o; }
 
@@ -133,7 +136,7 @@ namespace OpFlow::Utils {
                         tecdat142(&N, (void*) (&xs[i[k] - range.start[k]]), &db);
                     });
                 }
-                if (!separate_file) writeMesh = _alwaysWriteMesh;
+                if (!separate_file) writeMesh = fixed_mesh;
             } else {
                 teczne142(zone_title.c_str(), &zone_type, &imax, &jmax, &kmax, &icellmax, &jcellmax,
                           &kcellmax, &time.time, &strandID, &parentZone, &isBlock, &dummy, &dummy, &dummy,
@@ -229,7 +232,7 @@ namespace OpFlow::Utils {
                             tecdat142(&N, (void*) (&xs[i[k] - range.start[k]]), &db);
                         });
                     }
-                    if (!separate_file) writeMesh = _alwaysWriteMesh;
+                    if (!separate_file) writeMesh = fixed_mesh;
                 } else {
                     stat = teczne142(zone_title.c_str(), &zone_type, &imax, &jmax, &kmax, &icellmax,
                                      &jcellmax, &kcellmax, &time.time, &strandID, &parentZone, &isBlock,
@@ -254,7 +257,7 @@ namespace OpFlow::Utils {
     private:
         std::string path;
         TimeStamp time {};
-        bool writeMesh = true, _alwaysWriteMesh = true, dumpLogicalRange = false, separate_file = false;
+        bool writeMesh = true, fixed_mesh = true, dumpLogicalRange = false, separate_file = false;
         bool initialized = false;
         int id;
     };
