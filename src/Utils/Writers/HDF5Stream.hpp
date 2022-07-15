@@ -85,6 +85,7 @@ namespace OpFlow::Utils {
             if (mode & StreamOut) file = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, fcpl_id, fapl_id);
             else
                 file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, fapl_id);
+            OP_ASSERT_MSG(file >= 0, "HDF5Stream: cannot open file {}", filename);
             H5Pclose(fapl_id);
             file_inited = true;
 #else
@@ -98,10 +99,11 @@ namespace OpFlow::Utils {
 #endif
             if (file_inited) {
                 if (group_inited) {
-                    H5Gclose(current_group);
+                    OP_ASSERT_MSG(H5Gclose(current_group) >= 0, "HDF5Stream: cannot close current group {}",
+                                  current_group);
                     group_inited = false;
                 }
-                H5Fclose(file);
+                OP_ASSERT_MSG(H5Fclose(file) >= 0, "HDF5Stream: cannot close file {}", file);
                 file_inited = false;
                 first_run = true;
             }
@@ -318,16 +320,20 @@ namespace OpFlow::Utils {
         // open the dataset
         std::string dataset_name = fmt::format("/T={}/{}", time.time, f.getName());
         auto dataset = H5Dopen(file, dataset_name.c_str(), H5P_DEFAULT);
+        OP_ASSERT_MSG(dataset >= 0, "HDF5Stream: cannot open data set with name {}", dataset_name);
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
         // read data by hyperslab
         auto mem_space = H5Screate_simple(OpFlow::internal::ExprTrait<T>::dim, h_extends, NULL);
+        OP_ASSERT_MSG(mem_space >= 0, "HDF5Stream: cannot create mem space with extends {}",
+                      Serializer::serialize(h_extends));
         auto file_space = H5Dget_space(dataset);
+        OP_ASSERT_MSG(file_space >= 0, "HDF5Stream: cannot get space with dataset {}", dataset_name);
         hsize_t offset[dim];
         for (auto i = 0; i < dim; ++i) offset[i] = f.localRange.start[i];
-        H5Sselect_hyperslab(file_space, H5S_SELECT_SET, offset, NULL, h_extends, NULL);
+        OP_ASSERT(H5Sselect_hyperslab(file_space, H5S_SELECT_SET, offset, NULL, h_extends, NULL) >= 0);
         auto plist_id = H5Pcreate(H5P_DATASET_XFER);
         H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_INDEPENDENT);
-        H5Dread(dataset, datatype, mem_space, file_space, plist_id, buffer.raw());
+        OP_ASSERT(H5Dread(dataset, datatype, mem_space, file_space, plist_id, buffer.raw()) >= 0);
         H5Sclose(mem_space);
         H5Sclose(file_space);
         H5Pclose(plist_id);
