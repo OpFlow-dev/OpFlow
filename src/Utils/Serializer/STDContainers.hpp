@@ -18,17 +18,32 @@
 #include <string>
 
 namespace OpFlow::Utils::Serializer {
-    template <Meta::BracketIndexable T>
+    template <typename T>
+    requires Meta::BracketIndexable<T>&& requires(T t) {
+        { t.empty() }
+        ->std::same_as<bool>;
+        { t.size() }
+        ->std::same_as<std::size_t>;
+    }
     auto serialize_impl(const T& arr, const std::string& prefix, const std::string& postfix,
                         const std::string& splitter) {
         std::string ret = prefix;
         if (arr.empty()) return ret + postfix;
-        else {
-            ret += fmt::to_string(arr[0]);
-            for (std::size_t i = 1; i < arr.size(); ++i) { ret += fmt::format("{}{}", splitter, arr[i]); }
-            ret += postfix;
-            return ret;
-        }
+        ret += fmt::to_string(arr[0]);
+        for (std::size_t i = 1; i < arr.size(); ++i) { ret += fmt::format("{}{}", splitter, arr[i]); }
+        ret += postfix;
+        return ret;
+    }
+
+    template <typename T, std::size_t N>
+    auto serialize_impl(const T (&arr)[N], const std::string& prefix, const std::string& postfix,
+                        const std::string& splitter) {
+        std::string ret = prefix;
+        if (N == 0) return ret + postfix;
+        ret += fmt::to_string(arr[0]);
+        for (std::size_t i = 1; i < N; ++i) { ret += fmt::format("{}{}", splitter, arr[i]); }
+        ret += postfix;
+        return ret;
     }
 
     // default impl
