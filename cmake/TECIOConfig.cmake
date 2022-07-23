@@ -37,7 +37,7 @@ macro(CONFIG_AND_INSTALL_TECIO)
             RESULT_VARIABLE result
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tecio-build)
     if (result)
-        message(FATAL_ERROR "Build step for AMGCL failed: ${result}")
+        message(FATAL_ERROR "Build step for TECIO failed: ${result}")
     endif ()
     # Manually install
     file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/include/tecio)
