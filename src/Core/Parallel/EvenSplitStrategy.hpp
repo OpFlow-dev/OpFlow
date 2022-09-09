@@ -157,7 +157,7 @@ namespace OpFlow {
             // assume the input range is nodal range, convert to central range
             auto _range = range;
             for (std::size_t i = 0; i < d; ++i) _range.end[i]--;
-            if (plan.serialMode()) return std::vector<DS::Range<d>> {_range};
+            if (plan.singleNodeMode()) return std::vector<DS::Range<d>> {_range};
             else {
                 auto split_plan = gen_split_plan(range, plan);
 
