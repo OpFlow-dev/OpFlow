@@ -31,18 +31,67 @@ namespace OpFlow::Utils {
         };
     }// namespace internal
 
+    struct TecplotFileID {
+        static int getID() {
+            auto& ins = getInstance();
+            OP_ASSERT_MSG(ins.ids.size() < 10, "TecplotFileID: More than 10 streams are not supported");
+            ins.ids.push_back(newGlobalID());
+            return ins.ids.back();
+        }
+
+        static int getCurrentRank(int id) {
+            auto& ins = getInstance();
+            auto iter = std::find(ins.ids.begin(), ins.ids.end(), id);
+            if (iter == ins.ids.end()) {
+                OP_CRITICAL("TecplotFileID: ID {} not found in record.", id);
+                OP_ABORT;
+            } else {
+                return iter - ins.ids.begin() + 1;
+            }
+        }
+
+        static void revokeID(int id) {
+            auto& ins = getInstance();
+            auto iter = std::find(ins.ids.begin(), ins.ids.end(), id);
+            if (iter == ins.ids.end()) {
+                return;
+            } else {
+                ins.ids.erase(iter);
+            }
+        }
+
+    private:
+        TecplotFileID() = default;
+        TecplotFileID(const TecplotFileID&) = delete;
+        TecplotFileID(TecplotFileID&&) = delete;
+        TecplotFileID& operator=(const TecplotFileID&) = delete;
+
+        static TecplotFileID& getInstance() {
+            static TecplotFileID instance;
+            return instance;
+        }
+
+        static int newGlobalID() {
+            static int count = 1;
+            return count++;
+        }
+
+        std::vector<int> ids;
+    };
+
     struct TecplotBinaryStream : FieldStream<TecplotBinaryStream> {
         TecplotBinaryStream() = default;
         explicit TecplotBinaryStream(std::string path) : path(std::move(path)) {
-            id = new_global_id();
-            OP_ASSERT_MSG(id < 11, "TecplotBinaryStream: more than 10 streams are not supported.");
+            id = TecplotFileID::getID();
         }
         ~TecplotBinaryStream() { close(); }
 
         void close() {
             if (initialized) {
-                tecfil142(&id);
+                int rank = TecplotFileID::getCurrentRank(id);
+                tecfil142(&rank);
                 tecend142();
+                TecplotFileID::revokeID(id);
                 initialized = false;
             }
         }
@@ -62,11 +111,6 @@ namespace OpFlow::Utils {
         }
 
         void useLogicalRange(bool o) { dumpLogicalRange = o; }
-
-        static int new_global_id() {
-            static int id = 1;
-            return id++;
-        }
 
         template <CartesianFieldExprType T>
         auto& operator<<(const T& f) {
@@ -112,7 +156,8 @@ namespace OpFlow::Utils {
                 OP_ASSERT_MSG(stat == 0, "TecplotBinaryStream: File init failed {}", filename);
                 initialized = true;
             }
-            tecfil142(&id);
+            int rank = TecplotFileID::getCurrentRank(id);
+            tecfil142(&rank);
 
             std::string zone_title = name;
             auto range = dumpLogicalRange ? f.logicalRange : f.localRange;
@@ -254,7 +299,8 @@ namespace OpFlow::Utils {
                     OP_ASSERT_MSG(stat == 0, "TecplotBinaryStream: File init failed {}", filename);
                     initialized = true;
                 }
-                tecfil142(&id);
+                int rank = TecplotFileID::getCurrentRank(id);
+                tecfil142(&rank);
 
                 std::string zone_title = "allinone";
                 auto range = dumpLogicalRange ? maxCommonRange(std::vector {fs.logicalRange...})
