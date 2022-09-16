@@ -31,11 +31,12 @@ ELSE ()
     set(BaseFlags "-DLINUX -DLINUX64 -DTP_PROJECT_USES_BOOST -DBOOST_ALL_NO_LIB -DMAKEARCHIVE -DNO_THIRD_PARTY_LIBS -DTECIOMPI -DOMPI_SKIP_MPICXX -DNO_ASSERTS -fmessage-length=0 -fPIC -fvisibility=hidden -w")
 ENDIF ()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BaseFlags} ${MPI_CXX_COMPILE_FLAGS}")
-                    
+
 FILE(GLOB mainFiles "*.cxx" "*.h")
 LIST(REMOVE_ITEM mainFiles "${CMAKE_CURRENT_SOURCE_DIR}/szcombine.cxx")
 
 add_library(teciompi STATIC ${mainFiles})
+target_compile_definitions(teciompi PUBLIC TECIOMPI)
 
 add_executable(szcombine "szcombine.cxx")
 target_link_libraries(szcombine teciompi ${MPI_LIBRARIES})
