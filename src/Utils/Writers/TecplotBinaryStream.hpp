@@ -316,8 +316,8 @@ namespace OpFlow::Utils {
                     jmax = (dim >= 2) ? std::min(range.end[1] - range.start[1] + jmin, glob_j_count) : 1,
                     kmax = (dim >= 3) ? std::min(range.end[2] - range.start[2] + kmin, glob_k_count) : 1,
                     icellmax = 0, jcellmax = 0, kcellmax = 0, strandID = 1, parentZone = 0, isBlock = 1,
-                    dummy = 0, total_num_face_nodes = 1, nfconns = 0, fnmode = 0, total_num_boundary_faces = 1,
-                    total_num_boundary_connections = 1;
+                    dummy = 0, total_num_face_nodes = 1, nfconns = 0, fnmode = 0,
+                    total_num_boundary_faces = 1, total_num_boundary_connections = 1;
                 std::vector<int> passive_var(dim + sizeof...(fs), 0), share(dim + sizeof...(fs), 0);
                 for (int i = 0; i < dim; ++i) share[i] = 1;
                 auto extended_range = range;
@@ -367,8 +367,8 @@ namespace OpFlow::Utils {
                 } else {
                     teczne142(zone_title.c_str(), &zone_type, &glob_i_count, &glob_j_count, &glob_k_count,
                               &icellmax, &jcellmax, &kcellmax, &time.time, &strandID, &parentZone, &isBlock,
-                              &dummy, &dummy, &dummy, &dummy, &dummy, passive_var.data(), nullptr, share.data(),
-                              &dummy);
+                              &dummy, &dummy, &dummy, &dummy, &dummy, passive_var.data(), nullptr,
+                              share.data(), &dummy);
 #ifdef OPFLOW_WITH_MPI
                     if (!getGlobalParallelPlan().singleNodeMode()) {
                         std::vector<int> partition_ranks(getWorkerCount());
