@@ -48,7 +48,6 @@ protected:
 };
 
 TEST_F(TecIOMPITest, SingleField) {
-    GTEST_SKIP();
     using namespace OpFlow;
 
     if (DS::inRange(u.getLocalWritableRange(), DS::MDIndex<3>(2, 4, 1))) u[DS::MDIndex<3>(2, 4, 1)] = 2.;
@@ -88,5 +87,23 @@ TEST_F(TecIOMPITest, TwoFields_NewAPI) {
     uf << u;
     if (DS::inRange(u.getLocalWritableRange(), DS::MDIndex<3>(2, 4, 2))) u[DS::MDIndex<3>(2, 4, 2)] = 0.;
     uf2 << u;
+    ASSERT_TRUE(true);
+}
+
+TEST_F(TecIOMPITest, DumpTwoFields) {
+    using namespace OpFlow;
+    Utils::TecplotBinaryStream uf("./uv.szplt");
+    auto v = u;
+    v.name = "v";
+    uf.dumpMultiple(u, v);
+    ASSERT_TRUE(true);
+}
+
+TEST_F(TecIOMPITest, DumpTwoFields_NewAPI) {
+    using namespace OpFlow;
+    Utils::TecplotSZPLTStream uf("./uv_newapi.szplt");
+    auto v = u;
+    v.name = "v";
+    uf.dumpMultiple(u, v);
     ASSERT_TRUE(true);
 }
