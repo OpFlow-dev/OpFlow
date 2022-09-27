@@ -63,6 +63,7 @@ TEST(IOGroupTest, SeparateFile) {
     ASSERT_EQ((u[DS::MDIndex<2> {0, 0}]), 2);
 }
 
+#ifndef NDEBUG
 TEST(IOGroupTest, DEATH_NumberByStep) {
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<double, Mesh>;
@@ -83,6 +84,7 @@ TEST(IOGroupTest, DEATH_NumberByStep) {
 
     ASSERT_DEATH(group.dump(Utils::TimeStamp(0.)), "");
 }
+#endif
 
 TEST(IOGroupTest, NumberByStep) {
     using Mesh = CartesianMesh<Meta::int_<2>>;
