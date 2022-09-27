@@ -63,6 +63,62 @@ TEST(IOGroupTest, SeparateFile) {
     ASSERT_EQ((u[DS::MDIndex<2> {0, 0}]), 2);
 }
 
+TEST(IOGroupTest, DEATH_NumberByStep) {
+    using Mesh = CartesianMesh<Meta::int_<2>>;
+    using Field = CartesianField<double, Mesh>;
+
+    auto m = MeshBuilder<Mesh>().newMesh(10, 10).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
+
+    auto u = ExprBuilder<Field>()
+                     .setName("u")
+                     .setMesh(m)
+                     .setLoc({LocOnMesh::Center, LocOnMesh::Center})
+                     .build();
+
+    u = 2;
+
+    auto group = Utils::makeIOGroup<Utils::H5Stream>("./", StreamOut, u);
+    group.dumpToSeparateFile();
+    group.setNumberingType(OpFlow::Utils::NumberingType::ByStep);
+
+    ASSERT_DEATH(group.dump(Utils::TimeStamp(0.)), "");
+}
+
+TEST(IOGroupTest, NumberByStep) {
+    using Mesh = CartesianMesh<Meta::int_<2>>;
+    using Field = CartesianField<double, Mesh>;
+
+    auto m = MeshBuilder<Mesh>().newMesh(10, 10).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
+
+    auto u = ExprBuilder<Field>()
+                     .setName("u")
+                     .setMesh(m)
+                     .setLoc({LocOnMesh::Center, LocOnMesh::Center})
+                     .build();
+
+    u = 2;
+
+    auto group = Utils::makeIOGroup<Utils::H5Stream>("./", StreamOut, u);
+    group.dumpToSeparateFile();
+    group.setNumberingType(OpFlow::Utils::NumberingType::ByStep);
+    group.dump(Utils::TimeStamp(0., 0));
+    {
+        Utils::H5Stream readstream("u_0.h5", StreamIn);
+        readstream >> u;
+
+        ASSERT_EQ((u[DS::MDIndex<2> {0, 0}]), 2);
+    }
+    u = 1.5;
+    group.dump(Utils::TimeStamp(1., 1));
+    {
+        Utils::H5Stream readstream("u_1.h5", StreamIn);
+        readstream.moveToTime(Utils::TimeStamp(1.));
+        readstream >> u;
+
+        ASSERT_EQ((u[DS::MDIndex<2> {0, 0}]), 1.5);
+    }
+}
+
 TEST(IOGroupTest, DoubleField) {
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<double, Mesh>;

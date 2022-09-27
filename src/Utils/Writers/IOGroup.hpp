@@ -25,6 +25,7 @@ namespace OpFlow::Utils {
         virtual void setAllInOne(bool o) = 0;
         virtual void fixedMesh() {}
         virtual void dumpToSeparateFile() {}
+        virtual void setNumberingType(NumberingType type) = 0;
     };
 
     template <typename Stream, typename... Exprs>
@@ -74,6 +75,12 @@ namespace OpFlow::Utils {
                     OP_ABORT;
                 }
             }
+            if constexpr (requires(Stream s) { s.setNumberingType(NumberingType::ByTime); }) {
+                for (auto& s : streams) s.setNumberingType(numberingType);
+            } else {
+                OP_CRITICAL("IOGroup: stream does not support set numbering type.");
+                OP_ABORT;
+            }
             inited = true;
         }
 
@@ -116,6 +123,8 @@ namespace OpFlow::Utils {
 
         void dumpToSeparateFile() override { separate_file = true; }
 
+        void setNumberingType(NumberingType type) override { numberingType = type; }
+
         std::tuple<typename std::conditional_t<
                 RStreamType<Stream>,
                 typename std::conditional_t<Exprs::isConcrete(), Meta::RealType<Exprs>&,
@@ -127,6 +136,7 @@ namespace OpFlow::Utils {
         bool allInOne = false, fixed_mesh = false, separate_file = false;
         std::string root;
         unsigned int mode;
+        NumberingType numberingType = NumberingType::ByTime;
         bool inited = false;
     };
 

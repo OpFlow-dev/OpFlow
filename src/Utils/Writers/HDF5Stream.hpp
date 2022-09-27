@@ -70,7 +70,9 @@ namespace OpFlow::Utils {
                 // add time stamp between filename and extension
                 std::string ext = std::filesystem::path(path).extension();
                 filename.erase(filename.end() - ext.size(), filename.end());
-                filename += fmt::format("_{:.6f}", time.time);
+                if (numberingType == NumberingType::ByTime) filename += fmt::format("_{:.6f}", time.time);
+                else
+                    filename += fmt::format("_{}", time.step.value());
                 filename += ext;
             }
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
@@ -117,6 +119,9 @@ namespace OpFlow::Utils {
         // time info
         auto& operator<<(const TimeStamp& t) {
             time = t;
+            if (separate_file && numberingType == NumberingType::ByStep) {
+                OP_ASSERT_MSG(time.step, "HDF5Stream: Must provide step number to postfix by step");
+            }
 #ifdef OPFLOW_WITH_HDF5
             if (separate_file) {
                 close();
@@ -149,6 +154,8 @@ namespace OpFlow::Utils {
             if (fixed_mesh) fixed_mesh = false;
         }
 
+        void setNumberingTypeImpl(NumberingType type) { numberingType = type; }
+
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
         void setMPIComm(MPI_Comm comm) { mpi_comm = comm; }
 #endif
@@ -176,6 +183,8 @@ namespace OpFlow::Utils {
         TimeStamp time {0};
         bool first_run = true, file_inited = false, group_inited = false, fixed_mesh = false,
              write_mesh = true, separate_file = false;
+        NumberingType numberingType = NumberingType::ByTime;
+        int dump_count = 0;
         unsigned int mode;
 #ifdef OPFLOW_WITH_MPI
         MPI_Comm mpi_comm = MPI_COMM_WORLD;

@@ -20,15 +20,18 @@
 #include <fstream>
 #include <functional>
 #include <iomanip>
+#include <optional>
 #include <string>
 #include <utility>
 
 namespace OpFlow::Utils {
 
     struct TimeStamp {
-        double time;
+        double time {};
+        std::optional<int> step;
         TimeStamp() = default;
-        explicit TimeStamp(auto t) : time(t) {}
+        explicit TimeStamp(double t) : time(t) {}
+        explicit TimeStamp(double t, int step) : time(t), step(step) {}
 
         explicit operator double() const { return time; }
         TimeStamp& operator=(double t) {
@@ -52,7 +55,7 @@ namespace OpFlow::Utils {
                 return this->derived() << t;
             }
 
-        private:
+        protected:
             DEFINE_CRTP_HELPERS(Derived)
         };
 
@@ -63,7 +66,7 @@ namespace OpFlow::Utils {
                 return this->derived() >> t;
             }
 
-        private:
+        protected:
             DEFINE_CRTP_HELPERS(Derived)
         };
 
@@ -78,13 +81,17 @@ namespace OpFlow::Utils {
                 return this->derived() >> t;
             }
 
-        private:
+        protected:
             DEFINE_CRTP_HELPERS(Derived)
         };
     }// namespace internal
 
+    enum class NumberingType { ByStep, ByTime };
+
     template <typename Derived>
     struct Stream : internal::StreamImpl<Derived, bool(internal::StreamTrait<Derived>::mode_flag& StreamIn),
-                                         bool(internal::StreamTrait<Derived>::mode_flag& StreamOut)> {};
+                                         bool(internal::StreamTrait<Derived>::mode_flag& StreamOut)> {
+        void setNumberingType(NumberingType type) { this->derived().setNumberingTypeImpl(type); }
+    };
 }// namespace OpFlow::Utils
 #endif//OPFLOW_STREAMS_HPP

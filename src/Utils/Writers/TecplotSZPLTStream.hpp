@@ -43,6 +43,9 @@ namespace OpFlow::Utils {
 
         auto& operator<<(const TimeStamp& t) {
             time = t;
+            if (separate_file && numberingType == NumberingType::ByStep) {
+                OP_ASSERT_MSG(time.step, "TecplotSZPLTStream: Must provide step number to postfix by step");
+            }
             return *this;
         }
 
@@ -56,6 +59,8 @@ namespace OpFlow::Utils {
         }
 
         void useLogicalRange(bool o) { dumpLogicalRange = o; }
+
+        void setNumberingTypeImpl(NumberingType type) { numberingType = type; }
 
         template <CartesianFieldExprType T>
         auto& operator<<(const T& f) {
@@ -76,7 +81,9 @@ namespace OpFlow::Utils {
                 // add time stamp between filename and extension
                 std::string ext = std::filesystem::path(path).extension();
                 filename.erase(filename.end() - ext.size(), filename.end());
-                filename += fmt::format("_{:.6f}", time.time);
+                if (numberingType == NumberingType::ByTime) filename += fmt::format("_{:.6f}", time.time);
+                else
+                    filename += fmt::format("_{}", time.step.value());
                 filename += ext;
             }
             int file_format = 1,                 // 0: Tecplot binary (.plt), 1: Tecplot subzone (.szplt)
@@ -201,7 +208,9 @@ namespace OpFlow::Utils {
                     // add time stamp between filename and extension
                     std::string ext = std::filesystem::path(path).extension();
                     filename.erase(filename.end() - ext.size(), filename.end());
-                    filename += fmt::format("_{:.6f}", time.time);
+                    if (numberingType == NumberingType::ByTime) filename += fmt::format("_{:.6f}", time.time);
+                    else
+                        filename += fmt::format("_{}", time.step.value());
                     filename += ext;
                 }
                 int file_format = 1,                 // 0: Tecplot binary (.plt), 1: Tecplot subzone (.szplt)
@@ -323,6 +332,7 @@ namespace OpFlow::Utils {
         std::string path;
         TimeStamp time {};
         bool writeMesh = true, fixed_mesh = true, dumpLogicalRange = false, separate_file = false;
+        NumberingType numberingType = NumberingType::ByTime;
         bool initialized = false;
         void* file_handler = nullptr;
     };
