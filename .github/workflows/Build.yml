@@ -40,6 +40,7 @@ jobs:
       - name: Install dependence
         run: |
           export INPUT_MPI=${{ matrix.mpi }}
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           brew install gcc@11 doxygen tbb llvm
           if [ "$RUNNER_OS" == "Linux" ]; then
             sudo apt update && sudo apt install -y python3-pip python3-sphinx lcov libboost-all-dev libomp-12-dev clang-12
@@ -65,6 +66,7 @@ jobs:
       - name: Generate
         working-directory: ./build
         run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           if [ "${{ matrix.compiler }}" == "clang" ]; then
             if [ "$RUNNER_OS" == "Linux" ]; then
               cmake -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DCMAKE_C_COMPILER=clang-12 -DCMAKE_CXX_COMPILER=clang++-12 \
