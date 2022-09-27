@@ -52,6 +52,8 @@ namespace OpFlow::Utils {
             if (!fixed_mesh) fixed_mesh = true;
         }
 
+        void setNumberingTypeImpl(NumberingType type) { numberingType = type; }
+
         void reOpen(const std::string& new_path) {
             of.close();
             of.open(new_path, std::ofstream::out | std::ofstream::ate);
@@ -66,7 +68,9 @@ namespace OpFlow::Utils {
                 std::string filename = path;
                 std::string ext = std::filesystem::path(path).extension();
                 filename.erase(filename.end() - ext.size(), filename.end());
-                filename += fmt::format("_{:.6f}", time.time);
+                if (numberingType == NumberingType::ByTime) filename += fmt::format("_{:.6f}", time.time);
+                else
+                    filename += fmt::format("_{}", time.step.value());
                 filename += ext;
                 reOpen(filename);
             }
@@ -138,7 +142,9 @@ namespace OpFlow::Utils {
                     std::string filename = path;
                     std::string ext = std::filesystem::path(path).extension();
                     filename.erase(filename.end() - ext.size(), filename.end());
-                    filename += fmt::format("_{:.6f}", time.time);
+                    if (numberingType == NumberingType::ByTime) filename += fmt::format("_{:.6f}", time.time);
+                    else
+                        filename += fmt::format("_{}", time.step.value());
                     filename += ext;
                     reOpen(filename);
                 }
@@ -203,6 +209,7 @@ namespace OpFlow::Utils {
         std::ofstream of;
         TimeStamp time {};
         bool writeMesh = true, fixed_mesh = true, dumpLogicalRange = false, separate_file = false;
+        NumberingType numberingType = NumberingType::ByTime;
     };
 }// namespace OpFlow::Utils
 #endif//OPFLOW_TECPLOTASCIISTREAM_HPP
