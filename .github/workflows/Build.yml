@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-12]
+        os: [ubuntu-22.04, macos-12]
         compiler: [clang, gcc]
         mpi: [ON, OFF]
         mode: [Debug, Release]
@@ -41,9 +41,9 @@ jobs:
         run: |
           export INPUT_MPI=${{ matrix.mpi }}
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          brew install gcc@11 doxygen tbb llvm
+          brew install doxygen tbb llvm
           if [ "$RUNNER_OS" == "Linux" ]; then
-            sudo apt update && sudo apt install -y python3-pip python3-sphinx lcov libboost-all-dev libomp-12-dev clang-12
+            sudo apt update && sudo apt install -y gcc-12 g++-12 python3-pip python3-sphinx lcov libboost-all-dev libomp-12-dev clang-12
             if [ "$INPUT_MPI" == "ON" ]; then
                sudo apt install -y libopenmpi-dev libhdf5-mpi-dev
             else
@@ -81,7 +81,7 @@ jobs:
                     -DTBB_DIR=$(brew --prefix tbb)/lib/cmake/TBB -DOPFLOW_WITH_MPI=${{ matrix.mpi }} ..
             fi
           else
-            cmake -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 \
+            cmake -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 \
                   -DOPFLOW_WITH_HDF5=ON -DBENCHMARK_ENABLE_TESTING=OFF -DOPFLOW_BUILD_ALL=ON -DOPFLOW_INSTALL=OFF \
                   -DOPFLOW_WITH_VTK=OFF -DOPFLOW_TBB_EXTERNAL=ON -DDOXYGEN_DIR=$(brew --prefix doxygen)/bin \
                   -DTBB_DIR=$(brew --prefix tbb)/lib/cmake/TBB -DOPFLOW_WITH_MPI=${{ matrix.mpi }} ..
