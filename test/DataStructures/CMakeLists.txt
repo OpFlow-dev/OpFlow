@@ -23,3 +23,4 @@ add_gmock(StencilPadTest ${CMAKE_CURRENT_LIST_DIR}/StencilPadTest.cpp)
 
 # Mappers
 add_gmock(BlockedMDRangeMapperTest ${CMAKE_CURRENT_LIST_DIR}/Index/BlockedMDRangeMapperTest.cpp)
+add_gmock(ColoredBlockedMDRangeMapperTest ${CMAKE_CURRENT_LIST_DIR}/Index/ColoredBlockedMDRangeMapperTest.cpp)
