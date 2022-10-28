@@ -52,7 +52,8 @@ protected:
     Mesh m;
 };
 
-TEST_F(ColoredBlockedMDRangeMapperTest, XFaceMap) {
+// Single target. Should fallback to BlockedMDRangeMapper.
+TEST_F(ColoredBlockedMDRangeMapperTest, XFaceMap_N3_Fallback) {
     std::vector<DS::Range<2>> ranges;
     auto info = makeParallelInfo();
     info.nodeInfo.node_count = 3;
@@ -60,9 +61,50 @@ TEST_F(ColoredBlockedMDRangeMapperTest, XFaceMap) {
     auto splitMap = strategy->getSplitMap(m.getRange(), plan);
     for (const auto& m : splitMap) { ranges.push_back(DS::commonRange(m, u.getLocalWritableRange())); }
     auto mapper = DS::ColoredBlockedMDRangeMapper<2>(ranges);
-    // Block 2
-    ASSERT_EQ(mapper(DS::ColoredIndex<DS::MDIndex<2>>{DS::MDIndex<2>{1, 0}, 0}), 0);
-    // Block 3
-    ASSERT_EQ(mapper(DS::ColoredIndex<DS::MDIndex<2>>{DS::MDIndex<2>{2, 0}, 0}), 4);
-    ASSERT_EQ(mapper(DS::ColoredIndex<DS::MDIndex<2>>{DS::MDIndex<2>{3, 0}, 0}), 5);
+    auto fallback_mapper = DS::BlockedMDRangeMapper<2>(ranges);
+    rangeFor_s(u.getLocalWritableRange(), [&](auto&& i) {
+        ASSERT_EQ(mapper(DS::ColoredIndex<DS::MDIndex<2>> {i, 0}), fallback_mapper(i));
+    });
+}
+
+TEST_F(ColoredBlockedMDRangeMapperTest, XFaceMap_N4_Fallback) {
+    std::vector<DS::Range<2>> ranges;
+    auto info = makeParallelInfo();
+    info.nodeInfo.node_count = 4;
+    auto plan = makeParallelPlan(info, ParallelIdentifier::DistributeMem);
+    auto splitMap = strategy->getSplitMap(m.getRange(), plan);
+    for (const auto& m : splitMap) { ranges.push_back(DS::commonRange(m, u.getLocalWritableRange())); }
+    auto mapper = DS::ColoredBlockedMDRangeMapper<2>(ranges);
+    auto fallback_mapper = DS::BlockedMDRangeMapper<2>(ranges);
+    rangeFor_s(u.getLocalWritableRange(), [&](auto&& i) {
+        ASSERT_EQ(mapper(DS::ColoredIndex<DS::MDIndex<2>> {i, 0}), fallback_mapper(i));
+    });
+}
+
+TEST_F(ColoredBlockedMDRangeMapperTest, CenterMap_N3_Fallback) {
+    std::vector<DS::Range<2>> ranges;
+    auto info = makeParallelInfo();
+    info.nodeInfo.node_count = 3;
+    auto plan = makeParallelPlan(info, ParallelIdentifier::DistributeMem);
+    auto splitMap = strategy->getSplitMap(m.getRange(), plan);
+    for (const auto& m : splitMap) { ranges.push_back(DS::commonRange(m, p.getLocalWritableRange())); }
+    auto mapper = DS::ColoredBlockedMDRangeMapper<2>(ranges);
+    auto fallback_mapper = DS::BlockedMDRangeMapper<2>(ranges);
+    rangeFor_s(p.getLocalWritableRange(), [&](auto&& i) {
+        ASSERT_EQ(mapper(DS::ColoredIndex<DS::MDIndex<2>> {i, 0}), fallback_mapper(i));
+    });
+}
+
+TEST_F(ColoredBlockedMDRangeMapperTest, CenterMap_N4_Fallback) {
+    std::vector<DS::Range<2>> ranges;
+    auto info = makeParallelInfo();
+    info.nodeInfo.node_count = 4;
+    auto plan = makeParallelPlan(info, ParallelIdentifier::DistributeMem);
+    auto splitMap = strategy->getSplitMap(m.getRange(), plan);
+    for (const auto& m : splitMap) { ranges.push_back(DS::commonRange(m, p.getLocalWritableRange())); }
+    auto mapper = DS::ColoredBlockedMDRangeMapper<2>(ranges);
+    auto fallback_mapper = DS::BlockedMDRangeMapper<2>(ranges);
+    rangeFor_s(p.getLocalWritableRange(), [&](auto&& i) {
+        ASSERT_EQ(mapper(DS::ColoredIndex<DS::MDIndex<2>> {i, 0}), fallback_mapper(i));
+    });
 }
