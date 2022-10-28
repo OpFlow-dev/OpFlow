@@ -44,10 +44,9 @@ namespace OpFlow::DS {
 
     private:
         void init_offset() {
-            // note: offset begins with index 1, which is due to that the color starts with 1
-            offset.resize(mappers.size() + 1);
-            offset[0] = offset[1] = 0;
-            for (int i = 2; i < offset.size(); ++i) { offset[i] = offset[i - 1] + mappers[i - 2].count(); }
+            offset.resize(mappers.size());
+            offset[0] = 0;
+            for (int i = 1; i < offset.size(); ++i) { offset[i] = offset[i - 1] + mappers[i - 1].count(); }
         }
 
         void init_mappers() {
@@ -64,7 +63,7 @@ namespace OpFlow::DS {
 
     public:
         auto operator()(const ColoredIndex<MDIndex<dim>>& idx) const {
-            return mappers[idx.color](idx) + offset[idx.color + 1];
+            return mappers[idx.color](idx) + offset[idx.color];
         }
 
         auto operator()(const MDIndex<dim>& idx, int i) const { return mappers[i](idx); }
