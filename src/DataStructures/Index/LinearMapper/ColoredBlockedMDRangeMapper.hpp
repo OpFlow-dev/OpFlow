@@ -27,6 +27,7 @@ namespace OpFlow::DS {
 
         explicit ColoredBlockedMDRangeMapper(const std::vector<Range<dim>>& r, auto&&... rs)
             : ranges({r, rs...}) {
+            check_ranges();
             init_mappers();
             init_offset();
         }
@@ -44,9 +45,53 @@ namespace OpFlow::DS {
 
     private:
         void init_offset() {
-            offset.resize(mappers.size());
-            offset[0] = 0;
-            for (int i = 1; i < offset.size(); ++i) { offset[i] = offset[i - 1] + mappers[i - 1].count(); }
+            int target_count = mappers.size();
+            int block_counts = mappers[0].block_count();
+            offset.resize(target_count);
+            // loop over all blocks, calculate interleaved offset
+            // target0.block0, ..., targetN.block0, target0.block1, ..., targetN.blockM
+            // push back the initial 0
+            offset[0].push_back(0);
+            // initialize the 0th block
+            for (int i = 1; i < target_count; ++i) {
+                offset[i].push_back(offset[i - 1].back() + mappers[i - 1].getBlockSize(0));
+            }
+            // initialize block 1 ... M
+            if (target_count == 1) {
+                for (int b = 1; b < block_counts; ++b) {
+                    offset[0].push_back(offset[0].back() + mappers[0].getBlockSize(b - 1));
+                }
+            } else {
+                for (int b = 1; b < block_counts; ++b) {
+                    offset[0].push_back(offset.back().back() + mappers.back().getBlockSize(b - 1));
+                    for (int i = 1; i < target_count; ++i) {
+                        // for each target i's block b, its offset is the offset of i-1's block b + its size
+                        offset[i].push_back(offset[i - 1].back() + mappers[i - 1].getBlockSize(b));
+                    }
+                }
+            }
+            // local_offset records the offset of the blocks in the same block_rank, i.e.,
+            // target0.block, target1.block, ..., targetN.block
+            // the first index is the block rank, the second index is the target rank (contradictory to offset)
+            local_offset.resize(block_counts);
+            for (int b = 0; b < block_counts; ++b) {
+                local_offset[b].push_back(0);
+                for (int i = 1; i < target_count; ++i) {
+                    local_offset[b].push_back(mappers[i - 1].getBlockSize(b));
+                }
+            }
+        }
+
+        void check_ranges() const {
+            if (ranges.empty()) return;
+            auto subranges_count = ranges[0].size();
+            // all range list in ranges must have the same count of sub-ranges
+            for (const auto& r : ranges) {
+                OP_ASSERT_MSG(r.size() == subranges_count,
+                              "ColoredBlockedMDRangeMapper: range list has {} elements which is not equal to "
+                              "the common size {}",
+                              r.size(), subranges_count);
+            }
         }
 
         void init_mappers() {
@@ -63,15 +108,22 @@ namespace OpFlow::DS {
 
     public:
         auto operator()(const ColoredIndex<MDIndex<dim>>& idx) const {
-            return mappers[idx.color](idx) + offset[idx.color];
+            return mappers[idx.color].getLocalRank(MDIndex<dim>(idx))
+                   + offset[idx.color][mappers[idx.color].getBlockRank(MDIndex<dim>(idx))];
+        }
+
+        auto getLocalRank(const ColoredIndex<MDIndex<dim>>& idx) const {
+            return mappers[idx.color].getLocalRank(MDIndex<dim>(idx))
+                   + local_offset[mappers[idx.color].getBlockRank(MDIndex<dim>(idx))][idx.color];
         }
 
         auto operator()(const MDIndex<dim>& idx, int i) const { return mappers[i](idx); }
 
+    private:
         std::vector<std::vector<Range<dim>>> ranges;
         std::vector<Range<dim>> localRanges;
         std::vector<BlockedMDRangeMapper<dim>> mappers;
-        std::vector<int> offset;
+        std::vector<std::vector<int>> offset, local_offset;
     };
 }// namespace OpFlow::DS
 

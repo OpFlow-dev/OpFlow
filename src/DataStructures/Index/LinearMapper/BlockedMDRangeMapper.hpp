@@ -23,6 +23,9 @@ namespace OpFlow::DS {
     struct BlockedMDRangeMapper {
         BlockedMDRangeMapper() = default;
         explicit BlockedMDRangeMapper(const std::vector<Range<d>>& ranges) : _ranges(ranges) {
+            gatherSplits();
+            sortRanges();
+            calculateOffsets();
             calculateMultiplier();
         }
         explicit BlockedMDRangeMapper(const Range<d>& range) {
@@ -49,20 +52,31 @@ namespace OpFlow::DS {
             _ranges.resize(1);
             _ranges[0] = range;
 #endif
+            gatherSplits();
+            calculateOffsets();
             calculateMultiplier();
         }
 
-        int operator()(const MDIndex<d>& idx) const {
-            // we assume the _ranges are listed by column-major sequence
-            int block_idx[d];
-            for (auto i = 0; i < d; ++i) {
-                for (auto j = 0; j < _split[i].size() - 1; ++j) {
-                    if (_split[i][j] <= idx[i] && idx[i] < _split[i][j + 1]) {
-                        block_idx[i] = j;
-                        break;
+        std::array<int, d> getBlockIndex(const MDIndex<d>& idx) const {
+            if (!checkIndexInBlock(idx, getBlockRank(last_block))) {
+                for (auto i = 0; i < d; ++i) {
+                    for (auto j = 0; j < _split[i].size() - 1; ++j) {
+                        if (_split[i][j] <= idx[i] && idx[i] < _split[i][j + 1]) {
+                            last_block[i] = j;
+                            break;
+                        }
                     }
                 }
             }
+            return last_block;
+        }
+
+        bool checkIndexInBlock(const MDIndex<d>& idx, const int block_rank) const {
+            return inRange(_ranges[block_rank], idx);
+        }
+
+        int getBlockRank(const std::array<int, d>& block_idx) const {
+            // we assume the _ranges are listed by column-major sequence
             int block_rank = block_idx[d - 1];
             for (int i = d - 2; i >= 0; --i) {
                 block_rank *= _split[i].size() - 1;
@@ -70,15 +84,48 @@ namespace OpFlow::DS {
             }
             OP_ASSERT_MSG(block_rank < _ranges.size(), "Block rank {} out of range {}", block_rank,
                           _ranges.size());
+            return block_rank;
+        }
+
+        int getBlockRank(const MDIndex<d>& idx) const { return getBlockRank(getBlockIndex(idx)); }
+
+        int getBlockSize(int block_rank) const { return _ranges[block_rank].count(); }
+
+        int getLocalRank(const MDIndex<d>& idx) const {
+            if (!checkIndexInBlock(idx, last_block_rank)) {
+                last_block = getBlockIndex(idx);
+                last_block_rank = getBlockRank(last_block);
+            }
+            int block_rank = last_block_rank;
+            OP_ASSERT_MSG(block_rank < _ranges.size(),
+                          "BlockedMDRangeMapper error: block_rank {} large than total ranges count {}",
+                          block_rank, _ranges.size());
             const auto& _r = _ranges[block_rank];
             OP_ASSERT_MSG(inRange(_r, idx), "BlockedMDRangeMapper Error: index {} not in blocked range {}",
                           idx, _r.toString());
+            int ret = 0;
+            for (auto i = 0; i < d; ++i) ret += _fac[block_rank][i] * (idx[i] - _r.start[i]);
+            return ret;
+        }
+
+        int operator()(const MDIndex<d>& idx) const {
+            if (!checkIndexInBlock(idx, last_block_rank)) {
+                last_block = getBlockIndex(idx);
+                last_block_rank = getBlockRank(last_block);
+            }
+            int block_rank = last_block_rank;
+            const auto& _r = _ranges[block_rank];
+            OP_ASSERT_MSG(inRange(_r, idx),
+                          "BlockedMDRangeMapper Error: index {} not in blocked range {}, block_idx = {{{}, "
+                          "{}}}, last_block_rank = {}",
+                          idx, _r.toString(), last_block[0], last_block[1], last_block_rank);
             int ret = _offset[block_rank];
             for (auto i = 0; i < d; ++i) ret += _fac[block_rank][i] * (idx[i] - _r.start[i]);
             return ret;
         }
 
-        int count() const { return _offset.back(); }
+        [[nodiscard]] int count() const { return _offset.back(); }
+        [[nodiscard]] int block_count() const { return _ranges.size(); }
 
         int operator()(const ColoredIndex<MDIndex<d>>& idx) const {
             // todo: color is ignored here. check this out
@@ -89,19 +136,41 @@ namespace OpFlow::DS {
         int operator()(const MDIndex<d>& idx, int) const { return operator()(idx); }
 
     private:
-        void calculateMultiplier() {
-            // remove all empty ranges as they are not numbered
-            {
-                auto end = std::remove_if(_ranges.begin(), _ranges.end(),
-                                          [](const Range<d>& r) { return r.empty(); });
-                _ranges.erase(end, _ranges.end());
+        void gatherSplits() {
+            // IMPORTANT ASSUMPTION:
+            // We assume here the input _ranges are generated by splitting a range by several orthogonal planes
+            std::vector<std::vector<std::pair<int, int>>> segments(d);
+            for (auto i = 0; i < d; ++i) {
+                for (const auto& _r : _ranges) { segments[i].template emplace_back(_r.start[i], _r.end[i]); }
+                std::sort(segments[i].begin(), segments[i].end());
+                auto end = std::unique(segments[i].begin(), segments[i].end());
+                segments[i].erase(end, segments[i].end());
+                _split[i].push_back(segments[i].front().first);
+                for (const auto& s : segments[i]) _split[i].push_back(s.second);
             }
+        }
+
+        void sortRanges() {
+            // sort the ranges according to column-major rank
+            std::sort(_ranges.begin(), _ranges.end(), [&](const Range<d>& a, const Range<d>& b) {
+                // this happens when the left-most block is empty because all nodes covered by the boundary
+                // e.g., x-face field on a 4x4 mesh with 3 MPI procs and Dirichlet boundary condition
+                if (a.empty() && !b.empty()) {
+                    return true;
+                } else
+                    return getBlockRank(getBlockIndex(a.first())) < getBlockRank(getBlockIndex(b.first()));
+            });
+        }
+
+        void calculateOffsets() {
             _offset.resize(_ranges.size() + 1);
             _offset[0] = 0;
             for (auto i = 1; i < _offset.size(); ++i) {
                 _offset[i] = _offset[i - 1] + _ranges[i - 1].count();
             }
+        }
 
+        void calculateMultiplier() {
             _fac.resize(_ranges.size());
             for (auto i = 0; i < _fac.size(); ++i) {
                 _fac[i][0] = 1;
@@ -109,24 +178,16 @@ namespace OpFlow::DS {
                     _fac[i][j] = (_ranges[i].end[j - 1] - _ranges[i].start[j - 1]) * _fac[i][j - 1];
                 }
             }
-
-            // IMPORTANT ASSUMPTION:
-            // We assume here the input _ranges are generated by splitting a range by several orthogonal planes
-            for (auto i = 0; i < d; ++i) { _split[i].push_back(_ranges[0].start[i]); }
-            for (const auto& _r : _ranges) {
-                for (auto i = 0; i < d; ++i) _split[i].push_back(_r.end[i]);
-            }
-            for (auto i = 0; i < d; ++i) {
-                std::sort(_split[i].begin(), _split[i].end());
-                auto end = std::unique(_split[i].begin(), _split[i].end());
-                _split[i].erase(end, _split[i].end());
-            }
         }
 
         std::vector<int> _offset;
         std::array<std::vector<int>, d> _split;
         std::vector<std::array<int, d>> _fac;
         std::vector<Range<d>> _ranges;
+
+        // used to accelerate repeating query inside the same block
+        mutable std::array<int, d> last_block {0};
+        mutable int last_block_rank = 0;
     };
 }// namespace OpFlow::DS
 

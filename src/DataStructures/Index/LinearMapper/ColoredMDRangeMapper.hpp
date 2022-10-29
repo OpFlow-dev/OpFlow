@@ -35,6 +35,8 @@ namespace OpFlow::DS {
             return mappers[idx.color](idx) + offset[idx.color + 1];
         }
 
+        auto getLocalRank(const ColoredIndex<MDIndex<dim>>& idx) const { return operator()(idx); }
+
         auto operator()(const MDIndex<dim>& idx, int i) const { return mappers[i](idx); }
 
         std::vector<Range<dim>> ranges;
