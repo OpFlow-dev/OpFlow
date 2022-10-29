@@ -79,15 +79,20 @@ namespace OpFlow {
         for (const auto& p : params) pin.push_back(p.pinValue);
         auto mat = CSRMatrixGenerator::generate(st_holder, mapper, pin);
         if (params[0].dumpPath && !params[0].dumpPath.value().empty()) {
+#ifdef OPFLOW_WITH_MPI
+            std::ofstream of(params[0].dumpPath.value() + "A.mat" + fmt::format(".rank{}", getWorkerId()));
+#else
             std::ofstream of(params[0].dumpPath.value() + "A.mat");
-            of << mat.toString(false);
+#endif
+            of << mat.toString();
         }
         std::vector<Real> x(mat.rhs.size());
         auto state = AMGCLBackend<S, Real>::solve(mat, x, params[0].p, params[0].bp, params[0].verbose);
         Meta::static_for<decltype(st_holder)::size>([&]<int i>(Meta::int_<i>) {
             auto target = eqn_holder.template getTargetPtr<i>();
-            rangeFor(target->assignableRange, [&](auto&& k) {
-                (*target)[k] = x[mapper(DS::ColoredIndex<Meta::RealType<decltype(k)>> {k, i})];
+            auto local_mapper = DS::MDRangeMapper {target->getLocalWritableRange()};
+            rangeFor(target->getLocalWritableRange(), [&](auto&& k) {
+                (*target)[k] = x[mapper.getLocalRank(DS::ColoredIndex<Meta::RealType<decltype(k)>> {k, i})];
             });
             target->updatePadding();
         });
