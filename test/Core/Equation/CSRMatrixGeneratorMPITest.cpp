@@ -269,7 +269,16 @@ TEST_F(CSRMatrixGeneratorMPITest, SimplePoisson_2Eqn) {
         ASSERT_EQ(mat.row[i] - mat.row[mat.row.size() / 2], mat.row[j]);
     }
     for (int i = mat.col.size() / 2, j = 0; i < mat.col.size(); ++i, ++j) {
-        ASSERT_EQ(mat.col[i] - 16, mat.col[j]);
+        if (getWorkerCount() == 3) {// non-even split case
+            int offset;
+            if (4 <= mat.col[i] && mat.col[i] < 16) offset = 4;
+            else
+                offset = 8;
+            ASSERT_EQ(mat.col[i] - offset, mat.col[j]);
+        } else {
+            // other case (N = 1, 2, 4) are even split, the offset is the same
+            ASSERT_EQ(mat.col[i] - p.getLocalWritableRange().count(), mat.col[j]);
+        }
     }
     for (int i = mat.val.size() / 2, j = 0; i < mat.val.size(); ++i, ++j) {
         ASSERT_DOUBLE_EQ(mat.val[i], mat.val[j]);
@@ -312,7 +321,16 @@ TEST_F(CSRMatrixGeneratorMPITest, SimplePoisson_Neum_2Eqn) {
         ASSERT_EQ(mat.row[i] - mat.row[mat.row.size() / 2], mat.row[j]);
     }
     for (int i = mat.col.size() / 2, j = 0; i < mat.col.size(); ++i, ++j) {
-        ASSERT_EQ(mat.col[i] - 16, mat.col[j]);
+        if (getWorkerCount() == 3) {// non-even split case
+            int offset;
+            if (4 <= mat.col[i] && mat.col[i] < 16) offset = 4;
+            else
+                offset = 8;
+            ASSERT_EQ(mat.col[i] - offset, mat.col[j]);
+        } else {
+            // other case (N = 1, 2, 4) are even split, the offset is the same
+            ASSERT_EQ(mat.col[i] - p.getLocalWritableRange().count(), mat.col[j]);
+        }
     }
     for (int i = mat.val.size() / 2, j = 0; i < mat.val.size(); ++i, ++j) {
         ASSERT_DOUBLE_EQ(mat.val[i], mat.val[j]);
