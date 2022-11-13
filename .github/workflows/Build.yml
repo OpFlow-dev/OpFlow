@@ -66,6 +66,10 @@ jobs:
       - name: Generate
         working-directory: ./build
         run: |
+          # need to add the python path to the environment
+          if [ "$RUNNER_OS" == "macOS" ]; then
+            export PATH="$PATH:/Library/Frameworks/Python.framework/Versions/3.11/bin"
+          fi
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           if [ "${{ matrix.compiler }}" == "clang" ]; then
             if [ "$RUNNER_OS" == "Linux" ]; then
