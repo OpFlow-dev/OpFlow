@@ -122,6 +122,7 @@ namespace OpFlow {
 
         auto evalAtImpl_final(const index_type& index) const {
             OP_ASSERT_MSG(base, "base ptr of stencil field is nullptr");
+            // inner case, return a stencil pad
             if (DS::inRange(this->assignableRange, index)) [[likely]] {
                     auto ret = typename internal::ExprTrait<StencilField>::elem_type {0};
                     // note: here solution is pinned at base->assignableRange.start
@@ -132,14 +133,11 @@ namespace OpFlow {
                         [[likely]] ret.pad[colored_index_type {index, color}] = 1.0;
                     return ret;
                 }
-            else if (DS::inRange(this->accessibleRange, index)) {
-                // index lay on dirc bc
-                return typename internal::ExprTrait<StencilField>::elem_type {base->evalAt(index)};
-            } else if (!DS::inRange(this->logicalRange, index)) {
+            else if (!DS::inRange(this->logicalRange, index)) {// corner case, error & abort
                 OP_ERROR("Index {} out of range {}", index, this->logicalRange.toString());
                 OP_ABORT;
-            } else {
-                // index has to be extended by bc
+            } else {// needs boundary condition info to continue
+                // case 1: index fall outside of boundary, fold it into accessibleRange
                 for (int i = 0; i < dim; ++i) {
                     if (this->accessibleRange.start[i] <= index[i] && index[i] < this->accessibleRange.end[i])
                         continue;
@@ -332,10 +330,23 @@ namespace OpFlow {
                         }
                     }
                 }
-                // should not reach here
-                OP_ERROR("Could not handle current case: i = {}", index);
-                OP_ABORT;
+                // case 2: index fall on a Dirc bc
+                for (int i = 0; i < dim; ++i) {
+                    if (this->loc[i] == LocOnMesh::Corner && this->bc[i].start->getBCType() == BCType::Dirc
+                        && index[i] == this->accessibleRange.start[i]) {
+                        // fall on the left boundary
+                        return this->bc[i].start->evalAt(index);
+                    } else if (this->loc[i] == LocOnMesh::Corner
+                               && this->bc[i].end->getBCType() == BCType::Dirc
+                               && index[i] == this->accessibleRange.end[i] - 1) {
+                        // fall on the right boundary
+                        return this->bc[i].end->evalAt(index);
+                    }
+                }
             }
+            // should not reach here
+            OP_ERROR("Could not handle current case: i = {}", index);
+            OP_ABORT;
         }
         void prepareImpl_final() const {}
 
