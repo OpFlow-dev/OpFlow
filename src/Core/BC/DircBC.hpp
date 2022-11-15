@@ -69,6 +69,8 @@ namespace OpFlow {
             return std::make_unique<FunctorDircBC<F>>(f);
         }
 
+        [[nodiscard]] auto getValue() const { return _c; }
+
     protected:
         void assignImpl(const BCBase<F>& other) override {
             _c = other.evalAt(typename internal::FieldExprTrait<F>::index_type());
@@ -105,6 +107,8 @@ namespace OpFlow {
                              f) const override {
             return std::make_unique<FunctorDircBC<F>>(f);
         }
+
+        [[nodiscard]] auto getFunctor() const { return _f; }
 
     protected:
         void assignImpl(const BCBase<F>& other) override {
