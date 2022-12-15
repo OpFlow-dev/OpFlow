@@ -27,8 +27,27 @@
 
 namespace OpFlow {
 
-    DEFINE_BINFUNC(Max, std::max, max)
-    DEFINE_BINFUNC(Min, std::min, min)
+    namespace internal {
+        template <typename T, typename U>
+        auto min(const T& a, const U& b) {
+            if constexpr (std::is_same_v<T, U>) {
+                return std::min<T>(a, b);
+            } else {
+                return std::min<std::common_type_t<T, U>>(a, b);
+            }
+        }
+        template <typename T, typename U>
+        auto max(const T& a, const U& b) {
+            if constexpr (std::is_same_v<T, U>) {
+                return std::max<T>(a, b);
+            } else {
+                return std::max<std::common_type_t<T, U>>(a, b);
+            }
+        }
+    }// namespace internal
+
+    DEFINE_BINFUNC(Max, internal::max, max)
+    DEFINE_BINFUNC(Min, internal::min, min)
 
 #undef DEFINE_BINOP
 #undef DEFINE_BINFUNC
