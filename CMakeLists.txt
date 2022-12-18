@@ -496,7 +496,7 @@ if (OPFLOW_BUILD_DOCS OR OPFLOW_BUILD_ALL)
         endif ()
     endif ()
     message(STATUS "Found Doxygen version: ${_out}")
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+    configure_file(doc/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen)
     add_custom_target(doxygen_doc
             COMMAND ${DOXYGEN_PATH} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
