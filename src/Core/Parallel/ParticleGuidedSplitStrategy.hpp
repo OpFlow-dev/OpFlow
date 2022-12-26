@@ -60,6 +60,8 @@ namespace OpFlow {
 
         void setParticleLoad(double load) { part_load_factor = load; }
 
+        void setParticleWeight(double w) { local_particle_weight = w; }
+
         void setMeshLoad(double load) { mesh_load_factor = load; }
 
         void setRefMesh(const typename internal::ExprTrait<F>::mesh_type& mesh) { ref_mesh = mesh; }
@@ -68,6 +70,8 @@ namespace OpFlow {
 
     private:
         std::vector<Particle<dim>> particles;
+        double local_particle_weight = 1;
+        std::vector<double> particle_weight;
         typename internal::ExprTrait<F>::mesh_type ref_mesh;
         double part_load_factor = 0, mesh_load_factor = 1;
         int max_levels = 0;
@@ -77,6 +81,7 @@ namespace OpFlow {
             Node* parent = nullptr;
             DS::Range<dim> range;
             std::vector<Particle<dim>> particles;
+            std::vector<double> particle_weight;
             int split_axis = -1;// -1 for leaf node
 
             Node() = default;
@@ -86,6 +91,17 @@ namespace OpFlow {
                     rc->traverse(OP_PERFECT_FOWD(func));
                 } else {
                     func(*this);
+                }
+            }
+
+            void print_tree(std::string prefix) const {
+                OP_INFO("{} range = {}, axis = {}", prefix, range.toString(), split_axis);
+                if (!is_leaf()) {
+                    prefix += "--";
+                    OP_INFO("{} lc:", prefix);
+                    lc->print_tree(prefix);
+                    OP_INFO("{} rc:", prefix);
+                    rc->print_tree(prefix);
                 }
             }
             void splitAt(int d, int pos, const typename internal::ExprTrait<F>::mesh_type& mesh) {
@@ -101,10 +117,14 @@ namespace OpFlow {
                 new_lc->parent = this;
                 new_rc->parent = this;
                 split_axis = d;
-                for (const auto& p : particles) {
-                    if (p.x[d] < mesh.x(d, pos + range.start[d])) new_lc->particles.push_back(p);
-                    else
-                        new_rc->particles.push_back(p);
+                for (int i = 0; i < particles.size(); ++i) {
+                    if (particles[i].x[d] < mesh.x(d, pos + range.start[d])) {
+                        new_lc->particles.push_back(particles[i]);
+                        new_lc->particle_weight.push_back(particle_weight[i]);
+                    } else {
+                        new_rc->particles.push_back(particles[i]);
+                        new_rc->particle_weight.push_back(particle_weight[i]);
+                    }
                 }
                 lc = std::move(new_lc);
                 rc = std::move(new_rc);
@@ -126,12 +146,14 @@ namespace OpFlow {
                 auto load = get_load_along_dim(d, pload, mload, mesh);
                 auto total_load = get_total_load(pload, mload);
                 auto mid_iter = std::find_if_not(load.begin(), load.end(),
-                                             [=](auto&& l) { return l < total_load / 2; });
+                                                 [=](auto&& l) { return l < total_load / 2; });
                 return mid_iter - load.begin();
             }
 
             double get_total_load(double pload, double mload) const {
-                return particles.size() * pload + range.count() * mload;
+                double weighted_particle_size
+                        = std::accumulate(particle_weight.begin(), particle_weight.end(), 0);
+                return weighted_particle_size * pload + range.count() * mload;
             }
 
             std::vector<double> get_load_along_dim(int d, double pload, double mload,
@@ -164,16 +186,24 @@ namespace OpFlow {
                 } else {
                     // do the real work
                     // sort particles along axis d
-                    std::sort(
-                            particles.begin(), particles.end(),
-                            [d](const Particle<dim>& a, const Particle<dim>& b) { return a.x[d] < b.x[d]; });
+                    std::vector<std::pair<Particle<dim>, double>> buffer;
+                    for (int i = 0; i < particles.size(); ++i) {
+                        buffer.emplace_back(particles[i], particle_weight[i]);
+                    }
+                    std::sort(buffer.begin(), buffer.end(),
+                              [d](auto&& a, auto&& b) { return a.first.x[d] < b.first.x[d]; });
+                    for (int i = 0; i < particles.size(); ++i) {
+                        particles[i] = buffer[i].first;
+                        particle_weight[i] = buffer[i].second;
+                    }
+                    buffer.clear();
                     // add particle work load first
                     auto part_iter = particles.begin();
                     for (int i = 0; i < ret.size(); ++i) {
                         double xleft = mesh.x(d, i), xright = mesh.x(d, i + 1);
                         while (part_iter != particles.end() && xleft <= part_iter->x[d]
                                && part_iter->x[d] < xright) {
-                            ret[i] += pload;
+                            ret[i] += particle_weight[part_iter - particles.begin()] * pload;
                             part_iter++;
                         }
                     }
@@ -192,11 +222,41 @@ namespace OpFlow {
                           "ParticleGuidedSplitStrategy: total number of ranks must be power of 2");
         }
 
+        void gather_all_particles() {
+#if defined(OPFLOW_WITH_MPI) || defined(OPFLOW_TEST_ENVIRONMENT)
+            // gather counts
+            std::vector<int> counts(getWorkerCount(), 0);
+            int local_count = particles.size();
+            MPI_Allgather(&local_count, 1, MPI_INT, counts.data(), 1, MPI_INT, MPI_COMM_WORLD);
+            int total_part_size = std::accumulate(counts.begin(), counts.end(), 0);
+            // gather weights
+            std::vector<double> global_weights, weights_buffer(counts.size());
+            MPI_Allgather(&local_particle_weight, 1, MPI_DOUBLE, weights_buffer.data(), 1, MPI_DOUBLE,
+                          MPI_COMM_WORLD);
+            global_weights.reserve(total_part_size);
+            for (int i = 0; i < counts.size(); ++i) {
+                for (int j = 0; j < counts[i]; ++j) global_weights.push_back(weights_buffer[i]);
+            }
+            particle_weight = std::move(global_weights);
+            // gather parts
+            std::vector<Particle<dim>> global_parts(total_part_size);
+            std::vector<int> offsets(counts.size());
+            std::exclusive_scan(counts.begin(), counts.end(), offsets.begin(), 0);
+            for (auto& c : counts) c *= sizeof(Particle<dim>);
+            for (auto& o : offsets) o *= sizeof(Particle<dim>);
+            MPI_Allgatherv(particles.data(), local_count * sizeof(Particle<dim>), MPI_CHAR,
+                           global_parts.data(), counts.data(), offsets.data(), MPI_CHAR, MPI_COMM_WORLD);
+            particles = std::move(global_parts);
+#endif
+        }
+
         // build a kd-tree of max_levels according to given particles and background mesh
-        auto gen_split_tree(const DS::Range<dim>& range, const ParallelPlan& plan) const {
+        auto gen_split_tree(const DS::Range<dim>& range, const ParallelPlan& plan) {
+            gather_all_particles();
             Node root;
             root.range = range;
             root.particles = particles;
+            root.particle_weight = particle_weight;
             std::deque<Node*> build_queue;
             build_queue.push_back(&root);
             for (int i = 0; i < max_levels; ++i) {
@@ -218,7 +278,7 @@ namespace OpFlow {
             // assume the input range is nodal range, convert to central range
             auto _range = range;
             for (std::size_t i = 0; i < dim; ++i) _range.end[i]--;
-            if (plan.singleNodeMode() || max_levels == 1) return _range;
+            if (plan.singleNodeMode() || max_levels == 0) return _range;
             else {
                 if (!kdtree) kdtree = gen_split_tree(_range, plan);
                 auto* ptr = kdtree.get();
