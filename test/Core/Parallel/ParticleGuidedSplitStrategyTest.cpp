@@ -45,6 +45,33 @@ TEST_F(ParticleGuidedSplitStrategyTest, DivisibleDim) {
     ASSERT_TRUE((map[3] == DS::Range<2> {std::array {16, 16}, std::array {32, 32}}));
 }
 
+TEST_F(ParticleGuidedSplitStrategyTest, DivisibleDimWithParticle) {
+    auto range = DS::Range<2> {std::array<int, 2> {33, 33}};
+    auto plan = ParallelPlan {};
+    plan.distributed_workers_count = 4;
+    setGlobalParallelPlan(plan);
+    auto strategy = ParticleGuidedSplitStrategy<Field> {};
+    auto mesh = MeshBuilder<Mesh>()
+                        .newMesh(33, 33)
+                        .setMeshOfDim(0, 0., 1.)
+                        .setMeshOfDim(1, 0., 1.)
+                        .setPadWidth(5)
+                        .build();
+    strategy.setMaxLevel(2);
+    strategy.setRefMesh(mesh);
+    std::vector<Particle<2>> parts;
+    parts.push_back(Particle<2>{std::array<double, 2>{0.1, 0.1}});
+    strategy.setParticles(parts);
+    strategy.setParticleLoad(100);
+    // input nodal range, return centered range
+    auto map = strategy.getSplitMap(range, plan);
+    for (auto& m : map) OP_INFO("{}", m.toString());
+    ASSERT_TRUE((map[0] == DS::Range<2> {std::array {15, 13}}));
+    ASSERT_TRUE((map[2] == DS::Range<2> {std::array {15, 0}, std::array {32, 16}}));
+    ASSERT_TRUE((map[1] == DS::Range<2> {std::array {0, 13}, std::array {15, 32}}));
+    ASSERT_TRUE((map[3] == DS::Range<2> {std::array {15, 16}, std::array {32, 32}}));
+}
+
 TEST_F(ParticleGuidedSplitStrategyTest, DivisibleDimInEqual) {
     GTEST_SKIP() << "Non-power-of-2 procs currently not supported.";
     auto range = DS::Range<2> {std::array<int, 2> {49, 33}};
