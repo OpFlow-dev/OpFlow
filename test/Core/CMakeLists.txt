@@ -38,6 +38,7 @@ add_gmock(RangeReduceTest ${CMAKE_CURRENT_LIST_DIR}/Loops/RangeReduceTest.cpp)
 
 # Parallel
 add_gmock(EvenSplitStrategyTest ${CMAKE_CURRENT_LIST_DIR}/Parallel/EvenSplitStrategyTest.cpp)
+add_gmock(ParticleGuidedSplitStrategyTest ${CMAKE_CURRENT_LIST_DIR}/Parallel/ParticleGuidedSplitStrategyTest.cpp)
 add_gmock_mpi(MPITest 16 ${CMAKE_CURRENT_LIST_DIR}/Parallel/MPITest.cpp)
 
 # Equation
