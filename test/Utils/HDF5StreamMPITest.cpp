@@ -124,3 +124,25 @@ TEST_F(H5RWMPITest, ReadAfterWriteInEqualDim) {
     istream.close();
     rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) { ASSERT_EQ(v.evalAt(i), u.evalAt(i)); });
 }
+
+TEST_F(H5RWMPITest, GeneralSplitWite) {
+    if (getWorkerCount() != 4) GTEST_SKIP();
+    auto s = std::make_shared<ManualSplitStrategy<Field>>();
+    s->splitMap.emplace_back(std::array{0, 0}, std::array{1, 4});
+    s->splitMap.emplace_back(std::array{3, 0}, std::array{4, 4});
+    s->splitMap.emplace_back(std::array{1, 2}, std::array{3, 4});
+    s->splitMap.emplace_back(std::array{1, 0}, std::array{3, 2});
+    u.initBy([](auto&& x) { return getWorkerId(); });
+
+    Utils::H5Stream stream("./u.general.split.h5");
+    stream << Utils::TimeStamp(0) << u;
+    u.resplitWithStrategy(s.get());
+    OP_INFO("local range = {}", u.localRange.toString());
+    stream << Utils::TimeStamp(1.) << u;
+    u.initBy([](auto&& x) { return getWorkerId(); });
+    stream << Utils::TimeStamp(2) << u;
+    auto es = std::make_shared<EvenSplitStrategy<Field>>();
+    u.resplitWithStrategy(es.get());
+    stream << Utils::TimeStamp(3) << u;
+    ASSERT_TRUE(true);
+}
