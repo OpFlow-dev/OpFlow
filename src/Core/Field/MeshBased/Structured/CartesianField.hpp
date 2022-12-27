@@ -78,6 +78,99 @@ namespace OpFlow {
             return *this;
         }
 
+        template <typename T>
+            requires std::same_as<T, CartesianField>
+        void resplitWithStrategy(AbstractSplitStrategy<T>* strategy) {
+            if (!strategy) return;
+            auto old_local_range = this->localRange;
+            auto old_splitMap = this->splitMap;
+            auto new_local_range = strategy->splitRange(this->mesh.getRange(), getGlobalParallelPlan());
+            auto new_splitMap = strategy->getSplitMap(this->mesh.getRange(), getGlobalParallelPlan());
+            for (int i = 0; i < dim; ++i) {
+                auto _loc = this->loc[i];
+                if (_loc == LocOnMesh::Corner && new_local_range.end[i] == this->mesh.getRange().end[i] - 1)
+                    new_local_range.end[i]
+                            = std::min(new_local_range.end[i] + 1, this->accessibleRange.end[i]);
+                for (auto& r : new_splitMap) {
+                    if (_loc == LocOnMesh::Corner && r.end[i] == this->mesh.getRange().end[i] - 1)
+                        r.end[i] = std::min(r.end[i] + 1, this->accessibleRange.end[i]);
+                }
+            }
+
+            // find each potential intersections with each rank
+            std::vector<DS::Range<dim>> intersections(getWorkerCount());
+            for (int i = 0; i < this->splitMap.size(); ++i) {
+                intersections[i] = DS::commonRange(old_local_range, new_splitMap[i]);
+            }
+            std::vector<std::vector<D>> send_buff;
+            std::vector<int> dest_ranks;
+            for (int i = 0; i < intersections.size(); ++i) {
+                if (!intersections[i].empty()) {
+                    dest_ranks.push_back(i);
+                    std::vector<D> buff;
+                    buff.reserve(intersections[i].count());
+                    rangeFor_s(intersections[i], [&](auto&& k) { buff.push_back(this->evalAt(k)); });
+                    send_buff.push_back(std::move(buff));
+                    if constexpr (std::is_trivial_v<D> && std::is_standard_layout_v<D>) {
+                        MPI_Request request;
+                        MPI_Isend(send_buff.back().data(), send_buff.back().size() * sizeof(D), MPI_BYTE,
+                                  dest_ranks.back(), getWorkerId(), MPI_COMM_WORLD, &request);
+                        MPI_Request_free(&request);// status tested on receiver's side
+                    } else {
+                        OP_NOT_IMPLEMENTED;
+                    }
+                }
+            }
+
+            std::vector<std::vector<D>> recv_buff;
+            std::vector<MPI_Request> recv_requests;
+            recv_buff.reserve(getWorkerCount());
+            recv_requests.reserve(getWorkerCount());
+            for (int i = 0; i < old_splitMap.size(); ++i) {
+                intersections[i] = DS::commonRange(new_local_range, old_splitMap[i]);
+            }
+            std::vector<int> src_ranks;
+            for (int i = 0; i < intersections.size(); ++i) {
+                if (!intersections[i].empty()) {
+                    src_ranks.push_back(i);
+                    recv_buff.emplace_back();
+                    recv_buff.back().resize(intersections[i].count());
+                    recv_requests.emplace_back();
+                    if constexpr (std::is_trivial_v<D> && std::is_standard_layout_v<D>) {
+                        MPI_Irecv(recv_buff.back().data(), intersections[i].count() * sizeof(D), MPI_BYTE, i,
+                                  i, MPI_COMM_WORLD, &recv_requests.back());
+                    }
+                }
+            }
+            // reshape data array
+            this->data.reShape(new_local_range.getInnerRange(-this->padding).getExtends());
+            this->offset = typename internal::CartesianFieldExprTrait<CartesianField>::index_type(
+                    new_local_range.getInnerRange(-this->padding).getOffset());
+            this->localRange = new_local_range;
+            this->splitMap = new_splitMap;
+
+            // loop over all requests
+            int finished_count = 0;
+            std::vector<bool> finished_bit(src_ranks.size(), false);
+            while (finished_count != src_ranks.size()) {
+                for (int i = 0; i < finished_bit.size(); ++i) {
+                    if (!finished_bit[i]) {
+                        int flag;
+                        MPI_Test(&recv_requests[i], &flag, MPI_STATUS_IGNORE);
+                        if (flag) {
+                            finished_bit[i] = true;
+                            finished_count++;
+                            auto iter = recv_buff[i].begin();
+                            rangeFor_s(intersections[src_ranks[i]],
+                                       [&](auto&& k) { this->operator[](k) = *iter++; });
+                        }
+                    }
+                }
+            }
+            this->updateNeighbors();
+            updatePaddingImpl_final();
+        }
+
         template <BasicArithOp Op = BasicArithOp::Eq>
         auto& assignImpl_final(const CartesianField& other) {
             if (!initialized) {
@@ -269,14 +362,10 @@ namespace OpFlow {
             // the latter padding op pads the outer range of the former padding zone
             std::array<int, dim> start, end;
             if constexpr (requires(D v) {
-                              { v + v }
-                              ->std::same_as<D>;
-                              { v - v }
-                              ->std::same_as<D>;
-                              { v * 1.0 }
-                              ->std::same_as<D>;
-                              { v / 1.0 }
-                              ->std::same_as<D>;
+                              { v + v } -> std::same_as<D>;
+                              { v - v } -> std::same_as<D>;
+                              { v * 1.0 } -> std::same_as<D>;
+                              { v / 1.0 } -> std::same_as<D>;
                           }) {
                 for (int i = 0; i < dim; ++i) {
                     // lower side
@@ -531,8 +620,7 @@ namespace OpFlow {
                 }
             } else {
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
-                int rank;
-                MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+                int rank = getWorkerId();
                 // one of the following pairs of buffer is used
                 std::vector<std::vector<D>> send_buff, recv_buff;
                 std::vector<std::vector<std::byte>> send_buff_byte, recv_buff_byte;
@@ -689,7 +777,8 @@ namespace OpFlow {
         }
 
         template <typename Other>
-        requires(!std::same_as<Other, CartesianField>) bool containsImpl_final(const Other& o) const {
+            requires(!std::same_as<Other, CartesianField>)
+        bool containsImpl_final(const Other& o) const {
             return false;
         }
 
@@ -772,10 +861,13 @@ namespace OpFlow {
 
         // set a functor bc
         template <typename F>
-        requires requires(F f) {
-            { f(std::declval<typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>()) }
-            ->std::convertible_to<typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
-        }
+            requires requires(F f) {
+                         {
+                             f(std::declval<
+                                     typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>())
+                         } -> std::convertible_to<
+                                 typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
+                     }
         auto& setBC(int d, DimPos pos, BCType type, F&& functor) {
             OP_ASSERT(d < dim);
             auto& targetBC = pos == DimPos::start ? f.bc[d].start : f.bc[d].end;
