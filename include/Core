@@ -135,6 +135,7 @@
 #include "Core/Parallel/AbstractSplitStrategy.hpp"
 #include "Core/Parallel/EvenSplitStrategy.hpp"
 #include "Core/Parallel/ParticleGuidedSplitStrategy.hpp"
+#include "Core/Parallel/ManualSplitStrategy.hpp"
 
 // Others
 #include "Core/Loops/RangeFor.hpp"
