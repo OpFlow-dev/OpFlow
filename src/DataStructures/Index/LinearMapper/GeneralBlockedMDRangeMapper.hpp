@@ -84,30 +84,27 @@ namespace OpFlow::DS {
         int getBlockSize(int block_rank) const { return _ranges[block_rank].count(); }
 
         int getLocalRank(const MDIndex<d>& idx) const {
-            if (!checkIndexInBlock(idx, last_block_rank)) {
-                last_block_rank = getBlockRank(idx);
-            }
+            if (!checkIndexInBlock(idx, last_block_rank)) { last_block_rank = getBlockRank(idx); }
             int block_rank = last_block_rank;
             OP_ASSERT_MSG(block_rank < _ranges.size(),
                           "GeneralBlockedMDRangeMapper error: block_rank {} large than total ranges count {}",
                           block_rank, _ranges.size());
             const auto& _r = _ranges[block_rank];
-            OP_ASSERT_MSG(inRange(_r, idx), "GeneralBlockedMDRangeMapper Error: index {} not in blocked range {}",
-                          idx, _r.toString());
+            OP_ASSERT_MSG(inRange(_r, idx),
+                          "GeneralBlockedMDRangeMapper Error: index {} not in blocked range {}", idx,
+                          _r.toString());
             int ret = 0;
             for (auto i = 0; i < d; ++i) ret += _fac[block_rank][i] * (idx[i] - _r.start[i]);
             return ret;
         }
 
         int operator()(const MDIndex<d>& idx) const {
-            if (!checkIndexInBlock(idx, last_block_rank)) {
-                last_block_rank = getBlockRank(idx);
-            }
+            if (!checkIndexInBlock(idx, last_block_rank)) { last_block_rank = getBlockRank(idx); }
             int block_rank = last_block_rank;
             const auto& _r = _ranges[block_rank];
             OP_ASSERT_MSG(inRange(_r, idx),
-                          "GeneralBlockedMDRangeMapper Error: index {} not in blocked range {}",
-                          idx, _r.toString());
+                          "GeneralBlockedMDRangeMapper Error: index {} not in blocked range {}", idx,
+                          _r.toString());
             int ret = _offset[block_rank];
             for (auto i = 0; i < d; ++i) ret += _fac[block_rank][i] * (idx[i] - _r.start[i]);
             return ret;
