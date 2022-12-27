@@ -128,10 +128,10 @@ TEST_F(H5RWMPITest, ReadAfterWriteInEqualDim) {
 TEST_F(H5RWMPITest, GeneralSplitWite) {
     if (getWorkerCount() != 4) GTEST_SKIP();
     auto s = std::make_shared<ManualSplitStrategy<Field>>();
-    s->splitMap.emplace_back(std::array{0, 0}, std::array{1, 4});
-    s->splitMap.emplace_back(std::array{3, 0}, std::array{4, 4});
-    s->splitMap.emplace_back(std::array{1, 2}, std::array{3, 4});
-    s->splitMap.emplace_back(std::array{1, 0}, std::array{3, 2});
+    s->splitMap.emplace_back(std::array {0, 0}, std::array {1, 4});
+    s->splitMap.emplace_back(std::array {3, 0}, std::array {4, 4});
+    s->splitMap.emplace_back(std::array {1, 2}, std::array {3, 4});
+    s->splitMap.emplace_back(std::array {1, 0}, std::array {3, 2});
     u.initBy([](auto&& x) { return getWorkerId(); });
 
     Utils::H5Stream stream("./u.general.split.h5");

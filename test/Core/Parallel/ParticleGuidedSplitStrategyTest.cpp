@@ -60,7 +60,7 @@ TEST_F(ParticleGuidedSplitStrategyTest, DivisibleDimWithParticle) {
     strategy.setMaxLevel(2);
     strategy.setRefMesh(mesh);
     std::vector<Particle<2>> parts;
-    parts.push_back(Particle<2>{std::array<double, 2>{0.1, 0.1}});
+    parts.push_back(Particle<2> {std::array<double, 2> {0.1, 0.1}});
     strategy.setParticles(parts);
     strategy.setParticleLoad(100);
     // input nodal range, return centered range
@@ -159,7 +159,7 @@ TEST_F(ParticleGuidedSplitStrategyTest, WithOffset) {
                         .setMeshOfDim(0, 0., 1.)
                         .setMeshOfDim(1, 0., 1.)
                         .setPadWidth(5)
-                        .setStart(std::array<int, 2>{3, 3})
+                        .setStart(std::array<int, 2> {3, 3})
                         .build();
     strategy.setMaxLevel(2);
     strategy.setRefMesh(mesh);
