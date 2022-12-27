@@ -40,6 +40,7 @@
 #include "DataStructures/Index/LinearMapper/LevelMDRangeMapper.hpp"
 #include "DataStructures/Index/LinearMapper/ColoredMDRangeMapper.hpp"
 #include "DataStructures/Index/LinearMapper/ColoredBlockedMDRangeMapper.hpp"
+#include "DataStructures/Index/LinearMapper/GeneralBlockedMDRangeMapper.hpp"
 
 // Range
 #include "DataStructures/Range/LevelRanges.hpp"
