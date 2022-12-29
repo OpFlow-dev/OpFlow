@@ -351,7 +351,7 @@ namespace OpFlow::Utils {
                     }
 #endif
                     auto m = std::get<0>(fs_tuple)->getMesh();
-                    const auto& loc = (fs.loc, ...);
+                    const auto& loc = std::get<0>(fs_tuple)->loc;
                     for (auto k = 0; k < dim; ++k) {
                         std::vector<double> xs;
                         if (loc[k] == LocOnMesh::Corner) {
