@@ -74,7 +74,7 @@ namespace OpFlow {
 #ifdef OPFLOW_WITH_CUDA
         ret.parallelType |= ParallelIdentifier::Heterogeneous;
         OP_NOT_IMPLEMENTED;
-#elifdef OPFLOW_WITH_ROCM
+#elif defined(OPFLOW_WITH_ROCM)
         ret.parallelType |= ParallelIdentifier::Heterogeneous;
         OP_NOT_IMPLEMENTED;
 #else
