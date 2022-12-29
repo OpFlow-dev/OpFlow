@@ -81,6 +81,8 @@ namespace OpFlow {
         template <typename T>
         requires std::same_as<T, CartesianField> void
         resplitWithStrategy(AbstractSplitStrategy<T>* strategy) {
+            // this method only acts when MPI is enabled
+#if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
             if (!strategy) return;
             auto old_local_range = this->localRange;
             auto old_splitMap = this->splitMap;
@@ -169,6 +171,7 @@ namespace OpFlow {
             }
             this->updateNeighbors();
             updatePaddingImpl_final();
+#endif
         }
 
         template <BasicArithOp Op = BasicArithOp::Eq>
