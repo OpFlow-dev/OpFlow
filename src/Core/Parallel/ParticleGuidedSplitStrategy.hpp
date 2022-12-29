@@ -223,7 +223,7 @@ namespace OpFlow {
         }
 
         void gather_all_particles() {
-#if defined(OPFLOW_WITH_MPI) || defined(OPFLOW_TEST_ENVIRONMENT)
+#if defined(OPFLOW_WITH_MPI)
             // gather counts
             std::vector<int> counts(getWorkerCount(), 0);
             int local_count = particles.size();
@@ -247,6 +247,9 @@ namespace OpFlow {
             MPI_Allgatherv(particles.data(), local_count * sizeof(Particle<dim>), MPI_CHAR,
                            global_parts.data(), counts.data(), offsets.data(), MPI_CHAR, MPI_COMM_WORLD);
             particles = std::move(global_parts);
+#else
+            particle_weight.resize(particles.size());
+            std::fill(particle_weight.begin(), particle_weight.end(), local_particle_weight);
 #endif
         }
 
