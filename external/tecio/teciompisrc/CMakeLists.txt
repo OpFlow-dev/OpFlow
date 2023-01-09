@@ -4,6 +4,7 @@ if (NOT CMAKE_BUILD_TYPE)
     set (CMAKE_BUILD_TYPE Release CACHE STRING "CMake build type (Debug|Release)" FORCE)
 endif ()
 
+cmake_policy(SET CMP0048 NEW)
 project (teciompi)
 
 FIND_PACKAGE(Boost)
