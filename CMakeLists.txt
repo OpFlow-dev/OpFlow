@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 #
-# Copyright (c) 2019 - 2022 by the OpFlow developers
+# Copyright (c) 2019 - 2023 by the OpFlow developers
 #
 # This file is part of OpFlow.
 #
@@ -234,6 +234,7 @@ else ()
         set(TBB_TEST OFF)
         set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
         add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/tbb EXCLUDE_FROM_ALL)
+        find_package(tbb NAMES tbb TBB REQUIRED)
     endif ()
 endif ()
 target_link_libraries(opflow INTERFACE TBB::tbb)
