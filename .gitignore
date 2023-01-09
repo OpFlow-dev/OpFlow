@@ -370,3 +370,4 @@ doc/build
 doc/*.html
 venv
 build*/
+.vscode/
