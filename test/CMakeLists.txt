@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 #
-# Copyright (c) 2019 - 2022 by the OpFlow developers
+# Copyright (c) 2019 - 2023 by the OpFlow developers
 #
 # This file is part of OpFlow.
 # 
@@ -44,7 +44,7 @@ function(add_gmock testname testfile)
     if (NOT ${testname} STREQUAL "UniTests")
         add_test(NAME ${testname} COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${testname})
     endif ()
-    if (${CMAKE_BUILD_TYPE} STREQUAL "Debug" AND OPFLOW_ENABLE_CONVERAGE)
+    if (${CMAKE_BUILD_TYPE} STREQUAL "Debug" AND OPFLOW_ENABLE_COVERAGE)
         target_link_libraries(${testname} gcov)
         target_compile_options(${testname} PRIVATE $<$<CXX_COMPILER_ID:GNU>:--coverage>
                 PRIVATE $<$<CXX_COMPILER_ID:GNU>:-fconcepts-diagnostics-depth=5>
@@ -69,7 +69,7 @@ function(add_gmock_mpi testname proccount testfile)
         set_property(GLOBAL APPEND PROPERTY all_test_srcs ${testfile} ${ARGN})
         add_dependencies(AllTests ${testname})
         if (proccount GREATER MPIEXEC_MAX_NUMPROCS)
-            message(WARNING "Given #Proc = ${proccount} > #MaxProc = ${MPIEXEC_MAX_NUMPROCS}. Reset to ${MPIEXEC_MAX_NUMPROCS}")
+            message(STATUS "Given #Proc = ${proccount} > #MaxProc = ${MPIEXEC_MAX_NUMPROCS}. Reset to ${MPIEXEC_MAX_NUMPROCS}")
             set(proccount ${MPIEXEC_MAX_NUMPROCS})
         endif ()
         if (NOT ${testname} STREQUAL "UniTests")
