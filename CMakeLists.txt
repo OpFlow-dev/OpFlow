@@ -114,7 +114,7 @@ option(OPFLOW_WITH_HDF5 "Build OpFlow with HDF5 support" OFF)
 # testing options
 option(OPFLOW_BUILD_TESTS "Build tests" OFF)
 option(OPFLOW_USE_BUNDLED_GTEST "Use bundled googletest" ON)
-option(OPFLOW_ENABLE_COVERAGE "Enable converage" OFF)
+option(OPFLOW_ENABLE_COVERAGE "Enable coverage" OFF)
 
 # benchmark options
 option(OPFLOW_BUILD_BENCHMARKS "Build benchmarks" OFF)

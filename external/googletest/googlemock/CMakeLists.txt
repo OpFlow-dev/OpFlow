@@ -42,6 +42,11 @@ else ()
     cmake_policy(SET CMP0048 NEW)
     project(gmock VERSION ${GOOGLETEST_VERSION} LANGUAGES CXX C)
 endif ()
+
+if (POLICY CMP0042)
+    cmake_policy(SET CMP0042 NEW)
+endif (POLICY CMP0042)
+
 cmake_minimum_required(VERSION 2.8.12)
 
 if (COMMAND set_up_hermetic_build)
