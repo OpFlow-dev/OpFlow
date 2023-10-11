@@ -66,6 +66,8 @@ if (MSVC)
     string(APPEND CMAKE_CXX_FLAGS " /Zc:__cplusplus /wd4267 /wd4390 /wd4244")
 endif ()
 
+# supress possible abi warning by upgrade compiler
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
 # temporary fix for macOS 14 & CLT 15
 if (CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin"
         AND CMAKE_HOST_SYSTEM_VERSION VERSION_GREATER_EQUAL 23)
