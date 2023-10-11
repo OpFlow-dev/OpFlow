@@ -67,7 +67,8 @@ if (MSVC)
 endif ()
 
 # temporary fix for macOS 14 & CLT 15
-if (APPLE)
+if (CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin"
+        AND CMAKE_HOST_SYSTEM_VERSION VERSION_GREATER_EQUAL 23)
     add_link_options(-Wl,-ld_classic)
 endif ()
 
