@@ -26,7 +26,8 @@ option(BUILD_GMOCK "Builds the googlemock subproject" ON)
 option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" ON)
 
 # temporary fix for macOS 14 & CLT 15
-if (APPLE)
+if (CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin"
+        AND CMAKE_HOST_SYSTEM_VERSION VERSION_GREATER_EQUAL 23)
     add_link_options(-Wl,-ld_classic)
 endif ()
 if (BUILD_GMOCK)
