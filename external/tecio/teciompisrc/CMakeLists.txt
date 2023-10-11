@@ -7,6 +7,7 @@ endif ()
 cmake_policy(SET CMP0048 NEW)
 project (teciompi)
 
+set(CMAKE_CXX_STANDARD 14)
 FIND_PACKAGE(Boost)
 IF (Boost_FOUND)
     INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
@@ -36,9 +37,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BaseFlags} ${MPI_CXX_COMPILE_FLAGS}")
 FILE(GLOB mainFiles "*.cxx" "*.h")
 LIST(REMOVE_ITEM mainFiles "${CMAKE_CURRENT_SOURCE_DIR}/szcombine.cxx")
 
+# temporary fix for macOS 14 & CLT 15
+if (APPLE)
+    add_link_options(-Wl,-ld_classic)
+endif ()
 add_library(teciompi STATIC ${mainFiles})
 target_compile_definitions(teciompi PUBLIC TECIOMPI)
 
 add_executable(szcombine "szcombine.cxx")
 target_link_libraries(szcombine teciompi ${MPI_LIBRARIES})
-

@@ -79,7 +79,7 @@
 cmake_minimum_required(VERSION 3.0)
 # Check prereqs
 IF (APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    FIND_PROGRAM(GCOV_PATH gcov-11)
+    FIND_PROGRAM(GCOV_PATH gcov-13)
     MESSAGE("${GCOV_PATH}")
 ELSE ()
     FIND_PROGRAM(GCOV_PATH gcov)

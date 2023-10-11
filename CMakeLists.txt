@@ -66,6 +66,11 @@ if (MSVC)
     string(APPEND CMAKE_CXX_FLAGS " /Zc:__cplusplus /wd4267 /wd4390 /wd4244")
 endif ()
 
+# temporary fix for macOS 14 & CLT 15
+if (APPLE)
+    add_link_options(-Wl,-ld_classic)
+endif ()
+
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 if (CMAKE_SYSTEM_NAME MATCHES "CYGWIN" OR CMAKE_SYSTEM_NAME MATCHES "MSYS")
