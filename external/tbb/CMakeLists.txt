@@ -37,7 +37,10 @@ if (APPLE)
         set(CMAKE_C_OSX_DEPLOYMENT_TARGET_FLAG "-mmacosx-version-min=" CACHE STRING "Minimum macOS version flag")
     endif()
 endif()
-
+# temporary fix for macOS 14 & CLT 15
+if (APPLE)
+    add_link_options(-Wl,-ld_classic)
+endif ()
 # Until CMake 3.4.0 FindThreads.cmake requires C language enabled.
 # Enable C language before CXX to avoid possible override of CMAKE_SIZEOF_VOID_P.
 if (CMAKE_VERSION VERSION_LESS 3.4)

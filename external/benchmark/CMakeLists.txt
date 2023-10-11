@@ -49,7 +49,10 @@ if(MSVC)
       set(CMAKE_CROSSCOMPILING TRUE)
     endif()
 endif()
-
+# temporary fix for macOS 14 & CLT 15
+if (APPLE)
+  add_link_options(-Wl,-ld_classic)
+endif ()
 set(ENABLE_ASSEMBLY_TESTS_DEFAULT OFF)
 function(should_enable_assembly_tests)
   if(CMAKE_BUILD_TYPE)

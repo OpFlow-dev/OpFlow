@@ -6,6 +6,7 @@ endif ()
 
 cmake_policy(SET CMP0048 NEW)
 project (tecio C CXX)
+set(CMAKE_CXX_STANDARD 14)
 
 FIND_PACKAGE(Boost)
 IF (Boost_FOUND)
