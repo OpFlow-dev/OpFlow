@@ -30,6 +30,11 @@ jobs:
         compiler: [clang, gcc]
         mpi: [ON, OFF]
         mode: [Debug, Release]
+        exclude :
+          - os: macos-12
+            compiler: clang
+            mpi: ON
+            mode: Release # clang tends to emit illegal inst for macOS with MPI on release mode (-O3)
     if: "!contains(github.event.head_commit.message, 'skip build')"
     steps:
       - name: Checkout
