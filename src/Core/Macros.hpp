@@ -162,10 +162,10 @@ namespace OpFlow {
         }                                                                                                    \
     } while (0)
 #else
-#define OP_ASSERT(X) X
-#define OP_EXPECT(X) X
-#define OP_ASSERT_MSG(X, ...) X
-#define OP_EXPECT_MSG(X, ...) X
+#define OP_ASSERT(X)
+#define OP_EXPECT(X)
+#define OP_ASSERT_MSG(X, ...)
+#define OP_EXPECT_MSG(X, ...)
 #endif
 
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
