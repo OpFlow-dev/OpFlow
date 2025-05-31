@@ -185,20 +185,6 @@ endif ()
 target_compile_options(opflow INTERFACE -std=c++20)
 
 # ----------------------------------------------------------------------------
-# Use fmt package
-# ----------------------------------------------------------------------------
-if (OPFLOW_INSTALL)
-    # Build, install & link to the installed libfmt
-    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FMTConfig.cmake)
-    CONFIG_AND_INSTALL_FMT()
-    find_package(fmt REQUIRED PATHS ${CMAKE_INSTALL_PREFIX} NO_DEFAULT_PATH)
-else ()
-    # Add the bundled fmt library as a subproject
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/fmt EXCLUDE_FROM_ALL)
-endif ()
-target_link_libraries(opflow INTERFACE fmt::fmt)
-
-# ----------------------------------------------------------------------------
 # Use spdlog package
 # ----------------------------------------------------------------------------
 if (OPFLOW_INSTALL)
@@ -207,7 +193,6 @@ if (OPFLOW_INSTALL)
     CONFIG_AND_INSTALL_SPDLOG()
     find_package(spdlog REQUIRED PATHS ${CMAKE_INSTALL_PREFIX} NO_DEFAULT_PATH)
 else ()
-    set(SPDLOG_FMT_EXTERNAL ON)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/spdlog EXCLUDE_FROM_ALL)
 endif ()
 target_link_libraries(opflow INTERFACE spdlog::spdlog)
