@@ -1,13 +1,11 @@
 <div align="center">
   <img width="800px" src="doc/assets/opflow_banner_slice.png" alt="OpFlow banner">
-  <h3> <a href="https://opflow.cc/"> HomePage </a> | <a href="https://opflow.cc/doc"> Document </a> </h3>
+  <h3> <a href="https://opflow.cc/"> HomePage </a> | <a href="https://opflow.cc/doc"> Document </a> | <a href="README_zh.md"> 中文介绍 </a> </h3>
 </div>
 
 [![Latest Release](https://img.shields.io/github/v/release/OpFlow-dev/OpFlow?color=blue&label=Latest%20Release)](https://github.com/OpFlow-dev/OpFlow/releases/latest)
 [![License](https://img.shields.io/badge/license-MPL--2.0-blue)](https://github.com/OpFlow-dev/OpFlow/blob/master/LICENSE)
 [![Downloads](https://img.shields.io/github/downloads/OpFlow-dev/OpFlow/total?color=blue&label=Downloads)](https://github.com/OpFlow-dev/OpFlow/releases/latest)
-[![Format](https://img.shields.io/github/actions/workflow/status/OpFlow-dev/OpFlow/AutoFormat.yml?branch=master?color=green&label=Format)](https://github.com/OpFlow-dev/OpFlow/actions/workflows/AutoFormat.yml)
-[![Build](https://img.shields.io/github/actions/workflow/status/OpFlow-dev/OpFlow/Build.yml?branch=master?color=green&label=Build)](https://github.com/OpFlow-dev/OpFlow/actions/workflows/Build.yml)
 
 ## Overview
 
