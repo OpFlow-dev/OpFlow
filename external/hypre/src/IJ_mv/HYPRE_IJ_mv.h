@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -21,11 +21,9 @@ extern "C" {
 /**
  * @defgroup IJSystemInterface IJ System Interface
  *
- * This interface represents a linear-algebraic conceptual view of a
- * linear system.  The 'I' and 'J' in the name are meant to be
- * mnemonic for the traditional matrix notation A(I,J).
- *
- * @memo A linear-algebraic conceptual interface
+ * A linear-algebraic conceptual interface. This interface represents a
+ * linear-algebraic conceptual view of a linear system.  The 'I' and 'J' in the
+ * name are meant to be mnemonic for the traditional matrix notation A(I,J).
  *
  * @{
  **/
@@ -132,15 +130,15 @@ HYPRE_Int HYPRE_IJMatrixSetValues(HYPRE_IJMatrix       matrix,
                                   const HYPRE_Complex *values);
 
 /**
- * Sets all  matrix coefficients of an already assembled matrix to
+ * Sets all matrix coefficients of an already assembled matrix to
  * \e value
  **/
 HYPRE_Int HYPRE_IJMatrixSetConstantValues(HYPRE_IJMatrix matrix,
                                           HYPRE_Complex value);
 
 /**
- * Adds to values for \e nrows rows or partial rows of the matrix.  
- * Usage details are analogous to \ref HYPRE_IJMatrixSetValues.  
+ * Adds to values for \e nrows rows or partial rows of the matrix.
+ * Usage details are analogous to \ref HYPRE_IJMatrixSetValues.
  * Adds to any previous values at the specified locations, or, if
  * there was no value there before, inserts a new one.
  * AddToValues can be used to add to values on other processors.
@@ -179,7 +177,7 @@ HYPRE_Int HYPRE_IJMatrixSetValues2(HYPRE_IJMatrix       matrix,
                                    const HYPRE_Complex *values);
 
 /**
- * Adds to values for \e nrows rows or partial rows of the matrix.  
+ * Adds to values for \e nrows rows or partial rows of the matrix.
  *
  * Same as IJMatrixAddToValues, but with an additional \e row_indexes array
  * that provides indexes into the \e cols and \e values arrays.  Because
@@ -210,7 +208,7 @@ HYPRE_Int HYPRE_IJMatrixGetRowCounts(HYPRE_IJMatrix  matrix,
                                      HYPRE_Int      *ncols);
 
 /**
- * Gets values for \e nrows rows or partial rows of the matrix.  
+ * Gets values for \e nrows rows or partial rows of the matrix.
  * Usage details are mostly
  * analogous to \ref HYPRE_IJMatrixSetValues.
  * Note that if nrows is negative, the routine will return
@@ -223,6 +221,37 @@ HYPRE_Int HYPRE_IJMatrixGetValues(HYPRE_IJMatrix  matrix,
                                   HYPRE_BigInt   *rows,
                                   HYPRE_BigInt   *cols,
                                   HYPRE_Complex  *values);
+
+/**
+ * Gets values for \e nrows rows or partial rows of the matrix.
+ *
+ * Same as IJMatrixGetValues, but with an additional \e row_indexes array
+ * that provides indexes into the \e cols and \e values arrays.  Because
+ * of this, there can be gaps between the row data in these latter two arrays.
+ *
+ **/
+HYPRE_Int HYPRE_IJMatrixGetValues2(HYPRE_IJMatrix  matrix,
+                                   HYPRE_Int       nrows,
+                                   HYPRE_Int      *ncols,
+                                   HYPRE_BigInt   *rows,
+                                   HYPRE_Int      *row_indexes,
+                                   HYPRE_BigInt   *cols,
+                                   HYPRE_Complex  *values);
+
+/**
+ * Gets values for \e nrows rows or partial rows of the matrix
+ * and zeros out those entries in the matrix.
+ *
+ * Same as IJMatrixGetValues2, but zeros out the entries after getting them.
+ *
+ **/
+HYPRE_Int HYPRE_IJMatrixGetValuesAndZeroOut(HYPRE_IJMatrix  matrix,
+                                            HYPRE_Int       nrows,
+                                            HYPRE_Int      *ncols,
+                                            HYPRE_BigInt   *rows,
+                                            HYPRE_Int      *row_indexes,
+                                            HYPRE_BigInt   *cols,
+                                            HYPRE_Complex  *values);
 
 /**
  * Set the storage type of the matrix object to be constructed.
@@ -250,6 +279,24 @@ HYPRE_Int HYPRE_IJMatrixGetLocalRange(HYPRE_IJMatrix  matrix,
                                       HYPRE_BigInt   *iupper,
                                       HYPRE_BigInt   *jlower,
                                       HYPRE_BigInt   *jupper);
+
+/**
+ * Gets global information about the matrix, including the total number of rows,
+ * columns, and nonzero elements across all processes.
+ *
+ * @param matrix The IJMatrix object to query.
+ * @param global_num_rows Pointer to store the total number of rows in the matrix.
+ * @param global_num_cols Pointer to store the total number of columns in the matrix.
+ * @param global_num_nonzeros Pointer to store the total number of nonzero elements in the matrix.
+ *
+ * @return HYPRE_Int Error code.
+ *
+ * Collective (must be called by all processes).
+ **/
+HYPRE_Int HYPRE_IJMatrixGetGlobalInfo(HYPRE_IJMatrix  matrix,
+                                      HYPRE_BigInt   *global_num_rows,
+                                      HYPRE_BigInt   *global_num_cols,
+                                      HYPRE_BigInt   *global_num_nonzeros);
 
 /**
  * Get a reference to the constructed matrix object.
@@ -298,6 +345,32 @@ HYPRE_Int HYPRE_IJMatrixSetMaxOffProcElmts(HYPRE_IJMatrix matrix,
                                            HYPRE_Int      max_off_proc_elmts);
 
 /**
+ * (Optional, GPU only) Sets the initial memory allocation for matrix
+ * assemble, which factor * local number of rows
+ * Not collective.
+ **/
+HYPRE_Int HYPRE_IJMatrixSetInitAllocation(HYPRE_IJMatrix matrix,
+                                          HYPRE_Int      factor);
+
+/**
+ * (Optional, GPU only) Sets if matrix assemble routine does reductions
+ * during the accumulation of the entries before calling HYPRE_IJMatrixAssemble.
+ * This early assemble feature may save the peak memory usage but requires
+ * extra work.
+ * Not collective.
+ **/
+HYPRE_Int HYPRE_IJMatrixSetEarlyAssemble(HYPRE_IJMatrix matrix,
+                                         HYPRE_Int      early_assemble);
+
+/**
+ * (Optional, GPU only) Sets the grow factor of memory in matrix assemble when
+ * running out of memory.
+ * Not collective.
+ **/
+HYPRE_Int HYPRE_IJMatrixSetGrowFactor(HYPRE_IJMatrix matrix,
+                                      HYPRE_Real     factor);
+
+/**
  * (Optional) Sets the print level, if the user wants to print
  * error messages. The default is 0, i.e. no error messages are printed.
  *
@@ -332,10 +405,62 @@ HYPRE_Int HYPRE_IJMatrixRead(const char     *filename,
                              HYPRE_IJMatrix *matrix);
 
 /**
- * Print the matrix to file.  This is mainly for debugging purposes.
+ * Read the matrix from MM file.  This is mainly for debugging purposes.
+ **/
+HYPRE_Int HYPRE_IJMatrixReadMM(const char     *filename,
+                               MPI_Comm        comm,
+                               HYPRE_Int       type,
+                               HYPRE_IJMatrix *matrix);
+
+/**
+ * Print the matrix to file. This is mainly for debugging purposes.
  **/
 HYPRE_Int HYPRE_IJMatrixPrint(HYPRE_IJMatrix  matrix,
                               const char     *filename);
+
+/**
+ * Transpose an IJMatrix.
+ **/
+HYPRE_Int
+HYPRE_IJMatrixTranspose( HYPRE_IJMatrix  matrix_A,
+                         HYPRE_IJMatrix *matrix_AT );
+
+/**
+ * Computes the infinity norm of an IJMatrix
+ **/
+HYPRE_Int
+HYPRE_IJMatrixNorm( HYPRE_IJMatrix  matrix,
+                    HYPRE_Real     *norm );
+
+/**
+ * Performs C = alpha*A + beta*B
+ **/
+HYPRE_Int
+HYPRE_IJMatrixAdd( HYPRE_Complex    alpha,
+                   HYPRE_IJMatrix   matrix_A,
+                   HYPRE_Complex    beta,
+                   HYPRE_IJMatrix   matrix_B,
+                   HYPRE_IJMatrix  *matrix_C );
+
+/**
+ * Print the matrix to file in binary format. This is mainly for debugging purposes.
+ **/
+HYPRE_Int HYPRE_IJMatrixPrintBinary(HYPRE_IJMatrix  matrix,
+                                    const char     *filename);
+
+/**
+ * Read the matrix from file stored in binary format.  This is mainly for debugging purposes.
+ **/
+HYPRE_Int HYPRE_IJMatrixReadBinary(const char     *filename,
+                                   MPI_Comm        comm,
+                                   HYPRE_Int       type,
+                                   HYPRE_IJMatrix *matrix_ptr);
+
+/**
+ * Migrate the matrix to a given memory location.
+ **/
+HYPRE_Int HYPRE_IJMatrixMigrate(HYPRE_IJMatrix       matrix,
+                                HYPRE_MemoryLocation memory_location);
 
 /**@}*/
 
@@ -382,7 +507,30 @@ HYPRE_Int HYPRE_IJVectorCreate(MPI_Comm        comm,
 HYPRE_Int HYPRE_IJVectorDestroy(HYPRE_IJVector vector);
 
 /**
- * Prepare a vector object for setting coefficient values.  This
+ * This function should be called before `HYPRE_IJVectorSetData`
+ * if users intend to reuse an existing data pointer, thereby avoiding
+ * unnecessary memory copies. It configures the vector to accept external
+ * data without allocating new storage.
+ **/
+HYPRE_Int HYPRE_IJVectorInitializeShell(HYPRE_IJVector vector);
+
+/**
+ * This function sets the internal data pointer of the vector to an external
+ * array, allowing direct control over the vector's data storage without
+ * transferring ownership. Users are responsible for managing the memory
+ * of the `data` array, which must remain valid for the vector's lifetime.
+ *
+ * Users should call `HYPRE_IJVectorInitializeShell` before this function
+ * to prepare the vector for external data. The memory location of the `data`
+ * array is expected to be on the host when hypre is configured without GPU
+ * support. If hypre is configured with GPU support, it is assumed that `data`
+ * resides in device memory.
+ **/
+HYPRE_Int HYPRE_IJVectorSetData(HYPRE_IJVector  vector,
+                                HYPRE_Complex  *data);
+
+/**
+ * Prepare a vector object for setting coefficient values. This
  * routine will also re-initialize an already assembled vector,
  * allowing users to modify coefficient values.
  **/
@@ -394,7 +542,8 @@ HYPRE_Int HYPRE_IJVectorInitialize(HYPRE_IJVector vector);
  * allowing users to modify coefficient values. This routine
  * also specifies the memory location, i.e. host or device.
  **/
-HYPRE_Int HYPRE_IJVectorInitialize_v2( HYPRE_IJVector vector, HYPRE_MemoryLocation memory_location );
+HYPRE_Int HYPRE_IJVectorInitialize_v2( HYPRE_IJVector vector,
+                                       HYPRE_MemoryLocation memory_location );
 
 /**
  * (Optional) Sets the maximum number of elements that are expected to be set
@@ -406,6 +555,21 @@ HYPRE_Int HYPRE_IJVectorInitialize_v2( HYPRE_IJVector vector, HYPRE_MemoryLocati
  **/
 HYPRE_Int HYPRE_IJVectorSetMaxOffProcElmts(HYPRE_IJVector vector,
                                            HYPRE_Int      max_off_proc_elmts);
+
+/**
+ * (Optional) Sets the number of components (vectors) of a multivector. A vector
+ * is assumed to have a single component when this function is not called.
+ * This function must be called prior to HYPRE_IJVectorInitialize.
+ **/
+HYPRE_Int HYPRE_IJVectorSetNumComponents(HYPRE_IJVector  vector,
+                                         HYPRE_Int       num_components);
+
+/**
+ * (Optional) Sets the component identifier of a vector with multiple components (multivector).
+ * This can be used for Set/AddTo/Get purposes.
+ **/
+HYPRE_Int HYPRE_IJVectorSetComponent(HYPRE_IJVector  vector,
+                                     HYPRE_Int       component);
 
 /**
  * Sets values in vector.  The arrays \e values and \e indices
@@ -426,6 +590,12 @@ HYPRE_Int HYPRE_IJVectorSetValues(HYPRE_IJVector       vector,
                                   const HYPRE_Complex *values);
 
 /**
+ * Sets all vector coefficients to \e value
+ **/
+HYPRE_Int HYPRE_IJVectorSetConstantValues(HYPRE_IJVector vector,
+                                          HYPRE_Complex  value);
+
+/**
  * Adds to values in vector.  Usage details are analogous to
  * \ref HYPRE_IJVectorSetValues.
  * Adds to any previous values at the specified locations, or, if
@@ -443,6 +613,20 @@ HYPRE_Int HYPRE_IJVectorAddToValues(HYPRE_IJVector       vector,
  * Finalize the construction of the vector before using.
  **/
 HYPRE_Int HYPRE_IJVectorAssemble(HYPRE_IJVector vector);
+
+/**
+ * Update vectors by setting (action 1) or
+ * adding to (action 0) values in 'vector'.
+ * Note that this function cannot update values owned by other processes
+ * and does not allow repeated index values in 'indices'.
+ *
+ * Not collective.
+ **/
+HYPRE_Int HYPRE_IJVectorUpdateValues(HYPRE_IJVector       vector,
+                                     HYPRE_Int            nvalues,
+                                     const HYPRE_BigInt  *indices,
+                                     const HYPRE_Complex *values,
+                                     HYPRE_Int            action);
 
 /**
  * Gets values in vector.  Usage details are analogous to
@@ -504,10 +688,37 @@ HYPRE_Int HYPRE_IJVectorRead(const char     *filename,
                              HYPRE_IJVector *vector);
 
 /**
+ * Read the vector from binary file.  This is mainly for debugging purposes.
+ **/
+HYPRE_Int HYPRE_IJVectorReadBinary(const char     *filename,
+                                   MPI_Comm        comm,
+                                   HYPRE_Int       type,
+                                   HYPRE_IJVector *vector);
+
+/**
  * Print the vector to file.  This is mainly for debugging purposes.
  **/
 HYPRE_Int HYPRE_IJVectorPrint(HYPRE_IJVector  vector,
                               const char     *filename);
+
+/**
+ * Print the vector to binary file.  This is mainly for debugging purposes.
+ **/
+HYPRE_Int HYPRE_IJVectorPrintBinary(HYPRE_IJVector  vector,
+                                    const char     *filename);
+
+/**
+ * Computes the inner product between two vectors
+ **/
+HYPRE_Int HYPRE_IJVectorInnerProd(HYPRE_IJVector  x,
+                                  HYPRE_IJVector  y,
+                                  HYPRE_Real     *prod);
+
+/**
+ * Migrate the vector to a given memory location.
+ **/
+HYPRE_Int HYPRE_IJVectorMigrate(HYPRE_IJVector       vector,
+                                HYPRE_MemoryLocation memory_location);
 
 /**@}*/
 /**@}*/

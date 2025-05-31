@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -105,7 +105,7 @@ hypre_PFMGSolve( void               *pfmg_vdata,
    {
       /* eps = (tol^2) */
       b_dot_b = hypre_StructInnerProd(b_l[0], b_l[0]);
-      eps = tol*tol;
+      eps = tol * tol;
 
       /* if rhs is zero, return a zero solution */
       if (b_dot_b == 0.0)
@@ -143,16 +143,20 @@ hypre_PFMGSolve( void               *pfmg_vdata,
       }
 
       /* fine grid pre-relaxation */
+      HYPRE_ANNOTATE_REGION_BEGIN("%s", "Relaxation");
       hypre_PFMGRelaxSetPreRelax(relax_data_l[0]);
       hypre_PFMGRelaxSetMaxIter(relax_data_l[0], num_pre_relax);
       hypre_PFMGRelaxSetZeroGuess(relax_data_l[0], zero_guess);
       hypre_PFMGRelax(relax_data_l[0], A_l[0], b_l[0], x_l[0]);
       zero_guess = 0;
+      HYPRE_ANNOTATE_REGION_END("%s", "Relaxation");
 
       /* compute fine grid residual (b - Ax) */
+      HYPRE_ANNOTATE_REGION_BEGIN("%s", "Residual");
       hypre_StructCopy(b_l[0], r_l[0]);
       hypre_StructMatvecCompute(matvec_data_l[0],
                                 -1.0, A_l[0], x_l[0], 1.0, r_l[0]);
+      HYPRE_ANNOTATE_REGION_END("%s", "Residual");
 
       /* convergence check */
       if (tol > 0.0)
@@ -161,10 +165,10 @@ hypre_PFMGSolve( void               *pfmg_vdata,
 
          if (logging > 0)
          {
-            norms[i] = sqrt(r_dot_r);
+            norms[i] = hypre_sqrt(r_dot_r);
             if (b_dot_b > 0)
             {
-               rel_norms[i] = sqrt(r_dot_r/b_dot_b);
+               rel_norms[i] = hypre_sqrt(r_dot_r / b_dot_b);
             }
             else
             {
@@ -173,9 +177,9 @@ hypre_PFMGSolve( void               *pfmg_vdata,
          }
 
          /* always do at least 1 V-cycle */
-         if ((r_dot_r/b_dot_b < eps) && (i > 0))
+         if ((r_dot_r / b_dot_b < eps) && (i > 0))
          {
-            if ( ((rel_change) && (e_dot_e/x_dot_x) < eps) || (!rel_change) )
+            if ( ((rel_change) && (e_dot_e / x_dot_x) < eps) || (!rel_change) )
             {
                HYPRE_ANNOTATE_MGLEVEL_END(0);
                break;
@@ -215,15 +219,19 @@ hypre_PFMGSolve( void               *pfmg_vdata,
             if (active_l[l])
             {
                /* pre-relaxation */
+               HYPRE_ANNOTATE_REGION_BEGIN("%s", "Relaxation");
                hypre_PFMGRelaxSetPreRelax(relax_data_l[l]);
                hypre_PFMGRelaxSetMaxIter(relax_data_l[l], num_pre_relax);
                hypre_PFMGRelaxSetZeroGuess(relax_data_l[l], 1);
                hypre_PFMGRelax(relax_data_l[l], A_l[l], b_l[l], x_l[l]);
+               HYPRE_ANNOTATE_REGION_END("%s", "Relaxation");
 
                /* compute residual (b - Ax) */
+               HYPRE_ANNOTATE_REGION_BEGIN("%s", "Residual");
                hypre_StructCopy(b_l[l], r_l[l]);
                hypre_StructMatvecCompute(matvec_data_l[l],
                                          -1.0, A_l[l], x_l[l], 1.0, r_l[l]);
+               HYPRE_ANNOTATE_REGION_END("%s", "Residual");
             }
             else
             {
@@ -233,15 +241,15 @@ hypre_PFMGSolve( void               *pfmg_vdata,
             }
 
             /* restrict residual */
-            hypre_SemiRestrict(restrict_data_l[l], RT_l[l], r_l[l], b_l[l+1]);
+            hypre_SemiRestrict(restrict_data_l[l], RT_l[l], r_l[l], b_l[l + 1]);
 #if DEBUG
-            hypre_printf("Level %d: b_l = %.30e\n",l+1, hypre_StructInnerProd(b_l[l+1], b_l[l+1]));
+            hypre_printf("Level %d: b_l = %.30e\n", l + 1, hypre_StructInnerProd(b_l[l + 1], b_l[l + 1]));
             hypre_sprintf(filename, "zout_xdown.%02d", l);
             hypre_StructVectorPrint(filename, x_l[l], 0);
             hypre_sprintf(filename, "zout_rdown.%02d", l);
             hypre_StructVectorPrint(filename, r_l[l], 0);
-            hypre_sprintf(filename, "zout_b.%02d", l+1);
-            hypre_StructVectorPrint(filename, b_l[l+1], 0);
+            hypre_sprintf(filename, "zout_b.%02d", l + 1);
+            hypre_StructVectorPrint(filename, b_l[l + 1], 0);
 #endif
 
             HYPRE_ANNOTATE_MGLEVEL_END(l);
@@ -254,8 +262,10 @@ hypre_PFMGSolve( void               *pfmg_vdata,
 
          if (active_l[l])
          {
+            HYPRE_ANNOTATE_REGION_BEGIN("%s", "Relaxation");
             hypre_PFMGRelaxSetZeroGuess(relax_data_l[l], 1);
             hypre_PFMGRelax(relax_data_l[l], A_l[l], b_l[l], x_l[l]);
+            HYPRE_ANNOTATE_REGION_END("%s", "Relaxation");
          }
          else
          {
@@ -264,7 +274,7 @@ hypre_PFMGSolve( void               *pfmg_vdata,
 #if DEBUG
          hypre_sprintf(filename, "zout_xbottom.%02d", l);
          hypre_StructVectorPrint(filename, x_l[l], 0);
-         hypre_printf("Level %d: x_l = %.30e\n",l, hypre_StructInnerProd(x_l[l], x_l[l]));
+         hypre_printf("Level %d: x_l = %.30e\n", l, hypre_StructInnerProd(x_l[l], x_l[l]));
 #endif
 
          /*--------------------------------------------------
@@ -284,7 +294,7 @@ hypre_PFMGSolve( void               *pfmg_vdata,
                hypre_StructVectorClearAllValues(e_l[l]);
             }
             /* interpolate error and correct (x = x + Pe_c) */
-            hypre_SemiInterp(interp_data_l[l], P_l[l], x_l[l+1], e_l[l]);
+            hypre_SemiInterp(interp_data_l[l], P_l[l], x_l[l + 1], e_l[l]);
             hypre_StructAxpy(1.0, e_l[l], x_l[l]);
             HYPRE_ANNOTATE_MGLEVEL_END(l + 1);
 #if DEBUG
@@ -292,17 +302,19 @@ hypre_PFMGSolve( void               *pfmg_vdata,
             hypre_StructVectorPrint(filename, e_l[l], 0);
             hypre_sprintf(filename, "zout_xup.%02d", l);
             hypre_StructVectorPrint(filename, x_l[l], 0);
-            hypre_printf("Level %d: x_l = %.15e\n",l, hypre_StructInnerProd(x_l[l], x_l[l]));
+            hypre_printf("Level %d: x_l = %.15e\n", l, hypre_StructInnerProd(x_l[l], x_l[l]));
 #endif
             HYPRE_ANNOTATE_MGLEVEL_BEGIN(l);
 
             if (active_l[l])
             {
                /* post-relaxation */
+               HYPRE_ANNOTATE_REGION_BEGIN("%s", "Relaxation");
                hypre_PFMGRelaxSetPostRelax(relax_data_l[l]);
                hypre_PFMGRelaxSetMaxIter(relax_data_l[l], num_post_relax);
                hypre_PFMGRelaxSetZeroGuess(relax_data_l[l], 0);
                hypre_PFMGRelax(relax_data_l[l], A_l[l], b_l[l], x_l[l]);
+               HYPRE_ANNOTATE_REGION_END("%s", "Relaxation");
             }
          }
 #if 0 //defined(HYPRE_USING_CUDA) || defined(HYPRE_USING_HIP)
@@ -344,10 +356,12 @@ hypre_PFMGSolve( void               *pfmg_vdata,
          }
       }
 
+      HYPRE_ANNOTATE_REGION_BEGIN("%s", "Relaxation");
       hypre_PFMGRelaxSetPostRelax(relax_data_l[0]);
       hypre_PFMGRelaxSetMaxIter(relax_data_l[0], num_post_relax);
       hypre_PFMGRelaxSetZeroGuess(relax_data_l[0], 0);
       hypre_PFMGRelax(relax_data_l[0], A_l[0], b_l[0], x_l[0]);
+      HYPRE_ANNOTATE_REGION_END("%s", "Relaxation");
       (pfmg_data -> num_iterations) = (i + 1);
 
       HYPRE_ANNOTATE_MGLEVEL_END(0);

@@ -1,4 +1,4 @@
-# Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+# Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
 # HYPRE Project Developers. See the top-level COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -73,14 +73,16 @@ set(SRCS
   sparse_msg_setup.c
   sparse_msg_setup_rap.c
   sparse_msg_solve.c
+  F90_HYPRE_struct_flexgmres.c
+  F90_HYPRE_struct_lgmres.c
 )
 target_sources(${PROJECT_NAME}
   PRIVATE ${SRCS}
           ${HDRS}
 )
 
-if (HYPRE_USING_CUDA)
-  set(CUDA_SRCS
+if (HYPRE_USING_GPU)
+  set(GPU_SRCS
     cyclic_reduction.c
     HYPRE_struct_int.c
     HYPRE_struct_pcg.c
@@ -108,8 +110,8 @@ if (HYPRE_USING_CUDA)
     sparse_msg_interp.c
     sparse_msg_restrict.c
   )
-  convert_filenames_to_full_paths(CUDA_SRCS)
-  set(HYPRE_CUDA_SOURCES ${HYPRE_CUDA_SOURCES} ${CUDA_SRCS} PARENT_SCOPE)
+  convert_filenames_to_full_paths(GPU_SRCS)
+  set(HYPRE_GPU_SOURCES ${HYPRE_GPU_SOURCES} ${GPU_SRCS} PARENT_SCOPE)
 endif ()
 
 convert_filenames_to_full_paths(HDRS)

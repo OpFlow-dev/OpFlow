@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -28,44 +28,51 @@ hypre_MPI_Comm_f2c( hypre_int comm )
  * MPI stubs to generate serial codes without mpi
  *****************************************************************************/
 
-#ifdef HYPRE_SEQUENTIAL
+#if defined(HYPRE_SEQUENTIAL)
 
 HYPRE_Int
 hypre_MPI_Init( hypre_int   *argc,
                 char      ***argv )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(argc);
+   HYPRE_UNUSED_VAR(argv);
+
+   return (0);
 }
 
 HYPRE_Int
-hypre_MPI_Finalize( )
+hypre_MPI_Finalize( void )
 {
-   return(0);
+   return (0);
 }
 
 HYPRE_Int
 hypre_MPI_Abort( hypre_MPI_Comm comm,
                  HYPRE_Int      errorcode )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(comm);
+   HYPRE_UNUSED_VAR(errorcode);
+
+   return (0);
 }
 
 HYPRE_Real
-hypre_MPI_Wtime( )
+hypre_MPI_Wtime( void )
 {
-   return(0.0);
+   return (0.0);
 }
 
 HYPRE_Real
-hypre_MPI_Wtick( )
+hypre_MPI_Wtick( void )
 {
-   return(0.0);
+   return (0.0);
 }
 
 HYPRE_Int
 hypre_MPI_Barrier( hypre_MPI_Comm comm )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(comm);
+   return (0);
 }
 
 HYPRE_Int
@@ -73,35 +80,42 @@ hypre_MPI_Comm_create( hypre_MPI_Comm   comm,
                        hypre_MPI_Group  group,
                        hypre_MPI_Comm  *newcomm )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(comm);
+   HYPRE_UNUSED_VAR(group);
+   *newcomm = hypre_MPI_COMM_NULL;
+   return (0);
 }
 
 HYPRE_Int
 hypre_MPI_Comm_dup( hypre_MPI_Comm  comm,
                     hypre_MPI_Comm *newcomm )
 {
-   return(0);
+   *newcomm = comm;
+   return (0);
 }
 
 HYPRE_Int
 hypre_MPI_Comm_size( hypre_MPI_Comm  comm,
                      HYPRE_Int      *size )
 {
+   HYPRE_UNUSED_VAR(comm);
    *size = 1;
-   return(0);
+   return (0);
 }
 
 HYPRE_Int
 hypre_MPI_Comm_rank( hypre_MPI_Comm  comm,
                      HYPRE_Int      *rank )
 {
+   HYPRE_UNUSED_VAR(comm);
    *rank = 0;
-   return(0);
+   return (0);
 }
 
 HYPRE_Int
 hypre_MPI_Comm_free( hypre_MPI_Comm *comm )
 {
+   HYPRE_UNUSED_VAR(comm);
    return 0;
 }
 
@@ -109,7 +123,9 @@ HYPRE_Int
 hypre_MPI_Comm_group( hypre_MPI_Comm   comm,
                       hypre_MPI_Group *group )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(comm);
+   HYPRE_UNUSED_VAR(group);
+   return (0);
 }
 
 HYPRE_Int
@@ -118,7 +134,11 @@ hypre_MPI_Comm_split( hypre_MPI_Comm  comm,
                       HYPRE_Int       m,
                       hypre_MPI_Comm *comms )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(comm);
+   HYPRE_UNUSED_VAR(n);
+   HYPRE_UNUSED_VAR(m);
+   HYPRE_UNUSED_VAR(comms);
+   return (0);
 }
 
 HYPRE_Int
@@ -127,12 +147,17 @@ hypre_MPI_Group_incl( hypre_MPI_Group  group,
                       HYPRE_Int       *ranks,
                       hypre_MPI_Group *newgroup )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(group);
+   HYPRE_UNUSED_VAR(n);
+   HYPRE_UNUSED_VAR(ranks);
+   HYPRE_UNUSED_VAR(newgroup);
+   return (0);
 }
 
 HYPRE_Int
 hypre_MPI_Group_free( hypre_MPI_Group *group )
 {
+   HYPRE_UNUSED_VAR(group);
    return 0;
 }
 
@@ -140,7 +165,9 @@ HYPRE_Int
 hypre_MPI_Address( void           *location,
                    hypre_MPI_Aint *address )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(location);
+   HYPRE_UNUSED_VAR(address);
+   return (0);
 }
 
 HYPRE_Int
@@ -148,7 +175,10 @@ hypre_MPI_Get_count( hypre_MPI_Status   *status,
                      hypre_MPI_Datatype  datatype,
                      HYPRE_Int          *count )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(status);
+   HYPRE_UNUSED_VAR(datatype);
+   HYPRE_UNUSED_VAR(count);
+   return (0);
 }
 
 HYPRE_Int
@@ -160,7 +190,14 @@ hypre_MPI_Alltoall( void               *sendbuf,
                     hypre_MPI_Datatype  recvtype,
                     hypre_MPI_Comm      comm )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(sendbuf);
+   HYPRE_UNUSED_VAR(sendcount);
+   HYPRE_UNUSED_VAR(sendtype);
+   HYPRE_UNUSED_VAR(recvbuf);
+   HYPRE_UNUSED_VAR(recvcount);
+   HYPRE_UNUSED_VAR(recvtype);
+   HYPRE_UNUSED_VAR(comm);
+   return (0);
 }
 
 HYPRE_Int
@@ -174,6 +211,9 @@ hypre_MPI_Allgather( void               *sendbuf,
 {
    HYPRE_Int i;
 
+   HYPRE_UNUSED_VAR(comm);
+   HYPRE_UNUSED_VAR(recvcount);
+   HYPRE_UNUSED_VAR(recvtype);
    switch (sendtype)
    {
       case hypre_MPI_INT:
@@ -182,7 +222,29 @@ hypre_MPI_Allgather( void               *sendbuf,
          HYPRE_Int *csendbuf = (HYPRE_Int *)sendbuf;
          for (i = 0; i < sendcount; i++)
          {
-	    crecvbuf[i] = csendbuf[i];
+            crecvbuf[i] = csendbuf[i];
+         }
+      }
+      break;
+
+      case hypre_MPI_LONG_LONG_INT:
+      {
+         HYPRE_BigInt *crecvbuf = (HYPRE_BigInt *)recvbuf;
+         HYPRE_BigInt *csendbuf = (HYPRE_BigInt *)sendbuf;
+         for (i = 0; i < sendcount; i++)
+         {
+            crecvbuf[i] = csendbuf[i];
+         }
+      }
+      break;
+
+      case hypre_MPI_FLOAT:
+      {
+         float *crecvbuf = (float *)recvbuf;
+         float *csendbuf = (float *)sendbuf;
+         for (i = 0; i < sendcount; i++)
+         {
+            crecvbuf[i] = csendbuf[i];
          }
       }
       break;
@@ -193,7 +255,18 @@ hypre_MPI_Allgather( void               *sendbuf,
          double *csendbuf = (double *)sendbuf;
          for (i = 0; i < sendcount; i++)
          {
-	    crecvbuf[i] = csendbuf[i];
+            crecvbuf[i] = csendbuf[i];
+         }
+      }
+      break;
+
+      case hypre_MPI_LONG_DOUBLE:
+      {
+         long double *crecvbuf = (long double *)recvbuf;
+         long double *csendbuf = (long double *)sendbuf;
+         for (i = 0; i < sendcount; i++)
+         {
+            crecvbuf[i] = csendbuf[i];
          }
       }
       break;
@@ -204,14 +277,25 @@ hypre_MPI_Allgather( void               *sendbuf,
          char *csendbuf = (char *)sendbuf;
          for (i = 0; i < sendcount; i++)
          {
-	    crecvbuf[i] = csendbuf[i];
+            crecvbuf[i] = csendbuf[i];
+         }
+      }
+      break;
+
+      case hypre_MPI_LONG:
+      {
+         hypre_longint *crecvbuf = (hypre_longint *)recvbuf;
+         hypre_longint *csendbuf = (hypre_longint *)sendbuf;
+         for (i = 0; i < sendcount; i++)
+         {
+            crecvbuf[i] = csendbuf[i];
          }
       }
       break;
 
       case hypre_MPI_BYTE:
       {
-         hypre_Memcpy(recvbuf,  sendbuf,  sendcount, HYPRE_MEMORY_HOST, HYPRE_MEMORY_HOST);
+         hypre_TMemcpy(recvbuf, sendbuf, char, sendcount, HYPRE_MEMORY_HOST, HYPRE_MEMORY_HOST);
       }
       break;
 
@@ -221,7 +305,7 @@ hypre_MPI_Allgather( void               *sendbuf,
          HYPRE_Real *csendbuf = (HYPRE_Real *)sendbuf;
          for (i = 0; i < sendcount; i++)
          {
-	    crecvbuf[i] = csendbuf[i];
+            crecvbuf[i] = csendbuf[i];
          }
       }
       break;
@@ -232,13 +316,13 @@ hypre_MPI_Allgather( void               *sendbuf,
          HYPRE_Complex *csendbuf = (HYPRE_Complex *)sendbuf;
          for (i = 0; i < sendcount; i++)
          {
-	    crecvbuf[i] = csendbuf[i];
+            crecvbuf[i] = csendbuf[i];
          }
       }
       break;
    }
 
-   return(0);
+   return (0);
 }
 
 HYPRE_Int
@@ -251,6 +335,7 @@ hypre_MPI_Allgatherv( void               *sendbuf,
                       hypre_MPI_Datatype  recvtype,
                       hypre_MPI_Comm      comm )
 {
+   HYPRE_UNUSED_VAR(displs);
    return ( hypre_MPI_Allgather(sendbuf, sendcount, sendtype,
                                 recvbuf, *recvcounts, recvtype, comm) );
 }
@@ -265,21 +350,24 @@ hypre_MPI_Gather( void               *sendbuf,
                   HYPRE_Int           root,
                   hypre_MPI_Comm      comm )
 {
+   HYPRE_UNUSED_VAR(root);
    return ( hypre_MPI_Allgather(sendbuf, sendcount, sendtype,
                                 recvbuf, recvcount, recvtype, comm) );
 }
 
 HYPRE_Int
 hypre_MPI_Gatherv( void              *sendbuf,
-                  HYPRE_Int           sendcount,
-                  hypre_MPI_Datatype  sendtype,
-                  void               *recvbuf,
-                  HYPRE_Int          *recvcounts,
-                  HYPRE_Int          *displs,
-                  hypre_MPI_Datatype  recvtype,
-                  HYPRE_Int           root,
-                  hypre_MPI_Comm      comm )
+                   HYPRE_Int           sendcount,
+                   hypre_MPI_Datatype  sendtype,
+                   void               *recvbuf,
+                   HYPRE_Int          *recvcounts,
+                   HYPRE_Int          *displs,
+                   hypre_MPI_Datatype  recvtype,
+                   HYPRE_Int           root,
+                   hypre_MPI_Comm      comm )
 {
+   HYPRE_UNUSED_VAR(displs);
+   HYPRE_UNUSED_VAR(root);
    return ( hypre_MPI_Allgather(sendbuf, sendcount, sendtype,
                                 recvbuf, *recvcounts, recvtype, comm) );
 }
@@ -294,21 +382,24 @@ hypre_MPI_Scatter( void               *sendbuf,
                    HYPRE_Int           root,
                    hypre_MPI_Comm      comm )
 {
+   HYPRE_UNUSED_VAR(root);
    return ( hypre_MPI_Allgather(sendbuf, sendcount, sendtype,
                                 recvbuf, recvcount, recvtype, comm) );
 }
 
 HYPRE_Int
 hypre_MPI_Scatterv( void               *sendbuf,
-                   HYPRE_Int           *sendcounts,
-                   HYPRE_Int           *displs,
-                   hypre_MPI_Datatype   sendtype,
-                   void                *recvbuf,
-                   HYPRE_Int            recvcount,
-                   hypre_MPI_Datatype   recvtype,
-                   HYPRE_Int            root,
-                   hypre_MPI_Comm       comm )
+                    HYPRE_Int           *sendcounts,
+                    HYPRE_Int           *displs,
+                    hypre_MPI_Datatype   sendtype,
+                    void                *recvbuf,
+                    HYPRE_Int            recvcount,
+                    hypre_MPI_Datatype   recvtype,
+                    HYPRE_Int            root,
+                    hypre_MPI_Comm       comm )
 {
+   HYPRE_UNUSED_VAR(displs);
+   HYPRE_UNUSED_VAR(root);
    return ( hypre_MPI_Allgather(sendbuf, *sendcounts, sendtype,
                                 recvbuf, recvcount, recvtype, comm) );
 }
@@ -320,7 +411,12 @@ hypre_MPI_Bcast( void               *buffer,
                  HYPRE_Int           root,
                  hypre_MPI_Comm      comm )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(buffer);
+   HYPRE_UNUSED_VAR(count);
+   HYPRE_UNUSED_VAR(datatype);
+   HYPRE_UNUSED_VAR(root);
+   HYPRE_UNUSED_VAR(comm);
+   return (0);
 }
 
 HYPRE_Int
@@ -331,7 +427,13 @@ hypre_MPI_Send( void               *buf,
                 HYPRE_Int           tag,
                 hypre_MPI_Comm      comm )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(buf);
+   HYPRE_UNUSED_VAR(count);
+   HYPRE_UNUSED_VAR(datatype);
+   HYPRE_UNUSED_VAR(dest);
+   HYPRE_UNUSED_VAR(tag);
+   HYPRE_UNUSED_VAR(comm);
+   return (0);
 }
 
 HYPRE_Int
@@ -343,7 +445,14 @@ hypre_MPI_Recv( void               *buf,
                 hypre_MPI_Comm      comm,
                 hypre_MPI_Status   *status )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(buf);
+   HYPRE_UNUSED_VAR(count);
+   HYPRE_UNUSED_VAR(datatype);
+   HYPRE_UNUSED_VAR(source);
+   HYPRE_UNUSED_VAR(tag);
+   HYPRE_UNUSED_VAR(comm);
+   HYPRE_UNUSED_VAR(status);
+   return (0);
 }
 
 HYPRE_Int
@@ -355,7 +464,14 @@ hypre_MPI_Isend( void               *buf,
                  hypre_MPI_Comm      comm,
                  hypre_MPI_Request  *request )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(buf);
+   HYPRE_UNUSED_VAR(count);
+   HYPRE_UNUSED_VAR(datatype);
+   HYPRE_UNUSED_VAR(dest);
+   HYPRE_UNUSED_VAR(tag);
+   HYPRE_UNUSED_VAR(comm);
+   HYPRE_UNUSED_VAR(request);
+   return (0);
 }
 
 HYPRE_Int
@@ -367,7 +483,14 @@ hypre_MPI_Irecv( void               *buf,
                  hypre_MPI_Comm      comm,
                  hypre_MPI_Request  *request )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(buf);
+   HYPRE_UNUSED_VAR(count);
+   HYPRE_UNUSED_VAR(datatype);
+   HYPRE_UNUSED_VAR(source);
+   HYPRE_UNUSED_VAR(tag);
+   HYPRE_UNUSED_VAR(comm);
+   HYPRE_UNUSED_VAR(request);
+   return (0);
 }
 
 HYPRE_Int
@@ -379,6 +502,13 @@ hypre_MPI_Send_init( void               *buf,
                      hypre_MPI_Comm      comm,
                      hypre_MPI_Request  *request )
 {
+   HYPRE_UNUSED_VAR(buf);
+   HYPRE_UNUSED_VAR(count);
+   HYPRE_UNUSED_VAR(datatype);
+   HYPRE_UNUSED_VAR(dest);
+   HYPRE_UNUSED_VAR(tag);
+   HYPRE_UNUSED_VAR(comm);
+   HYPRE_UNUSED_VAR(request);
    return 0;
 }
 
@@ -391,6 +521,13 @@ hypre_MPI_Recv_init( void               *buf,
                      hypre_MPI_Comm      comm,
                      hypre_MPI_Request  *request )
 {
+   HYPRE_UNUSED_VAR(buf);
+   HYPRE_UNUSED_VAR(count);
+   HYPRE_UNUSED_VAR(datatype);
+   HYPRE_UNUSED_VAR(dest);
+   HYPRE_UNUSED_VAR(tag);
+   HYPRE_UNUSED_VAR(comm);
+   HYPRE_UNUSED_VAR(request);
    return 0;
 }
 
@@ -403,6 +540,13 @@ hypre_MPI_Irsend( void               *buf,
                   hypre_MPI_Comm      comm,
                   hypre_MPI_Request  *request )
 {
+   HYPRE_UNUSED_VAR(buf);
+   HYPRE_UNUSED_VAR(count);
+   HYPRE_UNUSED_VAR(datatype);
+   HYPRE_UNUSED_VAR(dest);
+   HYPRE_UNUSED_VAR(tag);
+   HYPRE_UNUSED_VAR(comm);
+   HYPRE_UNUSED_VAR(request);
    return 0;
 }
 
@@ -410,6 +554,8 @@ HYPRE_Int
 hypre_MPI_Startall( HYPRE_Int          count,
                     hypre_MPI_Request *array_of_requests )
 {
+   HYPRE_UNUSED_VAR(count);
+   HYPRE_UNUSED_VAR(array_of_requests);
    return 0;
 }
 
@@ -419,6 +565,10 @@ hypre_MPI_Probe( HYPRE_Int         source,
                  hypre_MPI_Comm    comm,
                  hypre_MPI_Status *status )
 {
+   HYPRE_UNUSED_VAR(source);
+   HYPRE_UNUSED_VAR(tag);
+   HYPRE_UNUSED_VAR(comm);
+   HYPRE_UNUSED_VAR(status);
    return 0;
 }
 
@@ -429,6 +579,11 @@ hypre_MPI_Iprobe( HYPRE_Int         source,
                   HYPRE_Int        *flag,
                   hypre_MPI_Status *status )
 {
+   HYPRE_UNUSED_VAR(source);
+   HYPRE_UNUSED_VAR(tag);
+   HYPRE_UNUSED_VAR(comm);
+   HYPRE_UNUSED_VAR(flag);
+   HYPRE_UNUSED_VAR(status);
    return 0;
 }
 
@@ -437,8 +592,10 @@ hypre_MPI_Test( hypre_MPI_Request *request,
                 HYPRE_Int         *flag,
                 hypre_MPI_Status  *status )
 {
+   HYPRE_UNUSED_VAR(request);
+   HYPRE_UNUSED_VAR(status);
    *flag = 1;
-   return(0);
+   return (0);
 }
 
 HYPRE_Int
@@ -447,15 +604,21 @@ hypre_MPI_Testall( HYPRE_Int          count,
                    HYPRE_Int         *flag,
                    hypre_MPI_Status  *array_of_statuses )
 {
+   HYPRE_UNUSED_VAR(count);
+   HYPRE_UNUSED_VAR(array_of_requests);
+   HYPRE_UNUSED_VAR(flag);
+   HYPRE_UNUSED_VAR(array_of_statuses);
    *flag = 1;
-   return(0);
+   return (0);
 }
 
 HYPRE_Int
 hypre_MPI_Wait( hypre_MPI_Request *request,
                 hypre_MPI_Status  *status )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(request);
+   HYPRE_UNUSED_VAR(status);
+   return (0);
 }
 
 HYPRE_Int
@@ -463,7 +626,10 @@ hypre_MPI_Waitall( HYPRE_Int          count,
                    hypre_MPI_Request *array_of_requests,
                    hypre_MPI_Status  *array_of_statuses )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(count);
+   HYPRE_UNUSED_VAR(array_of_requests);
+   HYPRE_UNUSED_VAR(array_of_statuses);
+   return (0);
 }
 
 HYPRE_Int
@@ -472,7 +638,11 @@ hypre_MPI_Waitany( HYPRE_Int          count,
                    HYPRE_Int         *index,
                    hypre_MPI_Status  *status )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(count);
+   HYPRE_UNUSED_VAR(array_of_requests);
+   HYPRE_UNUSED_VAR(index);
+   HYPRE_UNUSED_VAR(status);
+   return (0);
 }
 
 HYPRE_Int
@@ -485,6 +655,8 @@ hypre_MPI_Allreduce( void              *sendbuf,
 {
    HYPRE_Int i;
 
+   HYPRE_UNUSED_VAR(op);
+   HYPRE_UNUSED_VAR(comm);
    switch (datatype)
    {
       case hypre_MPI_INT:
@@ -495,7 +667,28 @@ hypre_MPI_Allreduce( void              *sendbuf,
          {
             crecvbuf[i] = csendbuf[i];
          }
+      }
+      break;
 
+      case hypre_MPI_LONG_LONG_INT:
+      {
+         HYPRE_BigInt *crecvbuf = (HYPRE_BigInt *)recvbuf;
+         HYPRE_BigInt *csendbuf = (HYPRE_BigInt *)sendbuf;
+         for (i = 0; i < count; i++)
+         {
+            crecvbuf[i] = csendbuf[i];
+         }
+      }
+      break;
+
+      case hypre_MPI_FLOAT:
+      {
+         float *crecvbuf = (float *)recvbuf;
+         float *csendbuf = (float *)sendbuf;
+         for (i = 0; i < count; i++)
+         {
+            crecvbuf[i] = csendbuf[i];
+         }
       }
       break;
 
@@ -503,6 +696,17 @@ hypre_MPI_Allreduce( void              *sendbuf,
       {
          double *crecvbuf = (double *)recvbuf;
          double *csendbuf = (double *)sendbuf;
+         for (i = 0; i < count; i++)
+         {
+            crecvbuf[i] = csendbuf[i];
+         }
+      }
+      break;
+
+      case hypre_MPI_LONG_DOUBLE:
+      {
+         long double *crecvbuf = (long double *)recvbuf;
+         long double *csendbuf = (long double *)sendbuf;
          for (i = 0; i < count; i++)
          {
             crecvbuf[i] = csendbuf[i];
@@ -521,9 +725,20 @@ hypre_MPI_Allreduce( void              *sendbuf,
       }
       break;
 
+      case hypre_MPI_LONG:
+      {
+         hypre_longint *crecvbuf = (hypre_longint *)recvbuf;
+         hypre_longint *csendbuf = (hypre_longint *)sendbuf;
+         for (i = 0; i < count; i++)
+         {
+            crecvbuf[i] = csendbuf[i];
+         }
+      }
+      break;
+
       case hypre_MPI_BYTE:
       {
-         hypre_Memcpy(recvbuf,  sendbuf,  count, HYPRE_MEMORY_HOST, HYPRE_MEMORY_HOST);
+         hypre_TMemcpy(recvbuf, sendbuf, char, count, HYPRE_MEMORY_HOST, HYPRE_MEMORY_HOST);
       }
       break;
 
@@ -562,6 +777,7 @@ hypre_MPI_Reduce( void               *sendbuf,
                   HYPRE_Int           root,
                   hypre_MPI_Comm      comm )
 {
+   HYPRE_UNUSED_VAR(root);
    hypre_MPI_Allreduce(sendbuf, recvbuf, count, datatype, op, comm);
    return 0;
 }
@@ -581,6 +797,7 @@ hypre_MPI_Scan( void               *sendbuf,
 HYPRE_Int
 hypre_MPI_Request_free( hypre_MPI_Request *request )
 {
+   HYPRE_UNUSED_VAR(request);
    return 0;
 }
 
@@ -589,7 +806,10 @@ hypre_MPI_Type_contiguous( HYPRE_Int           count,
                            hypre_MPI_Datatype  oldtype,
                            hypre_MPI_Datatype *newtype )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(count);
+   HYPRE_UNUSED_VAR(oldtype);
+   HYPRE_UNUSED_VAR(newtype);
+   return (0);
 }
 
 HYPRE_Int
@@ -599,7 +819,12 @@ hypre_MPI_Type_vector( HYPRE_Int           count,
                        hypre_MPI_Datatype  oldtype,
                        hypre_MPI_Datatype *newtype )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(count);
+   HYPRE_UNUSED_VAR(blocklength);
+   HYPRE_UNUSED_VAR(stride);
+   HYPRE_UNUSED_VAR(oldtype);
+   HYPRE_UNUSED_VAR(newtype);
+   return (0);
 }
 
 HYPRE_Int
@@ -609,7 +834,12 @@ hypre_MPI_Type_hvector( HYPRE_Int           count,
                         hypre_MPI_Datatype  oldtype,
                         hypre_MPI_Datatype *newtype )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(count);
+   HYPRE_UNUSED_VAR(blocklength);
+   HYPRE_UNUSED_VAR(stride);
+   HYPRE_UNUSED_VAR(oldtype);
+   HYPRE_UNUSED_VAR(newtype);
+   return (0);
 }
 
 HYPRE_Int
@@ -619,46 +849,65 @@ hypre_MPI_Type_struct( HYPRE_Int           count,
                        hypre_MPI_Datatype *array_of_types,
                        hypre_MPI_Datatype *newtype )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(count);
+   HYPRE_UNUSED_VAR(array_of_blocklengths);
+   HYPRE_UNUSED_VAR(array_of_displacements);
+   HYPRE_UNUSED_VAR(array_of_types);
+   HYPRE_UNUSED_VAR(newtype);
+   return (0);
 }
 
 HYPRE_Int
 hypre_MPI_Type_commit( hypre_MPI_Datatype *datatype )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(datatype);
+   return (0);
 }
 
 HYPRE_Int
 hypre_MPI_Type_free( hypre_MPI_Datatype *datatype )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(datatype);
+   return (0);
 }
 
 HYPRE_Int
 hypre_MPI_Op_create( hypre_MPI_User_function *function, hypre_int commute, hypre_MPI_Op *op )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(function);
+   HYPRE_UNUSED_VAR(commute);
+   HYPRE_UNUSED_VAR(op);
+   return (0);
 }
 
 HYPRE_Int
 hypre_MPI_Op_free( hypre_MPI_Op *op )
 {
-   return(0);
+   HYPRE_UNUSED_VAR(op);
+   return (0);
 }
 
 #if defined(HYPRE_USING_GPU)
-HYPRE_Int hypre_MPI_Comm_split_type( hypre_MPI_Comm comm, HYPRE_Int split_type, HYPRE_Int key, hypre_MPI_Info info, hypre_MPI_Comm *newcomm )
+HYPRE_Int hypre_MPI_Comm_split_type( hypre_MPI_Comm comm, HYPRE_Int split_type, HYPRE_Int key,
+                                     hypre_MPI_Info info, hypre_MPI_Comm *newcomm )
 {
+   HYPRE_UNUSED_VAR(comm);
+   HYPRE_UNUSED_VAR(split_type);
+   HYPRE_UNUSED_VAR(key);
+   HYPRE_UNUSED_VAR(info);
+   HYPRE_UNUSED_VAR(newcomm);
    return (0);
 }
 
 HYPRE_Int hypre_MPI_Info_create( hypre_MPI_Info *info )
 {
+   HYPRE_UNUSED_VAR(info);
    return (0);
 }
 
 HYPRE_Int hypre_MPI_Info_free( hypre_MPI_Info *info )
 {
+   HYPRE_UNUSED_VAR(info);
    return (0);
 }
 #endif
@@ -677,7 +926,7 @@ hypre_MPI_Init( hypre_int   *argc,
 }
 
 HYPRE_Int
-hypre_MPI_Finalize( )
+hypre_MPI_Finalize( void )
 {
    return (HYPRE_Int) MPI_Finalize();
 }
@@ -690,15 +939,15 @@ hypre_MPI_Abort( hypre_MPI_Comm comm,
 }
 
 HYPRE_Real
-hypre_MPI_Wtime( )
+hypre_MPI_Wtime( void )
 {
-   return MPI_Wtime();
+   return (HYPRE_Real)MPI_Wtime();
 }
 
 HYPRE_Real
-hypre_MPI_Wtick( )
+hypre_MPI_Wtick( void )
 {
-   return MPI_Wtick();
+   return (HYPRE_Real)MPI_Wtick();
 }
 
 HYPRE_Int
@@ -918,8 +1167,8 @@ hypre_MPI_Gatherv(void               *sendbuf,
       }
    }
    ierr = (HYPRE_Int) MPI_Gatherv(sendbuf, (hypre_int)sendcount, sendtype,
-                                     recvbuf, mpi_recvcounts, mpi_displs,
-                                     recvtype, (hypre_int) root, comm);
+                                  recvbuf, mpi_recvcounts, mpi_displs,
+                                  recvtype, (hypre_int) root, comm);
    hypre_TFree(mpi_recvcounts, HYPRE_MEMORY_HOST);
    hypre_TFree(mpi_displs, HYPRE_MEMORY_HOST);
 
@@ -971,8 +1220,8 @@ hypre_MPI_Scatterv(void               *sendbuf,
       }
    }
    ierr = (HYPRE_Int) MPI_Scatterv(sendbuf, mpi_sendcounts, mpi_displs, sendtype,
-                                     recvbuf, (hypre_int) recvcount,
-                                     recvtype, (hypre_int) root, comm);
+                                   recvbuf, (hypre_int) recvcount,
+                                   recvtype, (hypre_int) root, comm);
    hypre_TFree(mpi_sendcounts, HYPRE_MEMORY_HOST);
    hypre_TFree(mpi_displs, HYPRE_MEMORY_HOST);
 
@@ -1177,8 +1426,14 @@ hypre_MPI_Allreduce( void              *sendbuf,
                      hypre_MPI_Op       op,
                      hypre_MPI_Comm     comm )
 {
-   return (HYPRE_Int) MPI_Allreduce(sendbuf, recvbuf, (hypre_int)count,
+   hypre_GpuProfilingPushRange("MPI_Allreduce");
+
+   HYPRE_Int result = MPI_Allreduce(sendbuf, recvbuf, (hypre_int)count,
                                     datatype, op, comm);
+
+   hypre_GpuProfilingPopRange();
+
+   return result;
 }
 
 HYPRE_Int
@@ -1239,8 +1494,8 @@ hypre_MPI_Type_hvector( HYPRE_Int           count,
                         hypre_MPI_Datatype *newtype )
 {
 #if MPI_VERSION > 1
-      return (HYPRE_Int) MPI_Type_create_hvector((hypre_int)count, (hypre_int)blocklength,
-                                                 stride, oldtype, newtype);
+   return (HYPRE_Int) MPI_Type_create_hvector((hypre_int)count, (hypre_int)blocklength,
+                                              stride, oldtype, newtype);
 #else
    return (HYPRE_Int) MPI_Type_hvector((hypre_int)count, (hypre_int)blocklength,
                                        stride, oldtype, newtype);
@@ -1265,13 +1520,13 @@ hypre_MPI_Type_struct( HYPRE_Int           count,
    }
 
 #if MPI_VERSION > 1
-      ierr = (HYPRE_Int) MPI_Type_create_struct((hypre_int)count, mpi_array_of_blocklengths,
-                                                array_of_displacements, array_of_types,
-                                                newtype);
+   ierr = (HYPRE_Int) MPI_Type_create_struct((hypre_int)count, mpi_array_of_blocklengths,
+                                             array_of_displacements, array_of_types,
+                                             newtype);
 #else
-      ierr = (HYPRE_Int) MPI_Type_struct((hypre_int)count, mpi_array_of_blocklengths,
-                                         array_of_displacements, array_of_types,
-                                         newtype);
+   ierr = (HYPRE_Int) MPI_Type_struct((hypre_int)count, mpi_array_of_blocklengths,
+                                      array_of_displacements, array_of_types,
+                                      newtype);
 #endif
 
    hypre_TFree(mpi_array_of_blocklengths, HYPRE_MEMORY_HOST);
@@ -1303,9 +1558,10 @@ hypre_MPI_Op_create( hypre_MPI_User_function *function, hypre_int commute, hypre
    return (HYPRE_Int) MPI_Op_create(function, commute, op);
 }
 
-#if defined(HYPRE_USING_GPU)
+#if defined(HYPRE_USING_GPU) || defined(HYPRE_USING_DEVICE_OPENMP)
 HYPRE_Int
-hypre_MPI_Comm_split_type( hypre_MPI_Comm comm, HYPRE_Int split_type, HYPRE_Int key, hypre_MPI_Info info, hypre_MPI_Comm *newcomm )
+hypre_MPI_Comm_split_type( hypre_MPI_Comm comm, HYPRE_Int split_type, HYPRE_Int key,
+                           hypre_MPI_Info info, hypre_MPI_Comm *newcomm )
 {
    return (HYPRE_Int) MPI_Comm_split_type(comm, split_type, key, info, newcomm );
 }

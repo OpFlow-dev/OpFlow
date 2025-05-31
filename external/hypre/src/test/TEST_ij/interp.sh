@@ -1,5 +1,5 @@
-#!/bin/sh
-# Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+#!/bin/bash
+# Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
 # HYPRE Project Developers. See the top-level COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -22,6 +22,10 @@ FILES="\
  ${TNAME}.out.6\
  ${TNAME}.out.7\
  ${TNAME}.out.8\
+ ${TNAME}.out.9\
+ ${TNAME}.out.10\
+ ${TNAME}.out.11\
+ ${TNAME}.out.12\
 "
 
 for i in $FILES

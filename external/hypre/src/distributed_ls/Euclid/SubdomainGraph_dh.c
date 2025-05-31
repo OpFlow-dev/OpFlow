@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -164,8 +164,8 @@ hypre_fprintf(stderr, "blocks= %i\n", blocks);
 void SubdomainGraph_dhPrintStatsLong(SubdomainGraph_dh s, FILE *fp)
 {
   START_FUNC_DH
-    HYPRE_Int i, j, k; 
-    HYPRE_Real max = 0, min = INT_MAX;
+    HYPRE_Int i, j, k;
+    HYPRE_Real max = 0, min = (HYPRE_Real) INT_MAX;
 
     hypre_fprintf(fp, "\n------------- SubdomainGraph_dhPrintStatsLong -----------\n");
     hypre_fprintf(fp, "colors used     = %i\n", s->colors);
@@ -243,7 +243,7 @@ void SubdomainGraph_dhPrintStatsLong(SubdomainGraph_dh s, FILE *fp)
 
   } else {
     /*-----------------------------------------
-     * local n2o_row permutation 
+     * local n2o_row permutation
      *-----------------------------------------*/
     hypre_fprintf(fp, "\nlocal n2o_row permutation:\n");
     hypre_fprintf(fp, "--------------------------\n");
@@ -529,7 +529,7 @@ void init_mpi_private(SubdomainGraph_dh s, HYPRE_Int blocks, bool bj, void *A)
   t1 = hypre_MPI_Wtime();
   if (!bj) {
       HYPRE_Int *interiorNodes, *bdryNodes;
-      HYPRE_Int interiorCount, bdryCount;
+      HYPRE_Int interiorCount = 0, bdryCount;
       HYPRE_Int *o2n = s->o2n_col, idx;
       HYPRE_Int i;
 
@@ -828,6 +828,8 @@ void form_subdomaingraph_mpi_private(SubdomainGraph_dh s)
 #define __FUNC__ "form_subdomaingraph_seq_private"
 void form_subdomaingraph_seq_private(SubdomainGraph_dh s, HYPRE_Int m, void *A)
 {
+  HYPRE_UNUSED_VAR(m);
+
   START_FUNC_DH
   HYPRE_Int *dense, i, j, row, blocks = s->blocks;
   HYPRE_Int *cval, len, *adj;
@@ -924,6 +926,8 @@ void find_all_neighbors_sym_private(SubdomainGraph_dh s, HYPRE_Int m, void *A)
 #define __FUNC__ "find_all_neighbors_unsym_private"
 void find_all_neighbors_unsym_private(SubdomainGraph_dh s, HYPRE_Int m, void *A)
 {
+  HYPRE_UNUSED_VAR(m);
+
   START_FUNC_DH
   HYPRE_Int i, j, row, beg_row, end_row;
   HYPRE_Int *marker;
@@ -1022,6 +1026,8 @@ void find_bdry_nodes_sym_private(SubdomainGraph_dh s, HYPRE_Int m, void* A,
                      HYPRE_Int *interiorNodes, HYPRE_Int *bdryNodes,
                      HYPRE_Int *interiorCount, HYPRE_Int *bdryCount)
 {
+  HYPRE_UNUSED_VAR(m);
+
   START_FUNC_DH
   HYPRE_Int beg_row = s->beg_row[myid_dh];
   HYPRE_Int end_row = beg_row + s->row_count[myid_dh];
@@ -1427,7 +1433,7 @@ void SubdomainGraph_dhDump(SubdomainGraph_dh s, char *filename)
       hypre_fprintf(fp, "%i ", s->bdry_count[i]);
     }
     hypre_fprintf(fp, "\n");
-     
+
   }
 
   /* write subdomain graph */
@@ -1567,7 +1573,7 @@ void find_bdry_nodes_seq_private(SubdomainGraph_dh s, HYPRE_Int m, void* A)
     tmp = (HYPRE_Int*)MALLOC_DH(m*sizeof(HYPRE_Int)); CHECK_V_ERROR;
     for (i=0; i<m; ++i) tmp[i] = 0;
 
-    /*------------------------------------------ 
+    /*------------------------------------------
      * mark all boundary nodes
      *------------------------------------------ */
     for (i=0; i<blocks; ++i) {

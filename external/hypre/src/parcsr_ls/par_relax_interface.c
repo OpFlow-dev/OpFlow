@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -78,7 +78,8 @@ hypre_ParCSRRelax_L1_Jacobi( hypre_ParCSRMatrix *A,
                              hypre_ParVector    *Vtemp )
 
 {
-   return hypre_BoomerAMGRelax(A, f, cf_marker, 18, relax_points, relax_weight, 0.0, l1_norms, u, Vtemp, NULL);
+   return hypre_BoomerAMGRelax(A, f, cf_marker, 18, relax_points, relax_weight, 0.0, l1_norms, u,
+                               Vtemp, NULL);
 }
 
 /*--------------------------------------------------------------------------

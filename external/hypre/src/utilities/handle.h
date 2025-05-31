@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -14,20 +14,50 @@
 #ifndef HYPRE_HANDLE_H
 #define HYPRE_HANDLE_H
 
-struct hypre_CudaData;
-typedef struct hypre_CudaData hypre_CudaData;
+#if defined(HYPRE_USING_UMPIRE)
+#include "umpire/config.hpp"
+#if UMPIRE_VERSION_MAJOR >= 2022
+#include "umpire/interface/c_fortran/umpire.h"
+#define hypre_umpire_resourcemanager_make_allocator_pool umpire_resourcemanager_make_allocator_quick_pool
+#else
+#include "umpire/interface/umpire.h"
+#define hypre_umpire_resourcemanager_make_allocator_pool umpire_resourcemanager_make_allocator_pool
+#endif /* UMPIRE_VERSION_MAJOR >= 2022 */
+#define HYPRE_UMPIRE_POOL_NAME_MAX_LEN 1024
+#endif /* defined(HYPRE_USING_UMPIRE) */
+
+struct hypre_DeviceData;
+typedef struct hypre_DeviceData hypre_DeviceData;
+typedef void (*GPUMallocFunc)(void **, size_t);
+typedef void (*GPUMfreeFunc)(void *);
 
 typedef struct
 {
+   HYPRE_Int              log_level;
    HYPRE_Int              hypre_error;
    HYPRE_MemoryLocation   memory_location;
    HYPRE_ExecutionPolicy  default_exec_policy;
-   HYPRE_ExecutionPolicy  struct_exec_policy;
-#if defined(HYPRE_USING_GPU)
-   hypre_CudaData        *cuda_data;
-   /* device G-S options */
-   HYPRE_Int              device_gs_method;
+
+   /* the device buffers needed to do MPI communication for struct comm */
+   HYPRE_Complex         *struct_comm_recv_buffer;
+   HYPRE_Complex         *struct_comm_send_buffer;
+   HYPRE_Int              struct_comm_recv_buffer_size;
+   HYPRE_Int              struct_comm_send_buffer_size;
+
+   /* GPU MPI */
+#if defined(HYPRE_USING_GPU) || defined(HYPRE_USING_DEVICE_OPENMP)
+   HYPRE_Int              use_gpu_aware_mpi;
 #endif
+
+#if defined(HYPRE_USING_GPU)
+   hypre_DeviceData      *device_data;
+   HYPRE_Int              device_gs_method; /* device G-S options */
+#endif
+
+   /* user malloc/free function pointers */
+   GPUMallocFunc          user_device_malloc;
+   GPUMfreeFunc           user_device_free;
+
 #if defined(HYPRE_USING_UMPIRE)
    char                   umpire_device_pool_name[HYPRE_UMPIRE_POOL_NAME_MAX_LEN];
    char                   umpire_um_pool_name[HYPRE_UMPIRE_POOL_NAME_MAX_LEN];
@@ -44,43 +74,56 @@ typedef struct
    HYPRE_Int              own_umpire_pinned_pool;
    umpire_resourcemanager umpire_rm;
 #endif
-   /* user malloc/free function pointers */
-   GPUMallocFunc          user_device_malloc;
-   GPUMfreeFunc           user_device_free;
+
+#if defined(HYPRE_USING_MAGMA)
+   magma_queue_t          magma_queue;
+#endif
 } hypre_Handle;
 
 /* accessor macros to hypre_Handle */
+#define hypre_HandleLogLevel(hypre_handle)                       ((hypre_handle) -> log_level)
 #define hypre_HandleMemoryLocation(hypre_handle)                 ((hypre_handle) -> memory_location)
 #define hypre_HandleDefaultExecPolicy(hypre_handle)              ((hypre_handle) -> default_exec_policy)
-#define hypre_HandleStructExecPolicy(hypre_handle)               ((hypre_handle) -> struct_exec_policy)
-#define hypre_HandleCudaData(hypre_handle)                       ((hypre_handle) -> cuda_data)
-#define hypre_HandleDeviceGSMethod(hypre_handle)                 ((hypre_handle) -> device_gs_method)
 
-#define hypre_HandleCurandGenerator(hypre_handle)                hypre_CudaDataCurandGenerator(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleCublasHandle(hypre_handle)                   hypre_CudaDataCublasHandle(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleCusparseHandle(hypre_handle)                 hypre_CudaDataCusparseHandle(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleCudaComputeStream(hypre_handle)              hypre_CudaDataCudaComputeStream(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleCubBinGrowth(hypre_handle)                   hypre_CudaDataCubBinGrowth(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleCubMinBin(hypre_handle)                      hypre_CudaDataCubMinBin(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleCubMaxBin(hypre_handle)                      hypre_CudaDataCubMaxBin(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleCubMaxCachedBytes(hypre_handle)              hypre_CudaDataCubMaxCachedBytes(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleCubDevAllocator(hypre_handle)                hypre_CudaDataCubDevAllocator(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleCubUvmAllocator(hypre_handle)                hypre_CudaDataCubUvmAllocator(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleCudaDevice(hypre_handle)                     hypre_CudaDataCudaDevice(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleCudaComputeStreamNum(hypre_handle)           hypre_CudaDataCudaComputeStreamNum(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleCudaReduceBuffer(hypre_handle)               hypre_CudaDataCudaReduceBuffer(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleStructCommRecvBuffer(hypre_handle)           hypre_CudaDataStructCommRecvBuffer(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleStructCommSendBuffer(hypre_handle)           hypre_CudaDataStructCommSendBuffer(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleStructCommRecvBufferSize(hypre_handle)       hypre_CudaDataStructCommRecvBufferSize(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleStructCommSendBufferSize(hypre_handle)       hypre_CudaDataStructCommSendBufferSize(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleSpgemmUseCusparse(hypre_handle)              hypre_CudaDataSpgemmUseCusparse(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleSpgemmAlgorithm(hypre_handle)                hypre_CudaDataSpgemmAlgorithm(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleSpgemmRownnzEstimateMethod(hypre_handle)     hypre_CudaDataSpgemmRownnzEstimateMethod(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleSpgemmRownnzEstimateNsamples(hypre_handle)   hypre_CudaDataSpgemmRownnzEstimateNsamples(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleSpgemmRownnzEstimateMultFactor(hypre_handle) hypre_CudaDataSpgemmRownnzEstimateMultFactor(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleSpgemmHashType(hypre_handle)                 hypre_CudaDataSpgemmHashType(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleDeviceAllocator(hypre_handle)                hypre_CudaDataDeviceAllocator(hypre_HandleCudaData(hypre_handle))
-#define hypre_HandleUseGpuRand(hypre_handle)                     hypre_CudaDataUseGpuRand(hypre_HandleCudaData(hypre_handle))
+#define hypre_HandleStructCommRecvBuffer(hypre_handle)           ((hypre_handle) -> struct_comm_recv_buffer)
+#define hypre_HandleStructCommSendBuffer(hypre_handle)           ((hypre_handle) -> struct_comm_send_buffer)
+#define hypre_HandleStructCommRecvBufferSize(hypre_handle)       ((hypre_handle) -> struct_comm_recv_buffer_size)
+#define hypre_HandleStructCommSendBufferSize(hypre_handle)       ((hypre_handle) -> struct_comm_send_buffer_size)
+
+#define hypre_HandleDeviceData(hypre_handle)                     ((hypre_handle) -> device_data)
+#define hypre_HandleDeviceGSMethod(hypre_handle)                 ((hypre_handle) -> device_gs_method)
+#define hypre_HandleUseGpuAwareMPI(hypre_handle)                 ((hypre_handle) -> use_gpu_aware_mpi)
+
+#define hypre_HandleCurandGenerator(hypre_handle)                hypre_DeviceDataCurandGenerator(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleCublasHandle(hypre_handle)                   hypre_DeviceDataCublasHandle(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleCusparseHandle(hypre_handle)                 hypre_DeviceDataCusparseHandle(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleVendorSolverHandle(hypre_handle)             hypre_DeviceDataVendorSolverHandle(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleComputeStream(hypre_handle)                  hypre_DeviceDataComputeStream(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleCubBinGrowth(hypre_handle)                   hypre_DeviceDataCubBinGrowth(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleCubMinBin(hypre_handle)                      hypre_DeviceDataCubMinBin(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleCubMaxBin(hypre_handle)                      hypre_DeviceDataCubMaxBin(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleCubMaxCachedBytes(hypre_handle)              hypre_DeviceDataCubMaxCachedBytes(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleCubDevAllocator(hypre_handle)                hypre_DeviceDataCubDevAllocator(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleCubUvmAllocator(hypre_handle)                hypre_DeviceDataCubUvmAllocator(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleDevice(hypre_handle)                         hypre_DeviceDataDevice(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleDeviceMaxWorkGroupSize(hypre_handle)         hypre_DeviceDataDeviceMaxWorkGroupSize(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleDeviceMaxShmemPerBlock(hypre_handle)         hypre_DeviceDataDeviceMaxShmemPerBlock(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleDeviceMaxShmemPerBlockInited(hypre_handle)   hypre_DeviceDataDeviceMaxShmemPerBlockInited(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleComputeStreamNum(hypre_handle)               hypre_DeviceDataComputeStreamNum(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleReduceBuffer(hypre_handle)                   hypre_DeviceDataReduceBuffer(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleSpgemmUseVendor(hypre_handle)                hypre_DeviceDataSpgemmUseVendor(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleSpMVUseVendor(hypre_handle)                  hypre_DeviceDataSpMVUseVendor(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleSpTransUseVendor(hypre_handle)               hypre_DeviceDataSpTransUseVendor(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleSpgemmAlgorithm(hypre_handle)                hypre_DeviceDataSpgemmAlgorithm(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleSpgemmBinned(hypre_handle)                   hypre_DeviceDataSpgemmBinned(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleSpgemmNumBin(hypre_handle)                   hypre_DeviceDataSpgemmNumBin(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleSpgemmHighestBin(hypre_handle)               hypre_DeviceDataSpgemmHighestBin(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleSpgemmBlockNumDim(hypre_handle)              hypre_DeviceDataSpgemmBlockNumDim(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleSpgemmRownnzEstimateMethod(hypre_handle)     hypre_DeviceDataSpgemmRownnzEstimateMethod(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleSpgemmRownnzEstimateNsamples(hypre_handle)   hypre_DeviceDataSpgemmRownnzEstimateNsamples(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleSpgemmRownnzEstimateMultFactor(hypre_handle) hypre_DeviceDataSpgemmRownnzEstimateMultFactor(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleDeviceAllocator(hypre_handle)                hypre_DeviceDataDeviceAllocator(hypre_HandleDeviceData(hypre_handle))
+#define hypre_HandleUseGpuRand(hypre_handle)                     hypre_DeviceDataUseGpuRand(hypre_HandleDeviceData(hypre_handle))
 
 #define hypre_HandleUserDeviceMalloc(hypre_handle)               ((hypre_handle) -> user_device_malloc)
 #define hypre_HandleUserDeviceMfree(hypre_handle)                ((hypre_handle) -> user_device_free)
@@ -99,5 +142,7 @@ typedef struct
 #define hypre_HandleOwnUmpireUMPool(hypre_handle)                ((hypre_handle) -> own_umpire_um_pool)
 #define hypre_HandleOwnUmpireHostPool(hypre_handle)              ((hypre_handle) -> own_umpire_host_pool)
 #define hypre_HandleOwnUmpirePinnedPool(hypre_handle)            ((hypre_handle) -> own_umpire_pinned_pool)
+
+#define hypre_HandleMagmaQueue(hypre_handle)                     ((hypre_handle) -> magma_queue)
 
 #endif

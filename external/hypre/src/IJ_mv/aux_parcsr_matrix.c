@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -52,7 +52,7 @@ hypre_AuxParCSRMatrixCreate( hypre_AuxParCSRMatrix **aux_matrix,
    hypre_AuxParCSRMatrixOffProcJ(matrix) = NULL;
    hypre_AuxParCSRMatrixOffProcData(matrix) = NULL;
    hypre_AuxParCSRMatrixMemoryLocation(matrix) = HYPRE_MEMORY_HOST;
-#if defined(HYPRE_USING_CUDA) || defined(HYPRE_USING_HIP)
+#if defined(HYPRE_USING_GPU)
    hypre_AuxParCSRMatrixMaxStackElmts(matrix) = 0;
    hypre_AuxParCSRMatrixCurrentStackElmts(matrix) = 0;
    hypre_AuxParCSRMatrixStackI(matrix) = NULL;
@@ -61,7 +61,8 @@ hypre_AuxParCSRMatrixCreate( hypre_AuxParCSRMatrix **aux_matrix,
    hypre_AuxParCSRMatrixStackSorA(matrix) = NULL;
    hypre_AuxParCSRMatrixUsrOnProcElmts(matrix) = -1;
    hypre_AuxParCSRMatrixUsrOffProcElmts(matrix) = -1;
-   hypre_AuxParCSRMatrixInitAllocFactor(matrix) = 5.0;
+   hypre_AuxParCSRMatrixInitAllocFactor(matrix) = 0;
+   hypre_AuxParCSRMatrixEarlyAssemble(matrix) = 0;
    hypre_AuxParCSRMatrixGrowFactor(matrix) = 2.0;
 #endif
 
@@ -142,7 +143,7 @@ hypre_AuxParCSRMatrixDestroy( hypre_AuxParCSRMatrix *matrix )
       hypre_TFree(hypre_AuxParCSRMatrixOffProcJ(matrix),    HYPRE_MEMORY_HOST);
       hypre_TFree(hypre_AuxParCSRMatrixOffProcData(matrix), HYPRE_MEMORY_HOST);
 
-#if defined(HYPRE_USING_CUDA) || defined(HYPRE_USING_HIP)
+#if defined(HYPRE_USING_GPU)
       hypre_TFree(hypre_AuxParCSRMatrixStackI(matrix),    hypre_AuxParCSRMatrixMemoryLocation(matrix));
       hypre_TFree(hypre_AuxParCSRMatrixStackJ(matrix),    hypre_AuxParCSRMatrixMemoryLocation(matrix));
       hypre_TFree(hypre_AuxParCSRMatrixStackData(matrix), hypre_AuxParCSRMatrixMemoryLocation(matrix));
@@ -173,7 +174,7 @@ hypre_AuxParCSRMatrixSetRownnz( hypre_AuxParCSRMatrix *matrix )
    /* Count number of nonzero rows */
    local_num_rownnz = 0;
 #ifdef HYPRE_USING_OPENMP
-#pragma omp parallel for private(i) reduction(+:local_num_rownnz) HYPRE_SMP_SCHEDULE
+   #pragma omp parallel for private(i) reduction(+:local_num_rownnz) HYPRE_SMP_SCHEDULE
 #endif
    for (i = 0; i < local_num_rows; i++)
    {
@@ -264,20 +265,25 @@ hypre_AuxParCSRMatrixInitialize_v2( hypre_AuxParCSRMatrix *matrix,
       return 0;
    }
 
+#if defined(HYPRE_USING_GPU)
    if (memory_location != HYPRE_MEMORY_HOST)
    {
       /* GPU assembly */
       hypre_AuxParCSRMatrixNeedAux(matrix) = 1;
    }
    else
+#endif
    {
       /* CPU assembly */
       /* allocate stash for setting or adding off processor values */
       if (max_off_proc_elmts > 0)
       {
-         hypre_AuxParCSRMatrixOffProcI(matrix)    = hypre_CTAlloc(HYPRE_BigInt, 2*max_off_proc_elmts, HYPRE_MEMORY_HOST);
-         hypre_AuxParCSRMatrixOffProcJ(matrix)    = hypre_CTAlloc(HYPRE_BigInt,   max_off_proc_elmts, HYPRE_MEMORY_HOST);
-         hypre_AuxParCSRMatrixOffProcData(matrix) = hypre_CTAlloc(HYPRE_Complex,  max_off_proc_elmts, HYPRE_MEMORY_HOST);
+         hypre_AuxParCSRMatrixOffProcI(matrix)    = hypre_CTAlloc(HYPRE_BigInt, 2 * max_off_proc_elmts,
+                                                                  HYPRE_MEMORY_HOST);
+         hypre_AuxParCSRMatrixOffProcJ(matrix)    = hypre_CTAlloc(HYPRE_BigInt,   max_off_proc_elmts,
+                                                                  HYPRE_MEMORY_HOST);
+         hypre_AuxParCSRMatrixOffProcData(matrix) = hypre_CTAlloc(HYPRE_Complex,  max_off_proc_elmts,
+                                                                  HYPRE_MEMORY_HOST);
       }
 
       if (hypre_AuxParCSRMatrixNeedAux(matrix))
@@ -323,7 +329,8 @@ hypre_AuxParCSRMatrixInitialize_v2( hypre_AuxParCSRMatrix *matrix,
 
          if (!hypre_AuxParCSRMatrixRowLength(matrix))
          {
-            hypre_AuxParCSRMatrixRowLength(matrix) = hypre_CTAlloc(HYPRE_Int, local_num_rows, HYPRE_MEMORY_HOST);
+            hypre_AuxParCSRMatrixRowLength(matrix) = hypre_CTAlloc(HYPRE_Int, local_num_rows,
+                                                                   HYPRE_MEMORY_HOST);
          }
 
          if (row_space)
@@ -352,8 +359,8 @@ hypre_AuxParCSRMatrixInitialize_v2( hypre_AuxParCSRMatrix *matrix,
             for (i = 0; i < local_num_rows; i++)
             {
                row_space[i] = 30;
-               aux_j[i] = hypre_CTAlloc(HYPRE_BigInt, 30, HYPRE_MEMORY_HOST);
-               aux_data[i] = hypre_CTAlloc(HYPRE_Complex, 30, HYPRE_MEMORY_HOST);
+               aux_j[i] = hypre_CTAlloc(HYPRE_BigInt, row_space[i], HYPRE_MEMORY_HOST);
+               aux_data[i] = hypre_CTAlloc(HYPRE_Complex, row_space[i], HYPRE_MEMORY_HOST);
             }
             hypre_AuxParCSRMatrixRowSpace(matrix) = row_space;
          }

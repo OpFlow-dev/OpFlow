@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -183,7 +183,7 @@ HYPRE_Int HYPRE_ADSSetSmoothingOptions(HYPRE_Solver solver,
 
 HYPRE_Int HYPRE_ADSSetChebySmoothingOptions(HYPRE_Solver solver,
                                             HYPRE_Int cheby_order,
-                                            HYPRE_Int cheby_fraction)
+                                            HYPRE_Real cheby_fraction)
 {
    return hypre_ADSSetChebySmoothingOptions((void *) solver,
                                             cheby_order,

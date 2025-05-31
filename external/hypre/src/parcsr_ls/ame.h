@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -34,6 +34,7 @@ typedef struct
    HYPRE_Real *eigenvalues;
 
    /* Eigensolver (LOBPCG) options */
+   HYPRE_Int pcg_maxit;
    HYPRE_Int maxit;
    HYPRE_Real atol;
    HYPRE_Real rtol;

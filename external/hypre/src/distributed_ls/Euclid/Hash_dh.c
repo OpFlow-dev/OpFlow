@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -71,7 +71,7 @@ void Hash_dhInit_private(Hash_dh h, HYPRE_Int s)
   /* want table size to be a power of 2: */
   while (size < s) size *= 2;
   /* rule-of-thumb: ensure there's some padding */
-  if ( (size-s) < (.1 * size) ) { size *= 2.0; }
+  if ( (size-s) < (.1 * size) ) { size *= 2; }
   h->size = size;
 
 /*

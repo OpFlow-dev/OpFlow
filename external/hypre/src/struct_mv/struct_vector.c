@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -25,7 +25,7 @@ hypre_StructVectorCreate( MPI_Comm          comm,
    hypre_StructVector  *vector;
    HYPRE_Int            i;
 
-   vector = hypre_CTAlloc(hypre_StructVector,  1, HYPRE_MEMORY_HOST);
+   vector = hypre_CTAlloc(hypre_StructVector, 1, HYPRE_MEMORY_HOST);
 
    hypre_StructVectorComm(vector)           = comm;
    hypre_StructGridRef(grid, &hypre_StructVectorGrid(vector));
@@ -34,10 +34,12 @@ hypre_StructVectorCreate( MPI_Comm          comm,
    hypre_StructVectorRefCount(vector)       = 1;
 
    /* set defaults */
-   for (i = 0; i < 2*ndim; i++)
+   for (i = 0; i < 2 * ndim; i++)
    {
       hypre_StructVectorNumGhost(vector)[i] = hypre_StructGridNumGhost(grid)[i];
    }
+
+   hypre_StructVectorMemoryLocation(vector) = hypre_HandleMemoryLocation(hypre_handle());
 
    return vector;
 }
@@ -66,20 +68,9 @@ hypre_StructVectorDestroy( hypre_StructVector *vector )
       {
          if (hypre_StructVectorDataAlloced(vector))
          {
-#if 0 //defined(HYPRE_USING_CUDA) || defined(HYPRE_USING_HIP)
-            hypre_StructGrid     *grid = hypre_StructVectorGrid(vector);
-            if (hypre_StructGridDataLocation(grid) != HYPRE_MEMORY_HOST)
-            {
-               hypre_TFree(hypre_StructVectorData(vector),HYPRE_MEMORY_DEVICE);
-            }
-            else
-            {
-               hypre_TFree(hypre_StructVectorData(vector),HYPRE_MEMORY_HOST);
-            }
-#else
-            hypre_TFree(hypre_StructVectorData(vector),HYPRE_MEMORY_DEVICE);
-#endif
+            hypre_TFree(hypre_StructVectorData(vector), hypre_StructVectorMemoryLocation(vector));
          }
+
          hypre_TFree(hypre_StructVectorDataIndices(vector), HYPRE_MEMORY_HOST);
          hypre_BoxArrayDestroy(hypre_StructVectorDataSpace(vector));
          hypre_StructGridDestroy(hypre_StructVectorGrid(vector));
@@ -132,8 +123,8 @@ hypre_StructVectorInitializeShell( hypre_StructVector *vector )
          hypre_CopyBox(box, data_box);
          for (d = 0; d < ndim; d++)
          {
-            hypre_BoxIMinD(data_box, d) -= num_ghost[2*d];
-            hypre_BoxIMaxD(data_box, d) += num_ghost[2*d + 1];
+            hypre_BoxIMinD(data_box, d) -= num_ghost[2 * d];
+            hypre_BoxIMaxD(data_box, d) += num_ghost[2 * d + 1];
          }
       }
 
@@ -195,19 +186,9 @@ hypre_StructVectorInitialize( hypre_StructVector *vector )
    HYPRE_Complex *data;
 
    hypre_StructVectorInitializeShell(vector);
-#if 0 //defined(HYPRE_USING_CUDA) || defined(HYPRE_USING_HIP)
-   hypre_StructGrid     *grid = hypre_StructVectorGrid(vector);
-   if (hypre_StructGridDataLocation(grid) != HYPRE_MEMORY_HOST)
-   {
-      data = hypre_CTAlloc(HYPRE_Complex, hypre_StructVectorDataSize(vector),HYPRE_MEMORY_DEVICE);
-   }
-   else
-   {
-      data = hypre_CTAlloc(HYPRE_Complex, hypre_StructVectorDataSize(vector),HYPRE_MEMORY_HOST);
-   }
-#else
-   data = hypre_CTAlloc(HYPRE_Complex, hypre_StructVectorDataSize(vector),HYPRE_MEMORY_DEVICE);
-#endif
+
+   data = hypre_CTAlloc(HYPRE_Complex, hypre_StructVectorDataSize(vector),
+                        hypre_StructVectorMemoryLocation(vector));
 
    hypre_StructVectorInitializeData(vector, data);
    hypre_StructVectorDataAlloced(vector) = 1;
@@ -235,12 +216,13 @@ hypre_StructVectorSetValues( hypre_StructVector *vector,
                              HYPRE_Int           boxnum,
                              HYPRE_Int           outside    )
 {
-   hypre_BoxArray     *grid_boxes;
-   hypre_Box          *grid_box;
-
-   HYPRE_Complex      *vecp;
-
-   HYPRE_Int           i, istart, istop;
+   hypre_BoxArray      *grid_boxes;
+   hypre_Box           *grid_box;
+   HYPRE_Complex       *vecp;
+   HYPRE_Int            i, istart, istop;
+#if defined(HYPRE_USING_GPU)
+   HYPRE_MemoryLocation memory_location = hypre_StructVectorMemoryLocation(vector);
+#endif
 
    if (outside > 0)
    {
@@ -270,7 +252,8 @@ hypre_StructVectorSetValues( hypre_StructVector *vector,
       {
          vecp = hypre_StructVectorBoxDataValue(vector, i, grid_index);
 
-         if (hypre_GetActualMemLocation(HYPRE_MEMORY_DEVICE) != hypre_MEMORY_HOST)
+#if defined(HYPRE_USING_GPU)
+         if (hypre_GetExecPolicy1(memory_location) == HYPRE_EXEC_DEVICE)
          {
             if (action > 0)
             {
@@ -284,14 +267,15 @@ hypre_StructVectorSetValues( hypre_StructVector *vector,
             }
             else if (action > -1)
             {
-               hypre_TMemcpy(vecp, values, HYPRE_Complex, 1, HYPRE_MEMORY_DEVICE, HYPRE_MEMORY_DEVICE);
+               hypre_TMemcpy(vecp, values, HYPRE_Complex, 1, memory_location, memory_location);
             }
             else /* action < 0 */
             {
-               hypre_TMemcpy(values, vecp, HYPRE_Complex, 1, HYPRE_MEMORY_DEVICE, HYPRE_MEMORY_DEVICE);
+               hypre_TMemcpy(values, vecp, HYPRE_Complex, 1, memory_location, memory_location);
             }
          }
          else
+#endif
          {
             if (action > 0)
             {
@@ -407,8 +391,8 @@ hypre_StructVectorSetBoxValues( hypre_StructVector *vector,
          if (action > 0)
          {
             hypre_BoxLoop2Begin(hypre_StructVectorNDim(vector), loop_size,
-                                data_box,data_start,data_stride,datai,
-                                dval_box,dval_start,dval_stride,dvali);
+                                data_box, data_start, data_stride, datai,
+                                dval_box, dval_start, dval_stride, dvali);
             {
                datap[datai] += values[dvali];
             }
@@ -417,8 +401,8 @@ hypre_StructVectorSetBoxValues( hypre_StructVector *vector,
          else if (action > -1)
          {
             hypre_BoxLoop2Begin(hypre_StructVectorNDim(vector), loop_size,
-                                data_box,data_start,data_stride,datai,
-                                dval_box,dval_start,dval_stride,dvali);
+                                data_box, data_start, data_stride, datai,
+                                dval_box, dval_start, dval_stride, dvali);
             {
                datap[datai] = values[dvali];
             }
@@ -427,8 +411,8 @@ hypre_StructVectorSetBoxValues( hypre_StructVector *vector,
          else /* action < 0 */
          {
             hypre_BoxLoop2Begin(hypre_StructVectorNDim(vector), loop_size,
-                                data_box,data_start,data_stride,datai,
-                                dval_box,dval_start,dval_stride,dvali);
+                                data_box, data_start, data_stride, datai,
+                                dval_box, dval_start, dval_stride, dvali);
             {
                values[dvali] = datap[datai];
             }
@@ -455,12 +439,13 @@ hypre_StructVectorClearValues( hypre_StructVector *vector,
                                HYPRE_Int           boxnum,
                                HYPRE_Int           outside    )
 {
-   hypre_BoxArray     *grid_boxes;
-   hypre_Box          *grid_box;
-
-   HYPRE_Complex      *vecp;
-
-   HYPRE_Int           i, istart, istop;
+   hypre_BoxArray      *grid_boxes;
+   hypre_Box           *grid_box;
+   HYPRE_Complex       *vecp;
+   HYPRE_Int            i, istart, istop;
+#if defined(HYPRE_USING_GPU)
+   HYPRE_MemoryLocation memory_location = hypre_StructVectorMemoryLocation(vector);
+#endif
 
    if (outside > 0)
    {
@@ -490,7 +475,8 @@ hypre_StructVectorClearValues( hypre_StructVector *vector,
       {
          vecp = hypre_StructVectorBoxDataValue(vector, i, grid_index);
 
-         if (hypre_GetActualMemLocation(HYPRE_MEMORY_DEVICE) != hypre_MEMORY_HOST)
+#if defined(HYPRE_USING_GPU)
+         if (hypre_GetExecPolicy1(memory_location) == HYPRE_EXEC_DEVICE)
          {
 #define DEVICE_VAR is_device_ptr(vecp)
             hypre_LoopBegin(1, k)
@@ -501,6 +487,7 @@ hypre_StructVectorClearValues( hypre_StructVector *vector,
 #undef DEVICE_VAR
          }
          else
+#endif
          {
             *vecp = 0.0;
          }
@@ -586,7 +573,7 @@ hypre_StructVectorClearBoxValues( hypre_StructVector *vector,
 
 #define DEVICE_VAR is_device_ptr(datap)
          hypre_BoxLoop1Begin(hypre_StructVectorNDim(vector), loop_size,
-                             data_box,data_start,data_stride,datai);
+                             data_box, data_start, data_stride, datai);
          {
             datap[datai] = 0.0;
          }
@@ -641,8 +628,8 @@ hypre_StructVectorSetNumGhost( hypre_StructVector *vector,
 
    for (d = 0; d < ndim; d++)
    {
-      hypre_StructVectorNumGhost(vector)[2*d]     = num_ghost[2*d];
-      hypre_StructVectorNumGhost(vector)[2*d + 1] = num_ghost[2*d + 1];
+      hypre_StructVectorNumGhost(vector)[2 * d]     = num_ghost[2 * d];
+      hypre_StructVectorNumGhost(vector)[2 * d + 1] = num_ghost[2 * d + 1];
    }
 
    return hypre_error_flag;
@@ -656,6 +643,8 @@ hypre_StructVectorSetDataSize(hypre_StructVector *vector,
                               HYPRE_Int          *data_size,
                               HYPRE_Int          *data_host_size)
 {
+   HYPRE_UNUSED_VAR(data_host_size);
+
 #if 0 //defined(HYPRE_USING_CUDA) || defined(HYPRE_USING_HIP)
    hypre_StructGrid     *grid = hypre_StructVectorGrid(vector);
    if (hypre_StructGridDataLocation(grid) != HYPRE_MEMORY_HOST)
@@ -678,6 +667,8 @@ hypre_StructVectorSetDataSize(hypre_StructVector *vector,
 HYPRE_Int
 hypre_StructVectorAssemble( hypre_StructVector *vector )
 {
+   HYPRE_UNUSED_VAR(vector);
+
    return hypre_error_flag;
 }
 
@@ -713,7 +704,7 @@ hypre_StructVectorCopy( hypre_StructVector *x,
    boxes = hypre_StructGridBoxes( hypre_StructVectorGrid(x) );
    hypre_ForBoxI(i, boxes)
    {
-      box      = hypre_BoxArrayBox(boxes, i);
+      box   = hypre_BoxArrayBox(boxes, i);
       start = hypre_BoxIMin(box);
 
       x_data_box =
@@ -1071,6 +1062,93 @@ hypre_StructVectorMigrate( hypre_CommPkg      *comm_pkg,
 }
 
 /*--------------------------------------------------------------------------
+ * hypre_StructVectorPrintData
+ *--------------------------------------------------------------------------*/
+
+HYPRE_Int
+hypre_StructVectorPrintData( FILE               *file,
+                             hypre_StructVector *vector,
+                             HYPRE_Int           all )
+{
+   HYPRE_Int            ndim            = hypre_StructVectorNDim(vector);
+   hypre_StructGrid    *grid            = hypre_StructVectorGrid(vector);
+   hypre_BoxArray      *grid_boxes      = hypre_StructGridBoxes(grid);
+   hypre_BoxArray      *data_space      = hypre_StructVectorDataSpace(vector);
+   HYPRE_Int            data_size       = hypre_StructVectorDataSize(vector);
+   HYPRE_Complex       *data            = hypre_StructVectorData(vector);
+   HYPRE_MemoryLocation memory_location = hypre_StructVectorMemoryLocation(vector);
+   hypre_BoxArray      *boxes;
+   HYPRE_Complex       *h_data;
+
+   /* Allocate/Point to data on the host memory */
+   if (hypre_GetActualMemLocation(memory_location) != hypre_MEMORY_HOST)
+   {
+      h_data = hypre_CTAlloc(HYPRE_Complex, data_size, HYPRE_MEMORY_HOST);
+      hypre_TMemcpy(h_data, data, HYPRE_Complex, data_size,
+                    HYPRE_MEMORY_HOST, memory_location);
+   }
+   else
+   {
+      h_data = data;
+   }
+
+   /* Print ghost data (all) also or only real data? */
+   boxes = (all) ? data_space : grid_boxes;
+
+   /* Print data to file */
+   hypre_PrintBoxArrayData(file, boxes, data_space, 1, ndim, h_data);
+
+   /* Free memory */
+   if (hypre_GetActualMemLocation(memory_location) != hypre_MEMORY_HOST)
+   {
+      hypre_TFree(h_data, HYPRE_MEMORY_HOST);
+   }
+
+   return hypre_error_flag;
+}
+
+/*--------------------------------------------------------------------------
+ * hypre_StructVectorReadData
+ *--------------------------------------------------------------------------*/
+
+HYPRE_Int
+hypre_StructVectorReadData( FILE               *file,
+                            hypre_StructVector *vector )
+{
+   HYPRE_Int            ndim            = hypre_StructVectorNDim(vector);
+   hypre_StructGrid    *grid            = hypre_StructVectorGrid(vector);
+   hypre_BoxArray      *grid_boxes      = hypre_StructGridBoxes(grid);
+   hypre_BoxArray      *data_space      = hypre_StructVectorDataSpace(vector);
+   HYPRE_Int            data_size       = hypre_StructVectorDataSize(vector);
+   HYPRE_Complex       *data            = hypre_StructVectorData(vector);
+   HYPRE_MemoryLocation memory_location = hypre_StructVectorMemoryLocation(vector);
+   HYPRE_Complex       *h_data;
+
+   /* Allocate/Point to data on the host memory */
+   if (hypre_GetActualMemLocation(memory_location) != hypre_MEMORY_HOST)
+   {
+      h_data = hypre_CTAlloc(HYPRE_Complex, data_size, HYPRE_MEMORY_HOST);
+   }
+   else
+   {
+      h_data = data;
+   }
+
+   /* Read data from file */
+   hypre_ReadBoxArrayData(file, grid_boxes, data_space, 1, ndim, h_data);
+
+   /* Move data to the device memory if necessary and free host data */
+   if (hypre_GetActualMemLocation(memory_location) != hypre_MEMORY_HOST)
+   {
+      hypre_TMemcpy(data, h_data, HYPRE_Complex, data_size,
+                    memory_location, HYPRE_MEMORY_HOST);
+      hypre_TFree(h_data, HYPRE_MEMORY_HOST);
+   }
+
+   return hypre_error_flag;
+}
+
+/*--------------------------------------------------------------------------
  * hypre_StructVectorPrint
  *--------------------------------------------------------------------------*/
 
@@ -1083,24 +1161,21 @@ hypre_StructVectorPrint( const char         *filename,
    char               new_filename[255];
 
    hypre_StructGrid  *grid;
-   hypre_BoxArray    *boxes;
-
-   hypre_BoxArray    *data_space;
-
    HYPRE_Int          myid;
 
    /*----------------------------------------
     * Open file
     *----------------------------------------*/
 
-   hypre_MPI_Comm_rank(hypre_StructVectorComm(vector), &myid );
-
+   hypre_MPI_Comm_rank(hypre_StructVectorComm(vector), &myid);
    hypre_sprintf(new_filename, "%s.%05d", filename, myid);
 
    if ((file = fopen(new_filename, "w")) == NULL)
    {
       hypre_printf("Error: can't open output file %s\n", new_filename);
-      exit(1);
+      hypre_error_in_arg(1);
+
+      return hypre_error_flag;
    }
 
    /*----------------------------------------
@@ -1118,17 +1193,8 @@ hypre_StructVectorPrint( const char         *filename,
     * Print data
     *----------------------------------------*/
 
-   data_space = hypre_StructVectorDataSpace(vector);
-
-   if (all)
-      boxes = data_space;
-   else
-      boxes = hypre_StructGridBoxes(grid);
-
    hypre_fprintf(file, "\nData:\n");
-   hypre_PrintBoxArrayData(file, boxes, data_space, 1,
-                           hypre_StructGridNDim(grid),
-                           hypre_StructVectorData(vector));
+   hypre_StructVectorPrintData(file, vector, all);
 
    /*----------------------------------------
     * Close file
@@ -1141,6 +1207,7 @@ hypre_StructVectorPrint( const char         *filename,
 }
 
 /*--------------------------------------------------------------------------
+ * hypre_StructVectorRead
  *--------------------------------------------------------------------------*/
 
 hypre_StructVector *
@@ -1152,11 +1219,7 @@ hypre_StructVectorRead( MPI_Comm    comm,
    char                  new_filename[255];
 
    hypre_StructVector   *vector;
-
    hypre_StructGrid     *grid;
-   hypre_BoxArray       *boxes;
-
-   hypre_BoxArray       *data_space;
 
    HYPRE_Int             myid;
 
@@ -1164,13 +1227,13 @@ hypre_StructVectorRead( MPI_Comm    comm,
     * Open file
     *----------------------------------------*/
 
-   hypre_MPI_Comm_rank(comm, &myid );
-
+   hypre_MPI_Comm_rank(comm, &myid);
    hypre_sprintf(new_filename, "%s.%05d", filename, myid);
 
    if ((file = fopen(new_filename, "r")) == NULL)
    {
-      hypre_printf("Error: can't open output file %s\n", new_filename);
+      hypre_printf("Error: can't open input file %s\n", new_filename);
+      hypre_error_in_arg(2);
       exit(1);
    }
 
@@ -1182,7 +1245,7 @@ hypre_StructVectorRead( MPI_Comm    comm,
 
    /* read grid info */
    hypre_fscanf(file, "\nGrid:\n");
-   hypre_StructGridRead(comm,file,&grid);
+   hypre_StructGridRead(comm, file, &grid);
 
    /*----------------------------------------
     * Initialize the vector
@@ -1196,13 +1259,8 @@ hypre_StructVectorRead( MPI_Comm    comm,
     * Read data
     *----------------------------------------*/
 
-   boxes      = hypre_StructGridBoxes(grid);
-   data_space = hypre_StructVectorDataSpace(vector);
-
    hypre_fscanf(file, "\nData:\n");
-   hypre_ReadBoxArrayData(file, boxes, data_space, 1,
-                          hypre_StructGridNDim(grid),
-                          hypre_StructVectorData(vector));
+   hypre_StructVectorReadData(file, vector);
 
    /*----------------------------------------
     * Assemble the vector
@@ -1225,36 +1283,40 @@ hypre_StructVectorRead( MPI_Comm    comm,
  * hypre_StructVectorClone
  * Returns a complete copy of x - a deep copy, with its own copy of the data.
  *--------------------------------------------------------------------------*/
+
 hypre_StructVector *
 hypre_StructVectorClone(hypre_StructVector *x)
 {
-   MPI_Comm             comm = hypre_StructVectorComm(x);
-   hypre_StructGrid    *grid = hypre_StructVectorGrid(x);
-   hypre_BoxArray      *data_space = hypre_StructVectorDataSpace(x);
-   HYPRE_Int           *data_indices = hypre_StructVectorDataIndices(x);
-   HYPRE_Int            data_size = hypre_StructVectorDataSize(x);
-   HYPRE_Int            ndim = hypre_StructGridNDim(grid);
+   MPI_Comm             comm            = hypre_StructVectorComm(x);
+   hypre_StructGrid    *grid            = hypre_StructVectorGrid(x);
+   HYPRE_MemoryLocation memory_location = hypre_StructVectorMemoryLocation(x);
+   hypre_BoxArray      *data_space      = hypre_StructVectorDataSpace(x);
+   HYPRE_Int           *data_indices    = hypre_StructVectorDataIndices(x);
+   HYPRE_Int            data_size       = hypre_StructVectorDataSize(x);
+   HYPRE_Int            ndim            = hypre_StructGridNDim(grid);
    HYPRE_Int            data_space_size = hypre_BoxArraySize(data_space);
+   hypre_StructVector  *y               = hypre_StructVectorCreate(comm, grid);
    HYPRE_Int            i;
-   hypre_StructVector  *y = hypre_StructVectorCreate(comm, grid);
 
-   hypre_StructVectorDataSize(y) = data_size;
-   hypre_StructVectorDataSpace(y) = hypre_BoxArrayDuplicate(data_space);
-   hypre_StructVectorData(y) =  hypre_CTAlloc(HYPRE_Complex,  data_size, HYPRE_MEMORY_DEVICE);
+   hypre_StructVectorDataSize(y)    = data_size;
+   hypre_StructVectorDataSpace(y)   = hypre_BoxArrayDuplicate(data_space);
+   hypre_StructVectorData(y)        = hypre_CTAlloc(HYPRE_Complex, data_size, memory_location);
+   hypre_StructVectorDataIndices(y) = hypre_CTAlloc(HYPRE_Int, data_space_size, HYPRE_MEMORY_HOST);
 
-   hypre_StructVectorDataIndices(y) = hypre_CTAlloc(HYPRE_Int,  data_space_size, HYPRE_MEMORY_HOST);
-
-   for (i=0; i < data_space_size; i++)
+   for (i = 0; i < data_space_size; i++)
+   {
       hypre_StructVectorDataIndices(y)[i] = data_indices[i];
+   }
 
    hypre_StructVectorCopy( x, y );
 
-   for (i=0; i < 2*ndim; i++)
+   for (i = 0; i < 2 * ndim; i++)
+   {
       hypre_StructVectorNumGhost(y)[i] = hypre_StructVectorNumGhost(x)[i];
+   }
 
    hypre_StructVectorBGhostNotClear(y) = hypre_StructVectorBGhostNotClear(x);
    hypre_StructVectorGlobalSize(y) = hypre_StructVectorGlobalSize(x);
 
    return y;
 }
-

@@ -1,4 +1,4 @@
-# Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+# Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
 # HYPRE Project Developers. See the top-level COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -6,6 +6,7 @@
 set(HDRS
   HYPRE_utilities.h
   _hypre_utilities.h
+  _hypre_utilities.hpp
   HYPRE_error_f.h
   fortran.h
   fortran_matrix.h
@@ -23,14 +24,19 @@ set(SRCS
   ap.c
   log.c
   complex.c
-  cuda_utils.c
+  device_utils.c
   error.c
   general.c
   handle.c
   int_array.c
+  int_array_device.c
   hopscotch_hash.c
+  matrix_stats.c
+  magma.c
   memory.c
+  memory_tracker.c
   merge_sort.c
+  mmio.c
   mpi_comm_f2c.c
   nvtx.c
   omp_device.c
@@ -41,6 +47,8 @@ set(SRCS
   mpistubs.c
   qsplit.c
   random.c
+  state.c
+  stl_ops.c
   threading.c
   timer.c
   timing.c
@@ -51,19 +59,21 @@ target_sources(${PROJECT_NAME}
           ${HDRS}
 )
 
-if (HYPRE_USING_CUDA)
-  set(CUDA_SRCS
-    HYPRE_handle.c
-    cuda_utils.c
-    handle.c
-    int_array.c
+if (HYPRE_USING_GPU)
+  set(GPU_SRCS
+    device_utils.c
     general.c
+    handle.c
+    int_array_device.c
     memory.c
-    omp_device.c
+    memory_tracker.c
     nvtx.c
+    omp_device.c
+    stl_ops.c
+    HYPRE_handle.c
   )
-  convert_filenames_to_full_paths(CUDA_SRCS)
-  set(HYPRE_CUDA_SOURCES ${HYPRE_CUDA_SOURCES} ${CUDA_SRCS} PARENT_SCOPE)
+  convert_filenames_to_full_paths(GPU_SRCS)
+  set(HYPRE_GPU_SOURCES ${HYPRE_GPU_SOURCES} ${GPU_SRCS} PARENT_SCOPE)
 endif ()
 
 convert_filenames_to_full_paths(HDRS)

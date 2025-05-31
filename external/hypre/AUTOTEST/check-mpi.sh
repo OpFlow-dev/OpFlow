@@ -1,5 +1,5 @@
-#!/bin/sh
-# Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+#!/bin/bash
+# Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
 # HYPRE Project Developers. See the top-level COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -32,7 +32,6 @@ shift
 cd $src_dir
 
 find . -type f -print | egrep '[.]*[.](c|cc|cpp|cxx|C|h|hpp|hxx|H)$' |
-  egrep -v '/cmbuild' |
   egrep -v '/docs' |
   egrep -v '/examples' |
   egrep -v '/FEI_mv' |

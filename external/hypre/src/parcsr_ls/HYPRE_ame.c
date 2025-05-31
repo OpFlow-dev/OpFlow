@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -87,6 +87,16 @@ HYPRE_Int HYPRE_AMESetMaxIter(HYPRE_Solver esolver,
 }
 
 /*--------------------------------------------------------------------------
+ * HYPRE_AMESetMaxPCGIter
+ *--------------------------------------------------------------------------*/
+
+HYPRE_Int HYPRE_AMESetMaxPCGIter(HYPRE_Solver esolver,
+                                 HYPRE_Int maxit)
+{
+   return hypre_AMESetMaxPCGIter((void *) esolver, maxit);
+}
+
+/*--------------------------------------------------------------------------
  * HYPRE_AMESetTol
  *--------------------------------------------------------------------------*/
 
@@ -101,7 +111,7 @@ HYPRE_Int HYPRE_AMESetTol(HYPRE_Solver esolver,
  *--------------------------------------------------------------------------*/
 
 HYPRE_Int HYPRE_AMESetRTol(HYPRE_Solver esolver,
-			   HYPRE_Real tol)
+                           HYPRE_Real tol)
 {
    return hypre_AMESetRTol((void *) esolver, tol);
 }

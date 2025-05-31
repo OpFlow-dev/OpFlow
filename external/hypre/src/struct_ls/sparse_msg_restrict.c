@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -29,7 +29,7 @@ typedef struct
  *--------------------------------------------------------------------------*/
 
 void *
-hypre_SparseMSGRestrictCreate( )
+hypre_SparseMSGRestrictCreate( void )
 {
    hypre_SparseMSGRestrictData *restrict_data;
 
@@ -54,6 +54,8 @@ hypre_SparseMSGRestrictSetup( void               *restrict_vdata,
                               hypre_Index         stride,
                               hypre_Index         strideR         )
 {
+   HYPRE_UNUSED_VAR(rc);
+
    hypre_SparseMSGRestrictData *restrict_data = (hypre_SparseMSGRestrictData *)restrict_vdata;
 
    hypre_StructGrid       *grid;
@@ -84,9 +86,9 @@ hypre_SparseMSGRestrictSetup( void               *restrict_vdata,
 
    (restrict_data -> R) = hypre_StructMatrixRef(R);
    (restrict_data -> compute_pkg) = compute_pkg;
-   hypre_CopyIndex(cindex ,(restrict_data -> cindex));
-   hypre_CopyIndex(stride ,(restrict_data -> stride));
-   hypre_CopyIndex(strideR ,(restrict_data -> strideR));
+   hypre_CopyIndex(cindex, (restrict_data -> cindex));
+   hypre_CopyIndex(stride, (restrict_data -> stride));
+   hypre_CopyIndex(strideR, (restrict_data -> strideR));
 
    return ierr;
 }
@@ -169,7 +171,7 @@ hypre_SparseMSGRestrict( void               *restrict_vdata,
 
    for (compute_i = 0; compute_i < 2; compute_i++)
    {
-      switch(compute_i)
+      switch (compute_i)
       {
          case 0:
          {
@@ -202,7 +204,7 @@ hypre_SparseMSGRestrict( void               *restrict_vdata,
          rc_dbox = hypre_BoxArrayBox(hypre_StructVectorDataSpace(rc), ci);
 
          Rp0 = hypre_StructMatrixBoxData(R, fi, 1) -
-            hypre_BoxOffsetDistance(R_dbox, stencil_shape[1]);
+               hypre_BoxOffsetDistance(R_dbox, stencil_shape[1]);
          Rp1 = hypre_StructMatrixBoxData(R, fi, 0);
          rp  = hypre_StructVectorBoxData(r, fi);
          rp0 = rp + hypre_BoxOffsetDistance(r_dbox, stencil_shape[0]);
@@ -238,7 +240,7 @@ hypre_SparseMSGRestrict( void               *restrict_vdata,
     * Return
     *-----------------------------------------------------------------------*/
 
-   hypre_IncFLOPCount(4*hypre_StructVectorGlobalSize(rc));
+   hypre_IncFLOPCount(4 * hypre_StructVectorGlobalSize(rc));
    hypre_EndTiming(restrict_data -> time_index);
 
    return ierr;
@@ -265,4 +267,3 @@ hypre_SparseMSGRestrictDestroy( void *restrict_vdata )
 
    return ierr;
 }
-

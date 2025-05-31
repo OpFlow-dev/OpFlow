@@ -1,4 +1,4 @@
-.. Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+.. Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
    HYPRE Project Developers. See the top-level COPYRIGHT file for details.
 
    SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -6,6 +6,11 @@
 
 ParaSails
 ==============================================================================
+
+.. warning::
+   ParaSails is not actively supported by the hypre development team. We recommend using
+   :ref:`fsai` for parallel sparse approximate inverse algorithms. This new implementation
+   includes NVIDIA/AMD GPU support through the CUDA/HIP backends.
 
 ParaSails is a parallel implementation of a sparse approximate inverse
 preconditioner, using *a priori* sparsity patterns and least-squares (Frobenius
@@ -53,7 +58,7 @@ in order to construct the preconditioner.
 ParaSail's Create function differs from the synopsis in the following way:
 
 .. code-block:: c
-   
+
    int HYPRE_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver, int symmetry);
 
 where ``comm`` is the MPI communicator.
@@ -75,7 +80,7 @@ For more information about the final case, see section :ref:`nearly`.
 Parameters for setting up the preconditioner are specified using
 
 .. code-block:: c
-   
+
    int HYPRE_ParaSailsSetParams(HYPRE_Solver solver, double thresh,
                                 int nlevel, double filter);
 
@@ -119,4 +124,3 @@ latter may be guaranteed by 1) constructing the sparsity pattern with a
 symmetric matrix, or 2) if the matrix is structurally symmetric (has symmetric
 pattern), then thresholding to construct the pattern is not used (i.e., zero
 value of the ``thresh`` parameter is used).
-

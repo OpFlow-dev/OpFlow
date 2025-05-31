@@ -1,5 +1,5 @@
-#!/bin/sh
-# Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+#!/bin/bash
+# Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
 # HYPRE Project Developers. See the top-level COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -54,7 +54,7 @@ tail -11 ${TNAME}.out.verb.2      | head -3 >> ${TNAME}.out
 
 # Make sure that the output file is reasonable
 RUNCOUNT=18
-OUTCOUNT=`grep "Eigenvalue" ${TNAME}.out | wc -l`
+OUTCOUNT=`grep "Eigenvalue" ${TNAME}.out | wc -l | sed -e 's/^[[:space:]]*//'`
 if [ "$OUTCOUNT" != "$RUNCOUNT" ]; then
    echo "Incorrect number of runs in ${TNAME}.out" >&2
 fi

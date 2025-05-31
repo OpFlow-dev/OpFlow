@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -15,8 +15,10 @@
  * BoxLoop macros:
  *--------------------------------------------------------------------------*/
 
-#ifndef HYPRE_NEWBOXLOOP_HEADER
-#define HYPRE_NEWBOXLOOP_HEADER
+#ifndef HYPRE_BOXLOOP_DEVICEOMP_HEADER
+#define HYPRE_BOXLOOP_DEVICEOMP_HEADER
+
+#if defined(HYPRE_USING_DEVICE_OPENMP) && !defined(HYPRE_USING_RAJA) && !defined(HYPRE_USING_KOKKOS)
 
 #include "omp.h"
 
@@ -33,7 +35,7 @@
 
 #ifndef AUTO_OMP_TEAM
 /* omp team size (aka. gpu block size) */
-#define hypre_gpu_block_size 512
+#define hypre_gpu_block_size HYPRE_1D_BLOCK_SIZE
 /* the max number of omp teams */
 #define hypre_max_num_blocks 1000000
 #endif
@@ -68,7 +70,7 @@
 #define hypre_BoxLoop3End    zypre_omp4_dist_BoxLoopEnd
 #define hypre_BoxLoop4Begin  zypre_omp4_dist_BoxLoop4Begin
 #define hypre_BoxLoop4End    zypre_omp4_dist_BoxLoopEnd
-#define hypre_LoopBegin      zypre_LoopBegin
+#define hypre_LoopBegin      zypre_omp4_dist_LoopBegin
 #define hypre_LoopEnd        zypre_omp4_dist_BoxLoopEnd
 
 /* Look for more in struct_ls/red_black_gs.h" */
@@ -531,7 +533,7 @@ hypre__J = hypre__thread;  i1 = i2 = 0; \
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * Basic Loop
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-#define zypre_LoopBegin(size, idx) \
+#define zypre_omp4_dist_LoopBegin(size, idx) \
 { \
    /* host code: */ \
    /* HYPRE_Int idx = 0; */\
@@ -541,14 +543,6 @@ hypre__J = hypre__thread;  i1 = i2 = 0; \
    _Pragma (HYPRE_XSTR(omp target teams distribute parallel for IF_CLAUSE MAP_CLAUSE2 IS_DEVICE_CLAUSE TEAM_CLAUSE)) \
    for (HYPRE_Int idx = 0; idx < hypre__tot; idx++) \
    {
-
-#if 0
-#define hypre_LoopBegin0(size, idx) \
-{ \
-   HYPRE_Int idx, hypre__size = size; \
-   for (idx = 0; idx < hypre__size; idx++) \
-   {
-#endif
 
 #define hypre_BoxLoopGetIndex(index) \
   index[0] = hypre__id_0; \
@@ -571,4 +565,6 @@ hypre__J = hypre__thread;  i1 = i2 = 0; \
         hypre_BoxLoop2End(i1, i2)
 
 #endif
+
+#endif /* #ifndef HYPRE_BOXLOOP_DEVICEOMP_HEADER */
 

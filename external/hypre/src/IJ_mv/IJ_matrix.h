@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -64,7 +64,7 @@ typedef struct hypre_IJMatrix_struct
 #define hypre_IJMatrixOMPFlag(matrix)          ((matrix) -> omp_flag)
 #define hypre_IJMatrixPrintLevel(matrix)       ((matrix) -> print_level)
 
-static inline HYPRE_MemoryLocation
+static inline HYPRE_MAYBE_UNUSED_FUNC HYPRE_MemoryLocation
 hypre_IJMatrixMemoryLocation(hypre_IJMatrix *matrix)
 {
    if ( hypre_IJMatrixObject(matrix) && hypre_IJMatrixObjectType(matrix) == HYPRE_PARCSR)

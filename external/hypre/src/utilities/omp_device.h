@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -102,11 +102,12 @@ extern size_t hypre__target_dtoh_bytes;
    } \
 }
 
-HYPRE_Int HYPRE_OMPOffload(HYPRE_Int device, void *ptr, size_t num, const char *type1, const char *type2);
+HYPRE_Int HYPRE_OMPOffload(HYPRE_Int device, void *ptr, size_t num, const char *type1,
+                           const char *type2);
 HYPRE_Int HYPRE_OMPPtrIsMapped(void *p, HYPRE_Int device_num);
-HYPRE_Int HYPRE_OMPOffloadOn();
-HYPRE_Int HYPRE_OMPOffloadOff();
-HYPRE_Int HYPRE_OMPOffloadStatPrint();
+HYPRE_Int HYPRE_OMPOffloadOn(void);
+HYPRE_Int HYPRE_OMPOffloadOff(void);
+HYPRE_Int HYPRE_OMPOffloadStatPrint(void);
 
 #endif /* HYPRE_USING_DEVICE_OPENMP */
 #endif /* HYPRE_OMP_DEVICE_H */

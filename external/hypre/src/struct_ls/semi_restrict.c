@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -27,7 +27,7 @@ typedef struct
  *--------------------------------------------------------------------------*/
 
 void *
-hypre_SemiRestrictCreate( )
+hypre_SemiRestrictCreate( void )
 {
    hypre_SemiRestrictData *restrict_data;
 
@@ -51,6 +51,8 @@ hypre_SemiRestrictSetup( void               *restrict_vdata,
                          hypre_Index         findex,
                          hypre_Index         stride                )
 {
+   HYPRE_UNUSED_VAR(rc);
+
    hypre_SemiRestrictData *restrict_data = (hypre_SemiRestrictData *)restrict_vdata;
 
    hypre_StructGrid       *grid;
@@ -62,6 +64,8 @@ hypre_SemiRestrictSetup( void               *restrict_vdata,
    /*----------------------------------------------------------
     * Set up the compute package
     *----------------------------------------------------------*/
+
+   HYPRE_ANNOTATE_FUNC_BEGIN;
 
    grid    = hypre_StructVectorGrid(r);
    stencil = hypre_StructMatrixStencil(R);
@@ -80,8 +84,10 @@ hypre_SemiRestrictSetup( void               *restrict_vdata,
    (restrict_data -> R) = hypre_StructMatrixRef(R);
    (restrict_data -> R_stored_as_transpose) = R_stored_as_transpose;
    (restrict_data -> compute_pkg) = compute_pkg;
-   hypre_CopyIndex(cindex ,(restrict_data -> cindex));
-   hypre_CopyIndex(stride ,(restrict_data -> stride));
+   hypre_CopyIndex(cindex, (restrict_data -> cindex));
+   hypre_CopyIndex(stride, (restrict_data -> stride));
+
+   HYPRE_ANNOTATE_FUNC_END;
 
    return hypre_error_flag;
 }
@@ -139,6 +145,8 @@ hypre_SemiRestrict( void               *restrict_vdata,
     * Initialize some things.
     *-----------------------------------------------------------------------*/
 
+   HYPRE_ANNOTATE_FUNC_BEGIN;
+
    hypre_BeginTiming(restrict_data -> time_index);
 
    R_stored_as_transpose = (restrict_data -> R_stored_as_transpose);
@@ -149,10 +157,10 @@ hypre_SemiRestrict( void               *restrict_vdata,
    stencil       = hypre_StructMatrixStencil(R);
    stencil_shape = hypre_StructStencilShape(stencil);
    constant_coefficient = hypre_StructMatrixConstantCoefficient(R);
-   hypre_assert( constant_coefficient==0 || constant_coefficient==1 );
+   hypre_assert( constant_coefficient == 0 || constant_coefficient == 1 );
    /* ... if A has constant_coefficient==2, R has constant_coefficient==0 */
 
-   if (constant_coefficient) hypre_StructVectorClearBoundGhostValues(r, 0);
+   if (constant_coefficient) { hypre_StructVectorClearBoundGhostValues(r, 0); }
 
    hypre_SetIndex3(stridec, 1, 1, 1);
 
@@ -188,7 +196,7 @@ hypre_SemiRestrict( void               *restrict_vdata,
 
    for (compute_i = 0; compute_i < 2; compute_i++)
    {
-      switch(compute_i)
+      switch (compute_i)
       {
          case 0:
          {
@@ -259,18 +267,18 @@ hypre_SemiRestrict( void               *restrict_vdata,
 
             if ( constant_coefficient )
             {
-               HYPRE_Complex Rp0val,Rp1val;
+               HYPRE_Complex Rp0val, Rp1val;
                Ri = hypre_CCBoxIndexRank( R_dbox, startc );
 
-               Rp0val = Rp0[Ri+Rp0_offset];
+               Rp0val = Rp0[Ri + Rp0_offset];
                Rp1val = Rp1[Ri];
 #define DEVICE_VAR is_device_ptr(rcp,rp)
                hypre_BoxLoop2Begin(hypre_StructMatrixNDim(R), loop_size,
                                    r_dbox,  start,  stride,  ri,
                                    rc_dbox, startc, stridec, rci);
                {
-                  rcp[rci] = rp[ri] + (Rp0val * rp[ri+rp0_offset] +
-                                       Rp1val * rp[ri+rp1_offset]);
+                  rcp[rci] = rp[ri] + (Rp0val * rp[ri + rp0_offset] +
+                                       Rp1val * rp[ri + rp1_offset]);
                }
                hypre_BoxLoop2End(ri, rci);
 #undef DEVICE_VAR
@@ -283,8 +291,8 @@ hypre_SemiRestrict( void               *restrict_vdata,
                                    r_dbox,  start,  stride,  ri,
                                    rc_dbox, startc, stridec, rci);
                {
-                  rcp[rci] = rp[ri] + (Rp0[Ri+Rp0_offset] * rp[ri+rp0_offset] +
-                                       Rp1[Ri]            * rp[ri+rp1_offset]);
+                  rcp[rci] = rp[ri] + (Rp0[Ri + Rp0_offset] * rp[ri + rp0_offset] +
+                                       Rp1[Ri]            * rp[ri + rp1_offset]);
                }
                hypre_BoxLoop3End(Ri, ri, rci);
 #undef DEVICE_VAR
@@ -295,7 +303,8 @@ hypre_SemiRestrict( void               *restrict_vdata,
 #if 0 //defined(HYPRE_USING_CUDA) || defined(HYPRE_USING_HIP)
    if (data_location_f != data_location_c)
    {
-      hypre_TMemcpy(hypre_StructVectorData(rc),hypre_StructVectorData(rc_tmp),HYPRE_Complex,hypre_StructVectorDataSize(rc_tmp),HYPRE_MEMORY_HOST,HYPRE_MEMORY_DEVICE);
+      hypre_TMemcpy(hypre_StructVectorData(rc), hypre_StructVectorData(rc_tmp), HYPRE_Complex,
+                    hypre_StructVectorDataSize(rc_tmp), HYPRE_MEMORY_HOST, HYPRE_MEMORY_DEVICE);
       hypre_StructVectorDestroy(rc_tmp);
       hypre_StructGridDataLocation(cgrid) = data_location_c;
    }
@@ -304,8 +313,10 @@ hypre_SemiRestrict( void               *restrict_vdata,
     * Return
     *-----------------------------------------------------------------------*/
 
-   hypre_IncFLOPCount(4*hypre_StructVectorGlobalSize(rc));
+   hypre_IncFLOPCount(4 * hypre_StructVectorGlobalSize(rc));
    hypre_EndTiming(restrict_data -> time_index);
+
+   HYPRE_ANNOTATE_FUNC_END;
 
    return hypre_error_flag;
 }
@@ -328,4 +339,3 @@ hypre_SemiRestrictDestroy( void *restrict_vdata )
 
    return hypre_error_flag;
 }
-
