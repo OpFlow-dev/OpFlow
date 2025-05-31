@@ -178,11 +178,11 @@ target_include_directories(opflow INTERFACE
 # Compile options
 # ----------------------------------------------------------------------------
 include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag(-std=c++20 c++20support)
-if (NOT c++20support)
-    message(FATAL_ERROR "OpFlow requires C++20 to compile.")
+check_cxx_compiler_flag(-std=c++26 c++26support)
+if (NOT c++26support)
+    message(FATAL_ERROR "OpFlow requires C++26 to compile.")
 endif ()
-target_compile_options(opflow INTERFACE -std=c++20)
+target_compile_options(opflow INTERFACE -std=c++26)
 
 # ----------------------------------------------------------------------------
 # Use spdlog package
