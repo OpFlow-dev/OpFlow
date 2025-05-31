@@ -1,5 +1,5 @@
-#!/bin/sh
-# Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+#!/bin/bash
+# Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
 # HYPRE Project Developers. See the top-level COPYRIGHT file for details.
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -38,6 +38,8 @@ FILES="\
  ${TNAME}.out.23\
  ${TNAME}.out.24\
  ${TNAME}.out.25\
+ ${TNAME}.out.26\
+ ${TNAME}.out.27\
 "
 
 for i in $FILES
@@ -58,24 +60,9 @@ done > ${TNAME}.perf.out
 
 # Make sure that the output file is reasonable
 RUNCOUNT=`echo $FILES | wc -w`
-OUTCOUNT=`grep "Complexity" ${TNAME}.out | wc -l`
+OUTCOUNT=`grep "Iterations" ${TNAME}.out | wc -l`
 if [ "$OUTCOUNT" != "$RUNCOUNT" ]; then
    echo "Incorrect number of runs in ${TNAME}.out" >&2
-fi
-
-# Check performance
-HOST=`hostname`
-case $HOST in
-   lassen*)
-      SavePerfExt="saved.lassen"
-      rtol=0.15
-      ;;
-   *) SavePerfExt=""
-      ;;
-esac
-
-if [ -n "$SavePerfExt" ]; then
-   ../runcheck.sh $TNAME.perf.out $TNAME.perf.$SavePerfExt $rtol >&2
 fi
 
 #=============================================================================

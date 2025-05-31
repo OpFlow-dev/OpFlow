@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -157,9 +157,13 @@ hypre_SMGRelaxDestroyASol( void *relax_vdata )
       for (i = 0; i < (relax_data -> num_spaces); i++)
       {
          if (stencil_dim > 2)
+         {
             hypre_SMGDestroy(relax_data -> solve_data[i]);
+         }
          else
+         {
             hypre_CyclicReductionDestroy(relax_data -> solve_data[i]);
+         }
       }
       hypre_TFree(relax_data -> solve_data, HYPRE_MEMORY_HOST);
       hypre_StructMatrixDestroy(relax_data -> A_sol);
@@ -276,7 +280,7 @@ hypre_SMGRelax( void               *relax_vdata,
 
    for (k = 0; k < 2; k++)
    {
-      switch(k)
+      switch (k)
       {
          /* Do pre-relaxation iterations */
          case 0:
@@ -405,6 +409,9 @@ hypre_SMGRelaxSetupTempVec( void               *relax_vdata,
                             hypre_StructVector *b,
                             hypre_StructVector *x           )
 {
+   HYPRE_UNUSED_VAR(A);
+   HYPRE_UNUSED_VAR(x);
+
    hypre_SMGRelaxData  *relax_data = (hypre_SMGRelaxData  *)relax_vdata;
    hypre_StructVector  *temp_vec   = (relax_data -> temp_vec);
 
@@ -515,6 +522,8 @@ hypre_SMGRelaxSetupASol( void               *relax_vdata,
                          hypre_StructVector *b,
                          hypre_StructVector *x           )
 {
+   HYPRE_UNUSED_VAR(b);
+
    hypre_SMGRelaxData   *relax_data = (hypre_SMGRelaxData  *)relax_vdata;
 
    HYPRE_Int             num_spaces    = (relax_data -> num_spaces);
@@ -734,7 +743,9 @@ hypre_SMGRelaxSetNumPreSpaces( void *relax_vdata,
    (relax_data -> pre_space_ranks) = hypre_TAlloc(HYPRE_Int,  num_pre_spaces, HYPRE_MEMORY_HOST);
 
    for (i = 0; i < num_pre_spaces; i++)
+   {
       (relax_data -> pre_space_ranks[i]) = 0;
+   }
 
    return hypre_error_flag;
 }
@@ -755,7 +766,9 @@ hypre_SMGRelaxSetNumRegSpaces( void *relax_vdata,
    (relax_data -> reg_space_ranks) = hypre_TAlloc(HYPRE_Int,  num_reg_spaces, HYPRE_MEMORY_HOST);
 
    for (i = 0; i < num_reg_spaces; i++)
+   {
       (relax_data -> reg_space_ranks[i]) = 0;
+   }
 
    return hypre_error_flag;
 }
@@ -853,7 +866,7 @@ hypre_SMGRelaxSetNumPreRelax( void *relax_vdata,
 {
    hypre_SMGRelaxData *relax_data = (hypre_SMGRelaxData  *)relax_vdata;
 
-   (relax_data -> num_pre_relax) = hypre_max(num_pre_relax,1);
+   (relax_data -> num_pre_relax) = hypre_max(num_pre_relax, 1);
 
    return hypre_error_flag;
 }
@@ -913,6 +926,9 @@ hypre_SMGRelaxSetupBaseBoxArray( void               *relax_vdata,
                                  hypre_StructVector *b,
                                  hypre_StructVector *x           )
 {
+   HYPRE_UNUSED_VAR(A);
+   HYPRE_UNUSED_VAR(b);
+
    hypre_SMGRelaxData  *relax_data = (hypre_SMGRelaxData  *)relax_vdata;
 
    hypre_StructGrid    *grid;

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -43,12 +43,9 @@ typedef struct hypre_StructGrid_struct
 
 
    HYPRE_Int            ghlocal_size; /* Number of vars in box including ghosts */
-   HYPRE_Int            num_ghost[2*HYPRE_MAXDIM]; /* ghost layer size */
+   HYPRE_Int            num_ghost[2 * HYPRE_MAXDIM]; /* ghost layer size */
 
    hypre_BoxManager    *boxman;
-#if 0 //defined(HYPRE_USING_CUDA) || defined(HYPRE_USING_HIP)
-   HYPRE_MemoryLocation data_location;
-#endif
 } hypre_StructGrid;
 
 /*--------------------------------------------------------------------------

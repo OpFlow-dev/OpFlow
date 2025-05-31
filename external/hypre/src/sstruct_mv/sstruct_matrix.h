@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -76,7 +76,7 @@ typedef struct hypre_SStructMatrix_struct
 
    HYPRE_Int               ref_count;
 
-  /* GEC0902   adding an object type to the matrix  */
+   /* GEC0902   adding an object type to the matrix  */
    HYPRE_Int               object_type;
 
 } hypre_SStructMatrix;

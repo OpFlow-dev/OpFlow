@@ -24,7 +24,7 @@ extern "C" {
 #endif
 
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -150,7 +150,7 @@ you need to write EUCLID_GET_ROW() functions: see src/getRow.c
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -180,11 +180,8 @@ you need to write EUCLID_GET_ROW() functions: see src/getRow.c
 #endif
 
 /* used in Mat_SEQ_PrintTriples, so matlab won't discard zeros (yuck!) */
-#ifdef HYPRE_SINGLE
-#define _MATLAB_ZERO_  1e-30
-#else // default
-#define _MATLAB_ZERO_  1e-100
-#endif
+#define _MATLAB_ZERO_  HYPRE_REAL_MIN
+
 
 
 /*---------------------------------------------------------------------- 
@@ -339,7 +336,7 @@ you need to write EUCLID_GET_ROW() functions: see src/getRow.c
 
 #endif  /* #ifndef MACROS_DH */
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -458,7 +455,7 @@ extern char  msgBuf_dh[MSG_BUF_SIZE_DH];
  * enabled when compiled with the debugging (-g) option.
  */
 extern void openLogfile_dh(HYPRE_Int argc, char *argv[]);
-extern void closeLogfile_dh();
+extern void closeLogfile_dh(void);
 extern bool logInfoToStderr;
 extern bool logInfoToFile;
 extern bool logFuncsToStderr;
@@ -470,8 +467,8 @@ extern void dh_EndFunc(const char *function, HYPRE_Int priority);
 extern void printFunctionStack(FILE *fp);
 
 extern void EuclidInitialize(HYPRE_Int argc, char *argv[], char *help); /* instantiates global objects */
-extern void EuclidFinalize();    /* deletes global objects */
-extern bool EuclidIsInitialized();
+extern void EuclidFinalize(void);    /* deletes global objects */
+extern bool EuclidIsInitialized(void);
 extern void printf_dh(const char *fmt, ...);
 extern void fprintf_dh(FILE *fp, const char *fmt, ...);
 
@@ -483,7 +480,7 @@ extern void echoInvocation_dh(MPI_Comm comm, char *prefix, HYPRE_Int argc, char 
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -553,7 +550,7 @@ struct _extrows_dh {
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -647,7 +644,7 @@ extern void Factor_dhPrintRows(Factor_dh mat, FILE *fp);
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -689,7 +686,7 @@ extern void Vec_dhPrint(Vec_dh v, SubdomainGraph_dh sg, char *filename);
 extern void Vec_dhPrintBIN(Vec_dh v, SubdomainGraph_dh sg, char *filename); 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -827,7 +824,7 @@ extern HYPRE_Real box_2(HYPRE_Real coeff, HYPRE_Real x, HYPRE_Real y, HYPRE_Real
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -979,7 +976,7 @@ extern void dldperm(HYPRE_Int job, HYPRE_Int n, HYPRE_Int nnz, HYPRE_Int colptr[
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -1097,7 +1094,7 @@ extern void SubdomainGraph_dhPrintStats(SubdomainGraph_dh sg, FILE *fp);
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -1126,7 +1123,7 @@ extern void TimeLog_dhPrint(TimeLog_dh t, FILE *fp, bool allPrint);
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -1151,7 +1148,7 @@ extern void SortedSet_dhGetList(SortedSet_dh ss, HYPRE_Int **list, HYPRE_Int *co
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -1178,7 +1175,7 @@ extern void  Mem_dhPrint(Mem_dh m, FILE* fp, bool allPrint);
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -1200,7 +1197,7 @@ extern void shellSort_int_int_float(HYPRE_Int n, HYPRE_Int *x, HYPRE_Int *y, HYP
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -1250,7 +1247,7 @@ extern void Numbering_dhGlobalToLocal(Numbering_dh numb, HYPRE_Int len,
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -1293,7 +1290,7 @@ extern HYPRE_Int  Hash_i_dhLookup(Hash_i_dh h, HYPRE_Int key);
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -1380,7 +1377,7 @@ extern HYPRE_Real Timer_dhReadUsage(Timer_dh t);
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -1449,7 +1446,7 @@ extern void Parser_dhInit(Parser_dh p, HYPRE_Int argc, char *argv[]);
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -1534,7 +1531,7 @@ extern void SortedList_dhUpdateVal(SortedList_dh sList, SRecord *sr);
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -1596,7 +1593,7 @@ extern void Hash_dhPrint(Hash_dh h, FILE *fp);
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -1720,7 +1717,7 @@ extern void make_symmetric_private(HYPRE_Int m, HYPRE_Int **rp, HYPRE_Int **cval
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -1746,7 +1743,7 @@ extern void PrintMatUsingGetRow(void* A, HYPRE_Int beg_row, HYPRE_Int m,
 #endif
 
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -1787,7 +1784,7 @@ extern void ilut_seq(Euclid_dh ctx);
 #endif
 
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -1946,7 +1943,7 @@ struct _mpi_interface_dh {
 
 #endif /*  #ifndef EUCLID_MPI_INTERFACE_DH */
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -1965,14 +1962,14 @@ extern void cg_euclid(Mat_dh A, Euclid_dh ctx, HYPRE_Real *x, HYPRE_Real *b,
 
 #endif
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
  ******************************************************************************/
 
 /*
-   Note: this module contains functionality for reading/writing 
+   Note: this module contains functionality for reading/writing
          Euclid's binary io format, and opening and closing files.
          Additional io can be found in in mat_dh_private, which contains
          private functions for reading/writing various matrix and
@@ -1995,11 +1992,11 @@ extern void closeFile_dh(FILE *fpIN);
  * binary io; these are called by functions in mat_dh_private
  *---------------------------------------------------------------------------*/
 
-bool isSmallEndian();
+bool isSmallEndian(void);
 
 /* seq only ?? */
 extern void io_dh_print_ebin_mat_private(HYPRE_Int m, HYPRE_Int beg_row,
-                                HYPRE_Int *rp, HYPRE_Int *cval, HYPRE_Real *aval, 
+                                HYPRE_Int *rp, HYPRE_Int *cval, HYPRE_Real *aval,
                            HYPRE_Int *n2o, HYPRE_Int *o2n, Hash_i_dh hash, char *filename);
 
 /* seq only ?? */
@@ -2016,7 +2013,7 @@ extern void io_dh_read_ebin_vec_private(HYPRE_Int *n, HYPRE_Real **vals, char *f
 #endif
 
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)

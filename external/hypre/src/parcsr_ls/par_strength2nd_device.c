@@ -1,10 +1,11 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
  ******************************************************************************/
 
+#include "_hypre_onedpl.hpp"
 #include "HYPRE.h"
 #include "HYPRE_parcsr_mv.h"
 #include "HYPRE_IJ_mv.h"
@@ -16,12 +17,12 @@
 #include "_hypre_parcsr_mv.h"
 #include "HYPRE_utilities.h"
 
-#if defined(HYPRE_USING_CUDA) || defined(HYPRE_USING_HIP)
+#if defined(HYPRE_USING_GPU)
 
 //-----------------------------------------------------------------------
 HYPRE_Int
 hypre_BoomerAMGCreate2ndSDevice( hypre_ParCSRMatrix  *S,
-                                 HYPRE_Int           *CF_marker_host,
+                                 HYPRE_Int           *CF_marker,
                                  HYPRE_Int            num_paths,
                                  HYPRE_BigInt        *coarse_row_starts,
                                  hypre_ParCSRMatrix **S2_ptr)
@@ -31,10 +32,9 @@ hypre_BoomerAMGCreate2ndSDevice( hypre_ParCSRMatrix  *S,
    hypre_CSRMatrix    *S_offd     = hypre_ParCSRMatrixOffd(S);
    HYPRE_Int           S_diag_nnz = hypre_CSRMatrixNumNonzeros(S_diag);
    HYPRE_Int           S_offd_nnz = hypre_CSRMatrixNumNonzeros(S_offd);
-   hypre_ParCSRMatrix *SI         = hypre_CTAlloc(hypre_ParCSRMatrix, 1, HYPRE_MEMORY_HOST);
    hypre_CSRMatrix    *Id, *SI_diag;
    hypre_ParCSRMatrix *S_XC, *S_CX, *S2;
-   HYPRE_Int          *CF_marker, *new_end;
+   HYPRE_Int          *new_end;
    HYPRE_Complex       coeff = 2.0;
 
    /*
@@ -44,29 +44,27 @@ hypre_BoomerAMGCreate2ndSDevice( hypre_ParCSRMatrix  *S,
    hypre_MPI_Comm_rank(comm, &myid);
    */
 
-   CF_marker = hypre_TAlloc(HYPRE_Int, S_nr_local, HYPRE_MEMORY_DEVICE);
-   hypre_TMemcpy(CF_marker, CF_marker_host, HYPRE_Int, S_nr_local, HYPRE_MEMORY_DEVICE, HYPRE_MEMORY_HOST);
-
    /* 1. Create new matrix with added diagonal */
    hypre_GpuProfilingPushRange("Setup");
 
    /* give S data arrays */
    hypre_CSRMatrixData(S_diag) = hypre_TAlloc(HYPRE_Complex, S_diag_nnz, HYPRE_MEMORY_DEVICE );
-   HYPRE_THRUST_CALL( fill,
-                      hypre_CSRMatrixData(S_diag),
-                      hypre_CSRMatrixData(S_diag) + S_diag_nnz,
-                      1.0 );
+   hypreDevice_ComplexFilln( hypre_CSRMatrixData(S_diag),
+                             S_diag_nnz,
+                             1.0 );
 
    hypre_CSRMatrixData(S_offd) = hypre_TAlloc(HYPRE_Complex, S_offd_nnz, HYPRE_MEMORY_DEVICE );
-   HYPRE_THRUST_CALL( fill,
-                      hypre_CSRMatrixData(S_offd),
-                      hypre_CSRMatrixData(S_offd) + S_offd_nnz,
-                      1.0 );
+   hypreDevice_ComplexFilln( hypre_CSRMatrixData(S_offd),
+                             S_offd_nnz,
+                             1.0 );
 
-   hypre_MatvecCommPkgCreate(S);
+   if (!hypre_ParCSRMatrixCommPkg(S))
+   {
+      hypre_MatvecCommPkgCreate(S);
+   }
 
    /* S(C, :) and S(:, C) */
-   hypre_ParCSRMatrixGenerate1DCFDevice(S, CF_marker_host, coarse_row_starts, NULL, &S_CX, &S_XC);
+   hypre_ParCSRMatrixGenerate1DCFDevice(S, CF_marker, coarse_row_starts, NULL, &S_CX, &S_XC);
 
    hypre_assert(S_nr_local == hypre_ParCSRMatrixNumCols(S_CX));
 
@@ -77,6 +75,18 @@ hypre_BoomerAMGCreate2ndSDevice( hypre_ParCSRMatrix  *S,
 
    hypre_CSRMatrixInitialize_v2(Id, 0, HYPRE_MEMORY_DEVICE);
 
+#if defined(HYPRE_USING_SYCL)
+   hypreSycl_sequence( hypre_CSRMatrixI(Id),
+                       hypre_CSRMatrixI(Id) + hypre_ParCSRMatrixNumRows(S_CX) + 1,
+                       0 );
+
+   oneapi::dpl::counting_iterator<HYPRE_Int> count(0);
+   new_end = hypreSycl_copy_if( count,
+                                count + hypre_ParCSRMatrixNumCols(S_CX),
+                                CF_marker,
+                                hypre_CSRMatrixJ(Id),
+                                is_nonnegative<HYPRE_Int>()  );
+#else
    HYPRE_THRUST_CALL( sequence,
                       hypre_CSRMatrixI(Id),
                       hypre_CSRMatrixI(Id) + hypre_ParCSRMatrixNumRows(S_CX) + 1,
@@ -88,15 +98,13 @@ hypre_BoomerAMGCreate2ndSDevice( hypre_ParCSRMatrix  *S,
                                 CF_marker,
                                 hypre_CSRMatrixJ(Id),
                                 is_nonnegative<HYPRE_Int>()  );
+#endif
 
    hypre_assert(new_end - hypre_CSRMatrixJ(Id) == hypre_ParCSRMatrixNumRows(S_CX));
 
-   hypre_TFree(CF_marker, HYPRE_MEMORY_DEVICE);
-
-   HYPRE_THRUST_CALL( fill,
-                      hypre_CSRMatrixData(Id),
-                      hypre_CSRMatrixData(Id) + hypre_ParCSRMatrixNumRows(S_CX),
-                      coeff );
+   hypreDevice_ComplexFilln( hypre_CSRMatrixData(Id),
+                             hypre_ParCSRMatrixNumRows(S_CX),
+                             coeff );
 
    SI_diag = hypre_CSRMatrixAddDevice(1.0, hypre_ParCSRMatrixDiag(S_CX), 1.0, Id);
 
@@ -144,4 +152,4 @@ hypre_BoomerAMGCreate2ndSDevice( hypre_ParCSRMatrix  *S,
    return 0;
 }
 
-#endif /* #if defined(HYPRE_USING_CUDA) || defined(HYPRE_USING_HIP) */
+#endif /* #if defined(HYPRE_USING_GPU) */

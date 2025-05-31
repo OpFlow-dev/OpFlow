@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -162,7 +162,7 @@ DiagScale *DiagScaleCreate(Matrix *A, Numbering *numb)
             if (ind[j] == row)
             {
                 if (val[j] != 0.0)
-                    p->local_diags[row] = 1.0 / sqrt(ABS(val[j]));
+                    p->local_diags[row] = 1.0 / hypre_sqrt(ABS(val[j]));
                 break;
             }
         }

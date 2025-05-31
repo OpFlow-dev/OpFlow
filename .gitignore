@@ -371,3 +371,4 @@ doc/*.html
 venv
 build*/
 .vscode/
+install/

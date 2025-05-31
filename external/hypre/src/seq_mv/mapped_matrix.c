@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -18,7 +18,7 @@
  *--------------------------------------------------------------------------*/
 
 hypre_MappedMatrix *
-hypre_MappedMatrixCreate(  )
+hypre_MappedMatrixCreate( void )
 {
    hypre_MappedMatrix  *matrix;
 
@@ -32,10 +32,10 @@ hypre_MappedMatrixCreate(  )
  * hypre_MappedMatrixDestroy
  *--------------------------------------------------------------------------*/
 
-HYPRE_Int 
+HYPRE_Int
 hypre_MappedMatrixDestroy( hypre_MappedMatrix *matrix )
 {
-   HYPRE_Int  ierr=0;
+   HYPRE_Int  ierr = 0;
 
    if (matrix)
    {
@@ -53,10 +53,10 @@ hypre_MappedMatrixDestroy( hypre_MappedMatrix *matrix )
  * hypre_MappedMatrixLimitedDestroy
  *--------------------------------------------------------------------------*/
 
-HYPRE_Int 
+HYPRE_Int
 hypre_MappedMatrixLimitedDestroy( hypre_MappedMatrix *matrix )
 {
-   HYPRE_Int  ierr=0;
+   HYPRE_Int  ierr = 0;
 
    if (matrix)
    {
@@ -66,42 +66,50 @@ hypre_MappedMatrixLimitedDestroy( hypre_MappedMatrix *matrix )
    return ierr;
 }
 
-
 /*--------------------------------------------------------------------------
  * hypre_MappedMatrixInitialize
  *--------------------------------------------------------------------------*/
 
-HYPRE_Int 
+HYPRE_Int
 hypre_MappedMatrixInitialize( hypre_MappedMatrix *matrix )
 {
-   HYPRE_Int    ierr=0;
+   HYPRE_Int ierr = 0;
+
+   HYPRE_UNUSED_VAR(matrix);
 
    return ierr;
 }
-
 
 /*--------------------------------------------------------------------------
  * hypre_MappedMatrixAssemble
  *--------------------------------------------------------------------------*/
 
-HYPRE_Int 
+HYPRE_Int
 hypre_MappedMatrixAssemble( hypre_MappedMatrix *matrix )
 {
-   HYPRE_Int    ierr=0;
+   HYPRE_Int    ierr = 0;
 
-   if( matrix == NULL )
+   if ( matrix == NULL )
+   {
       return ( -1 ) ;
+   }
 
-   if( hypre_MappedMatrixMatrix(matrix) == NULL )
+   if ( hypre_MappedMatrixMatrix(matrix) == NULL )
+   {
       return ( -1 ) ;
+   }
 
-   if( hypre_MappedMatrixColMap(matrix) == NULL )
+   if ( hypre_MappedMatrixColMap(matrix) == NULL )
+   {
       return ( -1 ) ;
+   }
 
-   if( hypre_MappedMatrixMapData(matrix) == NULL )
+   if ( hypre_MappedMatrixMapData(matrix) == NULL )
+   {
       return ( -1 ) ;
+   }
 
-   return(ierr);
+   return (ierr);
 }
 
 
@@ -112,6 +120,8 @@ hypre_MappedMatrixAssemble( hypre_MappedMatrix *matrix )
 void
 hypre_MappedMatrixPrint(hypre_MappedMatrix *matrix  )
 {
+   HYPRE_UNUSED_VAR(matrix);
+
    hypre_printf("Stub for hypre_MappedMatrix\n");
 }
 
@@ -122,7 +132,7 @@ hypre_MappedMatrixPrint(hypre_MappedMatrix *matrix  )
 HYPRE_Int
 hypre_MappedMatrixGetColIndex(hypre_MappedMatrix *matrix, HYPRE_Int j  )
 {
-   return( hypre_MappedMatrixColIndex(matrix,j) );
+   return ( hypre_MappedMatrixColIndex(matrix, j) );
 }
 
 /*--------------------------------------------------------------------------
@@ -132,7 +142,7 @@ hypre_MappedMatrixGetColIndex(hypre_MappedMatrix *matrix, HYPRE_Int j  )
 void *
 hypre_MappedMatrixGetMatrix(hypre_MappedMatrix *matrix )
 {
-   return( hypre_MappedMatrixMatrix(matrix) );
+   return ( hypre_MappedMatrixMatrix(matrix) );
 }
 
 /*--------------------------------------------------------------------------
@@ -142,11 +152,11 @@ hypre_MappedMatrixGetMatrix(hypre_MappedMatrix *matrix )
 HYPRE_Int
 hypre_MappedMatrixSetMatrix(hypre_MappedMatrix *matrix, void *matrix_data  )
 {
-   HYPRE_Int ierr=0;
+   HYPRE_Int ierr = 0;
 
    hypre_MappedMatrixMatrix(matrix) = matrix_data;
 
-   return(ierr);
+   return (ierr);
 }
 
 /*--------------------------------------------------------------------------
@@ -154,14 +164,14 @@ hypre_MappedMatrixSetMatrix(hypre_MappedMatrix *matrix, void *matrix_data  )
  *--------------------------------------------------------------------------*/
 
 HYPRE_Int
-hypre_MappedMatrixSetColMap(hypre_MappedMatrix *matrix, 
-                          HYPRE_Int (*ColMap)(HYPRE_Int, void *)  )
+hypre_MappedMatrixSetColMap(hypre_MappedMatrix *matrix,
+                            HYPRE_Int (*ColMap)(HYPRE_Int, void *)  )
 {
-   HYPRE_Int ierr=0;
+   HYPRE_Int ierr = 0;
 
    hypre_MappedMatrixColMap(matrix) = ColMap;
 
-   return(ierr);
+   return (ierr);
 }
 
 /*--------------------------------------------------------------------------
@@ -169,13 +179,12 @@ hypre_MappedMatrixSetColMap(hypre_MappedMatrix *matrix,
  *--------------------------------------------------------------------------*/
 
 HYPRE_Int
-hypre_MappedMatrixSetMapData(hypre_MappedMatrix *matrix, 
-                          void *map_data )
+hypre_MappedMatrixSetMapData(hypre_MappedMatrix *matrix,
+                             void *map_data )
 {
-   HYPRE_Int ierr=0;
+   HYPRE_Int ierr = 0;
 
    hypre_MappedMatrixMapData(matrix) = map_data;
 
-   return(ierr);
+   return (ierr);
 }
-

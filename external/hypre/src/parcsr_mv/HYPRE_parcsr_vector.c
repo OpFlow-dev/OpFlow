@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -29,7 +29,7 @@ HYPRE_ParVectorCreate( MPI_Comm         comm,
       return hypre_error_flag;
    }
    *vector = (HYPRE_ParVector)
-      hypre_ParVectorCreate(comm, global_size, partitioning) ;
+             hypre_ParVectorCreate(comm, global_size, partitioning) ;
    return hypre_error_flag;
 }
 
@@ -50,7 +50,7 @@ HYPRE_ParMultiVectorCreate( MPI_Comm         comm,
       return hypre_error_flag;
    }
    *vector = (HYPRE_ParVector)
-      hypre_ParMultiVectorCreate( comm, global_size, partitioning, number_vectors );
+             hypre_ParMultiVectorCreate( comm, global_size, partitioning, number_vectors );
    return hypre_error_flag;
 }
 
@@ -102,6 +102,18 @@ HYPRE_ParVectorPrint( HYPRE_ParVector  vector,
 {
    return ( hypre_ParVectorPrint( (hypre_ParVector *) vector,
                                   file_name ) );
+}
+
+/*--------------------------------------------------------------------------
+ * HYPRE_ParVectorPrintBinaryIJ
+ *--------------------------------------------------------------------------*/
+
+HYPRE_Int
+HYPRE_ParVectorPrintBinaryIJ( HYPRE_ParVector  vector,
+                              const char      *file_name )
+{
+   return ( hypre_ParVectorPrintBinaryIJ( (hypre_ParVector *) vector,
+                                          file_name ) );
 }
 
 /*--------------------------------------------------------------------------
@@ -165,6 +177,7 @@ HYPRE_ParVectorScale( HYPRE_Complex   value,
 /*--------------------------------------------------------------------------
  * HYPRE_ParVectorAxpy
  *--------------------------------------------------------------------------*/
+
 HYPRE_Int
 HYPRE_ParVectorAxpy( HYPRE_Complex   alpha,
                      HYPRE_ParVector x,
@@ -215,7 +228,7 @@ HYPRE_VectorToParVector( MPI_Comm         comm,
       return hypre_error_flag;
    }
    *vector = (HYPRE_ParVector)
-      hypre_VectorToParVector (comm, (hypre_Vector *) b, partitioning);
+             hypre_VectorToParVector (comm, (hypre_Vector *) b, partitioning);
    return hypre_error_flag;
 }
 

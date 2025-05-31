@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright 1998-2019 Lawrence Livermore National Security, LLC and other
+ * Copyright (c) 1998 Lawrence Livermore National Security, LLC and other
  * HYPRE Project Developers. See the top-level COPYRIGHT file for details.
  *
  * SPDX-License-Identifier: (Apache-2.0 OR MIT)
@@ -9,17 +9,17 @@
 
 /*---------------------------------------------------------------------------
  * hypre_BoomerAMGBlockCreateNodalA
-
- This is the block version of creating a nodal norm matrix.
-
- option: determine which type of "norm" (or other measurement) is used.
-
- 1 = frobenius
- 2 = sum of abs. value of all elements
- 3 = largest element (positive or negative)
- 4 = 1-norm
- 5 = inf - norm
- 6 = sum of all elements
+ *
+ * This is the block version of creating a nodal norm matrix.
+ *
+ * Option: determine which type of "norm" (or other measurement) is used.
+ *
+ *   1 = frobenius
+ *   2 = sum of abs. value of all elements
+ *   3 = largest element (positive or negative)
+ *   4 = 1-norm
+ *   5 = inf - norm
+ *   6 = sum of all elements
  *--------------------------------------------------------------------------*/
 
 HYPRE_Int
@@ -34,7 +34,7 @@ hypre_BoomerAMGBlockCreateNodalA(hypre_ParCSRBlockMatrix *A,
    HYPRE_Real              *A_diag_data  = hypre_CSRBlockMatrixData(A_diag);
 
    HYPRE_Int                block_size = hypre_CSRBlockMatrixBlockSize(A_diag);
-   HYPRE_Int                bnnz = block_size*block_size;
+   HYPRE_Int                bnnz = block_size * block_size;
 
    hypre_CSRBlockMatrix    *A_offd          = hypre_ParCSRMatrixOffd(A);
    HYPRE_Int               *A_offd_i        = hypre_CSRBlockMatrixI(A_offd);
@@ -51,7 +51,7 @@ hypre_BoomerAMGBlockCreateNodalA(hypre_ParCSRBlockMatrix *A,
    hypre_ParCSRMatrix *AN;
    hypre_CSRMatrix    *AN_diag;
    HYPRE_Int          *AN_diag_i;
-   HYPRE_Int          *AN_diag_j=NULL;
+   HYPRE_Int          *AN_diag_j = NULL;
    HYPRE_Real         *AN_diag_data = NULL;
    hypre_CSRMatrix    *AN_offd;
    HYPRE_Int          *AN_offd_i;
@@ -89,7 +89,7 @@ hypre_BoomerAMGBlockCreateNodalA(hypre_ParCSRBlockMatrix *A,
    HYPRE_Real           tmp;
    HYPRE_Real           sum;
 
-   hypre_MPI_Comm_size(comm,&num_procs);
+   hypre_MPI_Comm_size(comm, &num_procs);
 
    if (!comm_pkg)
    {
@@ -107,7 +107,7 @@ hypre_BoomerAMGBlockCreateNodalA(hypre_ParCSRBlockMatrix *A,
    /* the diag part */
 
    num_nonzeros_diag = A_diag_i[num_nodes];
-   AN_diag_i = hypre_CTAlloc(HYPRE_Int,  num_nodes+1, HYPRE_MEMORY_HOST);
+   AN_diag_i = hypre_CTAlloc(HYPRE_Int,  num_nodes + 1, HYPRE_MEMORY_HOST);
 
    for (i = 0; i <= num_nodes; i++)
    {
@@ -125,7 +125,7 @@ hypre_BoomerAMGBlockCreateNodalA(hypre_ParCSRBlockMatrix *A,
    for (i = 0; i < num_nonzeros_diag; i++)
    {
       AN_diag_j[i]  = A_diag_j[i];
-      hypre_CSRBlockMatrixBlockNorm(norm_type, &A_diag_data[i*bnnz],
+      hypre_CSRBlockMatrixBlockNorm(norm_type, &A_diag_data[i * bnnz],
                                     &tmp, block_size);
       AN_diag_data[i] = tmp;
    }
@@ -140,7 +140,7 @@ hypre_BoomerAMGBlockCreateNodalA(hypre_ParCSRBlockMatrix *A,
       {
          index = AN_diag_i[i];
          sum = 0.0;
-         for (k = AN_diag_i[i]+1; k < AN_diag_i[i+1]; k++)
+         for (k = AN_diag_i[i] + 1; k < AN_diag_i[i + 1]; k++)
          {
             sum += AN_diag_data[k];
 
@@ -164,54 +164,50 @@ hypre_BoomerAMGBlockCreateNodalA(hypre_ParCSRBlockMatrix *A,
    /* copy the commpkg */
    if (comm_pkg)
    {
-      comm_pkg_AN = hypre_CTAlloc(hypre_ParCSRCommPkg, 1, HYPRE_MEMORY_HOST);
-      hypre_ParCSRCommPkgComm(comm_pkg_AN) = comm;
-
-      num_sends = hypre_ParCSRCommPkgNumSends(comm_pkg);
-      hypre_ParCSRCommPkgNumSends(comm_pkg_AN) = num_sends;
-
       num_recvs = hypre_ParCSRCommPkgNumRecvs(comm_pkg);
-      hypre_ParCSRCommPkgNumRecvs(comm_pkg_AN) = num_recvs;
-
+      recv_procs = hypre_ParCSRCommPkgRecvProcs(comm_pkg);
+      recv_vec_starts = hypre_ParCSRCommPkgRecvVecStarts(comm_pkg);
+      num_sends = hypre_ParCSRCommPkgNumSends(comm_pkg);
       send_procs = hypre_ParCSRCommPkgSendProcs(comm_pkg);
       send_map_starts = hypre_ParCSRCommPkgSendMapStarts(comm_pkg);
       send_map_elmts = hypre_ParCSRCommPkgSendMapElmts(comm_pkg);
+
       if (num_sends)
       {
          send_procs_AN = hypre_CTAlloc(HYPRE_Int,  num_sends, HYPRE_MEMORY_HOST);
-         send_map_elmts_AN = hypre_CTAlloc(HYPRE_Int,  send_map_starts[num_sends], HYPRE_MEMORY_HOST);
+         send_map_elmts_AN = hypre_CTAlloc(HYPRE_Int, send_map_starts[num_sends],
+                                           HYPRE_MEMORY_HOST);
       }
-      send_map_starts_AN = hypre_CTAlloc(HYPRE_Int,  num_sends+1, HYPRE_MEMORY_HOST);
-      send_map_starts_AN[0] = 0;
+      send_map_starts_AN = hypre_CTAlloc(HYPRE_Int,  num_sends + 1, HYPRE_MEMORY_HOST);
       for (i = 0; i < num_sends; i++)
       {
          send_procs_AN[i] = send_procs[i];
-         send_map_starts_AN[i+1] = send_map_starts[i+1];
+         send_map_starts_AN[i + 1] = send_map_starts[i + 1];
       }
+
       cnt = send_map_starts_AN[num_sends];
       for (i = 0; i < cnt; i++)
       {
          send_map_elmts_AN[i] = send_map_elmts[i];
       }
-      hypre_ParCSRCommPkgSendProcs(comm_pkg_AN) = send_procs_AN;
-      hypre_ParCSRCommPkgSendMapStarts(comm_pkg_AN) = send_map_starts_AN;
-      hypre_ParCSRCommPkgSendMapElmts(comm_pkg_AN) = send_map_elmts_AN;
 
-      recv_procs = hypre_ParCSRCommPkgRecvProcs(comm_pkg);
-      recv_vec_starts = hypre_ParCSRCommPkgRecvVecStarts(comm_pkg);
-      recv_vec_starts_AN = hypre_CTAlloc(HYPRE_Int,  num_recvs+1, HYPRE_MEMORY_HOST);
-      if (num_recvs) recv_procs_AN = hypre_CTAlloc(HYPRE_Int,  num_recvs, HYPRE_MEMORY_HOST);
-
-      recv_vec_starts_AN[0] = recv_vec_starts[0];
+      recv_vec_starts_AN = hypre_CTAlloc(HYPRE_Int,  num_recvs + 1, HYPRE_MEMORY_HOST);
+      if (num_recvs)
+      {
+         recv_procs_AN = hypre_CTAlloc(HYPRE_Int,  num_recvs, HYPRE_MEMORY_HOST);
+      }
       for (i = 0; i < num_recvs; i++)
       {
          recv_procs_AN[i] = recv_procs[i];
-         recv_vec_starts_AN[i+1] = recv_vec_starts[i+1];
-
+         recv_vec_starts_AN[i + 1] = recv_vec_starts[i + 1];
       }
-      hypre_ParCSRCommPkgRecvProcs(comm_pkg_AN) = recv_procs_AN;
-      hypre_ParCSRCommPkgRecvVecStarts(comm_pkg_AN) = recv_vec_starts_AN;
 
+      /* Create communication package */
+      hypre_ParCSRCommPkgCreateAndFill(comm,
+                                       num_recvs, recv_procs_AN, recv_vec_starts_AN,
+                                       num_sends, send_procs_AN, send_map_starts_AN,
+                                       send_map_elmts_AN,
+                                       &comm_pkg_AN);
    }
 
    /* the off-diag part */
@@ -224,7 +220,7 @@ hypre_BoomerAMGBlockCreateNodalA(hypre_ParCSRBlockMatrix *A,
    }
 
    num_nonzeros_offd = A_offd_i[num_nodes];
-   AN_offd_i = hypre_CTAlloc(HYPRE_Int,  num_nodes+1, HYPRE_MEMORY_HOST);
+   AN_offd_i = hypre_CTAlloc(HYPRE_Int,  num_nodes + 1, HYPRE_MEMORY_HOST);
    for (i = 0; i <= num_nodes; i++)
    {
       AN_offd_i[i] = A_offd_i[i];
@@ -236,7 +232,7 @@ hypre_BoomerAMGBlockCreateNodalA(hypre_ParCSRBlockMatrix *A,
    for (i = 0; i < num_nonzeros_offd; i++)
    {
       AN_offd_j[i]  = A_offd_j[i];
-      hypre_CSRBlockMatrixBlockNorm(norm_type, &A_offd_data[i*bnnz],
+      hypre_CSRBlockMatrixBlockNorm(norm_type, &A_offd_data[i * bnnz],
                                     &tmp, block_size);
       AN_offd_data[i] = tmp;
    }
@@ -255,7 +251,7 @@ hypre_BoomerAMGBlockCreateNodalA(hypre_ParCSRBlockMatrix *A,
       for (i = 0; i < num_nodes; i++)
       {
          sum = 0.0;
-         for (k = AN_offd_i[i]; k < AN_offd_i[i+1]; k++)
+         for (k = AN_offd_i[i]; k < AN_offd_i[i + 1]; k++)
          {
             sum += AN_offd_data[k];
          }
