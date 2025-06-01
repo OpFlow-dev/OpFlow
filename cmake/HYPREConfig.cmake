@@ -35,7 +35,7 @@ macro(CONFIG_AND_INSTALL_HYPRE)
             -DHYPRE_ENABLE_OPENMP=${OPFLOW_WITH_OPENMP}
             -DHYPRE_ENABLE_MPI=${OPFLOW_WITH_MPI}
             -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-            ${CMAKE_CURRENT_SOURCE_DIR}/external/hypre/src
+            ${CMAKE_CURRENT_LIST_DIR}/../external/hypre/src
             RESULT_VARIABLE _result
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/hypre-build)
     if (_result)

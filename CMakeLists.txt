@@ -175,6 +175,11 @@ target_include_directories(opflow INTERFACE
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/src>")
 
 # ----------------------------------------------------------------------------
+# External dependencies
+# ----------------------------------------------------------------------------
+add_subdirectory(external)
+
+# ----------------------------------------------------------------------------
 # Compile options
 # ----------------------------------------------------------------------------
 include(CheckCXXCompilerFlag)
@@ -183,54 +188,7 @@ if (NOT c++26support)
     message(FATAL_ERROR "OpFlow requires C++26 to compile.")
 endif ()
 target_compile_options(opflow INTERFACE -std=c++26)
-
-# ----------------------------------------------------------------------------
-# Use spdlog package
-# ----------------------------------------------------------------------------
-if (OPFLOW_INSTALL)
-    # Same as libfmt
-    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/SPDLOGConfig.cmake)
-    CONFIG_AND_INSTALL_SPDLOG()
-    find_package(spdlog REQUIRED PATHS ${CMAKE_INSTALL_PREFIX} NO_DEFAULT_PATH)
-else ()
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/spdlog EXCLUDE_FROM_ALL)
-endif ()
-target_link_libraries(opflow INTERFACE spdlog::spdlog)
-
-# ----------------------------------------------------------------------------
-# Use AMGCL
-# ----------------------------------------------------------------------------
-if (OPFLOW_INSTALL)
-    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AMGCLConfig.cmake)
-    CONFIG_AND_INSTALL_AMGCL()
-    find_package(amgcl REQUIRED PATHS ${CMAKE_INSTALL_PREFIX} NO_DEFAULT_PATH)
-else ()
-    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/amgcl EXCLUDE_FROM_ALL)
-endif ()
-target_link_libraries(opflow INTERFACE amgcl::amgcl)
-
-# ----------------------------------------------------------------------------
-# Use TBB
-# ----------------------------------------------------------------------------
-if (OPFLOW_TBB_EXTERNAL)
-    if (NOT DEFINED TBB_DIR)
-        message(FATAL "Variable TBB_DIR not defined. Use -DTBB_DIR to specify TBB's install path.")
-    endif ()
-    find_package(TBB REQUIRED PATHS ${TBB_DIR} NO_DEFAULT_PATH)
-else ()
-    if (OPFLOW_INSTALL)
-        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/TBBConfig.cmake)
-        CONFIG_AND_INSTALL_TBB()
-        find_package(tbb NAMES tbb TBB REQUIRED PATHS ${CMAKE_INSTALL_PREFIX} NO_DEFAULT_PATH)
-    else ()
-        set(BUILD_SHARED_LIBS ON)
-        set(TBB_TEST OFF)
-        set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/tbb EXCLUDE_FROM_ALL)
-        find_package(tbb NAMES tbb TBB REQUIRED)
-    endif ()
-endif ()
-target_link_libraries(opflow INTERFACE TBB::tbb)
+set_property(TARGET opflow PROPERTY CXX_SCAN_FOR_MODULES ON)
 
 # ----------------------------------------------------------------------------
 # Find MPI
@@ -271,105 +229,6 @@ if (OPFLOW_WITH_OPENMP)
     target_compile_options(opflow INTERFACE ${OpenMP_CXX_FLAGS})
 
     list(APPEND PKG_CONFIG_REQUIRES OpenMP)
-endif ()
-
-# ----------------------------------------------------------------------------
-# Use HYPRE package
-# ----------------------------------------------------------------------------
-if (OPFLOW_HYPRE_EXTERNAL)
-    if (NOT DEFINED HYPRE_DIR)
-        message(FATAL "Variable HYPRE_DIR not set. Use -DHYPRE_DIR to specify HYPRE's install path")
-    endif ()
-    # Use external HYPRE
-    find_package(HYPRE REQUIRED PATHS ${HYPRE_DIR} NO_DEFAULT_PATH)
-    # Here we hard link to the found HYPRE to avoid find again at client
-    target_link_libraries(opflow INTERFACE HYPRE)
-else ()
-    # Use bundled HYPRE
-    if (OPFLOW_INSTALL)
-        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/HYPREConfig.cmake)
-        CONFIG_AND_INSTALL_HYPRE()
-        find_package(HYPRE REQUIRED PATHS ${CMAKE_INSTALL_PREFIX} NO_DEFAULT_PATH)
-        # HYPRE::HYPRE is only exported on install
-        target_link_libraries(opflow INTERFACE HYPRE::HYPRE)
-    else ()
-        set(HYPRE_BUILD_TYPE Debug)
-        set(HYPRE_WITH_OPENMP ${OPFLOW_WITH_OPENMP})
-        set(HYPRE_ENABLE_SINGLE ${OPFLOW_SINGLE_PRECISION})
-        set(HYPRE_WITH_MPI ${OPFLOW_WITH_MPI})
-        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/hypre/src EXCLUDE_FROM_ALL)
-        target_link_libraries(opflow INTERFACE HYPRE)
-    endif ()
-endif ()
-
-# ----------------------------------------------------------------------------
-# Use VTK package
-# ----------------------------------------------------------------------------
-if (OPFLOW_WITH_VTK)
-    target_compile_definitions(opflow INTERFACE OPFLOW_WITH_VTK)
-    if (OPFLOW_VTK_EXTERNAL)
-        if (NOT TARGET VTK)
-            if (NOT DEFINED VTK_DIR)
-                message(FATAL "Variable VTK_DIR not defined. Use -DVTK_DIR to specify VTK's install path")
-            endif ()
-            find_package(VTK REQUIRED PATHS ${VTK_DIR} NO_DEFAULT_PATH)
-            target_compile_definitions(opflow INTERFACE OPFLOW_VTK_EXTERNAL)
-        endif ()
-    else ()
-        include(cmake/VTKConfig.cmake)
-        CONFIG_VTK()
-    endif ()
-    list(APPEND PKG_CONFIG_REQUIRES VTK)
-    target_include_directories(opflow INTERFACE ${VTK_INCLUDE_DIRS})
-    target_link_directories(opflow INTERFACE ${VTK_LIBRARY_DIRS})
-    target_link_libraries(opflow INTERFACE ${VTK_LIBRARIES})
-endif ()
-
-# ----------------------------------------------------------------------------
-# Use HDF5 package
-# ----------------------------------------------------------------------------
-if (OPFLOW_WITH_HDF5)
-    if (OPFLOW_WITH_MPI)
-        set(HDF5_PREFER_PARALLEL TRUE)
-    endif ()
-    set(HDF5_USE_STATIC_LIBRARIES ON)
-    include(FindHDF5)
-    find_package(HDF5 COMPONENTS C REQUIRED)
-    if (HDF5_PREFER_PARALLEL AND NOT HDF5_IS_PARALLEL)
-        message(FATAL_ERROR "Cannot find parallel HDF5 library")
-    endif ()
-    target_include_directories(opflow INTERFACE ${HDF5_C_INCLUDE_DIRS})
-    target_link_libraries(opflow INTERFACE ${HDF5_C_LIBRARIES})
-    target_compile_definitions(opflow INTERFACE OPFLOW_WITH_HDF5 ${HDF5_C_DEFINITIONS})
-    if (OPFLOW_WITH_MPI)
-        target_compile_definitions(opflow INTERFACE H5_HAVE_PARALLEL)
-    endif ()
-endif ()
-
-# ----------------------------------------------------------------------------
-# Use TecIO library
-# ----------------------------------------------------------------------------
-if (OPFLOW_INSTALL)
-    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/TECIOConfig.cmake)
-    CONFIG_AND_INSTALL_TECIO()
-    target_include_directories(opflow INTERFACE ${CMAKE_INSTALL_PREFIX}/include/tecio)
-    target_link_directories(opflow INTERFACE ${CMAKE_INSTALL_PREFIX}/lib)
-    if (OPFLOW_WITH_MPI)
-        target_link_libraries(opflow INTERFACE teciompi)
-        target_compile_definitions(opflow INTERFACE TECIOMPI)
-    else ()
-        target_link_libraries(opflow INTERFACE tecio)
-    endif ()
-else ()
-    if (OPFLOW_WITH_MPI)
-        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/tecio/teciompisrc EXCLUDE_FROM_ALL)
-        target_include_directories(opflow INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/external/tecio/teciompisrc)
-        target_link_libraries(opflow INTERFACE teciompi)
-    else ()
-        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/tecio/teciosrc EXCLUDE_FROM_ALL)
-        include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/tecio/teciosrc)
-        target_link_libraries(opflow INTERFACE tecio)
-    endif ()
 endif ()
 
 # ----------------------------------------------------------------------------
