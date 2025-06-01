@@ -38,68 +38,68 @@ include(GNUInstallDirs)
 # ----------------------------------------------------------------------------
 # Set CMake policies to support later version behaviour
 # ----------------------------------------------------------------------------
-if (POLICY CMP0077)
+if(POLICY CMP0077)
     cmake_policy(SET CMP0077 NEW) # option() honors variables already set
-endif ()
+endif()
 
 # ----------------------------------------------------------------------------
 # Set default build to release
 # ----------------------------------------------------------------------------
-if (NOT CMAKE_BUILD_TYPE)
+if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose Release or Debug" FORCE)
-endif ()
+endif()
 
 # ----------------------------------------------------------------------------
 # Compiler config
 # ----------------------------------------------------------------------------
-if (NOT CMAKE_C_STANDARD)
+if(NOT CMAKE_C_STANDARD)
     set(CMAKE_C_STANDARD 11)
     set(CMAKE_C_STANDARD_REQUIRED ON)
-elseif (CMAKE_C_STANDARD LESS 11)
+elseif(CMAKE_C_STANDARD LESS 11)
     message(WARNING "OpFlow needs C11 to compile. Changing the standard to C11.")
     set(CMAKE_C_STANDARD 11)
     set(CMAKE_C_STANDARD_REQUIRED ON)
-endif ()
+endif()
 
 # make sure __cplusplus is defined when using msvc
-if (MSVC)
+if(MSVC)
     string(APPEND CMAKE_CXX_FLAGS " /Zc:__cplusplus /wd4267 /wd4390 /wd4244")
-endif ()
+endif()
 
 # supress possible abi warning by upgrade compiler
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
 # temporary fix for macOS 14 & CLT 15
-if (CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin"
-        AND CMAKE_HOST_SYSTEM_VERSION VERSION_GREATER_EQUAL 23)
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin"
+    AND CMAKE_HOST_SYSTEM_VERSION VERSION_GREATER_EQUAL 23)
     add_link_options(-Wl,-ld_classic)
-endif ()
+endif()
 
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if (CMAKE_SYSTEM_NAME MATCHES "CYGWIN" OR CMAKE_SYSTEM_NAME MATCHES "MSYS")
+if(CMAKE_SYSTEM_NAME MATCHES "CYGWIN" OR CMAKE_SYSTEM_NAME MATCHES "MSYS")
     set(CMAKE_CXX_EXTENSIONS ON)
-endif ()
+endif()
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_THREAD_LIBS_INIT "-lpthread")
     set(CMAKE_HAVE_THREADS_LIBRARY 1)
     set(CMAKE_USE_WIN32_THREADS_INIT 0)
     set(CMAKE_USE_PTHREADS_INIT 1)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
-endif ()
+endif()
 
 # ----------------------------------------------------------------------------
 # Set OPFLOW_MASTER_PROJECT to ON if we are building opflow
 # ----------------------------------------------------------------------------
 # Check if opflow is being used directly or via add_subdirectory, but allow overriding
-if (NOT DEFINED OPFLOW_MASTER_PROJECT)
-    if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+if(NOT DEFINED OPFLOW_MASTER_PROJECT)
+    if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         set(OPFLOW_MASTER_PROJECT ON)
-    else ()
+    else()
         set(OPFLOW_MASTER_PROJECT OFF)
-    endif ()
-endif ()
+    endif()
+endif()
 
 option(OPFLOW_BUILD_ALL "Build all artifacts" OFF)
 
@@ -146,33 +146,27 @@ option(OPFLOW_VTK_EXTERNAL "Use external VTK library instead of bundled" OFF)
 option(OPFLOW_TBB_EXTERNAL "Use external Intel TBB library instead of bundled" OFF)
 
 # clang-tidy
-if (${CMAKE_VERSION} VERSION_GREATER "3.5")
+if(${CMAKE_VERSION} VERSION_GREATER "3.5")
     option(OPFLOW_TIDY "run clang-tidy" OFF)
-endif ()
+endif()
 
-if (OPFLOW_TIDY)
+if(OPFLOW_TIDY)
     set(CMAKE_CXX_CLANG_TIDY "clang-tidy")
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
     message(STATUS "Enabled clang-tidy")
-endif ()
+endif()
+
+# ----------------------------------------------------------------------------
+# Compile options
+# ----------------------------------------------------------------------------
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag(-std=c++26 c++26support)
+if(NOT c++26support)
+    message(FATAL_ERROR "OpFlow requires C++26 to compile.")
+endif()
 
 message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
-
-# ----------------------------------------------------------------------------
-# Header only version
-# ----------------------------------------------------------------------------
-add_library(opflow INTERFACE)
-add_library(opflow::opflow ALIAS opflow)
-
-# Create & include the version header
-configure_file(${CMAKE_CURRENT_LIST_DIR}/cmake/Version.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/Version.hpp @ONLY)
-
-target_include_directories(opflow INTERFACE
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/src>"
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
-        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/src>")
+add_subdirectory(src)
 
 # ----------------------------------------------------------------------------
 # External dependencies
@@ -180,108 +174,97 @@ target_include_directories(opflow INTERFACE
 add_subdirectory(external)
 
 # ----------------------------------------------------------------------------
-# Compile options
-# ----------------------------------------------------------------------------
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag(-std=c++26 c++26support)
-if (NOT c++26support)
-    message(FATAL_ERROR "OpFlow requires C++26 to compile.")
-endif ()
-target_compile_options(opflow INTERFACE -std=c++26)
-set_property(TARGET opflow PROPERTY CXX_SCAN_FOR_MODULES ON)
-
-# ----------------------------------------------------------------------------
 # Find MPI
 # ----------------------------------------------------------------------------
-if (OPFLOW_WITH_MPI)
+if(OPFLOW_WITH_MPI)
     find_package(MPI REQUIRED)
     target_link_libraries(opflow INTERFACE MPI::MPI_C MPI::MPI_CXX)
 
     list(APPEND PKG_CONFIG_REQUIRES MPI)
-endif ()
+endif()
 
 # ----------------------------------------------------------------------------
 # Find OpenMP
 # ----------------------------------------------------------------------------
-if (OPFLOW_WITH_OPENMP)
+if(OPFLOW_WITH_OPENMP)
     # workarounds for CI to find the correct libomp
-    if (APPLE)
-        if (EXISTS /usr/local/opt/llvm/lib)
+    if(APPLE)
+        if(EXISTS /usr/local/opt/llvm/lib)
             link_directories("/usr/local/opt/llvm/lib")
-        elseif (EXISTS /opt/homebrew/lib)
+        elseif(EXISTS /opt/homebrew/lib)
             link_directories("/opt/homebrew/lib")
-        endif ()
-    endif ()
-    if (CMAKE_C_COMPILER_ID MATCHES "Clang")
+        endif()
+    endif()
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
         set(OpenMP_C "${CMAKE_C_COMPILER}")
         set(OpenMP_C_FLAGS "-fopenmp=libomp -Wno-unused-command-line-argument -Wno-deprecated-pragma")
         set(OpenMP_C_LIB_NAMES "omp")
         set(OpenMP_omp_LIBRARY ${OpenMP_C_LIB_NAMES})
-    endif ()
-    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    endif()
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         set(OpenMP_CXX "${CMAKE_CXX_COMPILER}")
         set(OpenMP_CXX_FLAGS "-fopenmp=libomp -Wno-unused-command-line-argument")
         set(OpenMP_CXX_LIB_NAMES "omp")
         set(OpenMP_omp_LIBRARY ${OpenMP_CXX_LIB_NAMES})
-    endif ()
+    endif()
     find_package(OpenMP REQUIRED)
     target_link_libraries(opflow INTERFACE OpenMP::OpenMP_C OpenMP::OpenMP_CXX)
     target_compile_options(opflow INTERFACE ${OpenMP_CXX_FLAGS})
 
     list(APPEND PKG_CONFIG_REQUIRES OpenMP)
-endif ()
+endif()
 
 # ----------------------------------------------------------------------------
 # Platform detection
 # ----------------------------------------------------------------------------
-if (UNIX)
+if(UNIX)
     target_compile_definitions(opflow INTERFACE OPFLOW_PLATFORM_UNIX)
-elseif (APPLE)
+elseif(APPLE)
     target_compile_definitions(opflow INTERFACE OPFLOW_PLATFORM_APPLE)
-elseif (WIN32)
+elseif(WIN32)
     target_compile_definitions(opflow INTERFACE OPFLOW_PLATFORM_WIN)
-endif ()
+endif()
 
 # ----------------------------------------------------------------------------
 # Language & library features detection
 # ----------------------------------------------------------------------------
 include(CheckIncludeFiles)
 check_include_files("sys/mman.h" HAS_SYS_MMAN_H)
-if (HAS_SYS_MMAN_H)
+if(HAS_SYS_MMAN_H)
     target_compile_definitions(opflow INTERFACE OPFLOW_HAS_MMAN_H)
-endif ()
+endif()
 
 # ----------------------------------------------------------------------------
 # Misc definitions according to tweak options
 # ----------------------------------------------------------------------------
-foreach (
-        OPFLOW_OPTION
-        OPFLOW_SINGLE_PRECISION
-        OPFLOW_WITH_MPI
-        OPFLOW_WITH_OPENMP)
-    if (${OPFLOW_OPTION})
+foreach(
+    OPFLOW_OPTION
+    OPFLOW_SINGLE_PRECISION
+    OPFLOW_WITH_MPI
+    OPFLOW_WITH_OPENMP)
+    if(${OPFLOW_OPTION})
         target_compile_definitions(opflow INTERFACE ${OPFLOW_OPTION})
-    endif ()
-endforeach ()
-if (OPFLOW_WITH_MPI)
+    endif()
+endforeach()
+if(OPFLOW_WITH_MPI)
     target_compile_definitions(opflow INTERFACE OPFLOW_DISTRIBUTE_MODEL_MPI)
-endif ()
+endif()
 
-if (OPFLOW_NO_EXCEPTIONS AND NOT MSVC)
+if(OPFLOW_NO_EXCEPTIONS AND NOT MSVC)
     target_compile_options(opflow INTERFACE -fno-exceptions)
-endif ()
+endif()
 
 # sanitizer flags
 target_compile_options(opflow
-        INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_ADDRESS}>: -fsanitize=address>
-        INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_LEAK}>: -fsanitize=leak>
-        INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_THREAD}>: -fsanitize=thread>
-        INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_UB}>: -fsanitize=undefined>)
+    INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_ADDRESS}>: -fsanitize=address>
+    INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_LEAK}>: -fsanitize=leak>
+    INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_THREAD}>: -fsanitize=thread>
+    INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_UB}>: -fsanitize=undefined>)
 target_link_options(opflow
-        INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_ADDRESS}>: -fsanitize=address>
-        INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_LEAK}>: -fsanitize=leak>
-        INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_THREAD}>: -fsanitize=thread>
-        INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_UB}>: -fsanitize=undefined>)
+    INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_ADDRESS}>: -fsanitize=address>
+    INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_LEAK}>: -fsanitize=leak>
+    INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_THREAD}>: -fsanitize=thread>
+    INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_UB}>: -fsanitize=undefined>)
 
 # ----------------------------------------------------------------------------
 # All_CI target (= AllExamples + AllBenchmarks + AllTests)
@@ -291,24 +274,24 @@ add_custom_target(All_CI)
 # ----------------------------------------------------------------------------
 # Build binaries
 # ----------------------------------------------------------------------------
-if (OPFLOW_BUILD_EXAMPLES OR OPFLOW_BUILD_ALL)
+if(OPFLOW_BUILD_EXAMPLES OR OPFLOW_BUILD_ALL)
     message(STATUS "Generating examples")
     add_subdirectory(examples)
-endif ()
+endif()
 
 # ----------------------------------------------------------------------------
 # Build tests
 # ----------------------------------------------------------------------------
-if (OPFLOW_BUILD_TESTS OR OPFLOW_BUILD_ALL)
+if(OPFLOW_BUILD_TESTS OR OPFLOW_BUILD_ALL)
     message(STATUS "Generating tests")
     enable_testing()
     add_subdirectory(test)
-endif ()
+endif()
 
 # ----------------------------------------------------------------------------
 # Build benchmarks
 # ----------------------------------------------------------------------------
-if (OPFLOW_BUILD_BENCHMARKS OR OPFLOW_BUILD_ALL)
+if(OPFLOW_BUILD_BENCHMARKS OR OPFLOW_BUILD_ALL)
     message(STATUS "Generating benchmarks")
     # config google benchmark as part of the project
     set(BENCHMARK_ENABLE_INSTALL OFF)
@@ -316,61 +299,61 @@ if (OPFLOW_BUILD_BENCHMARKS OR OPFLOW_BUILD_ALL)
     set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/benchmark EXCLUDE_FROM_ALL)
     add_subdirectory(benchmark)
-endif ()
+endif()
 
 # ----------------------------------------------------------------------------
 # Build docs
 # ----------------------------------------------------------------------------
-if (OPFLOW_BUILD_DOCS OR OPFLOW_BUILD_ALL)
+if(OPFLOW_BUILD_DOCS OR OPFLOW_BUILD_ALL)
     message(STATUS "Generating docs")
     find_program(SPHINX_PATH sphinx-build
-            HINTS $ENV{PATH} ${SPHINX_DIR})
-    if (NOT SPHINX_PATH)
+        HINTS $ENV{PATH} ${SPHINX_DIR})
+    if(NOT SPHINX_PATH)
         message(FATAL_ERROR "sphinx-build not found. Please install it via \
         instructions at https://www.sphinx-doc.org/en/master/usage/installation.html")
-    else ()
+    else()
         message(STATUS "Found sphinx-build at ${SPHINX_PATH}")
-    endif ()
+    endif()
     find_program(DOXYGEN_PATH doxygen
-            HINTS ${DOXYGEN_DIR}
-            REQUIRED
-            )
-    if (NOT DOXYGEN_PATH)
+        HINTS ${DOXYGEN_DIR}
+        REQUIRED
+    )
+    if(NOT DOXYGEN_PATH)
         message(FATAL_ERROR "Doxygen not found. Please install doxygen with version >= 1.9.2")
-    else ()
+    else()
         execute_process(
-                COMMAND ${DOXYGEN_PATH} --version
-                RESULT_VARIABLE _
-                OUTPUT_VARIABLE _out
+            COMMAND ${DOXYGEN_PATH} --version
+            RESULT_VARIABLE _
+            OUTPUT_VARIABLE _out
         )
         string(REGEX REPLACE "\n$" "" _out "${_out}")
-        if (${_out} VERSION_LESS "1.9.2")
+        if(${_out} VERSION_LESS "1.9.2")
             message(FATAL_ERROR "Doxygen version too low. Found v${_out}, require >= v1.9.2")
-        endif ()
-    endif ()
+        endif()
+    endif()
     message(STATUS "Found Doxygen version: ${_out}")
     configure_file(doc/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen)
     add_custom_target(doxygen_doc
-            COMMAND ${DOXYGEN_PATH} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+        COMMAND ${DOXYGEN_PATH} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     add_custom_target(doc
-            COMMAND ${SPHINX_PATH} -b html
-            -Dbreathe_projects.OpFlow=${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/xml
-            ${CMAKE_CURRENT_LIST_DIR}/doc ${CMAKE_CURRENT_BINARY_DIR}/doc
-            DEPENDS doxygen_doc
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-endif ()
+        COMMAND ${SPHINX_PATH} -b html
+        -Dbreathe_projects.OpFlow=${CMAKE_CURRENT_BINARY_DIR}/doc/doxygen/xml
+        ${CMAKE_CURRENT_LIST_DIR}/doc ${CMAKE_CURRENT_BINARY_DIR}/doc
+        DEPENDS doxygen_doc
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+endif()
 
 # ----------------------------------------------------------------------------
 # Install
 # ----------------------------------------------------------------------------
-if (OPFLOW_INSTALL)
+if(OPFLOW_INSTALL)
     message(STATUS "Generating install")
-    IF (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
         SET(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}" CACHE PATH "" FORCE)
         message(STATUS "Install prefix set to: ${CMAKE_INSTALL_PREFIX}")
-    ENDIF (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(project_config_in "${CMAKE_CURRENT_LIST_DIR}/cmake/opflowConfig.cmake.in")
     set(project_config_out "${CMAKE_CURRENT_BINARY_DIR}/opflowConfig.cmake")
     set(config_targets_file "opflowConfigTargets.cmake")
@@ -386,16 +369,16 @@ if (OPFLOW_INSTALL)
     install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/src/ DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/src")
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Version.hpp DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
     install(
-            TARGETS opflow
-            EXPORT opflow
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+        TARGETS opflow
+        EXPORT opflow
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-    if (OPFLOW_WITH_VTK AND NOT OPFLOW_VTK_EXTERNAL)
+    if(OPFLOW_WITH_VTK AND NOT OPFLOW_VTK_EXTERNAL)
         install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/vtk/
-                DESTINATION "${CMAKE_INSTALL_PREFIX}")
-    endif ()
+            DESTINATION "${CMAKE_INSTALL_PREFIX}")
+    endif()
 
     # ----------------------------------------------------------------------------
     # Install CMake config files
@@ -412,15 +395,15 @@ if (OPFLOW_INSTALL)
     # Support creation of installable packages
     # ----------------------------------------------------------------------------
     #include(cmake/opflowCPack.cmake)
-endif ()
+endif()
 
 # uninstall target
-if (NOT TARGET uninstall)
+if(NOT TARGET uninstall)
     configure_file(
-            "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
-            "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
-            IMMEDIATE @ONLY)
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+        IMMEDIATE @ONLY)
 
     add_custom_target(uninstall
-            COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
-endif ()
+        COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+endif()
