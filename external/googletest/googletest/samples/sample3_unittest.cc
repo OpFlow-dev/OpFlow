@@ -60,8 +60,8 @@
 //
 // </TechnicalDetails>
 
-#include "gtest/gtest.h"
 #include "sample3-inl.h"
+#include "gtest/gtest.h"
 namespace {
 // To use a test fixture, derive a class from testing::Test.
 class QueueTestSmpl3 : public testing::Test {

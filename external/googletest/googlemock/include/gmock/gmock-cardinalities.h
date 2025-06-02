@@ -33,7 +33,8 @@
 // cardinalities can be defined by the user implementing the
 // CardinalityInterface interface if necessary.
 
-// GOOGLETEST_CM0002 DO NOT DELETE
+// IWYU pragma: private, include "gmock/gmock.h"
+// IWYU pragma: friend gmock/.*
 
 #ifndef GOOGLEMOCK_INCLUDE_GMOCK_GMOCK_CARDINALITIES_H_
 #define GOOGLEMOCK_INCLUDE_GMOCK_GMOCK_CARDINALITIES_H_
@@ -64,7 +65,7 @@ namespace testing {
 // The implementation of a cardinality.
 class CardinalityInterface {
  public:
-  virtual ~CardinalityInterface() {}
+  virtual ~CardinalityInterface() = default;
 
   // Conservative estimate on the lower/upper bound of the number of
   // calls allowed.
@@ -91,7 +92,7 @@ class GTEST_API_ Cardinality {
  public:
   // Constructs a null cardinality.  Needed for storing Cardinality
   // objects in STL containers.
-  Cardinality() {}
+  Cardinality() = default;
 
   // Constructs a Cardinality from its implementation.
   explicit Cardinality(const CardinalityInterface* impl) : impl_(impl) {}

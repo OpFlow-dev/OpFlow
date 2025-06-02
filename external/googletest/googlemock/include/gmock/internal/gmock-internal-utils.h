@@ -33,7 +33,8 @@
 // Mock.  They are subject to change without notice, so please DO NOT
 // USE THEM IN USER CODE.
 
-// GOOGLETEST_CM0002 DO NOT DELETE
+// IWYU pragma: private, include "gmock/gmock.h"
+// IWYU pragma: friend gmock/.*
 
 #ifndef GOOGLEMOCK_INCLUDE_GMOCK_INTERNAL_GMOCK_INTERNAL_UTILS_H_
 #define GOOGLEMOCK_INCLUDE_GMOCK_INTERNAL_GMOCK_INTERNAL_UTILS_H_
@@ -43,6 +44,8 @@
 #include <ostream>  // NOLINT
 #include <string>
 #include <type_traits>
+#include <utility>
+#include <vector>
 
 #include "gmock/internal/gmock-port.h"
 #include "gtest/gtest.h"
@@ -56,15 +59,12 @@ namespace internal {
 
 // Silence MSVC C4100 (unreferenced formal parameter) and
 // C4805('==': unsafe mix of type 'const int' and type 'const bool')
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4100)
-#pragma warning(disable : 4805)
-#endif
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4100 4805)
 
 // Joins a vector of strings as if they are fields of a tuple; returns
 // the joined string.
-GTEST_API_ std::string JoinAsTuple(const Strings& fields);
+GTEST_API_ std::string JoinAsKeyValueTuple(
+    const std::vector<const char*>& names, const Strings& values);
 
 // Converts an identifier name to a space-separated list of lower-case
 // words.  Each maximum substring of the form [A-Za-z][a-z]*|\d+ is
@@ -79,11 +79,36 @@ template <typename Pointer>
 inline const typename Pointer::element_type* GetRawPointer(const Pointer& p) {
   return p.get();
 }
+// This overload version is for std::reference_wrapper, which does not work with
+// the overload above, as it does not have an `element_type`.
+template <typename Element>
+inline const Element* GetRawPointer(const std::reference_wrapper<Element>& r) {
+  return &r.get();
+}
+
 // This overloaded version is for the raw pointer case.
 template <typename Element>
 inline Element* GetRawPointer(Element* p) {
   return p;
 }
+
+// Default definitions for all compilers.
+// NOTE: If you implement support for other compilers, make sure to avoid
+// unexpected overlaps.
+// (e.g., Clang also processes #pragma GCC, and clang-cl also handles _MSC_VER.)
+#define GMOCK_INTERNAL_WARNING_PUSH()
+#define GMOCK_INTERNAL_WARNING_CLANG(Level, Name)
+#define GMOCK_INTERNAL_WARNING_POP()
+
+#if defined(__clang__)
+#undef GMOCK_INTERNAL_WARNING_PUSH
+#define GMOCK_INTERNAL_WARNING_PUSH() _Pragma("clang diagnostic push")
+#undef GMOCK_INTERNAL_WARNING_CLANG
+#define GMOCK_INTERNAL_WARNING_CLANG(Level, Warning) \
+  _Pragma(GMOCK_PP_INTERNAL_STRINGIZE(clang diagnostic Level Warning))
+#undef GMOCK_INTERNAL_WARNING_POP
+#define GMOCK_INTERNAL_WARNING_POP() _Pragma("clang diagnostic pop")
+#endif
 
 // MSVC treats wchar_t as a native type usually, but treats it as the
 // same as unsigned short when the compiler option /Zc:wchar_t- is
@@ -200,7 +225,7 @@ class FailureReporterInterface {
   // The type of a failure (either non-fatal or fatal).
   enum FailureType { kNonfatal, kFatal };
 
-  virtual ~FailureReporterInterface() {}
+  virtual ~FailureReporterInterface() = default;
 
   // Reports a failure that occurred at the given source file location.
   virtual void ReportFailure(FailureType type, const char* file, int line,
@@ -280,13 +305,6 @@ class WithoutMatchers {
 // Internal use only: access the singleton instance of WithoutMatchers.
 GTEST_API_ WithoutMatchers GetWithoutMatchers();
 
-// Disable MSVC warnings for infinite recursion, since in this case the
-// the recursion is unreachable.
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4717)
-#endif
-
 // Invalid<T>() is usable as an expression of type T, but will terminate
 // the program with an assertion failure if actually run.  This is useful
 // when a value of type T is needed for compilation, but the statement
@@ -294,16 +312,16 @@ GTEST_API_ WithoutMatchers GetWithoutMatchers();
 // crashes).
 template <typename T>
 inline T Invalid() {
-  Assert(false, "", -1, "Internal error: attempt to return invalid value");
-  // This statement is unreachable, and would never terminate even if it
-  // could be reached. It is provided only to placate compiler warnings
-  // about missing return statements.
+  Assert(/*condition=*/false, /*file=*/"", /*line=*/-1,
+         "Internal error: attempt to return invalid value");
+#if defined(__GNUC__) || defined(__clang__)
+  __builtin_unreachable();
+#elif defined(_MSC_VER)
+  __assume(0);
+#else
   return Invalid<T>();
-}
-
-#ifdef _MSC_VER
-#pragma warning(pop)
 #endif
+}
 
 // Given a raw type (i.e. having no top-level reference or const
 // modifier) RawContainer that's either an STL-style container or a
@@ -403,7 +421,7 @@ struct RemoveConstFromKey<std::pair<const K, V> > {
 GTEST_API_ void IllegalDoDefault(const char* file, int line);
 
 template <typename F, typename Tuple, size_t... Idx>
-auto ApplyImpl(F&& f, Tuple&& args, IndexSequence<Idx...>)
+auto ApplyImpl(F&& f, Tuple&& args, std::index_sequence<Idx...>)
     -> decltype(std::forward<F>(f)(
         std::get<Idx>(std::forward<Tuple>(args))...)) {
   return std::forward<F>(f)(std::get<Idx>(std::forward<Tuple>(args))...);
@@ -411,12 +429,13 @@ auto ApplyImpl(F&& f, Tuple&& args, IndexSequence<Idx...>)
 
 // Apply the function to a tuple of arguments.
 template <typename F, typename Tuple>
-auto Apply(F&& f, Tuple&& args) -> decltype(ApplyImpl(
-    std::forward<F>(f), std::forward<Tuple>(args),
-    MakeIndexSequence<std::tuple_size<
-        typename std::remove_reference<Tuple>::type>::value>())) {
+auto Apply(F&& f, Tuple&& args)
+    -> decltype(ApplyImpl(
+        std::forward<F>(f), std::forward<Tuple>(args),
+        std::make_index_sequence<std::tuple_size<
+            typename std::remove_reference<Tuple>::type>::value>())) {
   return ApplyImpl(std::forward<F>(f), std::forward<Tuple>(args),
-                   MakeIndexSequence<std::tuple_size<
+                   std::make_index_sequence<std::tuple_size<
                        typename std::remove_reference<Tuple>::type>::value>());
 }
 
@@ -448,12 +467,16 @@ struct Function<R(Args...)> {
   using MakeResultIgnoredValue = IgnoredValue(Args...);
 };
 
-template <typename R, typename... Args>
-constexpr size_t Function<R(Args...)>::ArgumentCount;
+// Workaround for MSVC error C2039: 'type': is not a member of 'std'
+// when std::tuple_element is used.
+// See: https://github.com/google/googletest/issues/3931
+// Can be replaced with std::tuple_element_t in C++14.
+template <size_t I, typename T>
+using TupleElement = typename std::tuple_element<I, T>::type;
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+bool Base64Unescape(const std::string& encoded, std::string* decoded);
+
+GTEST_DISABLE_MSC_WARNINGS_POP_()  // 4100 4805
 
 }  // namespace internal
 }  // namespace testing

@@ -35,15 +35,16 @@
 
 #include <stdlib.h>
 
+#include <algorithm>
+#include <string>
+
 #include "gtest/gtest-spi.h"
 #include "gtest/gtest.h"
 #include "src/gtest-internal-inl.h"
 
-#if _MSC_VER
 GTEST_DISABLE_MSC_WARNINGS_PUSH_(4127 /* conditional expression is constant */)
-#endif  //  _MSC_VER
 
-#if GTEST_IS_THREADSAFE
+#ifdef GTEST_IS_THREADSAFE
 using testing::ScopedFakeTestPartResultReporter;
 using testing::TestPartResultArray;
 
@@ -249,7 +250,7 @@ TEST(SCOPED_TRACETest, CanBeRepeated) {
                 << "contain trace point A, B, and D.";
 }
 
-#if GTEST_IS_THREADSAFE
+#ifdef GTEST_IS_THREADSAFE
 // Tests that SCOPED_TRACE()s can be used concurrently from multiple
 // threads.  Namely, an assertion should be affected by
 // SCOPED_TRACE()s in its own thread only.
@@ -775,7 +776,7 @@ REGISTER_TYPED_TEST_SUITE_P(DetectNotInstantiatedTypesTest, Used);
 // typedef ::testing::Types<char, int, unsigned int> MyTypes;
 // INSTANTIATE_TYPED_TEST_SUITE_P(All, DetectNotInstantiatedTypesTest, MyTypes);
 
-#if GTEST_HAS_DEATH_TEST
+#ifdef GTEST_HAS_DEATH_TEST
 
 // We rely on the golden file to verify that tests whose test case
 // name ends with DeathTest are run first.
@@ -853,7 +854,7 @@ TEST_F(ExpectFailureTest, ExpectNonFatalFailure) {
                           "failure.");
 }
 
-#if GTEST_IS_THREADSAFE
+#ifdef GTEST_IS_THREADSAFE
 
 class ExpectFailureWithThreadsTest : public ExpectFailureTest {
  protected:
@@ -1000,31 +1001,43 @@ class BarEnvironment : public testing::Environment {
   }
 };
 
+class TestSuiteThatFailsToSetUp : public testing::Test {
+ public:
+  static void SetUpTestSuite() { EXPECT_TRUE(false); }
+};
+TEST_F(TestSuiteThatFailsToSetUp, ShouldNotRun) { std::abort(); }
+
+class TestSuiteThatSkipsInSetUp : public testing::Test {
+ public:
+  static void SetUpTestSuite() { GTEST_SKIP() << "Skip entire test suite"; }
+};
+TEST_F(TestSuiteThatSkipsInSetUp, ShouldNotRun) { std::abort(); }
+
 // The main function.
 //
 // The idea is to use Google Test to run all the tests we have defined (some
 // of them are intended to fail), and then compare the test results
 // with the "golden" file.
 int main(int argc, char** argv) {
-  testing::GTEST_FLAG(print_time) = false;
+  GTEST_FLAG_SET(print_time, false);
 
   // We just run the tests, knowing some of them are intended to fail.
   // We will use a separate Python script to compare the output of
   // this program with the golden file.
 
   // It's hard to test InitGoogleTest() directly, as it has many
-  // global side effects.  The following line serves as a sanity test
+  // global side effects.  The following line serves as a test
   // for it.
   testing::InitGoogleTest(&argc, argv);
   bool internal_skip_environment_and_ad_hoc_tests =
       std::count(argv, argv + argc,
                  std::string("internal_skip_environment_and_ad_hoc_tests")) > 0;
 
-#if GTEST_HAS_DEATH_TEST
-  if (testing::internal::GTEST_FLAG(internal_run_death_test) != "") {
+#ifdef GTEST_HAS_DEATH_TEST
+  if (!GTEST_FLAG_GET(internal_run_death_test).empty()) {
     // Skip the usual output capturing if we're running as the child
     // process of an threadsafe-style death test.
-#if GTEST_OS_WINDOWS
+#if defined(GTEST_OS_WINDOWS)
     posix::FReopen("nul:", "w", stdout);
 #else
     posix::FReopen("/dev/null", "w", stdout);
@@ -1040,8 +1053,6 @@ int main(int argc, char** argv) {
   // are registered, and torn down in the reverse order.
   testing::AddGlobalTestEnvironment(new FooEnvironment);
   testing::AddGlobalTestEnvironment(new BarEnvironment);
-#if _MSC_VER
   GTEST_DISABLE_MSC_WARNINGS_POP_()  //  4127
-#endif                               //  _MSC_VER
   return RunAllTests();
 }

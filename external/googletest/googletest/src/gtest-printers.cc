@@ -47,6 +47,8 @@
 #include <cctype>
 #include <cstdint>
 #include <cwchar>
+#include <iomanip>
+#include <ios>
 #include <ostream>  // NOLINT
 #include <string>
 #include <type_traits>
@@ -214,7 +216,7 @@ static const char* GetCharWidthPrefix(signed char) { return ""; }
 
 static const char* GetCharWidthPrefix(unsigned char) { return ""; }
 
-#ifdef __cpp_char8_t
+#ifdef __cpp_lib_char8_t
 static const char* GetCharWidthPrefix(char8_t) { return "u8"; }
 #endif
 
@@ -230,7 +232,7 @@ static CharFormat PrintAsStringLiteralTo(char c, ostream* os) {
   return PrintAsStringLiteralTo(ToChar32(c), os);
 }
 
-#ifdef __cpp_char8_t
+#ifdef __cpp_lib_char8_t
 static CharFormat PrintAsStringLiteralTo(char8_t c, ostream* os) {
   return PrintAsStringLiteralTo(ToChar32(c), os);
 }
@@ -283,6 +285,51 @@ void PrintTo(char32_t c, ::std::ostream* os) {
   *os << std::hex << "U+" << std::uppercase << std::setfill('0') << std::setw(4)
       << static_cast<uint32_t>(c);
 }
+
+// gcc/clang __{u,}int128_t
+#if defined(__SIZEOF_INT128__)
+void PrintTo(__uint128_t v, ::std::ostream* os) {
+  if (v == 0) {
+    *os << "0";
+    return;
+  }
+
+  // Buffer large enough for ceil(log10(2^128))==39 and the null terminator
+  char buf[40];
+  char* p = buf + sizeof(buf);
+
+  // Some configurations have a __uint128_t, but no support for built in
+  // division. Do manual long division instead.
+
+  uint64_t high = static_cast<uint64_t>(v >> 64);
+  uint64_t low = static_cast<uint64_t>(v);
+
+  *--p = 0;
+  while (high != 0 || low != 0) {
+    uint64_t high_mod = high % 10;
+    high = high / 10;
+    // This is the long division algorithm specialized for a divisor of 10 and
+    // only two elements.
+    // Notable values:
+    //   2^64 / 10 == 1844674407370955161
+    //   2^64 % 10 == 6
+    const uint64_t carry = 6 * high_mod + low % 10;
+    low = low / 10 + high_mod * 1844674407370955161 + carry / 10;
+
+    char digit = static_cast<char>(carry % 10);
+    *--p = static_cast<char>('0' + digit);
+  }
+  *os << p;
+}
+void PrintTo(__int128_t v, ::std::ostream* os) {
+  __uint128_t uv = static_cast<__uint128_t>(v);
+  if (v < 0) {
+    *os << "-";
+    uv = -uv;
+  }
+  PrintTo(uv, os);
+}
+#endif  // __SIZEOF_INT128__
 
 // Prints the given array of characters to the ostream.  CharType must be either
 // char, char8_t, char16_t, char32_t, or wchar_t.
@@ -348,7 +395,7 @@ void UniversalPrintArray(const char* begin, size_t len, ostream* os) {
   UniversalPrintCharArray(begin, len, os);
 }
 
-#ifdef __cpp_char8_t
+#ifdef __cpp_lib_char8_t
 // Prints a (const) char8_t array of 'len' elements, starting at address
 // 'begin'.
 void UniversalPrintArray(const char8_t* begin, size_t len, ostream* os) {
@@ -391,7 +438,7 @@ void PrintCStringTo(const Char* s, ostream* os) {
 
 void PrintTo(const char* s, ostream* os) { PrintCStringTo(s, os); }
 
-#ifdef __cpp_char8_t
+#ifdef __cpp_lib_char8_t
 void PrintTo(const char8_t* s, ostream* os) { PrintCStringTo(s, os); }
 #endif
 
@@ -477,13 +524,13 @@ void ConditionalPrintAsText(const char* str, size_t length, ostream* os) {
 
 void PrintStringTo(const ::std::string& s, ostream* os) {
   if (PrintCharsAsStringTo(s.data(), s.size(), os) == kHexEscape) {
-    if (GTEST_FLAG(print_utf8)) {
+    if (GTEST_FLAG_GET(print_utf8)) {
       ConditionalPrintAsText(s.data(), s.size(), os);
     }
   }
 }
 
-#ifdef __cpp_char8_t
+#ifdef __cpp_lib_char8_t
 void PrintU8StringTo(const ::std::u8string& s, ostream* os) {
   PrintCharsAsStringTo(s.data(), s.size(), os);
 }

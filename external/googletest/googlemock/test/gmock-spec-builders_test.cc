@@ -37,6 +37,7 @@
 #include <ostream>  // NOLINT
 #include <sstream>
 #include <string>
+#include <type_traits>
 
 #include "gmock/gmock.h"
 #include "gmock/internal/gmock-port.h"
@@ -45,64 +46,19 @@
 #include "gtest/internal/gtest-port.h"
 
 namespace testing {
-namespace internal {
-
-// Helper class for testing the Expectation class template.
-class ExpectationTester {
- public:
-  // Sets the call count of the given expectation to the given number.
-  void SetCallCount(int n, ExpectationBase* exp) { exp->call_count_ = n; }
-};
-
-}  // namespace internal
-}  // namespace testing
-
 namespace {
 
-using testing::_;
-using testing::AnyNumber;
-using testing::AtLeast;
-using testing::AtMost;
-using testing::Between;
-using testing::Cardinality;
-using testing::CardinalityInterface;
-using testing::Const;
-using testing::ContainsRegex;
-using testing::DoAll;
-using testing::DoDefault;
-using testing::Eq;
-using testing::Expectation;
-using testing::ExpectationSet;
-using testing::GMOCK_FLAG(verbose);
-using testing::Gt;
-using testing::IgnoreResult;
-using testing::InSequence;
-using testing::Invoke;
-using testing::InvokeWithoutArgs;
-using testing::IsNotSubstring;
-using testing::IsSubstring;
-using testing::Lt;
-using testing::Message;
-using testing::Mock;
-using testing::NaggyMock;
-using testing::Ne;
-using testing::Return;
-using testing::SaveArg;
-using testing::Sequence;
-using testing::SetArgPointee;
-using testing::internal::ExpectationTester;
-using testing::internal::FormatFileLocation;
-using testing::internal::kAllow;
-using testing::internal::kErrorVerbosity;
-using testing::internal::kFail;
-using testing::internal::kInfoVerbosity;
-using testing::internal::kWarn;
-using testing::internal::kWarningVerbosity;
+using ::testing::internal::FormatFileLocation;
+using ::testing::internal::kAllow;
+using ::testing::internal::kErrorVerbosity;
+using ::testing::internal::kFail;
+using ::testing::internal::kInfoVerbosity;
+using ::testing::internal::kWarn;
+using ::testing::internal::kWarningVerbosity;
 
 #if GTEST_HAS_STREAM_REDIRECTION
-using testing::HasSubstr;
-using testing::internal::CaptureStdout;
-using testing::internal::GetCapturedStdout;
+using ::testing::internal::CaptureStdout;
+using ::testing::internal::GetCapturedStdout;
 #endif
 
 class Incomplete;
@@ -142,7 +98,7 @@ class NonDefaultConstructible {
 
 class MockA {
  public:
-  MockA() {}
+  MockA() = default;
 
   MOCK_METHOD1(DoA, void(int n));
   MOCK_METHOD1(ReturnResult, Result(int n));
@@ -151,28 +107,31 @@ class MockA {
   MOCK_METHOD2(ReturnInt, int(int x, int y));
 
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(MockA);
+  MockA(const MockA&) = delete;
+  MockA& operator=(const MockA&) = delete;
 };
 
 class MockB {
  public:
-  MockB() {}
+  MockB() = default;
 
   MOCK_CONST_METHOD0(DoB, int());  // NOLINT
   MOCK_METHOD1(DoB, int(int n));   // NOLINT
 
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(MockB);
+  MockB(const MockB&) = delete;
+  MockB& operator=(const MockB&) = delete;
 };
 
 class ReferenceHoldingMock {
  public:
-  ReferenceHoldingMock() {}
+  ReferenceHoldingMock() = default;
 
   MOCK_METHOD1(AcceptReference, void(std::shared_ptr<MockA>*));
 
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(ReferenceHoldingMock);
+  ReferenceHoldingMock(const ReferenceHoldingMock&) = delete;
+  ReferenceHoldingMock& operator=(const ReferenceHoldingMock&) = delete;
 };
 
 // Tests that EXPECT_CALL and ON_CALL compile in a presence of macro
@@ -184,17 +143,18 @@ class ReferenceHoldingMock {
 
 class CC {
  public:
-  virtual ~CC() {}
+  virtual ~CC() = default;
   virtual int Method() = 0;
 };
 class MockCC : public CC {
  public:
-  MockCC() {}
+  MockCC() = default;
 
   MOCK_METHOD0(Method, int());
 
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(MockCC);
+  MockCC(const MockCC&) = delete;
+  MockCC& operator=(const MockCC&) = delete;
 };
 
 // Tests that a method with expanded name compiles.
@@ -382,7 +342,7 @@ TEST(ExpectCallSyntaxTest, TimesMustBeBeforeInSequence) {
       {  // NOLINT
         EXPECT_CALL(a, DoA(1)).InSequence(s).Times(1);
       },
-      ".Times() cannot appear after ");
+      ".Times() may only appear *before* ");
 
   a.DoA(1);
 }
@@ -661,9 +621,9 @@ TEST(ExpectCallSyntaxTest, WarnsOnTooFewActions) {
 }
 
 TEST(ExpectCallSyntaxTest, WarningIsErrorWithFlag) {
-  int original_behavior = testing::GMOCK_FLAG(default_mock_behavior);
+  int original_behavior = GMOCK_FLAG_GET(default_mock_behavior);
 
-  testing::GMOCK_FLAG(default_mock_behavior) = kAllow;
+  GMOCK_FLAG_SET(default_mock_behavior, kAllow);
   CaptureStdout();
   {
     MockA a;
@@ -672,7 +632,7 @@ TEST(ExpectCallSyntaxTest, WarningIsErrorWithFlag) {
   std::string output = GetCapturedStdout();
   EXPECT_TRUE(output.empty()) << output;
 
-  testing::GMOCK_FLAG(default_mock_behavior) = kWarn;
+  GMOCK_FLAG_SET(default_mock_behavior, kWarn);
   CaptureStdout();
   {
     MockA a;
@@ -683,7 +643,7 @@ TEST(ExpectCallSyntaxTest, WarningIsErrorWithFlag) {
   EXPECT_PRED_FORMAT2(IsSubstring, "Uninteresting mock function call",
                       warning_output);
 
-  testing::GMOCK_FLAG(default_mock_behavior) = kFail;
+  GMOCK_FLAG_SET(default_mock_behavior, kFail);
   EXPECT_NONFATAL_FAILURE(
       {
         MockA a;
@@ -692,7 +652,7 @@ TEST(ExpectCallSyntaxTest, WarningIsErrorWithFlag) {
       "Uninteresting mock function call");
 
   // Out of bounds values are converted to kWarn
-  testing::GMOCK_FLAG(default_mock_behavior) = -1;
+  GMOCK_FLAG_SET(default_mock_behavior, -1);
   CaptureStdout();
   {
     MockA a;
@@ -702,7 +662,7 @@ TEST(ExpectCallSyntaxTest, WarningIsErrorWithFlag) {
   EXPECT_PRED_FORMAT2(IsSubstring, "GMOCK WARNING", warning_output);
   EXPECT_PRED_FORMAT2(IsSubstring, "Uninteresting mock function call",
                       warning_output);
-  testing::GMOCK_FLAG(default_mock_behavior) = 3;
+  GMOCK_FLAG_SET(default_mock_behavior, 3);
   CaptureStdout();
   {
     MockA a;
@@ -713,7 +673,7 @@ TEST(ExpectCallSyntaxTest, WarningIsErrorWithFlag) {
   EXPECT_PRED_FORMAT2(IsSubstring, "Uninteresting mock function call",
                       warning_output);
 
-  testing::GMOCK_FLAG(default_mock_behavior) = original_behavior;
+  GMOCK_FLAG_SET(default_mock_behavior, original_behavior);
 }
 
 #endif  // GTEST_HAS_STREAM_REDIRECTION
@@ -779,11 +739,12 @@ TEST(ExpectCallTest, CatchesTooFewCalls) {
   EXPECT_NONFATAL_FAILURE(
       {  // NOLINT
         MockB b;
-        EXPECT_CALL(b, DoB(5)).Times(AtLeast(2));
+        EXPECT_CALL(b, DoB(5)).Description("DoB Method").Times(AtLeast(2));
 
         b.DoB(5);
       },
-      "Actual function call count doesn't match EXPECT_CALL(b, DoB(5))...\n"
+      "Actual function \"DoB Method\" call count "
+      "doesn't match EXPECT_CALL(b, DoB(5))...\n"
       "         Expected: to be called at least twice\n"
       "           Actual: called once - unsatisfied and active");
 }
@@ -843,6 +804,50 @@ TEST(ExpectCallTest, InfersCardinality1WhenThereIsWillRepeatedly) {
       "to be called at least once");
 }
 
+// TODO(b/396121064) - Fix this test under MSVC
+#ifndef _MSC_VER
+// It should be possible to return a non-moveable type from a mock action in
+// C++17 and above, where it's guaranteed that such a type can be initialized
+// from a prvalue returned from a function.
+TEST(ExpectCallTest, NonMoveableType) {
+  // Define a non-moveable result type.
+  struct NonMoveableStruct {
+    explicit NonMoveableStruct(int x_in) : x(x_in) {}
+    NonMoveableStruct(NonMoveableStruct&&) = delete;
+
+    int x;
+  };
+
+  static_assert(!std::is_move_constructible_v<NonMoveableStruct>);
+  static_assert(!std::is_copy_constructible_v<NonMoveableStruct>);
+
+  static_assert(!std::is_move_assignable_v<NonMoveableStruct>);
+  static_assert(!std::is_copy_assignable_v<NonMoveableStruct>);
+
+  // We should be able to use a callable that returns that result as both a
+  // OnceAction and an Action, whether the callable ignores arguments or not.
+  const auto return_17 = [] { return NonMoveableStruct(17); };
+
+  static_cast<void>(OnceAction<NonMoveableStruct()>{return_17});
+  static_cast<void>(Action<NonMoveableStruct()>{return_17});
+
+  static_cast<void>(OnceAction<NonMoveableStruct(int)>{return_17});
+  static_cast<void>(Action<NonMoveableStruct(int)>{return_17});
+
+  // It should be possible to return the result end to end through an
+  // EXPECT_CALL statement, with both WillOnce and WillRepeatedly.
+  MockFunction<NonMoveableStruct()> mock;
+  EXPECT_CALL(mock, Call)   //
+      .WillOnce(return_17)  //
+      .WillRepeatedly(return_17);
+
+  EXPECT_EQ(17, mock.AsStdFunction()().x);
+  EXPECT_EQ(17, mock.AsStdFunction()().x);
+  EXPECT_EQ(17, mock.AsStdFunction()().x);
+}
+
+#endif  // _MSC_VER
+
 // Tests that the n-th action is taken for the n-th matching
 // invocation.
 TEST(ExpectCallTest, NthMatchTakesNthAction) {
@@ -900,7 +905,7 @@ TEST(ExpectCallTest, TakesDefaultActionWhenWillListIsExhausted) {
                         " - returning default value."));
 }
 
-TEST(FunctionMockerMessageTest, ReportsExpectCallLocationForExhausedActions) {
+TEST(FunctionMockerMessageTest, ReportsExpectCallLocationForExhaustedActions) {
   MockB b;
   std::string expect_call_location = FormatFileLocation(__FILE__, __LINE__ + 1);
   EXPECT_CALL(b, DoB()).Times(AnyNumber()).WillOnce(Return(1));
@@ -1060,7 +1065,7 @@ TEST(UnexpectedCallTest, UnmatchedArguments) {
 
 // Tests that Google Mock explains that an expectation with
 // unsatisfied pre-requisites doesn't match the call.
-TEST(UnexpectedCallTest, UnsatisifiedPrerequisites) {
+TEST(UnexpectedCallTest, UnsatisfiedPrerequisites) {
   Sequence s1, s2;
   MockB b;
   EXPECT_CALL(b, DoB(1)).InSequence(s1);
@@ -1083,16 +1088,7 @@ TEST(UnexpectedCallTest, UnsatisifiedPrerequisites) {
 
   // Verifies that the failure message contains the two unsatisfied
   // pre-requisites but not the satisfied one.
-#if GTEST_USES_PCRE
-  EXPECT_THAT(
-      r.message(),
-      ContainsRegex(
-          // PCRE has trouble using (.|\n) to match any character, but
-          // supports the (?s) prefix for using . to match any character.
-          "(?s)the following immediate pre-requisites are not satisfied:\n"
-          ".*: pre-requisite #0\n"
-          ".*: pre-requisite #1"));
-#elif GTEST_USES_POSIX_RE
+#ifdef GTEST_USES_POSIX_RE
   EXPECT_THAT(r.message(),
               ContainsRegex(
                   // POSIX RE doesn't understand the (?s) prefix, but has no
@@ -1107,7 +1103,7 @@ TEST(UnexpectedCallTest, UnsatisifiedPrerequisites) {
                   "the following immediate pre-requisites are not satisfied:"));
   EXPECT_THAT(r.message(), ContainsRegex(": pre-requisite #0"));
   EXPECT_THAT(r.message(), ContainsRegex(": pre-requisite #1"));
-#endif  // GTEST_USES_PCRE
+#endif  // GTEST_USES_POSIX_RE
 
   b.DoB(1);
   b.DoB(3);
@@ -1144,10 +1140,11 @@ TEST(ExcessiveCallTest, DoesDefaultAction) {
   // When there is no ON_CALL(), the default value for the return type
   // should be returned.
   MockB b;
-  EXPECT_CALL(b, DoB(0)).Times(0);
+  EXPECT_CALL(b, DoB(0)).Description("DoB Method").Times(0);
   int n = -1;
-  EXPECT_NONFATAL_FAILURE(n = b.DoB(0),
-                          "Mock function called more times than expected");
+  EXPECT_NONFATAL_FAILURE(
+      n = b.DoB(0),
+      "Mock function \"DoB Method\" called more times than expected");
   EXPECT_EQ(0, n);
 }
 
@@ -1155,10 +1152,11 @@ TEST(ExcessiveCallTest, DoesDefaultAction) {
 // the failure message contains the argument values.
 TEST(ExcessiveCallTest, GeneratesFailureForVoidFunction) {
   MockA a;
-  EXPECT_CALL(a, DoA(_)).Times(0);
+  EXPECT_CALL(a, DoA(_)).Description("DoA Method").Times(0);
   EXPECT_NONFATAL_FAILURE(
       a.DoA(9),
-      "Mock function called more times than expected - returning directly.\n"
+      "Mock function \"DoA Method\" called more times than expected - "
+      "returning directly.\n"
       "    Function call: DoA(9)\n"
       "         Expected: to be never called\n"
       "           Actual: called once - over-saturated and active");
@@ -1772,16 +1770,11 @@ TEST(DeletingMockEarlyTest, Success2) {
 
 // Suppresses warning on unreferenced formal parameter in MSVC with
 // -W4.
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4100)
-#endif
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4100)
 
 ACTION_P(Delete, ptr) { delete ptr; }
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+GTEST_DISABLE_MSC_WARNINGS_POP_()  // 4100
 
 TEST(DeletingMockEarlyTest, CanDeleteSelfInActionReturningVoid) {
   MockA* const a = new MockA;
@@ -1888,28 +1881,32 @@ struct Unprintable {
 
 class MockC {
  public:
-  MockC() {}
+  MockC() = default;
 
   MOCK_METHOD6(VoidMethod, void(bool cond, int n, std::string s, void* p,
                                 const Printable& x, Unprintable y));
   MOCK_METHOD0(NonVoidMethod, int());  // NOLINT
 
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(MockC);
+  MockC(const MockC&) = delete;
+  MockC& operator=(const MockC&) = delete;
 };
 
 class VerboseFlagPreservingFixture : public testing::Test {
  protected:
-  VerboseFlagPreservingFixture() : saved_verbose_flag_(GMOCK_FLAG(verbose)) {}
+  VerboseFlagPreservingFixture()
+      : saved_verbose_flag_(GMOCK_FLAG_GET(verbose)) {}
 
   ~VerboseFlagPreservingFixture() override {
-    GMOCK_FLAG(verbose) = saved_verbose_flag_;
+    GMOCK_FLAG_SET(verbose, saved_verbose_flag_);
   }
 
  private:
   const std::string saved_verbose_flag_;
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(VerboseFlagPreservingFixture);
+  VerboseFlagPreservingFixture(const VerboseFlagPreservingFixture&) = delete;
+  VerboseFlagPreservingFixture& operator=(const VerboseFlagPreservingFixture&) =
+      delete;
 };
 
 #if GTEST_HAS_STREAM_REDIRECTION
@@ -1919,7 +1916,7 @@ class VerboseFlagPreservingFixture : public testing::Test {
 // --gmock_verbose=warning is specified.
 TEST(FunctionCallMessageTest,
      UninterestingCallOnNaggyMockGeneratesNoStackTraceWhenVerboseWarning) {
-  GMOCK_FLAG(verbose) = kWarningVerbosity;
+  GMOCK_FLAG_SET(verbose, kWarningVerbosity);
   NaggyMock<MockC> c;
   CaptureStdout();
   c.VoidMethod(false, 5, "Hi", nullptr, Printable(), Unprintable());
@@ -1933,7 +1930,7 @@ TEST(FunctionCallMessageTest,
 // --gmock_verbose=info is specified.
 TEST(FunctionCallMessageTest,
      UninterestingCallOnNaggyMockGeneratesFyiWithStackTraceWhenVerboseInfo) {
-  GMOCK_FLAG(verbose) = kInfoVerbosity;
+  GMOCK_FLAG_SET(verbose, kInfoVerbosity);
   NaggyMock<MockC> c;
   CaptureStdout();
   c.VoidMethod(false, 5, "Hi", nullptr, Printable(), Unprintable());
@@ -2051,9 +2048,9 @@ class GMockVerboseFlagTest : public VerboseFlagPreservingFixture {
         "call should not happen.  Do not suppress it by blindly adding "
         "an EXPECT_CALL() if you don't mean to enforce the call.  "
         "See "
-        "https://github.com/google/googletest/blob/master/docs/"
+        "https://github.com/google/googletest/blob/main/docs/"
         "gmock_cook_book.md#"
-        "knowing-when-to-expect for details.";
+        "knowing-when-to-expect-useoncall for details.";
 
     // A void-returning function.
     CaptureStdout();
@@ -2081,7 +2078,7 @@ class GMockVerboseFlagTest : public VerboseFlagPreservingFixture {
 // Tests that --gmock_verbose=info causes both expected and
 // uninteresting calls to be reported.
 TEST_F(GMockVerboseFlagTest, Info) {
-  GMOCK_FLAG(verbose) = kInfoVerbosity;
+  GMOCK_FLAG_SET(verbose, kInfoVerbosity);
   TestExpectedCall(true);
   TestUninterestingCallOnNaggyMock(true);
 }
@@ -2089,7 +2086,7 @@ TEST_F(GMockVerboseFlagTest, Info) {
 // Tests that --gmock_verbose=warning causes uninteresting calls to be
 // reported.
 TEST_F(GMockVerboseFlagTest, Warning) {
-  GMOCK_FLAG(verbose) = kWarningVerbosity;
+  GMOCK_FLAG_SET(verbose, kWarningVerbosity);
   TestExpectedCall(false);
   TestUninterestingCallOnNaggyMock(true);
 }
@@ -2097,7 +2094,7 @@ TEST_F(GMockVerboseFlagTest, Warning) {
 // Tests that --gmock_verbose=warning causes neither expected nor
 // uninteresting calls to be reported.
 TEST_F(GMockVerboseFlagTest, Error) {
-  GMOCK_FLAG(verbose) = kErrorVerbosity;
+  GMOCK_FLAG_SET(verbose, kErrorVerbosity);
   TestExpectedCall(false);
   TestUninterestingCallOnNaggyMock(false);
 }
@@ -2105,7 +2102,7 @@ TEST_F(GMockVerboseFlagTest, Error) {
 // Tests that --gmock_verbose=SOME_INVALID_VALUE has the same effect
 // as --gmock_verbose=warning.
 TEST_F(GMockVerboseFlagTest, InvalidFlagIsTreatedAsWarning) {
-  GMOCK_FLAG(verbose) = "invalid";  // Treated as "warning".
+  GMOCK_FLAG_SET(verbose, "invalid");  // Treated as "warning".
   TestExpectedCall(false);
   TestUninterestingCallOnNaggyMock(true);
 }
@@ -2124,12 +2121,13 @@ void PrintTo(PrintMeNot /* dummy */, ::std::ostream* /* os */) {
 
 class LogTestHelper {
  public:
-  LogTestHelper() {}
+  LogTestHelper() = default;
 
   MOCK_METHOD1(Foo, PrintMeNot(PrintMeNot));
 
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(LogTestHelper);
+  LogTestHelper(const LogTestHelper&) = delete;
+  LogTestHelper& operator=(const LogTestHelper&) = delete;
 };
 
 class GMockLogTest : public VerboseFlagPreservingFixture {
@@ -2138,19 +2136,19 @@ class GMockLogTest : public VerboseFlagPreservingFixture {
 };
 
 TEST_F(GMockLogTest, DoesNotPrintGoodCallInternallyIfVerbosityIsWarning) {
-  GMOCK_FLAG(verbose) = kWarningVerbosity;
+  GMOCK_FLAG_SET(verbose, kWarningVerbosity);
   EXPECT_CALL(helper_, Foo(_)).WillOnce(Return(PrintMeNot()));
   helper_.Foo(PrintMeNot());  // This is an expected call.
 }
 
 TEST_F(GMockLogTest, DoesNotPrintGoodCallInternallyIfVerbosityIsError) {
-  GMOCK_FLAG(verbose) = kErrorVerbosity;
+  GMOCK_FLAG_SET(verbose, kErrorVerbosity);
   EXPECT_CALL(helper_, Foo(_)).WillOnce(Return(PrintMeNot()));
   helper_.Foo(PrintMeNot());  // This is an expected call.
 }
 
 TEST_F(GMockLogTest, DoesNotPrintWarningInternallyIfVerbosityIsError) {
-  GMOCK_FLAG(verbose) = kErrorVerbosity;
+  GMOCK_FLAG_SET(verbose, kErrorVerbosity);
   ON_CALL(helper_, Foo(_)).WillByDefault(Return(PrintMeNot()));
   helper_.Foo(PrintMeNot());  // This should generate a warning.
 }
@@ -2588,20 +2586,14 @@ TEST(ParameterlessExpectationsTest,
 }
 
 }  // namespace
+}  // namespace testing
 
-// Allows the user to define their own main and then invoke gmock_main
-// from it. This might be necessary on some platforms which require
-// specific setup and teardown.
-#if GMOCK_RENAME_MAIN
-int gmock_main(int argc, char** argv) {
-#else
 int main(int argc, char** argv) {
-#endif  // GMOCK_RENAME_MAIN
   testing::InitGoogleMock(&argc, argv);
   // Ensures that the tests pass no matter what value of
   // --gmock_catch_leaked_mocks and --gmock_verbose the user specifies.
-  testing::GMOCK_FLAG(catch_leaked_mocks) = true;
-  testing::GMOCK_FLAG(verbose) = testing::internal::kWarningVerbosity;
+  GMOCK_FLAG_SET(catch_leaked_mocks, true);
+  GMOCK_FLAG_SET(verbose, testing::internal::kWarningVerbosity);
 
   return RUN_ALL_TESTS();
 }

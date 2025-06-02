@@ -35,6 +35,9 @@
 //
 // This program will be invoked from a Python unit test.  Don't run it
 // directly.
+// clang-format off
+
+#include <string>
 
 #include "gtest/gtest.h"
 
@@ -52,19 +55,26 @@ TEST_F(SuccessfulTest, Succeeds) {
   ASSERT_EQ(1, 1);
 }
 
-class FailedTest : public Test {};
+class FailedTest : public Test {
+};
 
-TEST_F(FailedTest, Fails) { ASSERT_EQ(1, 2); }
+TEST_F(FailedTest, Fails) {
+  ASSERT_EQ(1, 2);
+}
 
-class DisabledTest : public Test {};
+class DisabledTest : public Test {
+};
 
 TEST_F(DisabledTest, DISABLED_test_not_run) {
   FAIL() << "Unexpected failure: Disabled test should not be run";
 }
 
-class SkippedTest : public Test {};
+class SkippedTest : public Test {
+};
 
-TEST_F(SkippedTest, Skipped) { GTEST_SKIP(); }
+TEST_F(SkippedTest, Skipped) {
+  GTEST_SKIP();
+}
 
 TEST_F(SkippedTest, SkippedWithMessage) {
   GTEST_SKIP() << "It is good practice to tell why you skip a test.";
@@ -102,13 +112,19 @@ TEST(InvalidCharactersTest, InvalidCharactersInMessage) {
 
 class PropertyRecordingTest : public Test {
  public:
-  static void SetUpTestSuite() { RecordProperty("SetUpTestSuite", "yes"); }
+  static void SetUpTestSuite() {
+    RecordProperty("SetUpTestSuite (with whitespace)", "yes and yes");
+    RecordProperty("SetUpTestSuite", "yes");
+  }
   static void TearDownTestSuite() {
+    RecordProperty("TearDownTestSuite (with whitespace)", "aye and aye");
     RecordProperty("TearDownTestSuite", "aye");
   }
 };
 
-TEST_F(PropertyRecordingTest, OneProperty) { RecordProperty("key_1", "1"); }
+TEST_F(PropertyRecordingTest, OneProperty) {
+  RecordProperty("key_1", "1");
+}
 
 TEST_F(PropertyRecordingTest, IntValuedProperty) {
   RecordProperty("key_int", 1);
@@ -125,7 +141,9 @@ TEST_F(PropertyRecordingTest, TwoValuesForOneKeyUsesLastValue) {
   RecordProperty("key_1", "2");
 }
 
-TEST(NoFixtureTest, RecordProperty) { RecordProperty("key", "1"); }
+TEST(NoFixtureTest, RecordProperty) {
+  RecordProperty("key", "1");
+}
 
 void ExternalUtilityThatCallsRecordProperty(const std::string& key, int value) {
   testing::Test::RecordProperty(key, value);
@@ -144,6 +162,22 @@ TEST(NoFixtureTest, ExternalUtilityThatCallsRecordStringValuedProperty) {
   ExternalUtilityThatCallsRecordProperty("key_for_utility_string", "1");
 }
 
+// Ensures that SetUpTestSuite and TearDownTestSuite failures are reported in
+// the XML output.
+class SetupFailTest : public ::testing::Test {
+ protected:
+  static void SetUpTestSuite() { ASSERT_EQ(1, 2); }
+};
+
+TEST_F(SetupFailTest, NoopPassingTest) {}
+
+class TearDownFailTest : public ::testing::Test {
+ protected:
+  static void TearDownTestSuite() { ASSERT_EQ(1, 2); }
+};
+
+TEST_F(TearDownFailTest, NoopPassingTest) {}
+
 // Verifies that the test parameter value is output in the 'value_param'
 // XML attribute for value-parameterized tests.
 class ValueParamTest : public TestWithParam<int> {};
@@ -153,8 +187,7 @@ INSTANTIATE_TEST_SUITE_P(Single, ValueParamTest, Values(33, 42));
 
 // Verifies that the type parameter name is output in the 'type_param'
 // XML attribute for typed tests.
-template <typename T>
-class TypedTest : public Test {};
+template <typename T> class TypedTest : public Test {};
 typedef testing::Types<int, long> TypedTestTypes;
 TYPED_TEST_SUITE(TypedTest, TypedTestTypes);
 TYPED_TEST(TypedTest, HasTypeParamAttribute) {}
@@ -180,3 +213,5 @@ int main(int argc, char** argv) {
   testing::Test::RecordProperty("ad_hoc_property", "42");
   return RUN_ALL_TESTS();
 }
+
+// clang-format on

@@ -45,9 +45,9 @@
 #include <limits.h>
 #include <time.h>
 
-#include "gtest/gtest.h"
 #include "sample1.h"
 #include "sample3-inl.h"
+#include "gtest/gtest.h"
 namespace {
 // In this sample, we want to ensure that every test finishes within
 // ~5 seconds.  If a test takes longer to run, we consider it a
