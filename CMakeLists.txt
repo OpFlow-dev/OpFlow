@@ -14,7 +14,13 @@
 #
 # ----------------------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 4.0.2 FATAL_ERROR)
+# The specific value used for CMake==4.0.2
+set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD
+  # This specific value changes as experimental support evolves. See
+  # `Help/dev/experimental.rst` in the CMake source corresponding to
+  # your CMake build for the exact value to use.
+  "a9e1cf81-9932-4810-974b-6eccaf14e457")
 
 # ----------------------------------------------------------------------------
 # Start opflow project
@@ -32,6 +38,11 @@ opflow_extract_version()
 project(opflow VERSION ${OPFLOW_VERSION} LANGUAGES C CXX)
 set(OPFLOW_VERSION_STRING "${OPFLOW_VERSION} - ${SHORT_SHA1} - ${GIT_CHANGE}")
 message(STATUS "Build opflow: ${OPFLOW_VERSION_STRING}")
+
+set(CMAKE_EXPERIMENTAL_EXPORT_BUILD_DATABASE 4bd552e2-b7fb-429a-ab23-c83ef53f3f13)
+set(CMAKE_EXPORT_BUILD_DATABASE 1)
+
+set(CMAKE_CXX_MODULE_STD 1)
 
 include(GNUInstallDirs)
 
@@ -59,6 +70,15 @@ elseif(CMAKE_C_STANDARD LESS 11)
     message(WARNING "OpFlow needs C11 to compile. Changing the standard to C11.")
     set(CMAKE_C_STANDARD 11)
     set(CMAKE_C_STANDARD_REQUIRED ON)
+endif()
+
+if(NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 23)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+elseif(CMAKE_CXX_STANDARD LESS 23)
+    message(WARNING "OpFlow needs C++23 to compile. Changing the standard to C++23.")
+    set(CMAKE_CXX_STANDARD 23)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
 # make sure __cplusplus is defined when using msvc
@@ -136,6 +156,7 @@ option(OPFLOW_SANITIZE_UB "Enable undefined behavior sanitizer in tests" OFF)
 # compile options
 option(OPFLOW_BUILD_WARNINGS "Enable compiler warnings" OFF)
 option(OPFLOW_NO_EXCEPTIONS "Compile with -fno-exceptions" OFF)
+option(OPFLOW_ENABLE_MODULE "Enable C++ modules support" OFF)
 
 # install options
 option(OPFLOW_INSTALL "Generate the install target" ${OPFLOW_MASTER_PROJECT})
@@ -154,15 +175,6 @@ if(OPFLOW_TIDY)
     set(CMAKE_CXX_CLANG_TIDY "clang-tidy")
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
     message(STATUS "Enabled clang-tidy")
-endif()
-
-# ----------------------------------------------------------------------------
-# Compile options
-# ----------------------------------------------------------------------------
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag(-std=c++26 c++26support)
-if(NOT c++26support)
-    message(FATAL_ERROR "OpFlow requires C++26 to compile.")
 endif()
 
 message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
