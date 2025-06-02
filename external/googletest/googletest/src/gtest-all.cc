@@ -38,6 +38,7 @@
 #include "gtest/gtest.h"
 
 // The following lines pull in the real gtest *.cc files.
+#include "src/gtest-assertion-result.cc"
 #include "src/gtest-death-test.cc"
 #include "src/gtest-filepath.cc"
 #include "src/gtest-matchers.cc"

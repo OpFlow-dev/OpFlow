@@ -33,7 +33,7 @@
 #include "gtest/gtest-death-test.h"
 #include "gtest/gtest.h"
 
-#if GTEST_HAS_DEATH_TEST
+#ifdef GTEST_HAS_DEATH_TEST
 
 #if GTEST_HAS_SEH
 #include <windows.h>  // For RaiseException().
@@ -53,7 +53,7 @@ TEST(CxxExceptionDeathTest, ExceptionIsFailure) {
   } catch (...) {  // NOLINT
     FAIL() << "An exception escaped a death test macro invocation "
            << "with catch_exceptions "
-           << (testing::GTEST_FLAG(catch_exceptions) ? "enabled" : "disabled");
+           << (GTEST_FLAG_GET(catch_exceptions) ? "enabled" : "disabled");
   }
 }
 
@@ -78,7 +78,7 @@ TEST(CxxExceptionDeathTest, PrintsMessageForStdExceptions) {
 TEST(SehExceptionDeasTest, CatchExceptionsDoesNotInterfere) {
   EXPECT_DEATH(RaiseException(42, 0x0, 0, NULL), "")
       << "with catch_exceptions "
-      << (testing::GTEST_FLAG(catch_exceptions) ? "enabled" : "disabled");
+      << (GTEST_FLAG_GET(catch_exceptions) ? "enabled" : "disabled");
 }
 #endif
 
@@ -86,6 +86,6 @@ TEST(SehExceptionDeasTest, CatchExceptionsDoesNotInterfere) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  testing::GTEST_FLAG(catch_exceptions) = GTEST_ENABLE_CATCH_EXCEPTIONS_ != 0;
+  GTEST_FLAG_SET(catch_exceptions, GTEST_ENABLE_CATCH_EXCEPTIONS_ != 0);
   return RUN_ALL_TESTS();
 }

@@ -34,8 +34,8 @@
 // tested.
 
 // The interface and its implementations are in this header.
-#include "gtest/gtest.h"
 #include "prime_tables.h"
+#include "gtest/gtest.h"
 namespace {
 
 using ::testing::TestWithParam;

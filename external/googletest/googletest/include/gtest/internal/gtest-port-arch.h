@@ -26,7 +26,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
+
 // The Google C++ Testing and Mocking Framework (Google Test)
 //
 // This header file defines the GTEST_OS_* macro.
@@ -56,6 +56,8 @@
 #elif WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_TV_TITLE)
 #define GTEST_OS_WINDOWS_PHONE 1
 #define GTEST_OS_WINDOWS_TV_TITLE 1
+#elif WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_GAMES)
+#define GTEST_OS_WINDOWS_GAMES 1
 #else
 // WINAPI_FAMILY defined but no known partition matched.
 // Default to desktop.
@@ -78,6 +80,8 @@
 #define GTEST_OS_FREEBSD 1
 #elif defined __Fuchsia__
 #define GTEST_OS_FUCHSIA 1
+#elif defined(__GNU__)
+#define GTEST_OS_GNU_HURD 1
 #elif defined(__GLIBC__) && defined(__FreeBSD_kernel__)
 #define GTEST_OS_GNU_KFREEBSD 1
 #elif defined __linux__
@@ -109,6 +113,12 @@
 #define GTEST_OS_ESP32 1
 #elif defined(__XTENSA__)
 #define GTEST_OS_XTENSA 1
+#elif defined(__hexagon__)
+#define GTEST_OS_QURT 1
+#elif defined(CPU_QN9090) || defined(CPU_QN9090HN)
+#define GTEST_OS_NXP_QN9090 1
+#elif defined(NRF52)
+#define GTEST_OS_NRF52 1
 #endif  // __CYGWIN__
 
 #endif  // GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_PORT_ARCH_H_

@@ -38,10 +38,7 @@
 #include "gtest/gtest.h"
 
 // Silence C4100 (unreferenced formal parameter)
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4100)
-#endif
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4100)
 
 using testing::_;
 using testing::AnyNumber;
@@ -55,14 +52,15 @@ using testing::Value;
 
 class MockFoo {
  public:
-  MockFoo() {}
+  MockFoo() = default;
 
   MOCK_METHOD3(Bar, char(const std::string& s, int i, double x));
   MOCK_METHOD2(Bar2, bool(int x, int y));
   MOCK_METHOD2(Bar3, void(int x, int y));
 
  private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(MockFoo);
+  MockFoo(const MockFoo&) = delete;
+  MockFoo& operator=(const MockFoo&) = delete;
 };
 
 class GMockOutputTest : public testing::Test {
@@ -71,21 +69,21 @@ class GMockOutputTest : public testing::Test {
 };
 
 TEST_F(GMockOutputTest, ExpectedCall) {
-  testing::GMOCK_FLAG(verbose) = "info";
+  GMOCK_FLAG_SET(verbose, "info");
 
   EXPECT_CALL(foo_, Bar2(0, _));
   foo_.Bar2(0, 0);  // Expected call
 
-  testing::GMOCK_FLAG(verbose) = "warning";
+  GMOCK_FLAG_SET(verbose, "warning");
 }
 
 TEST_F(GMockOutputTest, ExpectedCallToVoidFunction) {
-  testing::GMOCK_FLAG(verbose) = "info";
+  GMOCK_FLAG_SET(verbose, "info");
 
   EXPECT_CALL(foo_, Bar3(0, _));
   foo_.Bar3(0, 0);  // Expected call
 
-  testing::GMOCK_FLAG(verbose) = "warning";
+  GMOCK_FLAG_SET(verbose, "warning");
 }
 
 TEST_F(GMockOutputTest, ExplicitActionsRunOut) {
@@ -278,13 +276,11 @@ int main(int argc, char** argv) {
   testing::InitGoogleMock(&argc, argv);
   // Ensures that the tests pass no matter what value of
   // --gmock_catch_leaked_mocks and --gmock_verbose the user specifies.
-  testing::GMOCK_FLAG(catch_leaked_mocks) = true;
-  testing::GMOCK_FLAG(verbose) = "warning";
+  GMOCK_FLAG_SET(catch_leaked_mocks, true);
+  GMOCK_FLAG_SET(verbose, "warning");
 
   TestCatchesLeakedMocksInAdHocTests();
   return RUN_ALL_TESTS();
 }
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+GTEST_DISABLE_MSC_WARNINGS_POP_()  // 4100
