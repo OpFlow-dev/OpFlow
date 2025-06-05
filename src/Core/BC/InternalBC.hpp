@@ -14,8 +14,10 @@
 #define OPFLOW_INTERNALBC_HPP
 
 #include "Core/BC/BCBase.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <map>
 #include <mpi.h>
+#endif
 
 namespace OpFlow::Core::BC {
     template <typename F>

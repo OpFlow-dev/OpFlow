@@ -13,15 +13,16 @@
 #ifndef OPFLOW_STATICALLOCATOR_HPP
 #define OPFLOW_STATICALLOCATOR_HPP
 
+#ifndef OPFLOW_INSIDE_MODULE
 #include <concepts>
 #include <type_traits>
 #include <utility>
+#endif
 
 namespace OpFlow::Utils {
     template <typename D, typename T>
     concept StaticAllocatorType = requires(std::size_t s) {
-        { T::allocate(s) }
-        ->std::same_as<D*>;
+        { T::allocate(s) } -> std::same_as<D*>;
         T::deallocate(std::declval<D*>(), s);
     };
 }// namespace OpFlow::Utils

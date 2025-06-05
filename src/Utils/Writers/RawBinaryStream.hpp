@@ -16,11 +16,13 @@
 #include "Core/Environment.hpp"
 #include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
 #include "Utils/Writers/FieldStream.hpp"
-#include "fmt/format.h"
+#include <format>
+#ifndef OPFLOW_INSIDE_MODULE
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <string>
+#endif
 
 namespace OpFlow::Utils {
     struct RawBinaryOStream;
@@ -103,9 +105,9 @@ namespace OpFlow::Utils {
             rank = getWorkerId();
         }
         std::string root;
-        if (nproc > 1) root = fmt::format("{}/{}_{}_{}.cart", path.string(), f.getName(), count, rank);
+        if (nproc > 1) root = std::format("{}/{}_{}_{}.cart", path.string(), f.getName(), count, rank);
         else
-            root = fmt::format("{}/{}_{}.cart", path.string(), f.getName(), count);
+            root = std::format("{}/{}_{}.cart", path.string(), f.getName(), count);
         FILE* data;
         data = fopen(root.c_str(), "wb");
         std::string name = f.getName();
@@ -157,9 +159,9 @@ namespace OpFlow::Utils {
             rank = getWorkerId();
         }
         std::string root;
-        if (nproc > 1) root = fmt::format("{}/{}_{}_{}.cart", path.string(), f.getName(), count, rank);
+        if (nproc > 1) root = std::format("{}/{}_{}_{}.cart", path.string(), f.getName(), count, rank);
         else
-            root = fmt::format("{}/{}_{}.cart", path.string(), f.getName(), count);
+            root = std::format("{}/{}_{}.cart", path.string(), f.getName(), count);
         FILE* data;
         data = fopen(root.c_str(), "rb");
 

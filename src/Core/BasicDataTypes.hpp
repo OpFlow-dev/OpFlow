@@ -13,8 +13,10 @@
 #ifndef OPFLOW_BASICDATATYPES_HPP
 #define OPFLOW_BASICDATATYPES_HPP
 
+#ifndef OPFLOW_INSIDE_MODULE
 #include <complex>
 #include <exception>
+#endif
 
 namespace OpFlow {
 

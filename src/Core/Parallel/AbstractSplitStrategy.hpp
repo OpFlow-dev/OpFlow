@@ -15,8 +15,10 @@
 
 #include "Core/Field/FieldExprTrait.hpp"
 #include "Core/Parallel/ParallelPlan.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <string>
 #include <vector>
+#endif
 
 namespace OpFlow {
     template <FieldExprType F>

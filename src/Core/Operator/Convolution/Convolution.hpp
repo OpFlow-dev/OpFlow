@@ -44,8 +44,9 @@ namespace OpFlow {
         }
 
         template <StructuredFieldExprType E, typename T, typename I>
-        requires(internal::ExprTrait<E>::dim == d) OPFLOW_STRONG_INLINE
-                static auto eval(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>& kernel, I&& i) {
+            requires(internal::ExprTrait<E>::dim == d)
+        OPFLOW_STRONG_INLINE static auto
+        eval(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>& kernel, I&& i) {
             DS::Range<d> range;
             for (auto j = 0; j < d; ++j) {
                 range.start[j] = i[j] - dims[j] / 2;
@@ -62,8 +63,9 @@ namespace OpFlow {
         }
 
         template <CartAMRFieldExprType E, typename T, typename I>
-        requires(internal::ExprTrait<E>::dim == d) OPFLOW_STRONG_INLINE
-                static auto eval(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>& kernel, I&& i) {
+            requires(internal::ExprTrait<E>::dim == d)
+        OPFLOW_STRONG_INLINE static auto
+        eval(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>& kernel, I&& i) {
             DS::LevelRange<d> range;
             for (auto j = 0; j < d; ++j) {
                 range.start[j] = i[j] - dims[j] / 2;
@@ -82,12 +84,13 @@ namespace OpFlow {
         }
 
         template <StructuredFieldExprType E, typename T>
-        requires(internal::ExprTrait<E>::dim == d) static void prepare(
-                const Expression<Convolution, E, ScalarExpr<DS::FixedSizeTensor<T, ns...>>>& expr) {
+            requires(internal::ExprTrait<E>::dim == d)
+        static void
+        prepare(const Expression<Convolution, E, ScalarExpr<DS::FixedSizeTensor<T, ns...>>>& expr) {
             expr.initPropsFrom(expr.arg1);
 
             // name
-            expr.name = fmt::format("Convolution<{}>({})", d, expr.arg1.name);
+            expr.name = std::format("Convolution<{}>({})", d, expr.arg1.name);
 
             // ranges
             for (auto i = 0; i < d; ++i) {
@@ -102,12 +105,13 @@ namespace OpFlow {
         }
 
         template <CartAMRFieldExprType E, typename T>
-        requires(internal::ExprTrait<E>::dim == d) static void prepare(
-                const Expression<Convolution, E, ScalarExpr<DS::FixedSizeTensor<T, ns...>>>& expr) {
+            requires(internal::ExprTrait<E>::dim == d)
+        static void
+        prepare(const Expression<Convolution, E, ScalarExpr<DS::FixedSizeTensor<T, ns...>>>& expr) {
             expr.initPropsFrom(expr.arg1);
 
             // name
-            expr.name = fmt::format("Convolution<{}>({})", d, expr.arg1.name);
+            expr.name = std::format("Convolution<{}>({})", d, expr.arg1.name);
 
             // ranges
             for (auto& l : expr.accessibleRanges)
@@ -162,7 +166,8 @@ namespace OpFlow {
     }// namespace internal
 
     template <std::integral auto... ns, typename E, typename D>
-            requires StructuredFieldExprType<E> || CartAMRFieldExprType<E> auto conv(E&& expr, const DS::FixedSizeTensor<D, ns...>& kernel) {
+        requires StructuredFieldExprType<E> || CartAMRFieldExprType<E>
+    auto conv(E&& expr, const DS::FixedSizeTensor<D, ns...>& kernel) {
         static_assert(((ns % 2 == 1) && ...), "Only odd sized conv kernel is allowed.");
         return makeExpression<Convolution<ns...>>(expr, ScalarExpr(kernel));
     }

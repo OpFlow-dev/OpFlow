@@ -17,7 +17,9 @@
 #include "DataStructures/Index/MDIndex.hpp"
 #include "Math/Function/Numeric.hpp"
 #include "Utils/xxHash.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <array>
+#endif
 
 namespace OpFlow::DS {
     template <std::size_t d>
@@ -82,9 +84,9 @@ namespace OpFlow::DS {
         [[nodiscard]] std::string toString(int n, const std::string& prefix) const override {
             std::string ret;
             for (int i = 0; i < n; ++i) ret += prefix;
-            ret += "{" + fmt::format("{}, {}", l, p);
-            if constexpr (d > 0) ret += fmt::format(", {}", this->idx[0]);
-            for (auto i = 1; i < d; ++i) ret += fmt::format(", {}", this->idx[i]);
+            ret += "{" + std::format("{}, {}", l, p);
+            if constexpr (d > 0) ret += std::format(", {}", this->idx[0]);
+            for (auto i = 1; i < d; ++i) ret += std::format(", {}", this->idx[i]);
             ret += "}";
             return ret;
         }

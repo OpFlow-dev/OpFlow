@@ -22,13 +22,17 @@
 #include "DataStructures/Index/LevelMDIndex.hpp"
 #include "DataStructures/Range/LevelRanges.hpp"
 #include "Math/Function/Numeric.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <deque>
 #include <map>
 #include <vector>
+#endif
 #ifdef OPFLOW_WITH_VTK
+#ifndef OPFLOW_INSIDE_MODULE
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkXMLPolyDataWriter.h>
+#endif
 #endif
 
 namespace OpFlow {
@@ -230,9 +234,9 @@ namespace OpFlow {
                 OP_DEBUG("Points at _level {}:", _level);
                 for (const auto &p : points) { OP_DEBUG("{}", p.toString()); }
                 dump_points(points, 1. / Math::int_pow(ratio, _level - 1),
-                            fmt::format("p_level{}.vtp", _level));
+                            std::format("p_level{}.vtp", _level));
                 dump_points(p_add, 1. / Math::int_pow(ratio, _level - 1),
-                            fmt::format("padd_level{}.vtp", _level));
+                            std::format("padd_level{}.vtp", _level));
 #endif
                 auto tree = MarkerTree(points);
                 auto boxes = domainPartition(tree, ret.fillRateThreshold, ret.slimThreshold);
@@ -319,9 +323,9 @@ namespace OpFlow {
                 OP_DEBUG("Points at _level {}:", _level);
                 for (const auto &p : points) { OP_DEBUG("{}", p.toString()); }
                 dump_points(points, 1. / Math::int_pow(ratio, _level - 1),
-                            fmt::format("p_level{}.vtp", _level));
+                            std::format("p_level{}.vtp", _level));
                 dump_points(p_add, 1. / Math::int_pow(ratio, _level - 1),
-                            fmt::format("padd_level{}.vtp", _level));
+                            std::format("padd_level{}.vtp", _level));
 #endif
                 auto tree = MarkerTree(points);
                 auto boxes = domainPartition(tree, ret.fillRateThreshold, ret.slimThreshold);

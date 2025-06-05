@@ -14,9 +14,13 @@
 #define OPFLOW_SEMISTRUCTSOLVER_HPP
 
 #ifdef OPFLOW_WITH_MPI
+#ifndef OPFLOW_INSIDE_MODULE
 #include <mpi.h>
 #endif
+#endif
+#ifndef OPFLOW_INSIDE_MODULE
 #include <optional>
+#endif
 
 namespace OpFlow {
     enum class SemiStructSolverType {

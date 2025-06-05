@@ -17,10 +17,12 @@
 #include "Core/Constants.hpp"
 #include "Core/DesignPatterns.hpp"
 #include "Utils/Writers/Streams.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <cassert>
 #include <fstream>
 #include <string>
 #include <vector>
+#endif
 
 namespace OpFlow::DS {
 

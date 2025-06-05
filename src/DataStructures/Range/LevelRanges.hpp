@@ -16,8 +16,10 @@
 #include "Core/Macros.hpp"
 #include "DataStructures/Index/LevelMDIndex.hpp"
 #include "Ranges.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <array>
 #include <concepts>
+#endif
 
 namespace OpFlow::DS {
     template <std::size_t dim>
@@ -128,7 +130,7 @@ namespace OpFlow::DS {
 
         auto toString() const {
             std::string ret;
-            ret = fmt::format("{{l = {}, p = {}, {} - {} by {}}}", level, part, start, end, stride);
+            ret = std::format("{{l = {}, p = {}, {} - {} by {}}}", level, part, start, end, stride);
             return ret;
         }
 

@@ -69,7 +69,7 @@ namespace OpFlow {
         static inline void prepare(const Expression<D1FirstOrderBiasedUpwind, E>& expr) {
             expr.initPropsFrom(expr.arg1);
             // name
-            expr.name = fmt::format("d1<D1FirstOrderBiasedUpwind<{}>>(", d) + expr.arg1.name + ")";
+            expr.name = std::format("d1<D1FirstOrderBiasedUpwind<{}>>(", d) + expr.arg1.name + ")";
 
             // mesh
             expr.mesh = expr.arg1.mesh.getView();
@@ -88,7 +88,7 @@ namespace OpFlow {
             expr.initPropsFrom(expr.arg1);
 
             // name
-            expr.name = fmt::format("d1<D1FirstOrderBiasedUpwind<{}>>({})", d, expr.arg1.name);
+            expr.name = std::format("d1<D1FirstOrderBiasedUpwind<{}>>({})", d, expr.arg1.name);
 
             // ranges
             if (expr.arg1.loc[d] == LocOnMesh::Corner) {

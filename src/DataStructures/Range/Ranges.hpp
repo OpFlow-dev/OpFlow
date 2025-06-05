@@ -17,12 +17,14 @@
 #include "DataStructures/Index/MDIndex.hpp"
 #include "Utils/Serializer/STDContainers.hpp"
 #include "Utils/xxHash.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <array>
 #include <concepts>
 #include <cstddef>
 #include <functional>
 #include <oneapi/tbb/detail/_range_common.h>
 #include <vector>
+#endif
 
 namespace OpFlow::DS {
     template <std::size_t dim>
@@ -134,7 +136,7 @@ namespace OpFlow::DS {
 
         auto toString() const {
             std::string ret;
-            ret = fmt::format("{{{} - {} by {}}}", Utils::Serializer::serialize(start),
+            ret = std::format("{{{} - {} by {}}}", Utils::Serializer::serialize(start),
                               Utils::Serializer::serialize(end), Utils::Serializer::serialize(stride));
             return ret;
         }
@@ -223,10 +225,7 @@ namespace OpFlow::DS {
     };
 
     template <typename T>
-    concept isRange = requires {
-        T::dim;
-    }
-    &&std::is_same_v<std::remove_cvref_t<T>, Range<T::dim>>;
+    concept isRange = requires { T::dim; } && std::is_same_v<std::remove_cvref_t<T>, Range<T::dim>>;
 
     template <std::size_t dim1, std::size_t dim2>
     constexpr auto commonRange(const Range<dim1>& a, const Range<dim2>& b) {

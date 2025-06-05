@@ -17,7 +17,9 @@
 #include "Core/Mesh/Structured/StructuredMeshBase.hpp"
 #include "Core/Mesh/Structured/StructuredMeshTrait.hpp"
 #include "DataStructures/Range/Ranges.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <array>
+#endif
 
 namespace OpFlow {
     template <typename Dim>
@@ -59,23 +61,23 @@ namespace OpFlow {
             static constexpr auto dim = internal::MeshTrait<Derived>::dim;
             std::string prefix;
             for (auto i = 0; i < level; ++i) prefix += "\t";
-            std::string ret = prefix + fmt::format("CartesianMesh<{}> :\n", dim);
+            std::string ret = prefix + std::format("CartesianMesh<{}> :\n", dim);
             prefix += "\t";
-            ret += prefix + fmt::format("dims: {}\n", this->dims);
-            ret += prefix + fmt::format("offsets: {}\n", this->offsets);
-            ret += prefix + fmt::format("range: {}\n", this->range.toString());
+            ret += prefix + std::format("dims: {}\n", this->dims);
+            ret += prefix + std::format("offsets: {}\n", this->offsets);
+            ret += prefix + std::format("range: {}\n", this->range.toString());
             auto range = getRange();
             for (auto i = 0; i < dim; ++i) {
-                ret += prefix + fmt::format("x[{}][{}] : ", i, range.end[i] - range.start[i]);
+                ret += prefix + std::format("x[{}][{}] : ", i, range.end[i] - range.start[i]);
                 for (auto j = range.start[i]; j < range.end[i]; ++j) {
-                    ret += fmt::format("{} ", this->x(i, j));
+                    ret += std::format("{} ", this->x(i, j));
                 }
                 ret += "\n";
             }
             for (auto i = 0; i < dim; ++i) {
-                ret += prefix + fmt::format("dx[{}][{}] : ", i, range.end[i] - range.start[i] - 1);
+                ret += prefix + std::format("dx[{}][{}] : ", i, range.end[i] - range.start[i] - 1);
                 for (auto j = range.start[i]; j < range.end[i] - 1; ++j) {
-                    ret += fmt::format("{} ", this->dx(i, j));
+                    ret += std::format("{} ", this->dx(i, j));
                 }
                 ret += "\n";
             }

@@ -13,7 +13,9 @@
 #ifndef OPFLOW_SERIALIZABLE_HPP
 #define OPFLOW_SERIALIZABLE_HPP
 
+#ifndef OPFLOW_INSIDE_MODULE
 #include <vector>
+#endif
 
 namespace OpFlow {
 
@@ -28,10 +30,9 @@ namespace OpFlow {
 
     template <typename T>
     concept Serializable = std::is_base_of_v<SerializableObj, T> || requires(T t) {
-        { t.serialize() }
-        ->std::same_as<std::vector<std::byte>>;
-        {t.deserialize(std::vector<std::byte> {})};
-        {t.deserialize(std::declval<const std::byte*>(), std::size_t(0))};
+        { t.serialize() } -> std::same_as<std::vector<std::byte>>;
+        { t.deserialize(std::vector<std::byte> {}) };
+        { t.deserialize(std::declval<const std::byte*>(), std::size_t(0)) };
     };
 }// namespace OpFlow
 

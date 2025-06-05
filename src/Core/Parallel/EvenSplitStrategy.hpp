@@ -16,13 +16,17 @@
 #include "Core/Field/FieldExprTrait.hpp"
 #include "Core/Field/MeshBased/Structured/StructuredFieldExprTrait.hpp"
 #include "Core/Parallel/AbstractSplitStrategy.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <algorithm>
 #include <array>
 #include <string>
 #include <utility>
 #include <vector>
+#endif
 #ifdef OPFLOW_WITH_MPI
+#ifndef OPFLOW_INSIDE_MODULE
 #include <mpi.h>
+#endif
 #endif
 
 namespace OpFlow {

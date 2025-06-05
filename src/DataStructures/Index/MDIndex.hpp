@@ -16,14 +16,16 @@
 #include "Core/Interfaces/Stringifiable.hpp"
 #include "Core/Macros.hpp"
 #include "Utils/xxHash.hpp"
-#include "fmt/format.h"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <array>
 #include <cassert>
 #include <compare>
 #include <concepts>
+#include <format>
 #include <initializer_list>
 #include <memory>
 #include <vector>
+#endif
 
 namespace OpFlow::DS {
 
@@ -101,9 +103,7 @@ namespace OpFlow::DS {
         constexpr auto copy() const { return *this; }
 
         template <std::size_t dim = 0>
-        requires requires {
-            dim < d;
-        }
+            requires requires { dim < d; }
         constexpr auto next(int steps = 1) const {
             auto c = copy();
             c.idx[dim] += steps;
@@ -111,9 +111,7 @@ namespace OpFlow::DS {
         }
 
         template <std::size_t dim = 0>
-        requires requires {
-            dim < d;
-        }
+            requires requires { dim < d; }
         constexpr auto prev(int steps = 1) const {
             auto c = copy();
             c.idx[dim] -= steps;
@@ -130,8 +128,8 @@ namespace OpFlow::DS {
             std::string ret;
             while (n-- > 0) ret += prefix;
             ret += "{";
-            if constexpr (d > 0) ret += fmt::format("{}", idx[0]);
-            for (auto i = 1; i < d; ++i) ret += fmt::format(", {}", idx[i]);
+            if constexpr (d > 0) ret += std::format("{}", idx[0]);
+            for (auto i = 1; i < d; ++i) ret += std::format(", {}", idx[i]);
             ret += "}";
             return ret;
         }

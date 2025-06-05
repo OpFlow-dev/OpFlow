@@ -13,7 +13,9 @@
 #ifndef OPFLOW_TENSORTRAIT_HPP
 #define OPFLOW_TENSORTRAIT_HPP
 
+#ifndef OPFLOW_INSIDE_MODULE
 #include <type_traits>
+#endif
 
 namespace OpFlow::DS {
     template <typename Derived>

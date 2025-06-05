@@ -15,7 +15,9 @@
 
 #include "DataStructures/Index/LevelMDIndex.hpp"
 #include "DataStructures/Range/LevelRanges.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <vector>
+#endif
 
 namespace OpFlow::DS {
     template <std::size_t d>

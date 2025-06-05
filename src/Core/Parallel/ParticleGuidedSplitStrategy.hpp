@@ -16,12 +16,16 @@
 #include "Core/Field/MeshBased/Structured/CartesianFieldTrait.hpp"
 #include "Core/Parallel/AbstractSplitStrategy.hpp"
 #ifdef OPFLOW_WITH_MPI
+#ifndef OPFLOW_INSIDE_MODULE
 #include <mpi.h>
 #endif
+#endif
+#ifndef OPFLOW_INSIDE_MODULE
 #include <array>
 #include <bit>
 #include <string>
 #include <vector>
+#endif
 
 namespace OpFlow {
     template <int d>

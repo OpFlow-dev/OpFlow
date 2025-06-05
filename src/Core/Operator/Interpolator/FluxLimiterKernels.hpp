@@ -13,9 +13,11 @@
 #ifndef OPFLOW_FLUXLIMITERKERNELS_HPP
 #define OPFLOW_FLUXLIMITERKERNELS_HPP
 
+#ifndef OPFLOW_INSIDE_MODULE
 #include <algorithm>
 #include <cmath>
 #include <ratio>
+#endif
 
 namespace OpFlow {
     enum class KappaScheme {

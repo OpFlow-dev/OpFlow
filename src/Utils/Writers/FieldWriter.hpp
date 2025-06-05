@@ -18,9 +18,11 @@
 #include "Core/Field/FieldExpr.hpp"
 #include "Core/Macros.hpp"
 #include "Streams.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <functional>
 #include <iostream>
 #include <string>
+#endif
 
 namespace OpFlow::Utils::Writer {
     template <typename FieldType>

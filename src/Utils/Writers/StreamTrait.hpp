@@ -14,7 +14,9 @@
 #define OPFLOW_STREAMTRAIT_HPP
 
 #include "Core/Constants.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <type_traits>
+#endif
 
 namespace OpFlow::Utils {
     namespace internal {
@@ -23,9 +25,9 @@ namespace OpFlow::Utils {
     }
 
     template <typename T>
-    concept RStreamType = bool(internal::StreamTrait<T>::mode_flag& StreamIn);
+    concept RStreamType = bool(internal::StreamTrait<T>::mode_flag & StreamIn);
 
     template <typename T>
-    concept WStreamType = bool(internal::StreamTrait<T>::mode_flag& StreamOut);
+    concept WStreamType = bool(internal::StreamTrait<T>::mode_flag & StreamOut);
 }// namespace OpFlow::Utils
 #endif//OPFLOW_STREAMTRAIT_HPP

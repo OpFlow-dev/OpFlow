@@ -20,9 +20,11 @@
 #include "Core/Operator/BinOpDefMacros.hpp.in"
 #include "Core/Operator/Operator.hpp"
 #include "Core/Operator/UniOpDefMacros.hpp.in"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <cmath>
 #include <type_traits>
 #include <utility>
+#endif
 
 #ifndef OPFLOW_CLASSIFY_HPP
 #define OPFLOW_CLASSIFY_HPP

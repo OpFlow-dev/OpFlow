@@ -16,11 +16,13 @@
 #include "Core/Equation/Equation.hpp"
 #include "Core/Meta.hpp"
 #include "DataStructures/StencilPad.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <any>
 #include <boost/core/demangle.hpp>
 #include <functional>
 #include <unordered_map>
 #include <vector>
+#endif
 
 namespace OpFlow {
     template <typename E, typename T>

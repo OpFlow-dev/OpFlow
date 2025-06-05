@@ -13,7 +13,9 @@
 #ifndef OPFLOW_STRUCTSOLVERPFMG_HPP
 #define OPFLOW_STRUCTSOLVERPFMG_HPP
 
+#ifndef OPFLOW_INSIDE_MODULE
 #include <utility>
+#endif
 
 #include "StructSolver.hpp"
 

@@ -10,9 +10,11 @@
 //
 //  ----------------------------------------------------------------------------
 
-#include <fmt/format.h>
+#ifndef OPFLOW_INSIDE_MODULE
+#include <format>
 #include <string>
 #include <vector>
+#endif
 
 #ifndef OPFLOW_STACKTRACER_HPP
 #define OPFLOW_STACKTRACER_HPP
@@ -27,9 +29,9 @@ namespace OpFlow::Utils {
 
         [[nodiscard]] std::string dump() const {
             std::string str;
-            str += fmt::format("\nCall stack:\n");
+            str += std::format("\nCall stack:\n");
             int size = msg.size();
-            for (int i = size - 1; i >= 0; --i) { str += fmt::format("  [{:2}] {}\n", i, msg[i]); }
+            for (int i = size - 1; i >= 0; --i) { str += std::format("  [{:2}] {}\n", i, msg[i]); }
             return str;
         }
     };

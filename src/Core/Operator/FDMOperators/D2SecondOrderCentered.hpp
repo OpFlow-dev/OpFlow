@@ -187,7 +187,7 @@ namespace OpFlow {
         OPFLOW_STRONG_INLINE static void prepare(const Expression<D2SecondOrderCentered, E>& expr) {
             expr.initPropsFrom(expr.arg1);
             // name
-            expr.name = fmt::format("d2<D2SecondOrderCentered<{}>>({})", d, expr.arg1.name);
+            expr.name = std::format("d2<D2SecondOrderCentered<{}>>({})", d, expr.arg1.name);
 
             // mesh
             expr.mesh = expr.arg1.mesh.getView();
@@ -209,7 +209,7 @@ namespace OpFlow {
             expr.initPropsFrom(expr.arg1);
 
             // name
-            expr.name = fmt::format("d2<D2SecondOrderCentered<{}>>({})", d, expr.arg1.name);
+            expr.name = std::format("d2<D2SecondOrderCentered<{}>>({})", d, expr.arg1.name);
 
             // ranges
             if (expr.arg1.loc[d] == LocOnMesh::Corner) {

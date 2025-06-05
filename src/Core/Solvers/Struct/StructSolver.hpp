@@ -13,8 +13,10 @@
 #ifndef OPFLOW_STRUCTSOLVER_HPP
 #define OPFLOW_STRUCTSOLVER_HPP
 
+#ifndef OPFLOW_INSIDE_MODULE
 #include <HYPRE.h>
 #include <optional>
+#endif
 
 namespace OpFlow {
 

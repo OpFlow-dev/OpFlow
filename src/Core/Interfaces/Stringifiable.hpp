@@ -15,9 +15,11 @@
 
 #include "Core/Macros.hpp"
 #include "Core/Meta.hpp"
-#include <fmt/format.h>
+#ifndef OPFLOW_INSIDE_MODULE
+#include <format>
 #include <iostream>
 #include <string>
+#endif
 
 namespace OpFlow {
 
@@ -34,13 +36,11 @@ namespace OpFlow {
     concept Stringifiable = std::is_base_of_v<StringifiableObj, T>;
 }// namespace OpFlow
 
-namespace fmt {
-    template <typename T>
-    requires std::derived_from<T, OpFlow::StringifiableObj> struct formatter<T> : formatter<std::string> {
-        template <typename FormatCtx>
-        auto format(const OpFlow::StringifiableObj& a, FormatCtx& ctx) {
-            return fmt::formatter<std::string>::format(a.toString(), ctx);
-        }
-    };
-}// namespace fmt
+template <typename T>
+    requires std::derived_from<T, OpFlow::StringifiableObj>
+struct std::formatter<T> : formatter<std::string> {
+    auto format(const OpFlow::StringifiableObj& a, auto& ctx) {
+        return std::formatter<std::string>::format(a.toString(), ctx);
+    }
+};
 #endif//OPFLOW_STRINGIFIABLE_HPP

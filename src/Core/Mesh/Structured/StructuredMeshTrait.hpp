@@ -15,7 +15,9 @@
 
 #include "Core/Mesh/MeshTrait.hpp"
 #include "Core/Meta.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <type_traits>
+#endif
 
 namespace OpFlow {
     template <typename Derived>

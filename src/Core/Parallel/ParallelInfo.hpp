@@ -15,12 +15,18 @@
 
 #include "Core/Parallel/ParallelType.hpp"
 #ifdef OPFLOW_WITH_MPI
+#ifndef OPFLOW_INSIDE_MODULE
 #include <mpi.h>
 #endif
+#endif
 #ifdef OPFLOW_WITH_OPENMP
+#ifndef OPFLOW_INSIDE_MODULE
 #include <omp.h>
 #endif
+#endif
+#ifndef OPFLOW_INSIDE_MODULE
 #include <oneapi/tbb.h>
+#endif
 
 namespace OpFlow {
     struct NodeInfo {

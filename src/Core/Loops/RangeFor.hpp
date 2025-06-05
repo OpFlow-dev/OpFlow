@@ -19,11 +19,15 @@
 #include "Core/Meta.hpp"
 #include "DataStructures/Index/RangedIndex.hpp"
 #include "DataStructures/Range/Ranges.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <omp.h>
 #include <tbb/tbb.h>
+#endif
 #define TBB_PREVIEW_BLOCKED_RANGE_ND 1
+#ifndef OPFLOW_INSIDE_MODULE
 #include <oneapi/tbb/blocked_rangeNd.h>
 #include <oneapi/tbb/detail/_range_common.h>
+#endif
 
 namespace OpFlow {
     /// \brief Serial version of range for
@@ -122,8 +126,8 @@ namespace OpFlow {
         auto local_result = rangeReduce(range, op, func);
         std::vector<decltype(local_result)> results(getWorkerCount());
         results[getWorkerId()] = local_result;
-        static_assert(std::is_standard_layout_v<decltype(
-                                      local_result)> && std::is_trivial_v<decltype(local_result)>,
+        static_assert(std::is_standard_layout_v<decltype(local_result)>
+                              && std::is_trivial_v<decltype(local_result)>,
                       "local_result must be pod type");
         MPI_Allgather(MPI_IN_PLACE, sizeof(decltype(local_result)), MPI_BYTE, results.data(),
                       sizeof(decltype(local_result)), MPI_BYTE, MPI_COMM_WORLD);

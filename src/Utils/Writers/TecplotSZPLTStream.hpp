@@ -15,11 +15,13 @@
 
 #include "Core/Field/MeshBased/Structured/CartesianField.hpp"
 #include "Utils/Writers/FieldStream.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <TECIO.h>
 #include <filesystem>
-#include <fmt/format.h>
+#include <format>
 #include <string>
 #include <utility>
+#endif
 
 namespace OpFlow::Utils {
     struct TecplotSZPLTStream;
@@ -74,16 +76,16 @@ namespace OpFlow::Utils {
                 auto ptr = std::remove(name.begin(), name.end(), ' ');
                 name.erase(ptr, name.end());
             }
-            std::string title = fmt::format("TITLE = \"Solution of {}\"", name);
-            std::string var_list = (dim == 2) ? fmt::format("X,Y,{}", name) : fmt::format("X,Y,Z,{}", name);
+            std::string title = std::format("TITLE = \"Solution of {}\"", name);
+            std::string var_list = (dim == 2) ? std::format("X,Y,{}", name) : std::format("X,Y,Z,{}", name);
             std::string filename = path;
             if (separate_file) {
                 // add time stamp between filename and extension
                 std::string ext = std::filesystem::path(path).extension();
                 filename.erase(filename.end() - ext.size(), filename.end());
-                if (numberingType == NumberingType::ByTime) filename += fmt::format("_{:.6f}", time.time);
+                if (numberingType == NumberingType::ByTime) filename += std::format("_{:.6f}", time.time);
                 else
-                    filename += fmt::format("_{}", time.step.value());
+                    filename += std::format("_{}", time.step.value());
                 filename += ext;
             }
             int file_format = 1,                 // 0: Tecplot binary (.plt), 1: Tecplot subzone (.szplt)
@@ -194,23 +196,23 @@ namespace OpFlow::Utils {
                 auto getName = [&](auto&& f) {
                     static int count = 0;
                     std::string name = f.getName();
-                    if (name.empty()) name = fmt::format("unnamed{}", count++);
+                    if (name.empty()) name = std::format("unnamed{}", count++);
                     auto ptr = std::remove(name.begin(), name.end(), ' ');
                     name.erase(ptr, name.end());
                     std::replace(name.begin(), name.end(), ',', '_');
                     return name;
                 };
-                std::string title = fmt::format("TITLE = \"Solution of all fields\"");
-                std::string var_list = (dim == 2) ? ("X,Y" + ... + fmt::format(",{}", getName(fs)))
-                                                  : ("X,Y,Z" + ... + fmt::format(",{}", getName(fs)));
+                std::string title = std::format("TITLE = \"Solution of all fields\"");
+                std::string var_list = (dim == 2) ? ("X,Y" + ... + std::format(",{}", getName(fs)))
+                                                  : ("X,Y,Z" + ... + std::format(",{}", getName(fs)));
                 std::string filename = path;
                 if (separate_file) {
                     // add time stamp between filename and extension
                     std::string ext = std::filesystem::path(path).extension();
                     filename.erase(filename.end() - ext.size(), filename.end());
-                    if (numberingType == NumberingType::ByTime) filename += fmt::format("_{:.6f}", time.time);
+                    if (numberingType == NumberingType::ByTime) filename += std::format("_{:.6f}", time.time);
                     else
-                        filename += fmt::format("_{}", time.step.value());
+                        filename += std::format("_{}", time.step.value());
                     filename += ext;
                 }
                 int file_format = 1,                 // 0: Tecplot binary (.plt), 1: Tecplot subzone (.szplt)

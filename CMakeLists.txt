@@ -17,10 +17,10 @@
 cmake_minimum_required(VERSION 4.0.2 FATAL_ERROR)
 # The specific value used for CMake==4.0.2
 set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD
-  # This specific value changes as experimental support evolves. See
-  # `Help/dev/experimental.rst` in the CMake source corresponding to
-  # your CMake build for the exact value to use.
-  "a9e1cf81-9932-4810-974b-6eccaf14e457")
+    # This specific value changes as experimental support evolves. See
+    # `Help/dev/experimental.rst` in the CMake source corresponding to
+    # your CMake build for the exact value to use.
+    "a9e1cf81-9932-4810-974b-6eccaf14e457")
 
 # ----------------------------------------------------------------------------
 # Start opflow project
@@ -63,24 +63,6 @@ endif()
 # ----------------------------------------------------------------------------
 # Compiler config
 # ----------------------------------------------------------------------------
-if(NOT CMAKE_C_STANDARD)
-    set(CMAKE_C_STANDARD 11)
-    set(CMAKE_C_STANDARD_REQUIRED ON)
-elseif(CMAKE_C_STANDARD LESS 11)
-    message(WARNING "OpFlow needs C11 to compile. Changing the standard to C11.")
-    set(CMAKE_C_STANDARD 11)
-    set(CMAKE_C_STANDARD_REQUIRED ON)
-endif()
-
-if(NOT CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 23)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-elseif(CMAKE_CXX_STANDARD LESS 23)
-    message(WARNING "OpFlow needs C++23 to compile. Changing the standard to C++23.")
-    set(CMAKE_CXX_STANDARD 23)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif()
-
 # make sure __cplusplus is defined when using msvc
 if(MSVC)
     string(APPEND CMAKE_CXX_FLAGS " /Zc:__cplusplus /wd4267 /wd4390 /wd4244")
@@ -107,18 +89,6 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_USE_PTHREADS_INIT 1)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
-endif()
-
-# ----------------------------------------------------------------------------
-# Set OPFLOW_MASTER_PROJECT to ON if we are building opflow
-# ----------------------------------------------------------------------------
-# Check if opflow is being used directly or via add_subdirectory, but allow overriding
-if(NOT DEFINED OPFLOW_MASTER_PROJECT)
-    if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-        set(OPFLOW_MASTER_PROJECT ON)
-    else()
-        set(OPFLOW_MASTER_PROJECT OFF)
-    endif()
 endif()
 
 option(OPFLOW_BUILD_ALL "Build all artifacts" OFF)
@@ -159,7 +129,7 @@ option(OPFLOW_NO_EXCEPTIONS "Compile with -fno-exceptions" OFF)
 option(OPFLOW_ENABLE_MODULE "Enable C++ modules support" OFF)
 
 # install options
-option(OPFLOW_INSTALL "Generate the install target" ${OPFLOW_MASTER_PROJECT})
+option(OPFLOW_INSTALL "Generate the install target" ${PROJECT_IS_TOP_LEVEL})
 # the default behavior is to use bundled HYPRE, VTK & TBB
 option(OPFLOW_WITH_VTK "Build OpFlow with VTK" OFF)
 option(OPFLOW_HYPRE_EXTERNAL "Use external HYPRE library instead of bundled" OFF)
@@ -368,34 +338,15 @@ if(OPFLOW_INSTALL)
     ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(project_config_in "${CMAKE_CURRENT_LIST_DIR}/cmake/opflowConfig.cmake.in")
     set(project_config_out "${CMAKE_CURRENT_BINARY_DIR}/opflowConfig.cmake")
-    set(config_targets_file "opflowConfigTargets.cmake")
     set(version_config_file "${CMAKE_CURRENT_BINARY_DIR}/opflowConfigVersion.cmake")
     set(export_dest_dir "${CMAKE_INSTALL_LIBDIR}/cmake/opflow")
     set(pkgconfig_install_dir "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
     set(pkg_config "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc")
 
-    # ----------------------------------------------------------------------------
-    # Include files
-    # ----------------------------------------------------------------------------
-    install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/ DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
-    install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/src/ DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/src")
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Version.hpp DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
-    install(
-        TARGETS opflow
-        EXPORT opflow
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-
     if(OPFLOW_WITH_VTK AND NOT OPFLOW_VTK_EXTERNAL)
         install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/vtk/
             DESTINATION "${CMAKE_INSTALL_PREFIX}")
     endif()
-
-    # ----------------------------------------------------------------------------
-    # Install CMake config files
-    # ----------------------------------------------------------------------------
-    install(EXPORT opflow DESTINATION ${export_dest_dir} NAMESPACE opflow:: FILE ${config_targets_file})
 
     include(CMakePackageConfigHelpers)
     configure_file("${project_config_in}" "${project_config_out}" @ONLY)

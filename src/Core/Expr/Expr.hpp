@@ -17,7 +17,9 @@
 #include "Core/Expr/ExprTrait.hpp"
 #include "Core/Macros.hpp"
 #include "Core/Meta.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <string>
+#endif
 
 namespace OpFlow {
 
@@ -49,67 +51,78 @@ namespace OpFlow {
         }
 
         template <typename Other>
-                requires ExprType<Other> || Meta::Numerical<Other> auto& operator=(Other&& other) {
+            requires ExprType<Other> || Meta::Numerical<Other>
+        auto& operator=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::Eq>(std::forward<Other>(other));
             return *this;
         }
 
         template <typename Other>
-                requires ExprType<Other> || Meta::Numerical<Other> auto& operator+=(Other&& other) {
+            requires ExprType<Other> || Meta::Numerical<Other>
+        auto& operator+=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::Add>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-                requires ExprType<Other> || Meta::Numerical<Other> auto& operator-=(Other&& other) {
+            requires ExprType<Other> || Meta::Numerical<Other>
+        auto& operator-=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::Minus>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-                requires ExprType<Other> || Meta::Numerical<Other> auto& operator*=(Other&& other) {
+            requires ExprType<Other> || Meta::Numerical<Other>
+        auto& operator*=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::Mul>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-                requires ExprType<Other> || Meta::Numerical<Other> auto& operator/=(Other&& other) {
+            requires ExprType<Other> || Meta::Numerical<Other>
+        auto& operator/=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::Div>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-        requires ExprType<Other> auto& operator%=(Other&& other) {
+            requires ExprType<Other>
+        auto& operator%=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::Mod>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-        requires ExprType<Other> auto& operator&=(Other&& other) {
+            requires ExprType<Other>
+        auto& operator&=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::And>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-        requires ExprType<Other> auto& operator|=(Other&& other) {
+            requires ExprType<Other>
+        auto& operator|=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::Or>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-        requires ExprType<Other> auto& operator^=(Other&& other) {
+            requires ExprType<Other>
+        auto& operator^=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::Xor>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-        requires ExprType<Other> auto& operator<<=(Other&& other) {
+            requires ExprType<Other>
+        auto& operator<<=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::LShift>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-        requires ExprType<Other> auto& operator>>=(Other&& other) {
+            requires ExprType<Other>
+        auto& operator>>=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::RShift>(OP_PERFECT_FOWD(other));
             return *this;
         }
@@ -162,67 +175,78 @@ namespace OpFlow {
         }
 
         template <typename Other>
-                requires ExprType<Other> || Meta::Numerical<Other> auto& operator=(Other&& other) {
+            requires ExprType<Other> || Meta::Numerical<Other>
+        auto& operator=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::Eq>(std::forward<Other>(other));
             return *this;
         }
 
         template <typename Other>
-                requires ExprType<Other> || Meta::Numerical<Other> auto& operator+=(Other&& other) {
+            requires ExprType<Other> || Meta::Numerical<Other>
+        auto& operator+=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::Add>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-                requires ExprType<Other> || Meta::Numerical<Other> auto& operator-=(Other&& other) {
+            requires ExprType<Other> || Meta::Numerical<Other>
+        auto& operator-=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::Minus>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-                requires ExprType<Other> || Meta::Numerical<Other> auto& operator*=(Other&& other) {
+            requires ExprType<Other> || Meta::Numerical<Other>
+        auto& operator*=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::Mul>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-                requires ExprType<Other> || Meta::Numerical<Other> auto& operator/=(Other&& other) {
+            requires ExprType<Other> || Meta::Numerical<Other>
+        auto& operator/=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::Div>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-        requires ExprType<Other> auto& operator%=(Other&& other) {
+            requires ExprType<Other>
+        auto& operator%=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::Mod>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-        requires ExprType<Other> auto& operator&=(Other&& other) {
+            requires ExprType<Other>
+        auto& operator&=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::And>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-        requires ExprType<Other> auto& operator|=(Other&& other) {
+            requires ExprType<Other>
+        auto& operator|=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::Or>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-        requires ExprType<Other> auto& operator^=(Other&& other) {
+            requires ExprType<Other>
+        auto& operator^=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::Xor>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-        requires ExprType<Other> auto& operator<<=(Other&& other) {
+            requires ExprType<Other>
+        auto& operator<<=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::LShift>(OP_PERFECT_FOWD(other));
             return *this;
         }
 
         template <typename Other>
-        requires ExprType<Other> auto& operator>>=(Other&& other) {
+            requires ExprType<Other>
+        auto& operator>>=(Other&& other) {
             this->derived().template assignImpl_final<BasicArithOp::RShift>(OP_PERFECT_FOWD(other));
             return *this;
         }
