@@ -13,7 +13,12 @@
 #ifndef OPFLOW_MACROS_HPP
 #define OPFLOW_MACROS_HPP
 
+#ifndef OPFLOW_INSIDE_MODULE
+#include "spdlog/spdlog.h"
 #include <cassert>
+#include <cstring>
+#include <utility>
+#endif
 #define OPFLOW_INLINE inline
 
 #if defined(__INTEL_COMPILER) || defined(__clang__)// Intel / Clang compiler
@@ -37,6 +42,12 @@
 #define OPFLOW_CPP20
 #endif
 
+#ifdef OPFLOW_USE_MODULE
+#define OPFLOW_MODULE_EXPORT export
+#else
+#define OPFLOW_MODULE_EXPORT
+#endif// OPFLOW_USE_MODULE
+
 // Field Macros
 #include "Core/Field/FieldMacros.hpp"
 
@@ -45,24 +56,22 @@
     "High order schemes on boundary is not supported in OpFlow."                                             \
     " Please consider use composed operators with low order decades."
 
-#include <cstring>
-
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
-#include "spdlog/spdlog.h"
-
 #ifdef OPFLOW_WITH_MPI
+#ifndef OPFLOW_INSIDE_MODULE
 #include <mpi.h>
+#endif
 namespace OpFlow {
     inline static int getWorkerId(MPI_Comm comm);
 }
 #define SPD_AUGMENTED_LOG(X, ...)                                                                            \
-    spdlog::X(fmt::format("[{}:{}@{}][Rank{}] ", __FILENAME__, __FUNCTION__, __LINE__,                       \
+    spdlog::X(std::format("[{}:{}@{}][Rank{}] ", __FILENAME__, __FUNCTION__, __LINE__,                       \
                           OpFlow::getWorkerId(MPI_COMM_WORLD))                                               \
-              + fmt::format(__VA_ARGS__))
+              + std::format(__VA_ARGS__))
 #else
 #define SPD_AUGMENTED_LOG(X, ...)                                                                            \
-    spdlog::X(fmt::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__) + fmt::format(__VA_ARGS__))
+    spdlog::X(std::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__) + std::format(__VA_ARGS__))
 #endif
 
 #ifndef OP_DEBUGLEVEL
@@ -106,11 +115,11 @@ namespace OpFlow {
 
 #define OP_STACK_PUSH(...)                                                                                   \
     do {                                                                                                     \
-        OpFlow::stackTracer.push(fmt::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__)            \
-                                 + fmt::format(__VA_ARGS__));                                                \
+        OpFlow::stackTracer.push(std::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__)            \
+                                 + std::format(__VA_ARGS__));                                                \
     } while (0)
 #define OP_STACK_APPEND(...)                                                                                 \
-    do { OpFlow::stackTracer.append(fmt::format(__VA_ARGS__)); } while (0)
+    do { OpFlow::stackTracer.append(std::format(__VA_ARGS__)); } while (0)
 #define OP_STACK_POP                                                                                         \
     do { OpFlow::stackTracer.pop(); } while (0)
 #define OP_DUMPSTACK                                                                                         \
@@ -266,7 +275,6 @@ namespace OpFlow {
     struct X##Trait;                                                                                         \
     DEFINE_TRAITS_CVR(X)
 
-#include <utility>
 #define OP_PERFECT_FOWD(X) std::forward<decltype(X)>(X)
 
 #endif//OPFLOW_MACROS_HPP

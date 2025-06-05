@@ -16,9 +16,11 @@
 #include "Core/Macros.hpp"
 #include "Core/Meta.hpp"
 #include "Utils/Serializer/STDContainers.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <array>
-#include <fmt/format.h>
+#include <format>
 #include <vector>
+#endif
 
 namespace OpFlow::DS {
 
@@ -96,7 +98,7 @@ namespace OpFlow::DS {
         std::array<T, d> lo, hi;
 
         auto toString() const {
-            return fmt::format("[{} -> {}]", Point<T, d>(lo).toString(), Point<T, d>(hi).toString());
+            return std::format("[{} -> {}]", Point<T, d>(lo).toString(), Point<T, d>(hi).toString());
         }
 
         auto operator==(const Box &other) const { return lo == other.lo && hi == other.hi; }
@@ -109,7 +111,8 @@ namespace OpFlow::DS {
     }
 
     template <typename T>
-    requires Meta::BracketIndexable<T> auto boxMerge(const T &boxes) {
+        requires Meta::BracketIndexable<T>
+    auto boxMerge(const T &boxes) {
         OP_ASSERT(boxes.size() > 0);
         auto ret = boxes[0];
         constexpr static auto dim = decltype(ret)::dim;

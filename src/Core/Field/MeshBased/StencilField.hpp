@@ -49,7 +49,7 @@ namespace OpFlow {
         }
         StencilField(StencilField&&) noexcept = default;
         explicit StencilField(const T& base, int color = 0) : base(&base), color(color) {
-            this->name = fmt::format("StencilField({})", base.name);
+            this->name = std::format("StencilField({})", base.name);
             if constexpr (StructuredFieldExprType<T>) this->loc = base.loc;
             this->mesh = base.mesh.getView();
             this->localRange = base.localRange;
@@ -124,16 +124,15 @@ namespace OpFlow {
             OP_ASSERT_MSG(base, "base ptr of stencil field is nullptr");
             // inner case, return a stencil pad
             if (DS::inRange(this->assignableRange, index)) [[likely]] {
-                    auto ret = typename internal::ExprTrait<StencilField>::elem_type {0};
-                    // note: here solution is pinned at base->assignableRange.start
-                    // rather than this->assignableRange.start; This is because
-                    // for periodic case the assignableRange of this will be changed
-                    // to logicalRange for HYPRE solver to get exact offset.
-                    if (!(pinned && index == index_type(base->assignableRange.start)))
-                        [[likely]] ret.pad[colored_index_type {index, color}] = 1.0;
-                    return ret;
-                }
-            else if (!DS::inRange(this->logicalRange, index)) {// corner case, error & abort
+                auto ret = typename internal::ExprTrait<StencilField>::elem_type {0};
+                // note: here solution is pinned at base->assignableRange.start
+                // rather than this->assignableRange.start; This is because
+                // for periodic case the assignableRange of this will be changed
+                // to logicalRange for HYPRE solver to get exact offset.
+                if (!(pinned && index == index_type(base->assignableRange.start))) [[likely]]
+                    ret.pad[colored_index_type {index, color}] = 1.0;
+                return ret;
+            } else if (!DS::inRange(this->logicalRange, index)) {// corner case, error & abort
                 OP_ERROR("Index {} out of range {}", index, this->logicalRange.toString());
                 OP_ABORT;
             } else {// needs boundary condition info to continue
@@ -351,7 +350,8 @@ namespace OpFlow {
         void prepareImpl_final() const {}
 
         template <typename Other>
-        requires(!std::same_as<Other, StencilField>) bool containsImpl_final(const Other& o) const {
+            requires(!std::same_as<Other, StencilField>)
+        bool containsImpl_final(const Other& o) const {
             return false;
         }
         bool containsImpl_final(const StencilField& o) const { return this == &o; }
@@ -387,7 +387,7 @@ namespace OpFlow {
             : CartAMRFieldExpr<StencilField>(std::move(other)), data(std::move(other.data)),
               block_mark(std::move(other.block_mark)), offset(std::move(other.offset)) {}
         explicit StencilField(const T& base, int color) : color(color) {
-            this->name = fmt::format("StencilField({})", base.name);
+            this->name = std::format("StencilField({})", base.name);
             this->loc = base.loc;
             this->mesh = base.mesh;
             this->localRanges = base.localRanges;
@@ -535,7 +535,8 @@ namespace OpFlow {
         const auto& blocked(const index_type& i) const { return block_mark[i.l][i.p][i - offset[i.l][i.p]]; }
 
         template <typename Other>
-        requires(!std::same_as<Other, StencilField>) bool containsImpl_final(const Other& o) const {
+            requires(!std::same_as<Other, StencilField>)
+        bool containsImpl_final(const Other& o) const {
             return false;
         }
         bool containsImpl_final(const StencilField& o) const { return this == &o; }

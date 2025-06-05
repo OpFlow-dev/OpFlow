@@ -13,12 +13,14 @@
 #ifndef OPFLOW_META_HPP
 #define OPFLOW_META_HPP
 
+#ifndef OPFLOW_INSIDE_MODULE
 #include <array>
 #include <concepts>
 #include <functional>
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#endif
 
 namespace OpFlow::Meta {
 
@@ -99,10 +101,8 @@ namespace OpFlow::Meta {
 
     template <typename T>
     concept StdRatio = requires {
-        { T::num }
-        ->std::convertible_to<int>;
-        { T::den }
-        ->std::convertible_to<int>;
+        { T::num } -> std::convertible_to<int>;
+        { T::den } -> std::convertible_to<int>;
         typename T::type;
     };
 
@@ -112,9 +112,7 @@ namespace OpFlow::Meta {
     };
 
     template <typename T>
-    concept BracketIndexable = requires(T t) {
-        t[0];
-    };
+    concept BracketIndexable = requires(T t) { t[0]; };
 
     template <bool b>
     struct bool_type : std::false_type {};
@@ -147,16 +145,16 @@ namespace OpFlow::Meta {
     struct make_integer_seq_impl;
 
     template <typename T, T start, T end, T step>
-            requires(step > 0 && start < end)
-            || (step<0 && start> end) struct make_integer_seq_impl<T, start, end, step> {
+        requires(step > 0 && start < end) || (step<0 && start> end)
+    struct make_integer_seq_impl<T, start, end, step> {
         using type = typename integer_seq_cat<
                 T, std::integer_sequence<T, start>,
                 typename make_integer_seq_impl<T, start + step, end, step>::type>::type;
     };
 
     template <typename T, T start, T end, T step>
-            requires(step > 0 && start >= end)
-            || (step < 0 && start <= end) struct make_integer_seq_impl<T, start, end, step> {
+        requires(step > 0 && start >= end) || (step < 0 && start <= end)
+    struct make_integer_seq_impl<T, start, end, step> {
         using type = std::integer_sequence<T>;
     };
 

@@ -19,7 +19,9 @@
 #include "Core/Operator/BinOpDefMacros.hpp.in"
 #include "Core/Operator/Operator.hpp"
 
+#ifndef OPFLOW_INSIDE_MODULE
 #include <cmath>
+#endif
 
 namespace OpFlow {
     DEFINE_BINOP(GreaterThan, >)

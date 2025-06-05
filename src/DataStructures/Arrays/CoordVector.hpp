@@ -15,7 +15,9 @@
 
 #include "Core/Meta.hpp"
 #include "OffsetVector.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <cmath>
+#endif
 
 namespace OpFlow::DS {
     template <Meta::Numerical T>

@@ -102,7 +102,7 @@ namespace OpFlow {
             expr.initPropsFrom(expr.arg1);
 
             // name
-            expr.name = fmt::format("d1<D1WENO53Downwind<{}>>({})", d, expr.arg1.name);
+            expr.name = std::format("d1<D1WENO53Downwind<{}>>({})", d, expr.arg1.name);
 
             // ranges
             expr.accessibleRange.start[d] += 3;
@@ -117,7 +117,7 @@ namespace OpFlow {
             expr.initPropsFrom(expr.arg1);
 
             // name
-            expr.name = fmt::format("d1<D1WENO53Downwind<{}>>({})", d, expr.arg1.name);
+            expr.name = std::format("d1<D1WENO53Downwind<{}>>({})", d, expr.arg1.name);
             // ranges
             auto levels = expr.getLevels();
             for (auto l = 0; l < levels; ++l) {

@@ -49,7 +49,7 @@ namespace OpFlow {
         static void prepare(const Expression<D1Linear, T>& expr) {
             if constexpr (dir == IntpDirection::Cen2Cor) {
                 expr.initPropsFrom(expr.arg1);
-                expr.name = fmt::format("D1Intp<D1Linear, {}, Cen2Cor>({})", d, expr.arg1.name);
+                expr.name = std::format("D1Intp<D1Linear, {}, Cen2Cor>({})", d, expr.arg1.name);
                 expr.loc = expr.arg1.loc;
                 expr.loc[d] = LocOnMesh::Corner;
                 expr.mesh = expr.arg1.mesh.getView();
@@ -59,7 +59,7 @@ namespace OpFlow {
                 expr.assignableRange.setEmpty();
             } else {
                 expr.initPropsFrom(expr.arg1);
-                expr.name = fmt::format("D1Intp<D1Linear, {}, Cor2Cen>({})", d, expr.arg1.name);
+                expr.name = std::format("D1Intp<D1Linear, {}, Cor2Cen>({})", d, expr.arg1.name);
                 expr.loc = expr.arg1.loc;
                 expr.loc[d] = LocOnMesh::Center;
                 expr.mesh = expr.arg1.mesh.getView();

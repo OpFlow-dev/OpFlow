@@ -44,7 +44,7 @@ namespace OpFlow {
         static void prepare(const Expression<UniOpAdaptor, E>& expr) {
             expr.initPropsFrom(expr.arg1);
             // name
-            expr.name = fmt::format("{}({})", Functor.getName().to_string(), expr.arg1.name);
+            expr.name = std::format("{}({})", Functor.getName().to_string(), expr.arg1.name);
         }
     };
 
@@ -86,7 +86,7 @@ namespace OpFlow {
         static void prepare(const Expression<BinOpAdaptor, E1, E2>& expr) {
             expr.initPropsFrom(expr.arg1);
             // name
-            expr.name = fmt::format("{}({}, {})", Functor.getName().to_string(), expr.arg1.name,
+            expr.name = std::format("{}({}, {})", Functor.getName().to_string(), expr.arg1.name,
                                     expr.arg2.name);
         }
     };

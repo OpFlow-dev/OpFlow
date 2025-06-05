@@ -16,10 +16,12 @@
 #include "Core/Field/MeshBased/MeshBasedFieldExpr.hpp"
 #include "DataStructures/Pair.hpp"
 #include "StructuredFieldExprTrait.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <array>
 #include <memory>
 #include <utility>
 #include <vector>
+#endif
 
 namespace OpFlow {
     namespace internal {

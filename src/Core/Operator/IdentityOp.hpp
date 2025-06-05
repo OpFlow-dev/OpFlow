@@ -25,7 +25,8 @@ namespace OpFlow {
         constexpr static auto bc_width = 0;
 
         template <typename E>
-                requires FieldExprType<E> || ScalarExprType<E> OPFLOW_STRONG_INLINE static auto eval(const E& e, auto&& i) {
+            requires FieldExprType<E> || ScalarExprType<E>
+        OPFLOW_STRONG_INLINE static auto eval(const E& e, auto&& i) {
             return e.evalAt(OP_PERFECT_FOWD(i));
         }
 
@@ -33,7 +34,7 @@ namespace OpFlow {
         static void prepare(const Expression<IdentityOp, E>& expr) {
             expr.initPropsFrom(expr.arg1);
             // name
-            expr.name = fmt::format("Identity({})", expr.arg1.name);
+            expr.name = std::format("Identity({})", expr.arg1.name);
         }
     };
 

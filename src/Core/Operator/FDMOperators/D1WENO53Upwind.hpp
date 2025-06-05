@@ -99,7 +99,7 @@ namespace OpFlow {
             constexpr auto dim = internal::CartesianFieldExprTrait<E>::dim;
             expr.initPropsFrom(expr.arg1);
             // name
-            expr.name = fmt::format("d1<D1WENO53Upwind<{}>>({})", d, expr.arg1.name);
+            expr.name = std::format("d1<D1WENO53Upwind<{}>>({})", d, expr.arg1.name);
             // ranges
             expr.accessibleRange.start[d] += 3;
             expr.accessibleRange.end[d] -= 3;
@@ -113,7 +113,7 @@ namespace OpFlow {
             expr.initPropsFrom(expr.arg1);
 
             // name
-            expr.name = fmt::format("d1<D1WENO53Upwind<{}>>({})", d, expr.arg1.name);
+            expr.name = std::format("d1<D1WENO53Upwind<{}>>({})", d, expr.arg1.name);
 
             // ranges
             auto levels = expr.getLevels();

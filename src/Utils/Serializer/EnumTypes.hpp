@@ -15,8 +15,10 @@
 
 #include "Core/BC/BCBase.hpp"
 #include "Core/Constants.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <ostream>
 #include <string>
+#endif
 
 namespace OpFlow {
 

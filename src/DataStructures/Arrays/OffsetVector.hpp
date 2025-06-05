@@ -13,10 +13,12 @@
 #ifndef OPFLOW_OFFSETVECTOR_HPP
 #define OPFLOW_OFFSETVECTOR_HPP
 
-#include "fmt/format.h"
+#include <format>
+#ifndef OPFLOW_INSIDE_MODULE
 #include <cmath>
 #include <string>
 #include <vector>
+#endif
 
 namespace OpFlow::DS {
     template <typename T>
@@ -55,7 +57,7 @@ namespace OpFlow::DS {
 
         auto toString() const {
             std::string ret;
-            ret += fmt::format("offset = {} data = {}", offset, val);
+            ret += std::format("offset = {} data = {}", offset, val);
             return ret;
         }
 

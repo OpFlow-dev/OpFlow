@@ -15,7 +15,9 @@
 
 #include "Core/Meta.hpp"
 #include "Utils/Allocator/AllocatorTrait.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <cstdlib>
+#endif
 
 namespace OpFlow::Utils {
     template <typename T, std::size_t align = 64>

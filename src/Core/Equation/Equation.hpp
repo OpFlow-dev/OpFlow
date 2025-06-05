@@ -19,7 +19,9 @@
 #include "Core/Expr/ScalarExpr.hpp"
 #include "Core/Field/FieldExprTrait.hpp"
 #include "DataStructures/Range/Ranges.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <tuple>
+#endif
 
 namespace OpFlow {
     template <ExprType Lhs, ExprType Rhs>

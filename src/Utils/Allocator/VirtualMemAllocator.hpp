@@ -14,7 +14,9 @@
 #define OPFLOW_VIRTUALMEMALLOCATOR_HPP
 
 #ifdef OPFLOW_HAS_MMAN_H
+#ifndef OPFLOW_INSIDE_MODULE
 #include <sys/mman.h>
+#endif
 #endif
 
 namespace OpFlow::Utils {

@@ -29,9 +29,9 @@ namespace OpFlow {
         using BCBase<F>::operator=;
         [[nodiscard]] BCType getBCType() const override { return type; }
 
-        [[nodiscard]] virtual std::unique_ptr<BCBase<F>>
-        getFunctorBC(std::function<typename BCBase<F>::elem_type(const typename BCBase<F>::index_type&)> f)
-                const = 0;
+        [[nodiscard]] virtual std::unique_ptr<BCBase<F>> getFunctorBC(
+                std::function<typename BCBase<F>::elem_type(const typename BCBase<F>::index_type&)> f) const
+                = 0;
     };
 
     template <MeshBasedFieldExprType F>
@@ -52,9 +52,9 @@ namespace OpFlow {
             std::string ret, prefix;
             for (auto i = 0; i < level; ++i) prefix += "\t";
             ret += prefix + "Type: ConstDirc\n";
-            if constexpr (Meta::is_numerical_v<decltype(_c)>) ret += prefix + fmt::format("Value: {}", _c);
+            if constexpr (Meta::is_numerical_v<decltype(_c)>) ret += prefix + std::format("Value: {}", _c);
             else
-                ret += prefix + fmt::format("Value: {}", _c.toString());
+                ret += prefix + std::format("Value: {}", _c.toString());
             return ret;
         }
 

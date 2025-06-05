@@ -23,9 +23,11 @@
 #include "DataStructures/Pair.hpp"
 #include "DataStructures/Range/Ranges.hpp"
 #include "Math/Function/Integral.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <array>
 #include <concepts>
 #include <cstdarg>
+#endif
 
 namespace OpFlow {
     enum class MeshExtMode { Undefined, Symm, Periodic, Uniform };
@@ -72,8 +74,8 @@ namespace OpFlow {
         }
 
         template <typename Other>
-        requires(internal::MeshTrait<Other>::dim == dim) auto&
-        operator=(const CartesianMeshView<Other>& view) {
+            requires(internal::MeshTrait<Other>::dim == dim)
+        auto& operator=(const CartesianMeshView<Other>& view) {
             _dims = view.getDims();
             _range = view.getRange();
             _ext_range = view.getExtRange();

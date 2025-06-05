@@ -15,12 +15,15 @@
 
 #include "Core/Field/MeshBased/SemiStructured/CartAMRField.hpp"
 #include "Utils/Writers/FieldStream.hpp"
-#include "fmt/format.h"
+#include <format>
+#ifndef OPFLOW_INSIDE_MODULE
 #include <fstream>
 #include <string>
 #include <utility>
+#endif
 
 #ifdef OPFLOW_WITH_VTK
+#ifndef OPFLOW_INSIDE_MODULE
 #include <vtkAMRBox.h>
 #include <vtkAMRUtilities.h>
 #include <vtkCell.h>
@@ -42,6 +45,7 @@
 #include <vtkXMLHierarchicalBoxDataWriter.h>
 #include <vtkXMLImageDataWriter.h>
 #include <vtkXMLMultiBlockDataWriter.h>
+#endif
 #endif
 
 namespace OpFlow::Utils {
@@ -122,7 +126,7 @@ namespace OpFlow::Utils {
             vtkAMRUtilities::BlankCells(data);
             data->Audit();
             auto writer = vtkSmartPointer<vtkXMLHierarchicalBoxDataWriter>::New();
-            auto name = fmt::format("{}_{}.vthb", path, (int) time.time * 100);
+            auto name = std::format("{}_{}.vthb", path, (int) time.time * 100);
             writer->SetFileName(name.c_str());
             writer->SetInputData(data);
             writer->Write();

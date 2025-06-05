@@ -13,12 +13,14 @@
 #ifndef OPFLOW_RANDOMSTRINGGENERATOR_HPP
 #define OPFLOW_RANDOMSTRINGGENERATOR_HPP
 
+#ifndef OPFLOW_INSIDE_MODULE
 #include <algorithm>
 #include <array>
 #include <cstring>
 #include <functional>
 #include <random>
 #include <string>
+#endif
 
 namespace OpFlow::Utils {
     // copied from https://stackoverflow.com/a/444614

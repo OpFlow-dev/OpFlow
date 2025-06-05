@@ -17,8 +17,10 @@
 #include "Core/Interfaces/Serializable.hpp"
 #include "Core/Interfaces/Stringifiable.hpp"
 #include "Core/Meta.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <algorithm>
 #include <unordered_map>
+#endif
 
 namespace OpFlow::DS {
     template <std::size_t max_size, typename K, typename V>
@@ -171,8 +173,8 @@ namespace OpFlow::DS {
             std::string _prefix;
             for (auto i = 0; i < n; ++i) _prefix += prefix;
             std::string ret = "\n" + _prefix + "pad:\n";
-            for (const auto& [k, v] : pad) { ret += _prefix + "\t" + fmt::format("({})\t {}\n", k, v); }
-            ret += _prefix + fmt::format("bias: {}", bias);
+            for (const auto& [k, v] : pad) { ret += _prefix + "\t" + std::format("({})\t {}\n", k, v); }
+            ret += _prefix + std::format("bias: {}", bias);
             return ret;
         }
 

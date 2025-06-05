@@ -16,15 +16,19 @@
 #include "Core/Environment.hpp"
 #include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
 #include "Utils/Writers/FieldStream.hpp"
-#include "fmt/format.h"
+#include <format>
+#ifndef OPFLOW_INSIDE_MODULE
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
-#ifdef OPFLOW_WITH_HDF5
-#include <hdf5.h>
-#endif
 #include <string>
 #include <utility>
+#endif
+#ifdef OPFLOW_WITH_HDF5
+#ifndef OPFLOW_INSIDE_MODULE
+#include <hdf5.h>
+#endif
+#endif
 
 namespace OpFlow::Utils {
     struct H5Stream;
@@ -70,9 +74,9 @@ namespace OpFlow::Utils {
                 // add time stamp between filename and extension
                 std::string ext = std::filesystem::path(path).extension();
                 filename.erase(filename.end() - ext.size(), filename.end());
-                if (numberingType == NumberingType::ByTime) filename += fmt::format("_{:.6f}", time.time);
+                if (numberingType == NumberingType::ByTime) filename += std::format("_{:.6f}", time.time);
                 else
-                    filename += fmt::format("_{}", time.step.value());
+                    filename += std::format("_{}", time.step.value());
                 filename += ext;
             }
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
@@ -133,7 +137,7 @@ namespace OpFlow::Utils {
             } else {
                 first_run = false;
             }
-            std::string group_name = fmt::format("/T={}", time.time);
+            std::string group_name = std::format("/T={}", time.time);
             current_group = H5Gcreate(file, group_name.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
             group_inited = true;
 #else
@@ -204,7 +208,7 @@ namespace OpFlow::Utils {
         if (write_mesh) {
             std::string mesh_name[dim];
             for (auto i = 0; i < dim; ++i)
-                mesh_name[i] = fmt::format("/T={}/{}_x{}", time.time, f.getName(), i);
+                mesh_name[i] = std::format("/T={}/{}_x{}", time.time, f.getName(), i);
             std::vector<double> x_buffer;
             for (auto i = 0; i < dim; ++i) {
                 // write each dim's mesh vector
@@ -261,7 +265,7 @@ namespace OpFlow::Utils {
             H5Tset_order(datatype, H5T_ORDER_LE);
 
             // create a new data set
-            std::string dataset_name = fmt::format("/T={}/{}", time.time, f.getName());
+            std::string dataset_name = std::format("/T={}/{}", time.time, f.getName());
             auto dataset = H5Dcreate(file, dataset_name.c_str(), datatype, dataspace, H5P_DEFAULT,
                                      H5P_DEFAULT, H5P_DEFAULT);
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
@@ -327,7 +331,7 @@ namespace OpFlow::Utils {
         H5Tset_order(datatype, H5T_ORDER_LE);
 
         // open the dataset
-        std::string dataset_name = fmt::format("/T={}/{}", time.time, f.getName());
+        std::string dataset_name = std::format("/T={}/{}", time.time, f.getName());
         auto dataset = H5Dopen(file, dataset_name.c_str(), H5P_DEFAULT);
         OP_ASSERT_MSG(dataset >= 0, "HDF5Stream: cannot open data set with name {}", dataset_name);
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)

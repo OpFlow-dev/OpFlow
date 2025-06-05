@@ -17,7 +17,9 @@
 #include "Core/Meta.hpp"
 #include "DataStructures/Index/LinearMapper/MDRangeMapper.hpp"
 #include "DataStructures/Matrix/CSRMatrix.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <vector>
+#endif
 
 namespace OpFlow {
     struct CSRMatrixGenerator {

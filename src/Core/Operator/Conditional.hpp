@@ -42,9 +42,9 @@ namespace OpFlow {
         template <FieldExprType C, FieldExprType T1, FieldExprType T2>
         static void prepare(const Expression<CondOp, C, T1, T2>& expr) {
             expr.initPropsFrom(expr.arg2);
-            expr.name = fmt::format("{} ? {} : {}", expr.arg1.name, expr.arg2.name, expr.arg3.name);
-            if constexpr (MeshBasedFieldExprType<
-                                  T1> && MeshBasedFieldExprType<T2> && MeshBasedFieldExprType<C>) {
+            expr.name = std::format("{} ? {} : {}", expr.arg1.name, expr.arg2.name, expr.arg3.name);
+            if constexpr (MeshBasedFieldExprType<T1> && MeshBasedFieldExprType<T2>
+                          && MeshBasedFieldExprType<C>) {
                 OP_ASSERT(expr.arg1.mesh == expr.arg2.mesh);
                 OP_ASSERT(expr.arg1.mesh == expr.arg3.mesh);
                 if constexpr (StructuredFieldExprType<T1> || SemiStructuredFieldExprType<T1>) {
@@ -83,7 +83,7 @@ namespace OpFlow {
             if constexpr (MeshBasedFieldExprType<T1> && MeshBasedFieldExprType<T2>)
                 OP_ASSERT(expr.arg2.mesh == expr.arg3.mesh);
             expr.initPropsFrom(expr.arg2);
-            expr.name = fmt::format("{} ? {} : {}", expr.arg1.name, expr.arg2.name, expr.arg3.name);
+            expr.name = std::format("{} ? {} : {}", expr.arg1.name, expr.arg2.name, expr.arg3.name);
             if constexpr (StructuredFieldExprType<T1>) {
                 expr.accessibleRange = DS::commonRange(expr.arg2.accessibleRange, expr.arg3.accessibleRange);
                 expr.assignableRange.setEmpty();
@@ -109,9 +109,9 @@ namespace OpFlow {
                 if (expr.arg1.get()) {
                     expr.name = expr.arg2.name;
                 } else
-                    expr.name = fmt::format("{}", expr.arg3.get());
+                    expr.name = std::format("{}", expr.arg3.get());
             } else
-                expr.name = fmt::format("{} ? {} : {}", expr.arg1.name, expr.arg2.name, expr.arg3.get());
+                expr.name = std::format("{} ? {} : {}", expr.arg1.name, expr.arg2.name, expr.arg3.get());
         }
 
         template <typename C, Meta::Numerical T1, FieldExprType T2>
@@ -119,11 +119,11 @@ namespace OpFlow {
             expr.initPropsFrom(expr.arg3);
             if constexpr (ScalarExprType<C>) {
                 if (expr.arg1.get()) {
-                    expr.name = fmt::format("{}", expr.arg2.get());
+                    expr.name = std::format("{}", expr.arg2.get());
                 } else
                     expr.name = expr.arg3.name;
             } else
-                expr.name = fmt::format("{} ? {} : {}", expr.arg1.name, expr.arg2.get(), expr.arg3.name);
+                expr.name = std::format("{} ? {} : {}", expr.arg1.name, expr.arg2.get(), expr.arg3.name);
         }
     };
 

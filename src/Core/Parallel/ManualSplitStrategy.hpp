@@ -16,11 +16,15 @@
 #include "Core/Field/FieldExprTrait.hpp"
 #include "Core/Parallel/AbstractSplitStrategy.hpp"
 #ifdef OPFLOW_WITH_MPI
+#ifndef OPFLOW_INSIDE_MODULE
 #include <mpi.h>
 #endif
+#endif
+#ifndef OPFLOW_INSIDE_MODULE
 #include <array>
 #include <string>
 #include <vector>
+#endif
 
 namespace OpFlow {
     /// \brief Manually specified split ranges strategy

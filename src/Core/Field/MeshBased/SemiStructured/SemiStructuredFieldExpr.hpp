@@ -16,7 +16,9 @@
 #include "Core/Field/MeshBased/MeshBasedFieldExpr.hpp"
 #include "DataStructures/Pair.hpp"
 #include "SemiStructuredFieldExprTrait.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <array>
+#endif
 
 namespace OpFlow {
 

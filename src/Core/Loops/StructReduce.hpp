@@ -18,7 +18,9 @@
 #include "Core/Macros.hpp"
 #include "Core/Meta.hpp"
 #include "RangeFor.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <omp.h>
+#endif
 
 namespace OpFlow {
     template <FieldExprType E, typename Func, typename ReOp>

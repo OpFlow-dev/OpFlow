@@ -15,12 +15,14 @@
 
 #include "Core/Mesh/Structured/CartesianMeshBase.hpp"
 #include "Core/Mesh/Structured/CartesianMeshTrait.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <memory>
+#endif
 
 namespace OpFlow {
     template <typename T>
-    requires CartesianMeshType<T>&& Meta::isTemplateInstance<CartesianMesh, T>::value struct CartesianMeshView
-        : CartesianMeshBase<CartesianMeshView<T>> {
+        requires CartesianMeshType<T> && Meta::isTemplateInstance<CartesianMesh, T>::value
+    struct CartesianMeshView : CartesianMeshBase<CartesianMeshView<T>> {
     private:
         std::add_pointer_t<typename std::add_const<T>::type> base = nullptr;
         static constexpr auto dim = internal::MeshTrait<T>::dim;

@@ -80,7 +80,7 @@ namespace OpFlow {
         auto mat = CSRMatrixGenerator::generate(st_holder, mapper, pin);
         if (params[0].dumpPath && !params[0].dumpPath.value().empty()) {
 #ifdef OPFLOW_WITH_MPI
-            std::ofstream of(params[0].dumpPath.value() + "A.mat" + fmt::format(".rank{}", getWorkerId()));
+            std::ofstream of(params[0].dumpPath.value() + "A.mat" + std::format(".rank{}", getWorkerId()));
 #else
             std::ofstream of(params[0].dumpPath.value() + "A.mat");
 #endif

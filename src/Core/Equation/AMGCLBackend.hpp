@@ -14,14 +14,18 @@
 #define OPFLOW_AMGCLBACKEND_HPP
 
 #include "DataStructures/Matrix/CSRMatrix.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <amgcl/adapter/zero_copy.hpp>
+#include <optional>
+#include <tuple>
+#endif
 #ifdef OPFLOW_WITH_MPI
+#ifndef OPFLOW_INSIDE_MODULE
 #include <amgcl/mpi/distributed_matrix.hpp>
 #include <amgcl/mpi/make_solver.hpp>
 #endif
+#endif
 #include "EqnSolveHandler.hpp"
-#include <optional>
-#include <tuple>
 
 namespace OpFlow {
     template <typename Solver, typename D>

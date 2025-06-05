@@ -15,10 +15,12 @@
 
 #include "Core/Field/MeshBased/Structured/CartesianField.hpp"
 #include "Utils/Writers/FieldStream.hpp"
-#include "fmt/format.h"
+#include <format>
+#ifndef OPFLOW_INSIDE_MODULE
 #include <filesystem>
 #include <fstream>
 #include <string>
+#endif
 
 namespace OpFlow::Utils {
     struct TecplotASCIIStream;
@@ -68,37 +70,37 @@ namespace OpFlow::Utils {
                 std::string filename = path;
                 std::string ext = std::filesystem::path(path).extension();
                 filename.erase(filename.end() - ext.size(), filename.end());
-                if (numberingType == NumberingType::ByTime) filename += fmt::format("_{:.6f}", time.time);
+                if (numberingType == NumberingType::ByTime) filename += std::format("_{:.6f}", time.time);
                 else
-                    filename += fmt::format("_{}", time.step.value());
+                    filename += std::format("_{}", time.step.value());
                 filename += ext;
                 reOpen(filename);
             }
             if (of.tellp() == 0) {
-                of << fmt::format("TITLE = \"Solution of {} \"\n", f.name);
-                if constexpr (dim == 1) of << fmt::format("VARIABLES = {}, \"{}\"\n", R"("X")", f.name);
+                of << std::format("TITLE = \"Solution of {} \"\n", f.name);
+                if constexpr (dim == 1) of << std::format("VARIABLES = {}, \"{}\"\n", R"("X")", f.name);
                 else if constexpr (dim == 2)
-                    of << fmt::format("VARIABLES = {}, \"{}\"\n", R"("X", "Y")", f.name);
+                    of << std::format("VARIABLES = {}, \"{}\"\n", R"("X", "Y")", f.name);
                 else if constexpr (dim == 3)
-                    of << fmt::format("VARIABLES = {}, \"{}\"\n", R"("X", "Y", "Z")", f.name);
+                    of << std::format("VARIABLES = {}, \"{}\"\n", R"("X", "Y", "Z")", f.name);
             }
             of << "ZONE\n";
             of << "ZONETYPE = ORDERED DATAPACKING = BLOCK\n";
             if constexpr (dim == 1)
-                of << fmt::format("I = {}\n", f.localRange.end[0] - f.localRange.start[0]);
+                of << std::format("I = {}\n", f.localRange.end[0] - f.localRange.start[0]);
             else if constexpr (dim == 2)
-                of << fmt::format("I = {} J = {}\n", f.localRange.end[0] - f.localRange.start[0],
+                of << std::format("I = {} J = {}\n", f.localRange.end[0] - f.localRange.start[0],
                                   f.localRange.end[1] - f.localRange.start[1]);
             else if constexpr (dim == 3)
-                of << fmt::format("I = {} J = {} K = {}\n", f.localRange.end[0] - f.localRange.start[0],
+                of << std::format("I = {} J = {} K = {}\n", f.localRange.end[0] - f.localRange.start[0],
                                   f.localRange.end[1] - f.localRange.start[1],
                                   f.localRange.end[2] - f.localRange.start[2]);
             of << std::scientific << std::setprecision(10);
-            of << fmt::format("SOLUTIONTIME = {}\n", time.time);
+            of << std::format("SOLUTIONTIME = {}\n", time.time);
             if (!writeMesh) {
                 if constexpr (dim == 1) of << "VARSHARELIST=([1]=1)\n";
                 else
-                    of << fmt::format("VARSHARELIST=([1-{}]=1)\n", dim);
+                    of << std::format("VARSHARELIST=([1-{}]=1)\n", dim);
             } else {
                 auto m = f.getMesh();
                 const auto& loc = f.loc;
@@ -131,7 +133,7 @@ namespace OpFlow::Utils {
                 auto getName = [&](auto&& f) {
                     static int count = 0;
                     std::string name = f.getName();
-                    if (name.empty()) name = fmt::format("unnamed{}", count++);
+                    if (name.empty()) name = std::format("unnamed{}", count++);
                     auto ptr = std::remove(name.begin(), name.end(), ' ');
                     name.erase(ptr, name.end());
                     std::replace(name.begin(), name.end(), ',', '_');
@@ -142,25 +144,25 @@ namespace OpFlow::Utils {
                     std::string filename = path;
                     std::string ext = std::filesystem::path(path).extension();
                     filename.erase(filename.end() - ext.size(), filename.end());
-                    if (numberingType == NumberingType::ByTime) filename += fmt::format("_{:.6f}", time.time);
+                    if (numberingType == NumberingType::ByTime) filename += std::format("_{:.6f}", time.time);
                     else
-                        filename += fmt::format("_{}", time.step.value());
+                        filename += std::format("_{}", time.step.value());
                     filename += ext;
                     reOpen(filename);
                 }
                 if (of.tellp() == 0) {
-                    of << fmt::format("TITLE = \"Solution of AllInOne\"\n");
+                    of << std::format("TITLE = \"Solution of AllInOne\"\n");
                     if constexpr (dim == 1)
-                        of << (fmt::format("VARIABLES = {}", R"("X")") + ...
-                               + fmt::format(",\"{}\"", getName(fs)))
+                        of << (std::format("VARIABLES = {}", R"("X")") + ...
+                               + std::format(",\"{}\"", getName(fs)))
                            << "\n";
                     else if constexpr (dim == 2)
-                        of << (fmt::format("VARIABLES = {}", R"("X", "Y")") + ...
-                               + fmt::format(",\"{}\"", getName(fs)))
+                        of << (std::format("VARIABLES = {}", R"("X", "Y")") + ...
+                               + std::format(",\"{}\"", getName(fs)))
                            << "\n";
                     else if constexpr (dim == 3)
-                        of << (fmt::format("VARIABLES = {}", R"("X", "Y", "Z")") + ...
-                               + fmt::format(",\"{}\"", getName(fs)))
+                        of << (std::format("VARIABLES = {}", R"("X", "Y", "Z")") + ...
+                               + std::format(",\"{}\"", getName(fs)))
                            << "\n";
                 }
                 of << "ZONE\n";
@@ -168,19 +170,19 @@ namespace OpFlow::Utils {
                 auto range = dumpLogicalRange ? maxCommonRange(std::vector {fs.logicalRange...})
                                               : maxCommonRange(std::vector {fs.localRange...});
 
-                if constexpr (dim == 1) of << fmt::format("I = {}\n", range.end[0] - range.start[0]);
+                if constexpr (dim == 1) of << std::format("I = {}\n", range.end[0] - range.start[0]);
                 else if constexpr (dim == 2)
-                    of << fmt::format("I = {} J = {}\n", range.end[0] - range.start[0],
+                    of << std::format("I = {} J = {}\n", range.end[0] - range.start[0],
                                       range.end[1] - range.start[1]);
                 else if constexpr (dim == 3)
-                    of << fmt::format("I = {} J = {} K = {}\n", range.end[0] - range.start[0],
+                    of << std::format("I = {} J = {} K = {}\n", range.end[0] - range.start[0],
                                       range.end[1] - range.start[1], range.end[2] - range.start[2]);
                 of << std::scientific << std::setprecision(10);
-                of << fmt::format("SOLUTIONTIME = {}\n", time.time);
+                of << std::format("SOLUTIONTIME = {}\n", time.time);
                 if (!writeMesh) {
                     if constexpr (dim == 1) of << "VARSHARELIST=([1]=1)\n";
                     else
-                        of << fmt::format("VARSHARELIST=([1-{}]=1)\n", dim);
+                        of << std::format("VARSHARELIST=([1-{}]=1)\n", dim);
                 } else {
                     auto m = std::get<0>(fs_tuple)->getMesh();
                     const auto& loc = std::get<0>(fs_tuple)->loc;

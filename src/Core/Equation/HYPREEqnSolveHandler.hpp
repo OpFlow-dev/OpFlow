@@ -27,6 +27,7 @@
 #include "Core/Solvers/Struct/StructSolver.hpp"
 #include "DataStructures/Index/LevelMDIndex.hpp"
 #include "DataStructures/Index/MDIndex.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <memory>
 #include <numeric>
 #include <vector>
@@ -34,6 +35,7 @@
 #include <HYPRE.h>
 #include <HYPRE_sstruct_ls.h>
 #include <HYPRE_sstruct_mv.h>
+#endif
 
 namespace OpFlow {
     template <typename F, typename T, typename S>
@@ -293,7 +295,7 @@ namespace OpFlow {
                             if (k.l != l) {
                                 HYPRE_SStructGraphAddEntries(graph, l, i.c_arr(), c_var, k.l, k.c_arr(),
                                                              c_var);
-                                fmt::print("GraphAddEntry: {} -> {}\n", i, k);
+                                std::print("GraphAddEntry: {} -> {}\n", i, k);
                             }
                         }
                     });
@@ -331,8 +333,8 @@ namespace OpFlow {
                         for (auto& [k, v] : offsetStencil.pad) {
                             if (k.l == l) { k -= i; }
                         }
-                        fmt::print("index = {}\n", i);
-                        fmt::print("current stencil:{}\noffset stencil:{}\n", currentStencil, offsetStencil);
+                        std::print("index = {}\n", i);
+                        std::print("current stencil:{}\noffset stencil:{}\n", currentStencil, offsetStencil);
                         auto extendedStencil = offsetStencil;
                         for (auto& [k, v] : commStencil.pad) {
                             auto _target_k = k;
@@ -344,7 +346,7 @@ namespace OpFlow {
                                 extendedStencil.pad[_target_k] = 0;
                             }
                         }
-                        fmt::print("extended stencil:{}\n", extendedStencil);
+                        std::print("extended stencil:{}\n", extendedStencil);
                         std::vector<Real> vals;
                         std::vector<int> entries(commStencil.pad.size());
                         std::iota(entries.begin(), entries.end(), 0);
@@ -364,7 +366,7 @@ namespace OpFlow {
                                 int entry[] = {count++};
                                 Real val[] = {v};
                                 HYPRE_SStructMatrixSetValues(A, l, i.c_arr(), 0, 1, entry, val);
-                                fmt::print("A[{}, {}] = {}\n", i, k, v);
+                                std::print("A[{}, {}] = {}\n", i, k, v);
                             }
                         }
                         auto bias = -extendedStencil.bias;

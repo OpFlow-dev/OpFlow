@@ -14,9 +14,11 @@
 #define OPFLOW_BLOCKEDMDRANGEMAPPER_HPP
 
 #include "DataStructures/Range/Ranges.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <algorithm>
 #include <array>
 #include <vector>
+#endif
 
 namespace OpFlow::DS {
     /**

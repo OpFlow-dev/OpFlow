@@ -19,7 +19,9 @@
 #include "DataStructures/Arrays/Tensor/PlainTensor.hpp"
 #include "DataStructures/Index/MDIndex.hpp"
 #include "DataStructures/Index/RangedIndex.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <utility>
+#endif
 
 namespace OpFlow::DS {
     // General array

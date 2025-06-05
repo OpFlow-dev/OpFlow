@@ -13,8 +13,10 @@
 #ifndef OPFLOW_CONSTEXPRSTRING_HPP
 #define OPFLOW_CONSTEXPRSTRING_HPP
 
+#ifndef OPFLOW_INSIDE_MODULE
 #include <array>
 #include <string>
+#endif
 
 namespace OpFlow::Utils {
     template <std::size_t N>
@@ -32,7 +34,8 @@ namespace OpFlow::Utils {
         constexpr bool operator==(const CXprString& other) const { return _str == other._str; }
 
         template <std::size_t NN>
-        requires(NN != N) constexpr bool operator==(const CXprString<NN>& other) const {
+            requires(NN != N)
+        constexpr bool operator==(const CXprString<NN>& other) const {
             return false;
         }
 

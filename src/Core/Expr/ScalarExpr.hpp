@@ -16,7 +16,9 @@
 #include "Core/Expr/Expr.hpp"
 #include "Core/Expr/ScalarExprTrait.hpp"
 #include "Core/Meta.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <type_traits>
+#endif
 
 namespace OpFlow {
     template <typename T>
@@ -50,7 +52,8 @@ namespace OpFlow {
         static constexpr bool isConcrete() { return true; }
         void prepareImpl_final() const {}
         template <typename O>
-        requires(!std::same_as<O, ScalarExpr>) bool containsImpl_final(const O&) const {
+            requires(!std::same_as<O, ScalarExpr>)
+        bool containsImpl_final(const O&) const {
             return false;
         }
 

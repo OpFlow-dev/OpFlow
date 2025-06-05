@@ -17,12 +17,14 @@
 #include "Core/Constants.hpp"
 #include "Core/Macros.hpp"
 #include "StreamTrait.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <fstream>
 #include <functional>
 #include <iomanip>
 #include <optional>
 #include <string>
 #include <utility>
+#endif
 
 namespace OpFlow::Utils {
 

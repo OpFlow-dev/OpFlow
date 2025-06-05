@@ -14,7 +14,9 @@
 #define OPFLOW_3DGEOMETRY_HPP
 
 #include "BasicElements.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <vector>
+#endif
 
 namespace OpFlow::DS {
 

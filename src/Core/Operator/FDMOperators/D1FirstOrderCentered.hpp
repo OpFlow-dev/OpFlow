@@ -38,7 +38,7 @@ namespace OpFlow {
         template <CartesianFieldExprType E>
         static inline void prepare(const Expression<D1FirstOrderCentered, E>& expr) {
             // name
-            expr.name = fmt::format("d1<D1FirstOrderCentered<{}>>(", d) + expr.arg1.name + ")";
+            expr.name = std::format("d1<D1FirstOrderCentered<{}>>(", d) + expr.arg1.name + ")";
 
             // mesh
             expr.mesh = expr.arg1.mesh.getView();

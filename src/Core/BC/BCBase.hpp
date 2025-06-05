@@ -16,7 +16,9 @@
 #include "Core/Field/FieldExprTrait.hpp"
 #include "Core/Field/MeshBased/Structured/StructuredFieldExprTrait.hpp"
 #include "Core/Mesh/MeshBase.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <memory>
+#endif
 
 namespace OpFlow {
     enum class BCType { Undefined, Dirc, Neum, Periodic, Internal, Symm, ASymm };

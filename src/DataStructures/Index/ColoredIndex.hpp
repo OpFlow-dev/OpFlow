@@ -16,8 +16,10 @@
 #include "Core/Interfaces/Stringifiable.hpp"
 #include "DataStructures/Index/LevelMDIndex.hpp"
 #include "DataStructures/Index/MDIndex.hpp"
-#include "fmt/format.h"
+#include <format>
+#ifndef OPFLOW_INSIDE_MODULE
 #include <string>
+#endif
 
 namespace OpFlow::DS {
     template <typename T>
@@ -104,9 +106,7 @@ namespace OpFlow::DS {
         constexpr auto copy() const { return *this; }
 
         template <std::size_t dim = 0>
-        requires requires {
-            dim < d;
-        }
+            requires requires { dim < d; }
         constexpr auto next(int steps = 1) const {
             auto c = copy();
             c.idx[dim] += steps;
@@ -114,9 +114,7 @@ namespace OpFlow::DS {
         }
 
         template <std::size_t dim = 0>
-        requires requires {
-            dim < d;
-        }
+            requires requires { dim < d; }
         constexpr auto prev(int steps = 1) const {
             auto c = copy();
             c.idx[dim] -= steps;
@@ -133,9 +131,9 @@ namespace OpFlow::DS {
             std::string ret;
             for (auto i = 0; i < n; ++i) ret += prefix;
             ret += "{";
-            if constexpr (d > 0) ret += fmt::format("{}", idx[0]);
-            for (auto i = 1; i < d; ++i) ret += fmt::format(", {}", idx[i]);
-            ret += fmt::format(", c = {}", color);
+            if constexpr (d > 0) ret += std::format("{}", idx[0]);
+            for (auto i = 1; i < d; ++i) ret += std::format(", {}", idx[i]);
+            ret += std::format(", c = {}", color);
             ret += "}";
             return ret;
         }
@@ -233,9 +231,9 @@ namespace OpFlow::DS {
         [[nodiscard]] std::string toString(int n, const std::string& prefix) const override {
             std::string ret;
             for (auto i = 0; i < n; ++i) ret += prefix;
-            ret += "{" + fmt::format("{}, {}", l, p);
-            if constexpr (d > 0) ret += fmt::format(", {}", this->idx[0]);
-            for (auto i = 1; i < d; ++i) ret += fmt::format(", {}", this->idx[i]);
+            ret += "{" + std::format("{}, {}", l, p);
+            if constexpr (d > 0) ret += std::format(", {}", this->idx[0]);
+            for (auto i = 1; i < d; ++i) ret += std::format(", {}", this->idx[i]);
             ret += "}";
             return ret;
         }
@@ -275,8 +273,8 @@ namespace std {
 
     template <std::size_t d>
     struct hash<OpFlow::DS::ColoredIndex<OpFlow::DS::LevelMDIndex<d>>> {
-        std::size_t operator()(const OpFlow::DS::ColoredIndex<OpFlow::DS::LevelMDIndex<d>>& i) const
-                noexcept {
+        std::size_t
+        operator()(const OpFlow::DS::ColoredIndex<OpFlow::DS::LevelMDIndex<d>>& i) const noexcept {
             auto idx = i.get();
             return XXHash64::hash(idx.data(), idx.size() * sizeof(int), 0);
         }

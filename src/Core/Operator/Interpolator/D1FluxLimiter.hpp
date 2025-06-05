@@ -22,20 +22,17 @@
 namespace OpFlow {
     template <typename K>
     concept FluxLimiterKernel = requires(double r) {
-        { K::eval(r) }
-        ->std::same_as<double>;
+        { K::eval(r) } -> std::same_as<double>;
     };
 
     template <typename K>
     concept LinearFluxLimiterKernel
-            = FluxLimiterKernel<K>&& requires(DS::StencilPad<DS::MDIndex<2>> pad, double r) {
-        // should take slop_u & slop_f in a type only support + and * to a number
-        { K::eval(pad, pad) }
-        ->std::same_as<DS::StencilPad<DS::MDIndex<2>>>;
-        // should take normal separate slops instead of ratio
-        { K::eval(r, r) }
-        ->std::same_as<double>;
-    };
+            = FluxLimiterKernel<K> && requires(DS::StencilPad<DS::MDIndex<2>> pad, double r) {
+                  // should take slop_u & slop_f in a type only support + and * to a number
+                  { K::eval(pad, pad) } -> std::same_as<DS::StencilPad<DS::MDIndex<2>>>;
+                  // should take normal separate slops instead of ratio
+                  { K::eval(r, r) } -> std::same_as<double>;
+              };
 
     namespace internal {
         template <FluxLimiterKernel Kernel, std::size_t d, IntpDirection dir>
@@ -154,7 +151,7 @@ namespace OpFlow {
                               "D1FluxLimiterIntp error: Expression {} located in corner in dimension = {}",
                               expr.arg2.getName(), d);
                 expr.initPropsFrom(expr.arg2);
-                expr.name = fmt::format("D1Intp<D1FluxLimiter, {}, Cen2Cor>({})", d, expr.arg2.name);
+                expr.name = std::format("D1Intp<D1FluxLimiter, {}, Cen2Cor>({})", d, expr.arg2.name);
                 expr.loc[d] = LocOnMesh ::Corner;
                 expr.accessibleRange.start[d] += 2;
                 expr.accessibleRange.end[d] -= 1;
@@ -188,7 +185,7 @@ namespace OpFlow {
                               "D1FluxLimiterIntp error: Expression {} located in center in dimension = {}",
                               expr.arg2.getName(), d);
                 expr.initPropsFrom(expr.arg2);
-                expr.name = fmt::format("D1Intp<D1FluxLimiter, {}, Cor2Cen>({})", d, expr.arg2.name);
+                expr.name = std::format("D1Intp<D1FluxLimiter, {}, Cor2Cen>({})", d, expr.arg2.name);
                 expr.loc[d] = LocOnMesh ::Center;
                 expr.accessibleRange.start[d] += 1;
                 expr.accessibleRange.end[d] -= 2;

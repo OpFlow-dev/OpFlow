@@ -16,7 +16,9 @@
 #include "Core/Field/MeshBased/SemiStructured/CartAMRFieldExprTrait.hpp"
 #include "Core/Macros.hpp"
 #include "SemiStructuredFieldExprTrait.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <vector>
+#endif
 
 namespace OpFlow {
 

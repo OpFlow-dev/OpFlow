@@ -16,8 +16,10 @@
 #include "Core/BasicDataTypes.hpp"
 #include "Core/Constants.hpp"
 #include "Core/Meta.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <cmath>
 #include <type_traits>
+#endif
 
 namespace OpFlow::Math {
 

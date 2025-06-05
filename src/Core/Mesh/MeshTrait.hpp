@@ -14,7 +14,9 @@
 #define OPFLOW_MESHTRAIT_HPP
 
 #include "Core/Meta.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <type_traits>
+#endif
 
 namespace OpFlow {
     template <typename Derived>

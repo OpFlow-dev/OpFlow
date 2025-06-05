@@ -1,4 +1,6 @@
+#ifndef OPFLOW_INSIDE_MODULE
 #include <string_view>
+#endif
 
 namespace OpFlow::internal {
     inline constexpr static auto OPFLOW_VERSION_STRING = std::string_view {"@OPFLOW_VERSION_STRING@"};

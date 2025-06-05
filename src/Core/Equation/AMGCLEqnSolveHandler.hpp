@@ -27,15 +27,19 @@
 #include "Core/Meta.hpp"
 #include "DataStructures/Index/LinearMapper/MDRangeMapper.hpp"
 #include "DataStructures/Matrix/CSRMatrix.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <atomic>
 #include <cstddef>
 #include <cstdlib>
 #include <fstream>
 #include <oneapi/tbb/concurrent_vector.h>
 #include <vector>
+#endif
 
 #ifdef OPFLOW_WITH_MPI
+#ifndef OPFLOW_INSIDE_MODULE
 #include <mpi.h>
+#endif
 #endif
 
 #include "Core/Solvers/IJ/IJSolver.hpp"
@@ -48,8 +52,8 @@ namespace OpFlow {
     template <typename... Fs, typename... Ts, typename M, typename S>
     struct AMGCLEqnSolveHandler<std::tuple<Fs...>, std::tuple<Ts...>, M, S> : virtual public EqnSolveHandler {
     public:
-        using eqn_holder_type = decltype(
-                makeEqnHolder(std::declval<std::tuple<Fs...>&>(), std::declval<std::tuple<Ts...>&>()));
+        using eqn_holder_type = decltype(makeEqnHolder(std::declval<std::tuple<Fs...>&>(),
+                                                       std::declval<std::tuple<Ts...>&>()));
         using st_holder_type = decltype(makeStencilHolder(std::declval<eqn_holder_type&>()));
         constexpr static int size = sizeof...(Ts);
 
@@ -89,7 +93,7 @@ namespace OpFlow {
             mat = CSRMatrixGenerator::generate(*st_holder, mapper, pin);
             if (params[0].dumpPath) {
 #ifdef OPFLOW_WITH_MPI
-                std::ofstream of(params[0].dumpPath.value() + fmt::format(".rank{}", getWorkerId()));
+                std::ofstream of(params[0].dumpPath.value() + std::format(".rank{}", getWorkerId()));
 #else
                 std::ofstream of(params[0].dumpPath.value());
 #endif
@@ -179,7 +183,9 @@ namespace OpFlow {
     }
 
     template <typename S>
-    std::unique_ptr<EqnSolveHandler> makeEqnSolveHandler(auto&&... fs) requires(sizeof...(fs) >= 6) {
+    std::unique_ptr<EqnSolveHandler> makeEqnSolveHandler(auto&&... fs)
+        requires(sizeof...(fs) >= 6)
+    {
         auto t = std::forward_as_tuple(OP_PERFECT_FOWD(fs)...);
         auto&& [getters, rest1] = Meta::tuple_split<sizeof...(fs) / 2 - 1>(t);
         auto&& [targets, rest2] = Meta::tuple_split<sizeof...(fs) / 2 - 1>(rest1);

@@ -13,6 +13,7 @@
 #ifndef OPFLOW_IJSOLVER_HPP
 #define OPFLOW_IJSOLVER_HPP
 
+#ifndef OPFLOW_INSIDE_MODULE
 #include <optional>
 
 #include <cstddef>
@@ -22,8 +23,10 @@
 
 #include <amgcl/adapter/crs_tuple.hpp>
 #include <amgcl/backend/builtin.hpp>
+#endif
 
 #ifdef OPFLOW_WITH_MPI
+#ifndef OPFLOW_INSIDE_MODULE
 #include <amgcl/mpi/amg.hpp>
 #include <amgcl/mpi/coarsening/smoothed_aggregation.hpp>
 #include <amgcl/mpi/distributed_matrix.hpp>
@@ -37,7 +40,9 @@
 #include <amgcl/mpi/solver/preonly.hpp>
 #include <mpi.h>
 #endif
+#endif
 
+#ifndef OPFLOW_INSIDE_MODULE
 #include <amgcl/amg.hpp>
 #include <amgcl/coarsening/smoothed_aggregation.hpp>
 #include <amgcl/make_solver.hpp>
@@ -53,11 +58,16 @@
 #include <amgcl/adapter/zero_copy.hpp>
 #include <amgcl/io/binary.hpp>
 #include <amgcl/profiler.hpp>
+#endif
 
 #if defined(AMGCL_HAVE_PARMETIS)
+#ifndef OPFLOW_INSIDE_MODULE
 #include <amgcl/mpi/partition/parmetis.hpp>
+#endif
 #elif defined(AMGCL_HAVE_SCOTCH)
+#ifndef OPFLOW_INSIDE_MODULE
 #include <amgcl/mpi/partition/ptscotch.hpp>
+#endif
 #endif
 
 namespace OpFlow {

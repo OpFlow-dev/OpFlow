@@ -19,11 +19,13 @@
 #include "DataStructures/Geometry/BasicElements.hpp"
 #include "DataStructures/Geometry/KdTree.hpp"
 #include "DataStructures/Range/Ranges.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <algorithm>
 #include <deque>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkXMLPolyDataWriter.h>
+#endif
 
 namespace OpFlow {
     inline auto int_pow(int a, int n) {
@@ -306,8 +308,8 @@ namespace OpFlow {
 #ifndef NDEBUG
             OP_DEBUG("Points at level {}:", level);
             for (const auto &p : points) { OP_DEBUG("{}", p.toString()); }
-            dump_points(points, 1. / int_pow(ratio, level), fmt::format("p_level{}.vtp", level));
-            dump_points(p_add, 1. / int_pow(ratio, level), fmt::format("padd_level{}.vtp", level));
+            dump_points(points, 1. / int_pow(ratio, level), std::format("p_level{}.vtp", level));
+            dump_points(p_add, 1. / int_pow(ratio, level), std::format("padd_level{}.vtp", level));
 #endif
             auto tree = DS::KdTree<int, dim>(points);
             auto boxes = domainPartition(tree, th, 2);

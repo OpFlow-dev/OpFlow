@@ -16,9 +16,11 @@
 #include "Core/Macros.hpp"
 #include "Core/Meta.hpp"
 #include "DataStructures/Index/MDIndex.hpp"
+#ifndef OPFLOW_INSIDE_MODULE
 #include <array>
 #include <type_traits>
 #include <vector>
+#endif
 
 namespace OpFlow {
 
