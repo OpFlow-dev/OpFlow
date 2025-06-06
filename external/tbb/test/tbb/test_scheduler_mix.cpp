@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2021 Intel Corporation
+    Copyright (c) 2021-2024 Intel Corporation
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -14,33 +14,30 @@
     limitations under the License.
 */
 
-#define TBB_PREVIEW_MUTEXES 1
-#define TBB_PREVIEW_WAITING_FOR_WORKERS 1
-#define TBB_PREVIEW_TASK_GROUP_EXTENSIONS 1
-
 #include "common/config.h"
 
-#include <oneapi/tbb/concurrent_vector.h>
-#include <oneapi/tbb/parallel_for.h>
-#include <oneapi/tbb/rw_mutex.h>
 #include <oneapi/tbb/task_arena.h>
+#include <oneapi/tbb/concurrent_vector.h>
+#include <oneapi/tbb/rw_mutex.h>
 #include <oneapi/tbb/task_group.h>
+#include <oneapi/tbb/parallel_for.h>
 
 #include <oneapi/tbb/global_control.h>
 
-#include "common/spin_barrier.h"
 #include "common/test.h"
 #include "common/utils.h"
 #include "common/utils_concurrency_limit.h"
+#include "common/spin_barrier.h"
 
+#include <stdlib.h> // C11/POSIX aligned_alloc
 #include <random>
-#include <stdlib.h>// C11/POSIX aligned_alloc
+
 
 //! \file test_scheduler_mix.cpp
 //! \brief Test for [scheduler.task_arena scheduler.task_scheduler_observer] specification
 
 const std::uint64_t maxNumActions = 1 * 100 * 1000;
-static std::atomic<std::uint64_t> globalNumActions {};
+static std::atomic<std::uint64_t> globalNumActions{};
 
 //using Random = utils::FastRandom<>;
 class Random {
@@ -51,14 +48,17 @@ class Random {
 
         State() : gen(rd()), dist(0, std::numeric_limits<unsigned short>::max()) {}
 
-        int get() { return dist(gen); }
+        int get() {
+            return dist(gen);
+        }
     };
     static thread_local State* mState;
     tbb::concurrent_vector<State*> mStateList;
-
 public:
     ~Random() {
-        for (auto s : mStateList) { delete s; }
+        for (auto s : mStateList) {
+            delete s;
+        }
     }
 
     int get() {
@@ -73,11 +73,12 @@ public:
 
 thread_local Random::State* Random::mState = nullptr;
 
+
 void* aligned_malloc(std::size_t alignment, std::size_t size) {
 #if _WIN32
     return _aligned_malloc(size, alignment);
 #elif __unix__ || __APPLE__
-    void* ptr {};
+    void* ptr{};
     int res = posix_memalign(&ptr, alignment, size);
     CHECK(res == 0);
     return ptr;
@@ -97,16 +98,20 @@ void aligned_free(void* ptr) {
 template <typename T, std::size_t Alignment>
 class PtrRWMutex {
     static const std::size_t maxThreads = (Alignment >> 1) - 1;
-    static const std::uintptr_t READER_MASK = maxThreads;      // 7F..
-    static const std::uintptr_t LOCKED = Alignment - 1;        // FF..
-    static const std::uintptr_t LOCKED_MASK = LOCKED;          // FF..
-    static const std::uintptr_t LOCK_PENDING = READER_MASK + 1;// 80..
+    static const std::uintptr_t READER_MASK = maxThreads;       // 7F..
+    static const std::uintptr_t LOCKED = Alignment - 1;         // FF..
+    static const std::uintptr_t LOCKED_MASK = LOCKED;           // FF..
+    static const std::uintptr_t LOCK_PENDING = READER_MASK + 1; // 80..
 
     std::atomic<std::uintptr_t> mState;
 
-    T* pointer() { return reinterpret_cast<T*>(state() & ~LOCKED_MASK); }
+    T* pointer() {
+        return reinterpret_cast<T*>(state() & ~LOCKED_MASK);
+    }
 
-    std::uintptr_t state() { return mState.load(std::memory_order_relaxed); }
+    std::uintptr_t state() {
+        return mState.load(std::memory_order_relaxed);
+    }
 
 public:
     class ScopedLock {
@@ -119,7 +124,9 @@ public:
         }
         //! Release lock (if lock is held).
         ~ScopedLock() {
-            if (mMutex) { release(); }
+            if (mMutex) {
+                release();
+            }
         }
         //! No Copy
         ScopedLock(const ScopedLock&) = delete;
@@ -159,14 +166,14 @@ public:
 
             if (mIsWriter) {
                 m->unlock();
-            } else {
+            }
+            else {
                 m->unlockShared();
             }
         }
-
     protected:
-        PtrRWMutex* mMutex {};
-        bool mIsWriter {};
+        PtrRWMutex* mMutex{};
+        bool mIsWriter{};
     };
 
     bool trySet(T* ptr) {
@@ -174,7 +181,9 @@ public:
         CHECK_FAST((p & (Alignment - 1)) == 0);
         if (!state()) {
             std::uintptr_t expected = 0;
-            if (mState.compare_exchange_strong(expected, p)) { return true; }
+            if (mState.compare_exchange_strong(expected, p)) {
+                return true;
+            }
         }
         return false;
     }
@@ -186,20 +195,28 @@ public:
 
     bool tryLock() {
         auto v = state();
-        if (v == 0) { return false; }
+        if (v == 0) {
+            return false;
+        }
         CHECK_FAST((v & LOCKED_MASK) == LOCKED || (v & READER_MASK) < maxThreads);
         if ((v & READER_MASK) == 0) {
-            if (mState.compare_exchange_strong(v, v | LOCKED)) { return true; }
+            if (mState.compare_exchange_strong(v, v | LOCKED)) {
+                return true;
+            }
         }
         return false;
     }
 
     bool tryLockShared() {
         auto v = state();
-        if (v == 0) { return false; }
+        if (v == 0) {
+            return false;
+        }
         CHECK_FAST((v & LOCKED_MASK) == LOCKED || (v & READER_MASK) < maxThreads);
         if ((v & LOCKED_MASK) != LOCKED && (v & LOCK_PENDING) == 0) {
-            if (mState.compare_exchange_strong(v, v + 1)) { return true; }
+            if (mState.compare_exchange_strong(v, v + 1)) {
+                return true;
+            }
         }
         return false;
     }
@@ -207,7 +224,9 @@ public:
     void lock() {
         auto v = state();
         mState.compare_exchange_strong(v, v | LOCK_PENDING);
-        while (!tryLock()) { utils::yield(); }
+        while (!tryLock()) {
+            utils::yield();
+        }
     }
 
     void unlock() {
@@ -223,9 +242,13 @@ public:
         mState -= 1;
     }
 
-    operator bool() const { return pointer() != 0; }
+    operator bool() const {
+        return pointer() != 0;
+    }
 
-    T* get() { return pointer(); }
+    T* get() {
+        return pointer();
+    }
 };
 
 class Statistics {
@@ -244,7 +267,6 @@ public:
     };
 
     static const char* const mStatNames[numActions];
-
 private:
     struct StatType {
         StatType() : mCounters() {}
@@ -262,18 +284,23 @@ private:
         }
         return *s;
     }
-
 public:
     ~Statistics() {
-        for (auto s : mStatsList) { delete s; }
+        for (auto s : mStatsList) {
+            delete s;
+        }
     }
 
-    void notify(ACTION a) { ++get().mCounters[a]; }
+    void notify(ACTION a) {
+        ++get().mCounters[a];
+    }
 
     void report() {
         StatType summary;
         for (auto& s : mStatsList) {
-            for (int i = 0; i < numActions; ++i) { summary.mCounters[i] += s->mCounters[i]; }
+            for (int i = 0; i < numActions; ++i) {
+                summary.mCounters[i] += s->mCounters[i];
+            }
         }
         std::cout << std::endl << "Statistics:" << std::endl;
         std::cout << "Total actions: " << globalNumActions << std::endl;
@@ -283,10 +310,12 @@ public:
     }
 };
 
-const char* const Statistics::mStatNames[Statistics::numActions]
-        = {"Arena create",         "Arena destroy",         "Arena acquire",
-           "Skipped arena create", "Skipped arena destroy", "Skipped arena acquire",
-           "Parallel algorithm",   "Arena enqueue",         "Arena execute"};
+
+const char* const Statistics::mStatNames[Statistics::numActions] = {
+    "Arena create", "Arena destroy", "Arena acquire",
+    "Skipped arena create", "Skipped arena destroy", "Skipped arena acquire",
+    "Parallel algorithm", "Arena enqueue", "Arena execute"
+};
 thread_local Statistics::StatType* Statistics::mStats;
 
 static Statistics gStats;
@@ -307,29 +336,41 @@ public:
             }
         }
 
-        Guard(Guard&& ing) : mObj(ing.mObj) { ing.mObj = nullptr; }
-
-        ~Guard() {
-            if (mObj != nullptr) { mObj->mReferences.fetch_sub(REFERENCE_FLAG); }
+        Guard(Guard&& ing) : mObj(ing.mObj) {
+            ing.mObj = nullptr;
         }
 
-        bool continue_execution() { return mObj != nullptr; }
+        ~Guard() {
+            if (mObj != nullptr) {
+                mObj->mReferences.fetch_sub(REFERENCE_FLAG);
+            }
+        }
+
+        bool continue_execution() {
+            return mObj != nullptr;
+        }
 
     private:
-        LifetimeTracker* mObj {nullptr};
+        LifetimeTracker* mObj{nullptr};
     };
 
-    Guard makeGuard() { return Guard(this); }
+    Guard makeGuard() {
+        return Guard(this);
+    }
 
-    void signalShutdown() { mReferences.fetch_add(SHUTDOWN_FLAG); }
+    void signalShutdown() {
+        mReferences.fetch_add(SHUTDOWN_FLAG);
+    }
 
-    void waitCompletion() { utils::SpinWaitUntilEq(mReferences, SHUTDOWN_FLAG); }
+    void waitCompletion() {
+        utils::SpinWaitUntilEq(mReferences, SHUTDOWN_FLAG);
+    }
 
 private:
     friend class Guard;
     static constexpr std::uintptr_t SHUTDOWN_FLAG = 1;
     static constexpr std::uintptr_t REFERENCE_FLAG = 1 << 1;
-    std::atomic<std::uintptr_t> mReferences {};
+    std::atomic<std::uintptr_t> mReferences{};
 };
 
 class ArenaTable {
@@ -341,19 +382,21 @@ class ArenaTable {
     std::array<ArenaPtrRWMutex, maxArenas> mArenaTable;
 
     struct ThreadState {
-        bool lockedArenas[maxArenas] {};
+        bool lockedArenas[maxArenas]{};
         int arenaIdxStack[maxArenas];
-        int level {};
+        int level{};
     };
 
-    LifetimeTracker mLifetimeTracker {};
+    LifetimeTracker mLifetimeTracker{};
     static thread_local ThreadState mThreadState;
 
     template <typename F>
-    auto find_arena(std::size_t start, F f) -> decltype(f(std::declval<ArenaPtrRWMutex&>(), std::size_t {})) {
+    auto find_arena(std::size_t start, F f) -> decltype(f(std::declval<ArenaPtrRWMutex&>(), std::size_t{})) {
         for (std::size_t idx = start, i = 0; i < maxArenas; ++i, idx = (idx + 1) % maxArenas) {
             auto res = f(mArenaTable[idx], idx);
-            if (res) { return res; }
+            if (res) {
+                return res;
+            }
         }
         return {};
     }
@@ -366,18 +409,18 @@ public:
         if (guard.continue_execution()) {
             int num_threads = rnd.get() % utils::get_platform_max_threads() + 1;
             unsigned int num_reserved = rnd.get() % num_threads;
-            tbb::task_arena::priority priorities[]
-                    = {tbb::task_arena::priority::low, tbb::task_arena::priority::normal,
-                       tbb::task_arena::priority::high};
+            tbb::task_arena::priority priorities[] = { tbb::task_arena::priority::low , tbb::task_arena::priority::normal, tbb::task_arena::priority::high };
             tbb::task_arena::priority priority = priorities[rnd.get() % 3];
 
-            tbb::task_arena* a = new (aligned_malloc(arenaAligment, arenaAligment))
-                    tbb::task_arena {num_threads, num_reserved, priority};
+            tbb::task_arena* a = new (aligned_malloc(arenaAligment, arenaAligment)) tbb::task_arena{ num_threads , num_reserved , priority };
 
             if (!find_arena(rnd.get() % maxArenas, [a](ArenaPtrRWMutex& arena, std::size_t) -> bool {
-                    if (arena.trySet(a)) { return true; }
+                    if (arena.trySet(a)) {
+                        return true;
+                    }
                     return false;
-                })) {
+                }))
+            {
                 gStats.notify(Statistics::skippedArenaCreate);
                 a->~task_arena();
                 aligned_free(a);
@@ -401,7 +444,8 @@ public:
                         }
                     }
                     return false;
-                })) {
+                }))
+            {
                 gStats.notify(Statistics::skippedArenaDestroy);
             }
         }
@@ -412,7 +456,7 @@ public:
         mLifetimeTracker.waitCompletion();
         find_arena(0, [](ArenaPtrRWMutex& arena, std::size_t) {
             if (arena.get()) {
-                ScopedLock lock {arena, true};
+                ScopedLock lock{ arena, true };
                 auto a = arena.get();
                 lock.clear();
                 a->~task_arena();
@@ -425,26 +469,27 @@ public:
     std::pair<tbb::task_arena*, std::size_t> acquire(Random& rnd, ScopedLock& lock) {
         auto guard = mLifetimeTracker.makeGuard();
 
-        tbb::task_arena* a {nullptr};
-        std::size_t resIdx {};
+        tbb::task_arena* a{nullptr};
+        std::size_t resIdx{};
         if (guard.continue_execution()) {
             auto& ts = mThreadState;
-            a = find_arena(
-                    rnd.get() % maxArenas,
-                    [&ts, &lock, &resIdx](ArenaPtrRWMutex& arena, std::size_t idx) -> tbb::task_arena* {
-                        if (!ts.lockedArenas[idx]) {
-                            if (lock.tryAcquire(arena, false)) {
-                                ts.lockedArenas[idx] = true;
-                                ts.arenaIdxStack[ts.level++] = int(idx);
-                                resIdx = idx;
-                                return arena.get();
-                            }
+            a = find_arena(rnd.get() % maxArenas,
+                [&ts, &lock, &resIdx](ArenaPtrRWMutex& arena, std::size_t idx) -> tbb::task_arena* {
+                    if (!ts.lockedArenas[idx]) {
+                        if (lock.tryAcquire(arena, false)) {
+                            ts.lockedArenas[idx] = true;
+                            ts.arenaIdxStack[ts.level++] = int(idx);
+                            resIdx = idx;
+                            return arena.get();
                         }
-                        return nullptr;
-                    });
-            if (!a) { gStats.notify(Statistics::skippedArenaAcquire); }
+                    }
+                    return nullptr;
+                });
+            if (!a) {
+                gStats.notify(Statistics::skippedArenaAcquire);
+            }
         }
-        return {a, resIdx};
+        return { a, resIdx };
     }
 
     void release(ScopedLock& lock) {
@@ -477,57 +522,74 @@ enum ACTIONS {
     num_actions
 };
 
-void global_actor();
+void global_actor(size_t arenaAfterStealing);
 
 template <ACTIONS action>
 struct actor;
 
 template <>
 struct actor<arena_create> {
-    static void do_it(Random& r) { arenaTable.create(r); }
+    static void do_it(Random& r) {
+        arenaTable.create(r);
+    }
 };
 
 template <>
 struct actor<arena_destroy> {
-    static void do_it(Random& r) { arenaTable.destroy(r); }
+    static void do_it(Random& r) {
+        arenaTable.destroy(r);
+    }
 };
 
 template <>
 struct actor<arena_action> {
-    static void do_it(Random& r) {
+    static void do_it(Random& r, size_t arenaAfterStealing) {
         static thread_local std::size_t arenaLevel = 0;
+
+        // treat arenas index as priority: we own some resource already,
+        // so may pretend only to low-priority resource
+        arenaLevel = std::max(arenaLevel, arenaAfterStealing);
+
         ArenaTable::ScopedLock lock;
         auto entry = arenaTable.acquire(r, lock);
         if (entry.first) {
-            enum arena_actions { arena_execute, arena_enqueue, num_arena_actions };
+            enum arena_actions {
+                arena_execute,
+                arena_enqueue,
+                num_arena_actions
+            };
             auto process = r.get() % 2;
             auto body = [process] {
                 if (process) {
-                    tbb::detail::d1::wait_context wctx {1};
+                    tbb::detail::d1::wait_context wctx{ 1 };
                     tbb::task_group_context ctx;
                     tbb::this_task_arena::enqueue([&wctx] { wctx.release(); });
                     tbb::detail::d1::wait(wctx, ctx);
                 } else {
-                    global_actor();
+                    global_actor(0);
                 }
             };
-            switch (r.get() % (16 * num_arena_actions)) {
-                case arena_execute:
-                    if (entry.second > arenaLevel) {
-                        gStats.notify(Statistics::ArenaExecute);
-                        auto oldArenaLevel = arenaLevel;
-                        arenaLevel = entry.second;
-                        entry.first->execute(body);
-                        arenaLevel = oldArenaLevel;
-                        break;
-                    }
-                    utils_fallthrough;
-                case arena_enqueue:
-                    utils_fallthrough;
-                default:
-                    gStats.notify(Statistics::ArenaEnqueue);
-                    entry.first->enqueue([] { global_actor(); });
+            switch (r.get() % (16*num_arena_actions)) {
+            case arena_execute:
+                // to prevent deadlock, potentially blocking operation
+                // may be called only for arenas with larger index
+                if (entry.second > arenaLevel) {
+                    gStats.notify(Statistics::ArenaExecute);
+                    auto oldArenaLevel = arenaLevel;
+                    arenaLevel = entry.second;
+                    entry.first->execute(body);
+                    arenaLevel = oldArenaLevel;
                     break;
+                }
+                utils_fallthrough;
+            case arena_enqueue:
+                utils_fallthrough;
+            default:
+                gStats.notify(Statistics::ArenaEnqueue);
+                // after stealing by a worker, the task will run in arena
+                // with index entry.second
+                entry.first->enqueue([ entry ] { global_actor(entry.second); });
+                break;
             }
             arenaTable.release(lock);
         }
@@ -537,54 +599,47 @@ struct actor<arena_action> {
 template <>
 struct actor<parallel_algorithm> {
     static void do_it(Random& rnd) {
-        enum PARTITIONERS { simpl_part, auto_part, aff_part, static_part, num_parts };
+        enum PARTITIONERS {
+            simpl_part,
+            auto_part,
+            aff_part,
+            static_part,
+            num_parts
+        };
         int sz = rnd.get() % 10000;
         auto doGlbAction = rnd.get() % 1000 == 42;
         auto body = [doGlbAction, sz](int i) {
-            if (i == sz / 2 && doGlbAction) { global_actor(); }
+            if (i == sz / 2 && doGlbAction) {
+                global_actor(0);
+            }
         };
 
         switch (rnd.get() % num_parts) {
-            case simpl_part:
-                tbb::parallel_for(0, sz, body, tbb::simple_partitioner {});
-                break;
-            case auto_part:
-                tbb::parallel_for(0, sz, body, tbb::auto_partitioner {});
-                break;
-            case aff_part: {
-                tbb::affinity_partitioner aff;
-                tbb::parallel_for(0, sz, body, aff);
-                break;
-            }
-            case static_part:
-                tbb::parallel_for(0, sz, body, tbb::static_partitioner {});
-                break;
+        case simpl_part:
+            tbb::parallel_for(0, sz, body, tbb::simple_partitioner{}); break;
+        case auto_part:
+            tbb::parallel_for(0, sz, body, tbb::auto_partitioner{}); break;
+        case aff_part:
+        {
+            tbb::affinity_partitioner aff;
+            tbb::parallel_for(0, sz, body, aff); break;
+        }
+        case static_part:
+            tbb::parallel_for(0, sz, body, tbb::static_partitioner{}); break;
         }
     }
 };
 
-void global_actor() {
-    static thread_local std::uint64_t localNumActions {};
+void global_actor(size_t arenaAfterStealing) {
+    static thread_local std::uint64_t localNumActions{};
 
     while (globalNumActions < maxNumActions) {
         auto& rnd = threadRandom;
         switch (rnd.get() % num_actions) {
-            case arena_create:
-                gStats.notify(Statistics::ArenaCreate);
-                actor<arena_create>::do_it(rnd);
-                break;
-            case arena_destroy:
-                gStats.notify(Statistics::ArenaDestroy);
-                actor<arena_destroy>::do_it(rnd);
-                break;
-            case arena_action:
-                gStats.notify(Statistics::ArenaAcquire);
-                actor<arena_action>::do_it(rnd);
-                break;
-            case parallel_algorithm:
-                gStats.notify(Statistics::ParallelAlgorithm);
-                actor<parallel_algorithm>::do_it(rnd);
-                break;
+        case arena_create:  gStats.notify(Statistics::ArenaCreate); actor<arena_create>::do_it(rnd);  break;
+        case arena_destroy: gStats.notify(Statistics::ArenaDestroy); actor<arena_destroy>::do_it(rnd); break;
+        case arena_action:  gStats.notify(Statistics::ArenaAcquire); actor<arena_action>::do_it(rnd, arenaAfterStealing);  break;
+        case parallel_algorithm: gStats.notify(Statistics::ParallelAlgorithm); actor<parallel_algorithm>::do_it(rnd);  break;
         }
 
         if (++localNumActions == 100) {
@@ -604,18 +659,18 @@ void global_actor() {
 TEST_CASE("Stress test with mixing functionality") {
     // TODO add thread recreation
     // TODO: Enable statistics
-    // tbb::task_scheduler_handle handle = tbb::task_scheduler_handle::get();
+    tbb::task_scheduler_handle handle{ tbb::attach{} };
 
     const std::size_t numExtraThreads = 16;
-    utils::SpinBarrier startBarrier {numExtraThreads};
+    utils::SpinBarrier startBarrier{numExtraThreads};
     utils::NativeParallelFor(numExtraThreads, [&startBarrier](std::size_t) {
         startBarrier.wait();
-        global_actor();
+        global_actor(0);
     });
 
     arenaTable.shutdown();
 
-    // tbb::finalize(handle, std::nothrow_t{});
+    tbb::finalize(handle);
 
     // gStats.report();
 }

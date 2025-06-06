@@ -1,40 +1,70 @@
-# oneAPI Threading Building Blocks
-[![Apache License Version 2.0](https://img.shields.io/badge/license-Apache_2.0-green.svg)](LICENSE.txt) [![oneTBB CI](https://github.com/oneapi-src/oneTBB/actions/workflows/ci.yml/badge.svg)](https://github.com/oneapi-src/oneTBB/actions/workflows/ci.yml?query=branch%3Amaster)
+# oneAPI Threading Building Blocks (oneTBB) <img align="right" width="200" height="100" src="https://raw.githubusercontent.com/uxlfoundation/artwork/e98f1a7a3d305c582d02c5f532e41487b710d470/foundation/uxl-foundation-logo-horizontal-color.svg">
+[![Apache License Version 2.0](https://img.shields.io/badge/license-Apache_2.0-green.svg)](LICENSE.txt) [![oneTBB CI](https://github.com/uxlfoundation/oneTBB/actions/workflows/ci.yml/badge.svg)](https://github.com/uxlfoundation/oneTBB/actions/workflows/ci.yml?query=branch%3Amaster)
+[![Join the community on GitHub Discussions](https://badgen.net/badge/join%20the%20discussion/on%20github/blue?icon=github)](https://github.com/uxlfoundation/oneTBB/discussions)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9125/badge)](https://www.bestpractices.dev/projects/9125)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/uxlfoundation/oneTBB/badge)](https://securityscorecards.dev/viewer/?uri=github.com/uxlfoundation/oneTBB)
+[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20oneTBB%20Guru-006BFF)](https://gurubase.io/g/onetbb)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/oneapi-src/oneTBB/badge)](https://securityscorecards.dev/viewer/?uri=github.com/oneapi-src/oneTBB)
+[![Coverity Scan Build Status](https://img.shields.io/coverity/scan/30373.svg)](https://scan.coverity.com/projects/oneapi-src-onetbb)
 
-oneAPI Threading Building Blocks (oneTBB) lets you easily write parallel C++ programs that take
-full advantage of multicore performance, that are portable, composable and have future-proof scalability.
+oneTBB is a flexible C++ library that simplifies the work of adding parallelism
+to complex applications, even if you are not a threading expert.  
+
+The library lets you easily write parallel programs that take full advantage of the multi-core performance. Such programs are portable, 
+composable and have a future-proof scalability. oneTBB provides you with functions, interfaces, and classes to parallelize and scale the code.
+All you have to do is to use the templates. 
+
+The library differs from typical threading packages in the following ways:
+* oneTBB enables you to specify logical parallelism instead of threads.
+* oneTBB targets threading for performance.
+* oneTBB is compatible with other threading packages.
+* oneTBB emphasizes scalable, data parallel programming.
+* oneTBB relies on generic programming.
+
+
+Refer to oneTBB [examples](examples) and [samples](https://github.com/oneapi-src/oneAPI-samples/tree/master/Libraries/oneTBB) to see how you can use the library.
+
+oneTBB is a part of the [UXL Foundation](http://www.uxlfoundation.org) and is an implementation of [oneAPI specification](https://oneapi.io).
+
+> **_NOTE:_** Threading Building Blocks (TBB) is now called oneAPI Threading Building Blocks (oneTBB) to highlight that the tool is a part of the oneAPI ecosystem.
 
 ## Release Information
-Here are [Release Notes]( https://software.intel.com/en-us/articles/intel-oneapi-threading-building-blocks-release-notes) and
-[System Requirements](https://software.intel.com/en-us/articles/intel-oneapi-threading-building-blocks-system-requirements).
+
+See [Release Notes](RELEASE_NOTES.md) and [System Requirements](SYSTEM_REQUIREMENTS.md).
 
 ## Documentation
 * [oneTBB Specification](https://spec.oneapi.com/versions/latest/elements/oneTBB/source/nested-index.html)
-* [oneTBB Developer Guide and Reference](https://software.intel.com/en-us/oneapi-tbb-documentation)
-* [Migrating from TBB to oneTBB](https://software.intel.com/content/www/us/en/develop/documentation/onetbb-documentation/top/onetbb-developer-guide/migrating-from-threading-building-blocks-tbb.html)
-* README for build system: [cmake/README.md](cmake/README.md)
+* [oneTBB Developer Guide and Reference](https://uxlfoundation.github.io/oneTBB)
+* [Migrating from TBB to oneTBB](https://uxlfoundation.github.io/oneTBB/main/tbb_userguide/Migration_Guide.html)
+* [README for the CMake build system](cmake/README.md)
+* [oneTBB Testing Approach](https://uxlfoundation.github.io/oneTBB/main/intro/testing_approach.html)
 * [Basic support for the Bazel build system](Bazel.md)
+* [oneTBB Discussions](https://github.com/uxlfoundation/oneTBB/discussions)
+* [WASM Support](WASM_Support.md)
+
+## Installation 
+See [Installation from Sources](INSTALL.md) to learn how to install oneTBB. 
+
+## Governance
+
+The oneTBB project is governed by the UXL Foundation.
+You can get involved in this project in following ways:
+* Join the [Open Source and Specification Working Group](https://github.com/uxlfoundation/foundation/tree/main?tab=readme-ov-file#working-groups) meetings.
+* Join the mailing lists for the [UXL Foundation](https://lists.uxlfoundation.org/g/main/subgroups) to receive meetings schedule and latest updates.
+* Contribute to oneTBB project or oneTBB specification. Read [CONTRIBUTING](./CONTRIBUTING.md) for more information.
 
 ## Support
-Please report issues and suggestions via
-[GitHub issues](https://github.com/oneapi-src/oneTBB/issues) or start a topic on the
-[oneTBB forum](https://community.intel.com/t5/Intel-oneAPI-Threading-Building/bd-p/oneapi-threading-building-blocks).
+See our [documentation](./SUPPORT.md) to learn how to request help.
 
 ## How to Contribute
-We welcome community contributions, so check our [contributing guidelines](CONTRIBUTING.md)
+We welcome community contributions, so check our [Contributing Guidelines](CONTRIBUTING.md)
 to learn more.
+
+Use GitHub Issues for feature requests, bug reports, and minor inquiries. For broader questions and development-related discussions, use GitHub Discussions.
 
 ## License
 oneAPI Threading Building Blocks is licensed under [Apache License, Version 2.0](LICENSE.txt).
 By its terms, contributions submitted to the project are also done under that license.
 
-## Security
-To report security issues please go to https://intel.com/security.
-
-## Engineering team contacts
-* [E-mail us.](mailto:inteltbbdevelopers@intel.com)
-
 ------------------------------------------------------------------------
-Intel and the Intel logo are trademarks of Intel Corporation or its subsidiaries in the U.S. and/or other countries.
-
-\* Other names and brands may be claimed as the property of others.
+\* All names and brands may be claimed as the property of others.

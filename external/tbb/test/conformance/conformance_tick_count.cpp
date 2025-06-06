@@ -17,8 +17,8 @@
 #include "common/test.h"
 #include "common/utils.h"
 
-#include "oneapi/tbb/detail/_template_helpers.h"
 #include "oneapi/tbb/tick_count.h"
+#include "oneapi/tbb/detail/_template_helpers.h"
 #include <type_traits>
 
 //! \file conformance_tick_count.cpp
@@ -45,13 +45,15 @@ TEST_CASE("Subtraction of equal tick_counts") {
 TEST_CASE("Subtraction subsequent timestamp") {
     oneapi::tbb::tick_count tick_f(oneapi::tbb::tick_count::now());
     oneapi::tbb::tick_count tick_s(oneapi::tbb::tick_count::now());
-    while ((tick_s - tick_f).seconds() == 0) { tick_s = oneapi::tbb::tick_count::now(); }
+    while ((tick_s - tick_f).seconds() == 0) {
+        tick_s = oneapi::tbb::tick_count::now();
+    }
     CHECK_GT((tick_s - tick_f).seconds(), 0);
 }
 
 // Wait for given duration.
 // The duration parameter is in units of seconds.
-static void WaitForDuration(double duration) {
+static void WaitForDuration( double duration ) {
     CHECK_GT(duration, 0);
     oneapi::tbb::tick_count start = oneapi::tbb::tick_count::now();
     double sec = 0;
@@ -62,9 +64,9 @@ static void WaitForDuration(double duration) {
 }
 
 // CHECK that two times in seconds are very close.
-void CheckNear(double x, double y) {
-    CHECK_GE(x - y, -1.0E-10);
-    CHECK_GE(1.0E-10, x - y);
+void CheckNear( double x, double y ) {
+    CHECK_GE(x-y, -1.0E-10);
+    CHECK_GE(1.0E-10, x-y);
 }
 
 //! Test arithmetic operators on tick_count::interval_t
@@ -94,6 +96,7 @@ TEST_CASE("Arithmetic operators") {
     sum -= j;
     CheckNear(sum.seconds(), 0.0);
 }
+
 
 //! Test resolution of oneapi::tbb::tick_count::interval_t
 //! \brief \ref interface \ref requirement

@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2005-2021 Intel Corporation
+    Copyright (c) 2005-2022 Intel Corporation
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -28,10 +28,10 @@
 #if !HARNESS_SKIP_TEST && TBB_USE_EXCEPTIONS && !__TBB_USE_ADDRESS_SANITIZER
 
 #if _MSC_VER
-#pragma warning(push)
+#pragma warning (push)
 // Forcing value to bool 'true' or 'false' (occurred inside tls.h)
-#pragma warning(disable : 4800)
-#endif//#if _MSC_VER
+#pragma warning (disable: 4800)
+#endif //#if _MSC_VER
 
 thread_local bool new_handler_called = false;
 void customNewHandler() {
@@ -46,7 +46,9 @@ bool allocateWithException(size_t big_mem) {
         // Allocate big array (should throw exception)
         char* volatile big_array = new char[big_mem];
         // If succeeded, double the size (unless it overflows) and recursively retry
-        if (big_mem * 2 > big_mem) { exception_caught = allocateWithException(big_mem * 2); }
+        if (big_mem * 2 > big_mem) {
+            exception_caught = allocateWithException(big_mem * 2);
+        }
         delete[] big_array;
     } catch (const std::bad_alloc&) {
         bool is_called = new_handler_called;
@@ -76,11 +78,11 @@ TEST_CASE("New handler callback") {
     // Run the test
     utils::NativeParallelFor(8, AllocLoopBody());
     // Undo custom handler
-    std::set_new_handler(0);
+    std::set_new_handler(nullptr);
 }
 
 #if _MSC_VER
-#pragma warning(pop)
+#pragma warning (pop)
 #endif
 
-#endif// !HARNESS_SKIP_TEST && TBB_USE_EXCEPTIONS
+#endif // !HARNESS_SKIP_TEST && TBB_USE_EXCEPTIONS

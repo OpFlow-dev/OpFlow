@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 Intel Corporation
+# Copyright (c) 2020-2025 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5.0...3.31.3)
 
 project(tachyon CXX)
 
@@ -23,41 +23,40 @@ set_common_project_settings(tbb)
 set(TACHYON_VERSION tbb CACHE STRING "Defines the version of the tachyon example")
 
 add_executable(
-        tachyon src/trace.${TACHYON_VERSION}.cpp
-        src/main.cpp src/pthread.cpp
-        src/tachyon_video.cpp src/api.cpp
-        src/apigeom.cpp
-        src/apitrigeom.cpp
-        src/bndbox.cpp
-        src/box.cpp
-        src/camera.cpp
-        src/coordsys.cpp
-        src/cylinder.cpp
-        src/extvol.cpp
-        src/global.cpp
-        src/grid.cpp
-        src/imageio.cpp
-        src/imap.cpp
-        src/intersect.cpp
-        src/jpeg.cpp
-        src/light.cpp
-        src/objbound.cpp
-        src/parse.cpp
-        src/plane.cpp
-        src/ppm.cpp
-        src/quadric.cpp
-        src/render.cpp
-        src/ring.cpp
-        src/shade.cpp
-        src/sphere.cpp
-        src/texture.cpp
-        src/tgafile.cpp
-        src/trace_rest.cpp
-        src/triangle.cpp
-        src/ui.cpp
-        src/util.cpp
-        src/vector.cpp
-        src/vol.cpp
+    tachyon src/trace.${TACHYON_VERSION}.cpp
+    src/main.cpp src/pthread.cpp
+    src/tachyon_video.cpp src/api.cpp
+    src/apigeom.cpp
+    src/apitrigeom.cpp
+    src/bndbox.cpp
+    src/box.cpp
+    src/camera.cpp
+    src/coordsys.cpp
+    src/cylinder.cpp
+    src/extvol.cpp
+    src/global.cpp
+    src/grid.cpp
+    src/imageio.cpp
+    src/imap.cpp
+    src/intersect.cpp
+    src/light.cpp
+    src/objbound.cpp
+    src/parse.cpp
+    src/plane.cpp
+    src/ppm.cpp
+    src/quadric.cpp
+    src/render.cpp
+    src/ring.cpp
+    src/shade.cpp
+    src/sphere.cpp
+    src/texture.cpp
+    src/tgafile.cpp
+    src/trace_rest.cpp
+    src/triangle.cpp
+    src/ui.cpp
+    src/util.cpp
+    src/vector.cpp
+    src/vol.cpp 
 )
 
 add_subdirectory(../../common/gui gui)
@@ -67,7 +66,7 @@ target_compile_options(tachyon PRIVATE ${TBB_CXX_STD_FLAG})
 
 if (MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL IntelLLVM)
     target_compile_options(tachyon PRIVATE -D_CRT_SECURE_NO_WARNINGS)
-endif ()
+endif()
 
 set(EXECUTABLE "$<TARGET_FILE:tachyon>")
 set(ARGS ${CMAKE_CURRENT_SOURCE_DIR}/dat/balls.dat)

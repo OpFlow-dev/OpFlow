@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2005-2021 Intel Corporation
+    Copyright (c) 2005-2024 Intel Corporation
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -148,8 +148,7 @@ class sleep_node : public wait_node<Context> {
 public:
     using base_type::base_type;
 
-    // Make it virtual due to Intel Compiler warning
-    virtual ~sleep_node() {
+    ~sleep_node() override {
         if (this->my_initialized) {
             if (this->my_skipped_wakeup) semaphore().P();
             semaphore().~binary_semaphore();
@@ -221,7 +220,7 @@ public:
 
         // Prepare wait guarantees Write Read memory barrier.
         // In C++ only full fence covers this type of barrier.
-        atomic_fence(std::memory_order_seq_cst);
+        atomic_fence_seq_cst();
     }
 
     //! Commit wait if event count has not changed; otherwise, cancel wait.
@@ -273,7 +272,7 @@ public:
 
     //! Notify one thread about the event
     void notify_one() {
-        atomic_fence(std::memory_order_seq_cst);
+        atomic_fence_seq_cst();
         notify_one_relaxed();
     }
 
@@ -291,7 +290,17 @@ public:
             n = my_waitset.front();
             if (n != end) {
                 my_waitset.remove(*n);
+
+// GCC 12.x-14.x issues a warning here that to_wait_node(n)->my_is_in_list might have size 0, since n is
+// a base_node pointer. (This cannot happen, because only wait_node pointers are added to my_waitset.)
+#if (__TBB_GCC_VERSION >= 120100 && __TBB_GCC_VERSION < 150000 ) && !__clang__ && !__INTEL_COMPILER
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
                 to_wait_node(n)->my_is_in_list.store(false, std::memory_order_relaxed);
+#if (__TBB_GCC_VERSION >= 120100 && __TBB_GCC_VERSION < 150000 ) && !__clang__ && !__INTEL_COMPILER
+#pragma GCC diagnostic pop
+#endif
             }
         }
 
@@ -302,7 +311,7 @@ public:
 
     //! Notify all waiting threads of the event
     void notify_all() {
-        atomic_fence(std::memory_order_seq_cst);
+        atomic_fence_seq_cst();
         notify_all_relaxed();
     }
 
@@ -338,7 +347,7 @@ public:
     //! Notify waiting threads of the event that satisfies the given predicate
     template <typename P>
     void notify( const P& predicate ) {
-        atomic_fence(std::memory_order_seq_cst);
+        atomic_fence_seq_cst();
         notify_relaxed( predicate );
     }
 
@@ -410,7 +419,7 @@ public:
 
     //! Abort any sleeping threads at the time of the call
     void abort_all() {
-        atomic_fence( std::memory_order_seq_cst );
+        atomic_fence_seq_cst();
         abort_all_relaxed();
     }
 

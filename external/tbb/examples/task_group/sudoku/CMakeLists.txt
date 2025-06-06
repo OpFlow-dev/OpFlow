@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 Intel Corporation
+# Copyright (c) 2020-2025 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5.0...3.31.3)
 
 project(sudoku CXX)
 
@@ -27,7 +27,7 @@ target_compile_options(sudoku PRIVATE ${TBB_CXX_STD_FLAG})
 
 if (MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL IntelLLVM)
     target_compile_options(sudoku PRIVATE -D_CRT_SECURE_NO_WARNINGS)
-endif ()
+endif()
 
 set(EXECUTABLE "$<TARGET_FILE:sudoku>")
 set(ARGS 4 ${CMAKE_CURRENT_SOURCE_DIR}/input1 verbose)

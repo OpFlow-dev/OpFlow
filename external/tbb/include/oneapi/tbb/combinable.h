@@ -19,54 +19,51 @@
 
 #include "detail/_namespace_injection.h"
 
-#include "cache_aligned_allocator.h"
 #include "enumerable_thread_specific.h"
+#include "cache_aligned_allocator.h"
 
 namespace tbb {
-    namespace detail {
-        namespace d1 {
-            /** \name combinable **/
-            //@{
-            //! Thread-local storage with optional reduction
-            /** @ingroup containers */
-            template <typename T>
-            class combinable {
-                using my_alloc = typename tbb::cache_aligned_allocator<T>;
-                using my_ets_type = typename tbb::enumerable_thread_specific<T, my_alloc, ets_no_key>;
-                my_ets_type my_ets;
+namespace detail {
+namespace d1 {
+/** \name combinable **/
+//@{
+//! Thread-local storage with optional reduction
+/** @ingroup containers */
+template <typename T>
+class combinable {
+    using my_alloc = typename tbb::cache_aligned_allocator<T>;
+    using my_ets_type = typename tbb::enumerable_thread_specific<T, my_alloc, ets_no_key>;
+    my_ets_type my_ets;
 
-            public:
-                combinable() = default;
+public:
+    combinable() = default;
 
-                template <typename Finit>
-                explicit combinable(Finit _finit) : my_ets(_finit) {}
+    template <typename Finit>
+    explicit combinable(Finit _finit) : my_ets(_finit) { }
 
-                void clear() { my_ets.clear(); }
+    void clear() { my_ets.clear(); }
 
-                T& local() { return my_ets.local(); }
+    T& local() { return my_ets.local(); }
 
-                T& local(bool& exists) { return my_ets.local(exists); }
+    T& local(bool& exists) { return my_ets.local(exists); }
 
-                // combine_func_t has signature T(T,T) or T(const T&, const T&)
-                template <typename CombineFunc>
-                T combine(CombineFunc f_combine) {
-                    return my_ets.combine(f_combine);
-                }
+    // combine_func_t has signature T(T,T) or T(const T&, const T&)
+    template <typename CombineFunc>
+    T combine(CombineFunc f_combine) { return my_ets.combine(f_combine); }
 
-                // combine_func_t has signature void(T) or void(const T&)
-                template <typename CombineFunc>
-                void combine_each(CombineFunc f_combine) {
-                    my_ets.combine_each(f_combine);
-                }
-            };
+    // combine_func_t has signature void(T) or void(const T&)
+    template <typename CombineFunc>
+    void combine_each(CombineFunc f_combine) { my_ets.combine_each(f_combine); }
+};
 
-        }// namespace d1
-    }    // namespace detail
+} // namespace d1
+} // namespace detail
 
-    inline namespace v1 {
-        using detail::d1::combinable;
-    }// namespace v1
+inline namespace v1 {
+using detail::d1::combinable;
+} // inline namespace v1
 
-}// namespace tbb
+} // namespace tbb
 
 #endif /* __TBB_combinable_H */
+

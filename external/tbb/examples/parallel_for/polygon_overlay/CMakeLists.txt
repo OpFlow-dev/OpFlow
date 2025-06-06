@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 Intel Corporation
+# Copyright (c) 2020-2025 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5.0...3.31.3)
 
 project(polygon_overlay CXX)
 
@@ -28,7 +28,7 @@ target_link_libraries(polygon_overlay TBB::tbb TBB::tbbmalloc Threads::Threads U
 target_compile_options(polygon_overlay PRIVATE ${TBB_CXX_STD_FLAG})
 if (MSVC)
     target_compile_options(polygon_overlay PRIVATE -DNOMINMAX)
-endif ()
+endif()
 
 set(EXECUTABLE "$<TARGET_FILE:polygon_overlay>")
 set(ARGS "")

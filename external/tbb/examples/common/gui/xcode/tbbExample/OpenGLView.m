@@ -14,11 +14,11 @@
     limitations under the License.
 */
 
-#import "OpenGLView.h"
 #import <Foundation/Foundation.h>
+#import "OpenGLView.h"
 
 // defined in macvideo.cpp
-extern char *window_title;
+extern char* window_title;
 extern int cocoa_update;
 extern int g_sizex, g_sizey;
 extern unsigned int *g_pImg;
@@ -36,28 +36,23 @@ bool initialized = false;
 @synthesize timer;
 @synthesize imageRect;
 
-- (void)drawRect:(CGRect)start {
+- (void)drawRect:(CGRect)start
+{
     if (initialized == false) {
         NSLog(@"INITIALIZE");
-        timer = [NSTimer scheduledTimerWithTimeInterval:0.03
-                                                 target:self
-                                               selector:@selector(update_window)
-                                               userInfo:nil
-                                                repeats:YES];
+        timer = [NSTimer scheduledTimerWithTimeInterval:0.03 target:self selector:@selector(update_window) userInfo:nil repeats:YES];
         imageRect = [[UIScreen mainScreen] bounds];
         CGFloat full_height = imageRect.size.height;
-        const float ratio = (float) g_sizex / g_sizey;
-        imageRect.size.height = imageRect.size.width / ratio;
-        imageRect.origin.y = (full_height - imageRect.size.height) / 2;
+        const float ratio=(float)g_sizex/g_sizey;
+        imageRect.size.height=imageRect.size.width/ratio;
+        imageRect.origin.y=(full_height-imageRect.size.height)/2;
         initialized = true;
     }
 
     CGColorSpaceRef colourSpace = CGColorSpaceCreateDeviceRGB();
-    CGDataProviderRef dataProvider = CGDataProviderCreateWithData(NULL, g_pImg, 4 * g_sizex * g_sizey, NULL);
+    CGDataProviderRef dataProvider = CGDataProviderCreateWithData(NULL, g_pImg, 4*g_sizex*g_sizey, NULL);
 
-    CGImageRef inputImage = CGImageCreate(g_sizex, g_sizey, 8, 32, g_sizex * 4, colourSpace,
-                                          (CGBitmapInfo) kCGImageAlphaNoneSkipLast, dataProvider, NULL, NO,
-                                          kCGRenderingIntentDefault);
+    CGImageRef inputImage = CGImageCreate(g_sizex, g_sizey, 8, 32, g_sizex * 4, colourSpace,(CGBitmapInfo)kCGImageAlphaNoneSkipLast, dataProvider, NULL, NO, kCGRenderingIntentDefault);
     UIImage *image = [UIImage imageWithCGImage:inputImage];
 
     CGDataProviderRelease(dataProvider);
@@ -65,20 +60,21 @@ bool initialized = false;
     CGImageRelease(inputImage);
 
     [image drawInRect:imageRect];
+
 }
 
-- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
+- (void) touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+{
     CGPoint point = [[touches anyObject] locationInView:self];
     const int x = point.x;
     const int y = point.y;
-    if ((y - imageRect.origin.y) > 0 && y < (imageRect.origin.y + imageRect.size.height))
-        on_mouse_func(x * g_sizex / (imageRect.size.width),
-                      (y - imageRect.origin.y) * g_sizey / imageRect.size.height, 1);
+    if ( (y-imageRect.origin.y) > 0 && y < (imageRect.origin.y + imageRect.size.height ))
+    on_mouse_func( x*g_sizex/(imageRect.size.width), (y-imageRect.origin.y)*g_sizey/imageRect.size.height,1);
     [self setNeedsDisplay];
 }
 
-- (void)update_window {
-    if (cocoa_update) [self setNeedsDisplay];
+-(void) update_window{
+    if( cocoa_update ) [self setNeedsDisplay];
 }
 
 @end
@@ -91,56 +87,55 @@ bool initialized = false;
 
 @synthesize timer;
 
-- (void)drawRect:(NSRect)start {
+- (void) drawRect:(NSRect)start
+{
     if (initialized == false) {
         NSLog(@"INITIALIZE");
-        timer = [NSTimer scheduledTimerWithTimeInterval:0.03
-                                                 target:self
-                                               selector:@selector(update_window)
-                                               userInfo:nil
-                                                repeats:YES];
+        timer = [NSTimer scheduledTimerWithTimeInterval:0.03 target:self selector:@selector(update_window) userInfo:nil repeats:YES];
         initialized = true;
     }
-    glWindowPos2i(0, (int) self.visibleRect.size.height);
-    glPixelZoom((float) self.visibleRect.size.width / (float) g_sizex,
-                -(float) self.visibleRect.size.height / (float) g_sizey);
+    glWindowPos2i(0, (int)self.visibleRect.size.height);
+    glPixelZoom( (float)self.visibleRect.size.width /(float)g_sizex,
+                -(float)self.visibleRect.size.height/(float)g_sizey);
     glDrawPixels(g_sizex, g_sizey, GL_BGRA_EXT, GL_UNSIGNED_INT_8_8_8_8_REV, g_pImg);
     glFlush();
 }
 
-- (void)update_window {
-    if (cocoa_update) [self setNeedsDisplay:YES];
-    if (window_title) [self.window setTitle:[NSString stringWithFormat:@"%s", window_title]];
+-(void) update_window{
+    if( cocoa_update ) [self setNeedsDisplay:YES];
+    if( window_title ) [self.window setTitle:[NSString stringWithFormat:@"%s", window_title]];
 }
 
-- (void)keyDown:(NSEvent *)theEvent {
+-(void) keyDown:(NSEvent *)theEvent{
     on_key_func([theEvent.characters characterAtIndex:0]);
 }
 
-- (void)mouseDown:(NSEvent *)theEvent {
+-(void) mouseDown:(NSEvent *)theEvent{
     // mouse event for seismic and fractal
-    NSPoint point = theEvent.locationInWindow;
-    const int x = (int) point.x;
-    const int y = (int) point.y;
+    NSPoint point= theEvent.locationInWindow;
+    const int x = (int)point.x;
+    const int y = (int)point.y;
     NSRect rect = self.visibleRect;
-    on_mouse_func(x * g_sizex / (int) rect.size.width,
-                  ((int) rect.size.height - y) * g_sizey / (int) rect.size.height, 1);
+    on_mouse_func(x*g_sizex/(int)rect.size.width,((int)rect.size.height-y)*g_sizey/(int)rect.size.height,1);
     [self setNeedsDisplay:YES];
 }
 
-- (BOOL)acceptsFirstResponder {
+- (BOOL) acceptsFirstResponder
+{
     return YES;
 }
 
-- (void)rightMouseDown:(NSEvent *)theEvent {
+- (void) rightMouseDown:(NSEvent *)theEvent
+{
     return;
 }
 
-- (void)viewDidEndLiveResize {
+-(void) viewDidEndLiveResize
+{
     NSRect rect = self.visibleRect;
-    const int x = (int) rect.size.width;
-    const int y = (int) rect.size.height;
-    [self.window setTitle:[NSString stringWithFormat:@"X=%d Y=%d", x, y]];
+    const int x=(int)rect.size.width;
+    const int y=(int)rect.size.height;
+    [self.window setTitle:[NSString stringWithFormat:@"X=%d Y=%d", x,y]];
 }
 
 @end

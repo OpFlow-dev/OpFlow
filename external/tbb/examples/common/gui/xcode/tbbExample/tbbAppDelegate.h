@@ -26,7 +26,7 @@
 
 @interface tbbAppDelegate : UIResponder <UIApplicationDelegate>
 
-@property(strong, nonatomic) UIWindow *window;
+@property (strong, nonatomic) UIWindow *window;
 
 @end
 
@@ -34,13 +34,13 @@
 
 #import <Cocoa/Cocoa.h>
 
-@interface tbbAppDelegate : NSObject <NSApplicationDelegate> {
+@interface tbbAppDelegate : NSObject <NSApplicationDelegate>{
     __unsafe_unretained NSWindow *_window;
 }
 
-@property(assign) IBOutlet NSWindow *window;
+@property (assign) IBOutlet NSWindow *window;
 
-- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender;
+- (BOOL) applicationShouldTerminateAfterLastWindowClosed:(NSApplication *) sender;
 
 @end
 

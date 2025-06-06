@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2020-2021 Intel Corporation
+    Copyright (c) 2020-2024 Intel Corporation
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 #error Do not #include this internal file directly; use public TBB headers instead.
 #endif
 
-// Included in namespace tbb::detail::d1 (in flow_graph.h)
+// Included in namespace tbb::detail::d2 (in flow_graph.h)
 
 #if __TBB_PREVIEW_FLOW_GRAPH_NODE_SET
 // Visual Studio 2019 reports an error while calling predecessor_selector::get and successor_selector::get
@@ -30,10 +30,10 @@
 #define __TBB_MSVC_DISABLE_TRAILING_DECLTYPE (_MSC_VER >= 1900)
 
 namespace order {
-    struct undefined {};
-    struct following {};
-    struct preceding {};
-}// namespace order
+struct undefined {};
+struct following {};
+struct preceding {};
+}
 
 class get_graph_helper {
 public:
@@ -57,7 +57,7 @@ private:
     }
 };
 
-template <typename Order, typename... Nodes>
+template<typename Order, typename... Nodes>
 struct node_set {
     typedef Order order_type;
 
@@ -67,19 +67,17 @@ struct node_set {
     template <typename... Nodes2>
     node_set(const node_set<order::undefined, Nodes2...>& set) : nodes(set.nodes) {}
 
-    graph& graph_reference() const { return get_graph_helper::get(std::get<0>(nodes)); }
+    graph& graph_reference() const {
+        return get_graph_helper::get(std::get<0>(nodes));
+    }
 };
 
 namespace alias_helpers {
-    template <typename T>
-    using output_type = typename T::output_type;
-    template <typename T>
-    using output_ports_type = typename T::output_ports_type;
-    template <typename T>
-    using input_type = typename T::input_type;
-    template <typename T>
-    using input_ports_type = typename T::input_ports_type;
-}// namespace alias_helpers
+template <typename T> using output_type = typename T::output_type;
+template <typename T> using output_ports_type = typename T::output_ports_type;
+template <typename T> using input_type = typename T::input_type;
+template <typename T> using input_ports_type = typename T::input_ports_type;
+} // namespace alias_helpers
 
 template <typename T>
 using has_output_type = supports<T, alias_helpers::output_type>;
@@ -93,10 +91,10 @@ using has_input_ports_type = supports<T, alias_helpers::input_ports_type>;
 template <typename T>
 using has_output_ports_type = supports<T, alias_helpers::output_ports_type>;
 
-template <typename T>
+template<typename T>
 struct is_sender : std::is_base_of<sender<typename T::output_type>, T> {};
 
-template <typename T>
+template<typename T>
 struct is_receiver : std::is_base_of<receiver<typename T::input_type>, T> {};
 
 template <typename Node>
@@ -105,50 +103,55 @@ struct is_async_node : std::false_type {};
 template <typename... Args>
 struct is_async_node<async_node<Args...>> : std::true_type {};
 
-template <typename FirstPredecessor, typename... Predecessors>
-node_set<order::following, FirstPredecessor, Predecessors...> follows(FirstPredecessor& first_predecessor,
-                                                                      Predecessors&... predecessors) {
-    static_assert((conjunction<has_output_type<FirstPredecessor>, has_output_type<Predecessors>...>::value),
-                  "Not all node's predecessors has output_type typedef");
+template<typename FirstPredecessor, typename... Predecessors>
+node_set<order::following, FirstPredecessor, Predecessors...>
+follows(FirstPredecessor& first_predecessor, Predecessors&... predecessors) {
+    static_assert((conjunction<has_output_type<FirstPredecessor>,
+                                                   has_output_type<Predecessors>...>::value),
+                        "Not all node's predecessors has output_type typedef");
     static_assert((conjunction<is_sender<FirstPredecessor>, is_sender<Predecessors>...>::value),
-                  "Not all node's predecessors are senders");
+                        "Not all node's predecessors are senders");
     return node_set<order::following, FirstPredecessor, Predecessors...>(first_predecessor, predecessors...);
 }
 
-template <typename... Predecessors>
+template<typename... Predecessors>
 node_set<order::following, Predecessors...>
 follows(node_set<order::undefined, Predecessors...>& predecessors_set) {
     static_assert((conjunction<has_output_type<Predecessors>...>::value),
-                  "Not all nodes in the set has output_type typedef");
-    static_assert((conjunction<is_sender<Predecessors>...>::value), "Not all nodes in the set are senders");
+                        "Not all nodes in the set has output_type typedef");
+    static_assert((conjunction<is_sender<Predecessors>...>::value),
+                        "Not all nodes in the set are senders");
     return node_set<order::following, Predecessors...>(predecessors_set);
 }
 
-template <typename FirstSuccessor, typename... Successors>
-node_set<order::preceding, FirstSuccessor, Successors...> precedes(FirstSuccessor& first_successor,
-                                                                   Successors&... successors) {
-    static_assert((conjunction<has_input_type<FirstSuccessor>, has_input_type<Successors>...>::value),
-                  "Not all node's successors has input_type typedef");
+template<typename FirstSuccessor, typename... Successors>
+node_set<order::preceding, FirstSuccessor, Successors...>
+precedes(FirstSuccessor& first_successor, Successors&... successors) {
+    static_assert((conjunction<has_input_type<FirstSuccessor>,
+                                                    has_input_type<Successors>...>::value),
+                        "Not all node's successors has input_type typedef");
     static_assert((conjunction<is_receiver<FirstSuccessor>, is_receiver<Successors>...>::value),
-                  "Not all node's successors are receivers");
+                        "Not all node's successors are receivers");
     return node_set<order::preceding, FirstSuccessor, Successors...>(first_successor, successors...);
 }
 
-template <typename... Successors>
+template<typename... Successors>
 node_set<order::preceding, Successors...>
 precedes(node_set<order::undefined, Successors...>& successors_set) {
     static_assert((conjunction<has_input_type<Successors>...>::value),
-                  "Not all nodes in the set has input_type typedef");
-    static_assert((conjunction<is_receiver<Successors>...>::value), "Not all nodes in the set are receivers");
+                        "Not all nodes in the set has input_type typedef");
+    static_assert((conjunction<is_receiver<Successors>...>::value),
+                        "Not all nodes in the set are receivers");
     return node_set<order::preceding, Successors...>(successors_set);
 }
 
 template <typename Node, typename... Nodes>
-node_set<order::undefined, Node, Nodes...> make_node_set(Node& first_node, Nodes&... nodes) {
+node_set<order::undefined, Node, Nodes...>
+make_node_set(Node& first_node, Nodes&... nodes) {
     return node_set<order::undefined, Node, Nodes...>(first_node, nodes...);
 }
 
-template <size_t I>
+template<size_t I>
 class successor_selector {
     template <typename NodeType>
     static auto get_impl(NodeType& node, std::true_type) -> decltype(input_port<I>(node)) {
@@ -156,9 +159,7 @@ class successor_selector {
     }
 
     template <typename NodeType>
-    static NodeType& get_impl(NodeType& node, std::false_type) {
-        return node;
-    }
+    static NodeType& get_impl(NodeType& node, std::false_type) { return node; }
 
 public:
     template <typename NodeType>
@@ -172,7 +173,7 @@ public:
     }
 };
 
-template <size_t I>
+template<size_t I>
 class predecessor_selector {
     template <typename NodeType>
     static auto internal_get(NodeType& node, std::true_type) -> decltype(output_port<I>(node)) {
@@ -180,25 +181,20 @@ class predecessor_selector {
     }
 
     template <typename NodeType>
-    static NodeType& internal_get(NodeType& node, std::false_type) {
-        return node;
-    }
+    static NodeType& internal_get(NodeType& node, std::false_type) { return node;}
 
     template <typename NodeType>
 #if __TBB_MSVC_DISABLE_TRAILING_DECLTYPE
     static auto& get_impl(NodeType& node, std::false_type)
 #else
-    static auto get_impl(NodeType& node, std::false_type)
-            -> decltype(internal_get(node, has_output_ports_type<NodeType>()))
+    static auto get_impl(NodeType& node, std::false_type) -> decltype(internal_get(node, has_output_ports_type<NodeType>()))
 #endif
     {
         return internal_get(node, has_output_ports_type<NodeType>());
     }
 
     template <typename AsyncNode>
-    static AsyncNode& get_impl(AsyncNode& node, std::true_type) {
-        return node;
-    }
+    static AsyncNode& get_impl(AsyncNode& node, std::true_type) { return node; }
 
 public:
     template <typename NodeType>
@@ -212,37 +208,37 @@ public:
     }
 };
 
-template <size_t I>
+template<size_t I>
 class make_edges_helper {
 public:
-    template <typename PredecessorsTuple, typename NodeType>
+    template<typename PredecessorsTuple, typename NodeType>
     static void connect_predecessors(PredecessorsTuple& predecessors, NodeType& node) {
         make_edge(std::get<I>(predecessors), successor_selector<I>::get(node));
         make_edges_helper<I - 1>::connect_predecessors(predecessors, node);
     }
 
-    template <typename SuccessorsTuple, typename NodeType>
+    template<typename SuccessorsTuple, typename NodeType>
     static void connect_successors(NodeType& node, SuccessorsTuple& successors) {
         make_edge(predecessor_selector<I>::get(node), std::get<I>(successors));
         make_edges_helper<I - 1>::connect_successors(node, successors);
     }
 };
 
-template <>
+template<>
 struct make_edges_helper<0> {
-    template <typename PredecessorsTuple, typename NodeType>
+    template<typename PredecessorsTuple, typename NodeType>
     static void connect_predecessors(PredecessorsTuple& predecessors, NodeType& node) {
         make_edge(std::get<0>(predecessors), successor_selector<0>::get(node));
     }
 
-    template <typename SuccessorsTuple, typename NodeType>
+    template<typename SuccessorsTuple, typename NodeType>
     static void connect_successors(NodeType& node, SuccessorsTuple& successors) {
         make_edge(predecessor_selector<0>::get(node), std::get<0>(successors));
     }
 };
 
 // TODO: consider adding an overload for making edges between node sets
-template <typename NodeType, typename OrderFlagType, typename... Args>
+template<typename NodeType, typename OrderFlagType, typename... Args>
 void make_edges(const node_set<OrderFlagType, Args...>& s, NodeType& node) {
     const std::size_t SetSize = std::tuple_size<decltype(s.nodes)>::value;
     make_edges_helper<SetSize - 1>::connect_predecessors(s.nodes, node);
@@ -264,6 +260,6 @@ void make_edges_in_order(const node_set<order::preceding, Nodes...>& ns, NodeTyp
     make_edges(node, ns);
 }
 
-#endif// __TBB_PREVIEW_FLOW_GRAPH_NODE_SET
+#endif  // __TBB_PREVIEW_FLOW_GRAPH_NODE_SET
 
-#endif// __TBB_flow_graph_node_set_impl_H
+#endif // __TBB_flow_graph_node_set_impl_H

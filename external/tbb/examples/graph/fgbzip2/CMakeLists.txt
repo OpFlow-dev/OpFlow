@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 Intel Corporation
+# Copyright (c) 2020-2025 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5.0...3.31.3)
 
 project(fgbzip2 CXX)
 
@@ -21,30 +21,30 @@ include(../../common/cmake/common.cmake)
 set_common_project_settings(tbb)
 
 add_executable(fgbzip2
-        blocksort.cpp
-        bzlib.cpp
-        compress.cpp
-        crctable.cpp
-        decompress.cpp
-        fgbzip2.cpp
-        huffman.cpp
-        randtable.cpp
-        )
+    blocksort.cpp
+    bzlib.cpp
+    compress.cpp
+    crctable.cpp
+    decompress.cpp
+    fgbzip2.cpp
+    huffman.cpp
+    randtable.cpp
+)
 
 target_link_libraries(fgbzip2 TBB::tbb Threads::Threads)
 target_compile_options(fgbzip2 PRIVATE ${TBB_CXX_STD_FLAG})
 
 if (MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL IntelLLVM)
     target_compile_options(fgbzip2 PRIVATE -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE)
-endif ()
+endif()
 
-if (MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL Intel)
+if (MSVC AND (CMAKE_CXX_COMPILER_ID STREQUAL Intel OR CMAKE_CXX_COMPILER_ID STREQUAL IntelLLVM))
     if (COMMAND target_link_options)
         target_link_options(fgbzip2 PRIVATE /FORCE:MULTIPLE /INCREMENTAL:NO)
-    else ()
+    else()
         set_target_properties(fgbzip2 PROPERTIES LINK_FLAGS /FORCE:MULTIPLE /INCREMENTAL:NO)
-    endif ()
-endif ()
+    endif()
+endif()
 
 set(EXECUTABLE "$<TARGET_FILE:fgbzip2>")
 set(ARGS -b=9 -async "$<TARGET_FILE:fgbzip2>")

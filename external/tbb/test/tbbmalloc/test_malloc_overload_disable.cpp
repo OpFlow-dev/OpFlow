@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2018-2021 Intel Corporation
+    Copyright (c) 2018-2022 Intel Corporation
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@
 #include "common/test.h"
 
 #include "common/allocator_overload.h"
-#include "common/utils_env.h"
 #include "common/utils_report.h"
+#include "common/utils_env.h"
 
 // Disabling malloc proxy via env variable is available only on Windows for now
 #if MALLOC_WINDOWS_OVERLOAD_ENABLED
@@ -36,29 +36,32 @@
 #include "src/tbb/environment.h"
 
 const size_t SmallObjectSize = 16;
-const size_t LargeObjectSize = 2 * 8 * 1024;
-const size_t HugeObjectSize = 2 * 1024 * 1024;
+const size_t LargeObjectSize = 2*8*1024;
+const size_t HugeObjectSize = 2*1024*1024;
 
-void CheckWindowsProxyDisablingViaMemSize(size_t ObjectSize) {
+void CheckWindowsProxyDisablingViaMemSize( size_t ObjectSize ) {
     void* ptr = malloc(ObjectSize);
     /*
      * If msize returns 0 - tbbmalloc doesn't contain this object in it`s memory
      * Also msize check that proxy lib is linked
      */
-    REQUIRE_MESSAGE(!__TBB_malloc_safer_msize(ptr, NULL), "Malloc replacement is not deactivated");
+    REQUIRE_MESSAGE(!__TBB_malloc_safer_msize(ptr,nullptr), "Malloc replacement is not deactivated");
     free(ptr);
 }
 
 TEST_CASE("Disabling malloc overload") {
-    if (!tbb::detail::r1::GetBoolEnvironmentVariable("TBB_MALLOC_DISABLE_REPLACEMENT")) {
-        utils::SetEnv("TBB_MALLOC_DISABLE_REPLACEMENT", "1");
+    if (!tbb::detail::r1::GetBoolEnvironmentVariable("TBB_MALLOC_DISABLE_REPLACEMENT"))
+    {
+        utils::SetEnv("TBB_MALLOC_DISABLE_REPLACEMENT","1");
         if ((system(TEST_SYSTEM_COMMAND)) != 0) {
             REPORT("Test error: unable to run the command: %s", TEST_SYSTEM_COMMAND);
             exit(-1);
         }
         // We must execute exit(0) to avoid duplicate "Done" printing.
         exit(0);
-    } else {
+    }
+    else
+    {
         // Check SMALL objects replacement disable
         CheckWindowsProxyDisablingViaMemSize(SmallObjectSize);
         // Check LARGE objects replacement disable
@@ -67,4 +70,4 @@ TEST_CASE("Disabling malloc overload") {
         CheckWindowsProxyDisablingViaMemSize(HugeObjectSize);
     }
 }
-#endif// MALLOC_WINDOWS_OVERLOAD_ENABLED
+#endif // MALLOC_WINDOWS_OVERLOAD_ENABLED

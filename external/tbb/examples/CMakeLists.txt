@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 Intel Corporation
+# Copyright (c) 2020-2025 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5.0...3.31.3)
 
 project(tbb_examples CXX)
 
@@ -29,9 +29,9 @@ macro(tbb_add_example subdir name)
     add_dependencies(run_examples run_${name})
     if (TARGET light_test_${name})
         add_dependencies(light_test_examples light_test_${name})
-    else ()
+    else()
         add_dependencies(light_test_examples run_${name})
-    endif ()
+    endif()
 endmacro()
 
 tbb_add_example(concurrent_hash_map count_strings)
@@ -44,12 +44,12 @@ tbb_add_example(graph binpack)
 # TODO: Consider using FindMKL module
 find_library(MKL_INTEL_LP64_LIB mkl_intel_lp64 PATHS ENV LIBRARY_PATH)
 find_library(MKL_SEQUENTIAL_LIB mkl_sequential PATHS ENV LIBRARY_PATH)
-find_library(MKL_CORE_LIB mkl_core PATHS ENV LIBRARY_PATH)
-if (MKL_INTEL_LP64_LIB AND MKL_SEQUENTIAL_LIB AND MKL_CORE_LIB)
+find_library(MKL_CORE_LIB       mkl_core PATHS ENV LIBRARY_PATH)
+if(MKL_INTEL_LP64_LIB AND MKL_SEQUENTIAL_LIB AND MKL_CORE_LIB)
     tbb_add_example(graph cholesky)
-else ()
+else()
     message(WARNING "Intel(R) Math Kernel Library (Intel(R) MKL) libraries were not found, graph/cholesky example is excluded from the build.")
-endif ()
+endif()
 
 tbb_add_example(graph dining_philosophers)
 tbb_add_example(graph fgbzip2)
@@ -66,6 +66,7 @@ tbb_add_example(parallel_for_each parallel_preorder)
 tbb_add_example(parallel_pipeline square)
 
 tbb_add_example(parallel_reduce convex_hull)
+tbb_add_example(parallel_reduce pi)
 tbb_add_example(parallel_reduce primes)
 
 tbb_add_example(task_arena fractal)
@@ -73,3 +74,5 @@ tbb_add_example(task_arena fractal)
 tbb_add_example(task_group sudoku)
 
 tbb_add_example(test_all fibonacci)
+
+tbb_add_example(migration recursive_fibonacci)

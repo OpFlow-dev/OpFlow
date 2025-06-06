@@ -19,7 +19,7 @@ macro(set_common_project_settings required_components)
     if (NOT TARGET TBB::tbb)
         list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../common/cmake/modules)
         find_package(TBB REQUIRED COMPONENTS ${required_components})
-    endif ()
+    endif()
     find_package(Threads REQUIRED)
 
     # ---------------------------------------------------------------------------------------------------------
@@ -27,11 +27,11 @@ macro(set_common_project_settings required_components)
     if (NOT MSVC)  # no need to cover MSVC as it uses C++14 by default.
         if (NOT CMAKE_CXX_STANDARD)
             set(CMAKE_CXX_STANDARD 11)
-        endif ()
+        endif()
         if (CMAKE_CXX${CMAKE_CXX_STANDARD}_STANDARD_COMPILE_OPTION)  # if standard option was detected by CMake
             set(CMAKE_CXX_STANDARD_REQUIRED ON)
-        endif ()
-    endif ()
+        endif()
+    endif()
 
     set(CMAKE_CXX_EXTENSIONS OFF) # use -std=c++... instead of -std=gnu++...
     # ---------------------------------------------------------------------------------------------------------
@@ -40,9 +40,9 @@ endmacro()
 macro(add_execution_target TARGET_NAME TARGET_DEPENDENCIES EXECUTABLE ARGS)
     if (WIN32)
         add_custom_target(${TARGET_NAME} set "PATH=$<TARGET_FILE_DIR:TBB::tbb>\\;$ENV{PATH}" & ${EXECUTABLE} ${ARGS})
-    else ()
+    else()
         add_custom_target(${TARGET_NAME} ${EXECUTABLE} ${ARGS})
-    endif ()
+    endif()
 
     add_dependencies(${TARGET_NAME} ${TARGET_DEPENDENCIES})
 endmacro()

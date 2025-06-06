@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 Intel Corporation
+# Copyright (c) 2020-2025 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5.0...3.31.3)
 
 project(seismic CXX)
 
@@ -29,7 +29,7 @@ target_compile_options(seismic PRIVATE ${TBB_CXX_STD_FLAG})
 
 if (EXAMPLES_UI_MODE STREQUAL "con")
     target_compile_definitions(seismic PRIVATE _CONSOLE)
-endif ()
+endif()
 
 set(EXECUTABLE "$<TARGET_FILE:seismic>")
 set(ARGS auto 0)

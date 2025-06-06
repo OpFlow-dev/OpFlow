@@ -18,8 +18,8 @@
 #include "oneapi/tbb/tbb_allocator.h"
 
 // the real body of the test is there:
-#include "common/allocator_stl_test_common.h"
 #include "common/allocator_test_common.h"
+#include "common/allocator_stl_test_common.h"
 
 //! \file conformance_allocators.cpp
 //! \brief Test for [memory_allocation.cache_aligned_allocator memory_allocation.tbb_allocator memory_allocation.cache_aligned_resource] specifications
@@ -37,9 +37,7 @@ TEST_CASE("Allocator concept") {
     AssertSameType(allocator.max_size(), typename std::allocator_traits<Allocator>::size_type(0));
     // Following assertion catches case where max_size() is so large that computation of
     // number of bytes for such an allocation would overflow size_type.
-    REQUIRE_MESSAGE((allocator.max_size() * typename std::allocator_traits<Allocator>::size_type(sizeof(int))
-                     >= allocator.max_size()),
-                    "max_size larger than reasonable");
+    REQUIRE_MESSAGE((allocator.max_size() * typename std::allocator_traits<Allocator>::size_type(sizeof(int)) >= allocator.max_size()), "max_size larger than reasonable");
 
     // operator==
     TestAllocator<oneapi::tbb::cache_aligned_allocator<void>>(Comparison);
@@ -70,8 +68,7 @@ TEST_CASE("Thread safety") {
 //! Testing tbb_allocator to return the type of allocation library used
 //! \brief \ref requirement
 TEST_CASE("tbb_allocator allocator type") {
-    using Allocator = oneapi::tbb::tbb_allocator<int>;
-    Allocator tbb_alloc;
+    using Allocator = oneapi::tbb::tbb_allocator<int>; Allocator tbb_alloc;
 #if _MSC_VER && _MSC_VER <= 1900 && !__INTEL_COMPILER
     utils::suppress_unused_warning(tbb_alloc);
 #endif
@@ -86,7 +83,7 @@ TEST_CASE("tbb_allocator allocator type") {
 //! \brief \ref interface \ref requirement
 TEST_CASE("polymorphic_allocator test") {
     oneapi::tbb::cache_aligned_resource aligned_resource;
-    TestAllocator<std::pmr::polymorphic_allocator<void>>(
-            Concept, std::pmr::polymorphic_allocator<void>(&aligned_resource));
+    TestAllocator<std::pmr::polymorphic_allocator<void>>(Concept, std::pmr::polymorphic_allocator<void>(&aligned_resource));
 }
 #endif
+

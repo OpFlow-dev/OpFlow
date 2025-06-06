@@ -54,7 +54,7 @@ TEST_CASE("Parallel test") {
     CHECK(!mLocal);
     mLocal = true;
     constexpr int N = 100;
-    std::atomic<int> suspend {}, resume {};
+    std::atomic<int> suspend{}, resume{};
     oneapi::tbb::task_group tg;
     for (int i = 0; i < N; ++i) {
         tg.run([&tg, &suspend, &resume] {

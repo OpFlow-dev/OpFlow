@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2005-2021 Intel Corporation
+    Copyright (c) 2005-2022 Intel Corporation
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,10 +20,8 @@
 
 #if _MSC_VER && !defined(__INTEL_COMPILER)
 // structure was padded due to alignment specifier
-#pragma warning(disable : 4324)
+#pragma warning( disable: 4324 )
 #endif
-
-#define TBB_PREVIEW_MUTEXES 1
 
 #include "common/test.h"
 #include "common/utils.h"
@@ -43,26 +41,28 @@
 template <typename Q>
 class FloggerBody {
 public:
-    FloggerBody& operator=(const FloggerBody&) = delete;
+    FloggerBody& operator=( const FloggerBody& ) = delete;
 
-    FloggerBody(Q& queue, std::size_t el_num) : q(queue), elem_num(el_num) {}
+    FloggerBody( Q& queue, std::size_t el_num )
+        : q(queue), elem_num(el_num) {}
 
-    void operator()(const int thread_id) const {
+    void operator()( const int thread_id ) const {
         using value_type = typename Q::value_type;
         value_type elem = value_type(thread_id);
         for (std::size_t i = 0; i < elem_num; ++i) {
             q.push(elem);
-            q.try_pop(elem);
+            bool res = q.try_pop(elem);
+            CHECK_FAST(res);
         }
     }
 
 private:
     Q& q;
     std::size_t elem_num;
-};// class FloggerBody
+}; // class FloggerBody
 
 template <typename Q>
-void test_flogger_help(Q& q, std::size_t items_per_page) {
+void test_flogger_help( Q& q, std::size_t items_per_page ) {
     std::size_t nq = q.my_queue_representation->n_queue;
     std::size_t reserved_elem_num = nq * items_per_page - 1;
     std::size_t hack_val = std::numeric_limits<std::size_t>::max() & ~reserved_elem_num;
@@ -70,7 +70,7 @@ void test_flogger_help(Q& q, std::size_t items_per_page) {
     q.my_queue_representation->head_counter = hack_val;
     q.my_queue_representation->tail_counter = hack_val;
 
-    std::size_t k = q.my_queue_representation->tail_counter & -(std::ptrdiff_t) nq;
+    std::size_t k = q.my_queue_representation->tail_counter & -(std::ptrdiff_t)nq;
 
     for (std::size_t i = 0; i < nq; ++i) {
         q.my_queue_representation->array[i].head_counter = k;
@@ -78,27 +78,24 @@ void test_flogger_help(Q& q, std::size_t items_per_page) {
     }
 
     // To induce the overflow occurrence
-    utils::NativeParallelFor(static_cast<typename Q::value_type>(utils::MaxThread),
-                             FloggerBody<Q>(q, reserved_elem_num + 20));
+    utils::NativeParallelFor(static_cast<typename Q::value_type>(utils::MaxThread), FloggerBody<Q>(q, reserved_elem_num + 20));
 
     REQUIRE_MESSAGE(q.empty(), "Failed flogger/empty test");
     REQUIRE_MESSAGE(q.my_queue_representation->head_counter < hack_val, "Failed wraparound test");
 }
 
-template <typename T>
-void test_flogger() {
-    {
-        tbb::concurrent_queue<T> q;
-        test_flogger_help(q, q.my_queue_representation->items_per_page);
-    }
-    {
-        tbb::concurrent_bounded_queue<T> q;
+//! \brief \ref error_guessing
+TEST_CASE("Test CQ Wrapparound") {
+    for (int i = 0; i < 1000; ++i) {
+        tbb::concurrent_queue<int> q;
         test_flogger_help(q, q.my_queue_representation->items_per_page);
     }
 }
 
 //! \brief \ref error_guessing
-TEST_CASE("Test Wrapparound") {
-    test_flogger<int>();
-    // TODO: add test with unsigned char
+TEST_CASE("Test CBQ Wrapparound") {
+    for (int i = 0; i < 1000; ++i) {
+        tbb::concurrent_bounded_queue<int> q;
+        test_flogger_help(q, q.my_queue_representation->items_per_page);
+    }
 }

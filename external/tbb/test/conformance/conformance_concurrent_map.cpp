@@ -15,16 +15,16 @@
 */
 
 #if __INTEL_COMPILER && _MSC_VER
-#pragma warning(disable : 2586)// decorated name length exceeded, name was truncated
+#pragma warning(disable : 2586) // decorated name length exceeded, name was truncated
 #endif
 
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 #include "oneapi/tbb/concurrent_map.h"
-#include <common/concurrent_ordered_common.h>
 #include <common/test.h>
 #include <common/utils.h>
+#include <common/concurrent_ordered_common.h>
 #include <memory>
 #include <type_traits>
 
@@ -42,12 +42,16 @@ using multimap_type = oneapi::tbb::concurrent_multimap<int, int, std::less<int>,
 
 template <>
 struct SpecialTests<map_type> {
-    static void Test() { SpecialMapTests<map_type>(); }
+    static void Test() {
+        SpecialMapTests<map_type>();
+    }
 };
 
 template <>
 struct SpecialTests<multimap_type> {
-    static void Test() { SpecialMultiMapTests<multimap_type>(); }
+    static void Test() {
+        SpecialMultiMapTests<multimap_type>();
+    }
 };
 
 template <template <typename...> class ContainerType>
@@ -55,11 +59,10 @@ void test_member_types() {
     using default_container_type = ContainerType<int, int>;
     static_assert(std::is_same<typename default_container_type::key_compare, std::less<int>>::value,
                   "Incorrect default template comparator");
-    static_assert(std::is_same<typename default_container_type::allocator_type,
-                               oneapi::tbb::tbb_allocator<std::pair<const int, int>>>::value,
+    static_assert(std::is_same<typename default_container_type::allocator_type, oneapi::tbb::tbb_allocator<std::pair<const int, int>>>::value,
                   "Incorrect default template allocator");
 
-    auto test_comparator = [](const int&, const int&) -> bool { return true; };
+    auto test_comparator = [](const int&, const int&)->bool { return true; };
     using test_allocator_type = std::allocator<std::pair<const int, int>>;
 
     using container_type = ContainerType<int, int, decltype(test_comparator), test_allocator_type>;
@@ -87,11 +90,9 @@ void test_member_types() {
     static_assert(std::is_same<typename container_type::const_reference, const value_type&>::value,
                   "Incorrect container const_reference member type");
     using allocator_type = typename container_type::allocator_type;
-    static_assert(std::is_same<typename container_type::pointer,
-                               typename std::allocator_traits<allocator_type>::pointer>::value,
+    static_assert(std::is_same<typename container_type::pointer, typename std::allocator_traits<allocator_type>::pointer>::value,
                   "Incorrect container pointer member type");
-    static_assert(std::is_same<typename container_type::const_pointer,
-                               typename std::allocator_traits<allocator_type>::const_pointer>::value,
+    static_assert(std::is_same<typename container_type::const_pointer, typename std::allocator_traits<allocator_type>::const_pointer>::value,
                   "Incorrect container const_pointer member type");
 
     static_assert(utils::is_forward_iterator<typename container_type::iterator>::value,
@@ -109,38 +110,34 @@ template <template <typename...> typename TMap>
 void test_deduction_guides() {
     std::vector<std::pair<int, int>> v(10, {0, 0});
     TMap map(v.begin(), v.end());
-    static_assert(std::is_same_v<decltype(map), TMap<int, int>>, "WRONG\n");
+    static_assert(std::is_same_v<decltype(map), TMap<int, int> >, "WRONG\n");
 
     std::greater<int> compare;
     std::allocator<std::pair<const int, int>> allocator;
     TMap map2(v.begin(), v.end(), compare);
-    static_assert(std::is_same_v<decltype(map2), TMap<int, int, decltype(compare)>>, "WRONG\n");
+    static_assert(std::is_same_v<decltype(map2), TMap<int, int, decltype(compare)> >, "WRONG\n");
 
     TMap map3(v.begin(), v.end(), allocator);
-    static_assert(std::is_same_v<decltype(map3), TMap<int, int, std::less<int>, decltype(allocator)>>,
-                  "WRONG\n");
+    static_assert(std::is_same_v<decltype(map3), TMap<int, int, std::less<int>, decltype(allocator)> >, "WRONG\n");
 
     TMap map4(v.begin(), v.end(), compare, allocator);
-    static_assert(std::is_same_v<decltype(map4), TMap<int, int, decltype(compare), decltype(allocator)>>,
-                  "WRONG\n");
+    static_assert(std::is_same_v<decltype(map4), TMap<int, int, decltype(compare), decltype(allocator)> >, "WRONG\n");
 
     using pair_t = std::pair<const int, int>;
-    auto init = {pair_t {1, 1}, pair_t {2, 2}, pair_t {3, 3}};
+    auto init = { pair_t{1, 1}, pair_t{2, 2}, pair_t{3, 3} };
     TMap map5(init);
-    static_assert(std::is_same_v<decltype(map5), TMap<int, int>>, "WRONG\n");
+    static_assert(std::is_same_v<decltype(map5), TMap<int, int> >, "WRONG\n");
 
     TMap map6(init, compare);
-    static_assert(std::is_same_v<decltype(map6), TMap<int, int, decltype(compare)>>, "WRONG\n");
+    static_assert(std::is_same_v<decltype(map6), TMap<int, int, decltype(compare)> >, "WRONG\n");
 
     TMap map7(init, allocator);
-    static_assert(std::is_same_v<decltype(map7), TMap<int, int, std::less<int>, decltype(allocator)>>,
-                  "WRONG\n");
+    static_assert(std::is_same_v<decltype(map7), TMap<int, int, std::less<int>, decltype(allocator)> >, "WRONG\n");
 
     TMap map8(init, compare, allocator);
-    static_assert(std::is_same_v<decltype(map8), TMap<int, int, decltype(compare), decltype(allocator)>>,
-                  "WRONG\n");
+    static_assert(std::is_same_v<decltype(map8), TMap<int, int, decltype(compare), decltype(allocator)> >, "WRONG\n");
 }
-#endif// __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
+#endif // __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
 
 template <template <typename...> class MapType>
 void test_heterogeneous_functions() {
@@ -157,7 +154,7 @@ struct COMapTraits : OrderedMoveTraitsBase {
     using container_value_type = std::pair<const T, T>;
 
     using init_iterator_type = move_support_tests::FooPairIterator;
-};// struct COMapTraits
+}; // struct COMapTraits
 
 struct COMultimapTraits : OrderedMoveTraitsBase {
     template <typename T, typename Allocator>
@@ -167,23 +164,31 @@ struct COMultimapTraits : OrderedMoveTraitsBase {
     using container_value_type = std::pair<const T, T>;
 
     using init_iterator_type = move_support_tests::FooPairIterator;
-};// struct COMultimapTraits
+}; // struct COMultimapTraits
 
 //! Testing concurrent_map member types
 //! \brief \ref interface \ref requirement
-TEST_CASE("concurrent_map member types") { test_member_types<oneapi::tbb::concurrent_map>(); }
+TEST_CASE("concurrent_map member types") {
+    test_member_types<oneapi::tbb::concurrent_map>();
+}
 
 //! Testing requirements of concurrent_map
 //! \brief \ref interface \ref requirement
-TEST_CASE("concurrent_map requirements") { test_basic<map_type>(); }
+TEST_CASE("concurrent_map requirements") {
+    test_basic<map_type>();
+}
 
 //! Testing multithreading support in concurrent_map
 //! \brief \ref requirement
-TEST_CASE("concurrent_map multithreading support") { test_concurrent<map_type>(); }
+TEST_CASE("concurrent_map multithreading support") {
+    test_concurrent<map_type>();
+}
 
 //! Testing move constructors and assignment operator in concurrent_map
 //! \brief \ref interface \ref requirement
-TEST_CASE("concurrent_map move semantics support") { test_rvalue_ref_support<COMapTraits>(); }
+TEST_CASE("concurrent_map move semantics support") {
+    test_rvalue_ref_support<COMapTraits>();
+}
 
 //! Testing std::initializer_list constructors and modifiers in concurrent_map
 //! \brief \ref interface \ref requirement
@@ -199,7 +204,9 @@ TEST_CASE("node handling support in concurrent_map") {
 
 //! Testing std::allocator_traits support in concurrent_map
 //! \brief \ref interface \ref requirement
-TEST_CASE("std::allocator_traits support in concurrent_map") { test_allocator_traits_support<COMapTraits>(); }
+TEST_CASE("std::allocator_traits support in concurrent_map") {
+    test_allocator_traits_support<COMapTraits>();
+}
 
 //! Testing heterogeneous overloads in concurrent_map
 //! \brief \ref interface \ref requirement
@@ -216,28 +223,40 @@ TEST_CASE("insertion by generic pair in concurrent_map") {
 #if __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
 //! Testing Class Template Argument Deduction in concurrent_map
 //! \brief \ref interface \ref requirement
-TEST_CASE("CTAD support in concurrent_map") { test_deduction_guides<oneapi::tbb::concurrent_map>(); }
-#endif// __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
+TEST_CASE("CTAD support in concurrent_map") {
+    test_deduction_guides<oneapi::tbb::concurrent_map>();
+}
+#endif // __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
 
 //! Testing comparisons of concurrent_map
 //! \brief \ref interface \ref requirement
-TEST_CASE("test concurrent_map comparisons") { test_map_comparisons<oneapi::tbb::concurrent_map>(); }
+TEST_CASE("test concurrent_map comparisons") {
+    test_map_comparisons<oneapi::tbb::concurrent_map>();
+}
 
 //! Testing concurrent_multimap member types
 //! \brief \ref interface \ref requirement
-TEST_CASE("concurrent_multimap member types") { test_member_types<oneapi::tbb::concurrent_multimap>(); }
+TEST_CASE("concurrent_multimap member types") {
+    test_member_types<oneapi::tbb::concurrent_multimap>();
+}
 
 //! Testing requirements of concurrent_multimap
 //! \brief \ref interface \ref requirement
-TEST_CASE("concurrent_multimap requirements") { test_basic<multimap_type>(); }
+TEST_CASE("concurrent_multimap requirements") {
+    test_basic<multimap_type>();
+}
 
 //! Testing multithreading support in concurrent_multimap
 //! \brief \ref requirement
-TEST_CASE("concurrent_multimap multithreading support") { test_concurrent<multimap_type>(); }
+TEST_CASE("concurrent_multimap multithreading support") {
+    test_concurrent<multimap_type>();
+}
 
 //! Testing move constructors and assignment operator in concurrent_multimap
 //! \brief \ref interface \ref requirement
-TEST_CASE("concurrent_multimap multithreading support") { test_rvalue_ref_support<COMultimapTraits>(); }
+TEST_CASE("concurrent_multimap multithreading support") {
+    test_rvalue_ref_support<COMultimapTraits>();
+}
 
 //! Testing std::initializer_list constructors and modifiers in concurrent_multimap
 //! \brief \ref interface \ref requirement
@@ -275,7 +294,7 @@ TEST_CASE("insertion by generic pair in concurrent_multimap") {
 TEST_CASE("CTAD support in concurrent_multimap") {
     test_deduction_guides<oneapi::tbb::concurrent_multimap>();
 }
-#endif// __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
+#endif // __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
 
 //! Testing comparison operators in concurrent_multimap
 //! \brief \ref interface \ref requirement
@@ -285,4 +304,6 @@ TEST_CASE("test concurrent_multimap comparisons") {
 
 //! Testing of merge operations in concurrent_map and concurrent_multimap
 //! \brief \ref interface \ref requirement
-TEST_CASE("merge operations") { node_handling_tests::test_merge<map_type, multimap_type>(1000); }
+TEST_CASE("merge operations") {
+    node_handling_tests::test_merge<map_type, multimap_type>(1000);
+}

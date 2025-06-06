@@ -17,97 +17,92 @@
 #ifndef __TBB__small_object_pool_H
 #define __TBB__small_object_pool_H
 
-#include "_assert.h"
 #include "_config.h"
+#include "_assert.h"
 
 #include "../profiling.h"
-#include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <atomic>
 
 namespace tbb {
-    namespace detail {
+namespace detail {
 
-        namespace d1 {
-            class small_object_pool {
-            protected:
-                small_object_pool() = default;
-            };
-            struct execution_data;
-        }// namespace d1
+namespace d1 {
+class small_object_pool {
+protected:
+    small_object_pool() = default;
+};
+struct execution_data;
+}
 
-        namespace r1 {
-            TBB_EXPORT void* __TBB_EXPORTED_FUNC allocate(d1::small_object_pool*& pool,
-                                                          std::size_t number_of_bytes,
-                                                          const d1::execution_data& ed);
-            TBB_EXPORT void* __TBB_EXPORTED_FUNC allocate(d1::small_object_pool*& pool,
-                                                          std::size_t number_of_bytes);
-            TBB_EXPORT void __TBB_EXPORTED_FUNC deallocate(d1::small_object_pool& pool, void* ptr,
-                                                           std::size_t number_of_bytes,
-                                                           const d1::execution_data& ed);
-            TBB_EXPORT void __TBB_EXPORTED_FUNC deallocate(d1::small_object_pool& pool, void* ptr,
-                                                           std::size_t number_of_bytes);
-        }// namespace r1
+namespace r1 {
+TBB_EXPORT void* __TBB_EXPORTED_FUNC allocate(d1::small_object_pool*& pool, std::size_t number_of_bytes,
+                                    const d1::execution_data& ed);
+TBB_EXPORT void* __TBB_EXPORTED_FUNC allocate(d1::small_object_pool*& pool, std::size_t number_of_bytes);
+TBB_EXPORT void  __TBB_EXPORTED_FUNC deallocate(d1::small_object_pool& pool, void* ptr, std::size_t number_of_bytes,
+                                        const d1::execution_data& ed);
+TBB_EXPORT void  __TBB_EXPORTED_FUNC deallocate(d1::small_object_pool& pool, void* ptr, std::size_t number_of_bytes);
+}
 
-        namespace d1 {
-            class small_object_allocator {
-            public:
-                template <typename Type, typename... Args>
-                Type* new_object(execution_data& ed, Args&&... args) {
-                    void* allocated_object = r1::allocate(m_pool, sizeof(Type), ed);
+namespace d1 {
+class small_object_allocator {
+public:
+    template <typename Type, typename... Args>
+    Type* new_object(execution_data& ed, Args&&... args) {
+        void* allocated_object = r1::allocate(m_pool, sizeof(Type), ed);
 
-                    auto constructed_object = new (allocated_object) Type(std::forward<Args>(args)...);
-                    return constructed_object;
-                }
+        auto constructed_object = new(allocated_object) Type(std::forward<Args>(args)...);
+        return constructed_object;
+    }
 
-                template <typename Type, typename... Args>
-                Type* new_object(Args&&... args) {
-                    void* allocated_object = r1::allocate(m_pool, sizeof(Type));
+    template <typename Type, typename... Args>
+    Type* new_object(Args&&... args) {
+        void* allocated_object = r1::allocate(m_pool, sizeof(Type));
 
-                    auto constructed_object = new (allocated_object) Type(std::forward<Args>(args)...);
-                    return constructed_object;
-                }
+        auto constructed_object = new(allocated_object) Type(std::forward<Args>(args)...);
+        return constructed_object;
+    }
 
-                template <typename Type>
-                void delete_object(Type* object, const execution_data& ed) {
-                    // Copy this since it can be a member of the passed object and
-                    // unintentionally destroyed when Type destructor is called below
-                    small_object_allocator alloc = *this;
-                    object->~Type();
-                    alloc.deallocate(object, ed);
-                }
+    template <typename Type>
+    void delete_object(Type* object, const execution_data& ed) {
+        // Copy this since it can be a member of the passed object and
+        // unintentionally destroyed when Type destructor is called below
+        small_object_allocator alloc = *this;
+        object->~Type();
+        alloc.deallocate(object, ed);
+    }
 
-                template <typename Type>
-                void delete_object(Type* object) {
-                    // Copy this since it can be a member of the passed object and
-                    // unintentionally destroyed when Type destructor is called below
-                    small_object_allocator alloc = *this;
-                    object->~Type();
-                    alloc.deallocate(object);
-                }
+    template <typename Type>
+    void delete_object(Type* object) {
+        // Copy this since it can be a member of the passed object and
+        // unintentionally destroyed when Type destructor is called below
+        small_object_allocator alloc = *this;
+        object->~Type();
+        alloc.deallocate(object);
+    }
 
-                template <typename Type>
-                void deallocate(Type* ptr, const execution_data& ed) {
-                    call_itt_task_notify(destroy, ptr);
+    template <typename Type>
+    void deallocate(Type* ptr, const execution_data& ed) {
+        call_itt_task_notify(destroy, ptr);
 
-                    __TBB_ASSERT(m_pool != nullptr, "Pool must be valid for deallocate call");
-                    r1::deallocate(*m_pool, ptr, sizeof(Type), ed);
-                }
+        __TBB_ASSERT(m_pool != nullptr, "Pool must be valid for deallocate call");
+        r1::deallocate(*m_pool, ptr, sizeof(Type), ed);
+    }
 
-                template <typename Type>
-                void deallocate(Type* ptr) {
-                    call_itt_task_notify(destroy, ptr);
+    template <typename Type>
+    void deallocate(Type* ptr) {
+        call_itt_task_notify(destroy, ptr);
 
-                    __TBB_ASSERT(m_pool != nullptr, "Pool must be valid for deallocate call");
-                    r1::deallocate(*m_pool, ptr, sizeof(Type));
-                }
+        __TBB_ASSERT(m_pool != nullptr, "Pool must be valid for deallocate call");
+        r1::deallocate(*m_pool, ptr, sizeof(Type));
+    }
+private:
+    small_object_pool* m_pool{};
+};
 
-            private:
-                small_object_pool* m_pool {};
-            };
-
-        }// namespace d1
-    }    // namespace detail
-}// namespace tbb
+} // namespace d1
+} // namespace detail
+} // namespace tbb
 
 #endif /* __TBB__small_object_pool_H */

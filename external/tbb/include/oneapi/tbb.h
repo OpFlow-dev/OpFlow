@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2005-2021 Intel Corporation
+    Copyright (c) 2005-2024 Intel Corporation
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -28,18 +28,14 @@
 #include "oneapi/tbb/blocked_range.h"
 #include "oneapi/tbb/blocked_range2d.h"
 #include "oneapi/tbb/blocked_range3d.h"
-#if TBB_PREVIEW_BLOCKED_RANGE_ND
-#include "tbb/blocked_rangeNd.h"
-#endif
+#include "oneapi/tbb/blocked_nd_range.h"
 #include "oneapi/tbb/cache_aligned_allocator.h"
 #include "oneapi/tbb/combinable.h"
 #include "oneapi/tbb/concurrent_hash_map.h"
 #if TBB_PREVIEW_CONCURRENT_LRU_CACHE
 #include "tbb/concurrent_lru_cache.h"
 #endif
-#if TBB_PREVIEW_COLLABORATIVE_CALL_ONCE
 #include "oneapi/tbb/collaborative_call_once.h"
-#endif
 #include "oneapi/tbb/concurrent_priority_queue.h"
 #include "oneapi/tbb/concurrent_queue.h"
 #include "oneapi/tbb/concurrent_unordered_map.h"
@@ -65,6 +61,8 @@
 #include "oneapi/tbb/queuing_rw_mutex.h"
 #include "oneapi/tbb/spin_mutex.h"
 #include "oneapi/tbb/spin_rw_mutex.h"
+#include "oneapi/tbb/mutex.h"
+#include "oneapi/tbb/rw_mutex.h"
 #include "oneapi/tbb/task.h"
 #include "oneapi/tbb/task_arena.h"
 #include "oneapi/tbb/task_group.h"
