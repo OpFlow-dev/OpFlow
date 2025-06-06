@@ -16,19 +16,22 @@
 
 macro(CONFIG_AND_INSTALL_AMGCL)
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/amgcl-build)
-    execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}"
-            -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-            -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} ${CMAKE_CURRENT_LIST_DIR}/../external/amgcl
-            RESULT_VARIABLE result
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/amgcl-build)
-    if (result)
+    execute_process(COMMAND ${CMAKE_COMMAND}
+        -G "${CMAKE_GENERATOR}"
+        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        ${CMAKE_CURRENT_LIST_DIR}/../external/amgcl
+        RESULT_VARIABLE result
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/amgcl-build)
+    if(result)
         message(FATAL_ERROR "CMake step for AMGCL failed: ${result}")
     endif()
     execute_process(COMMAND ${CMAKE_COMMAND} --install .
-            RESULT_VARIABLE result
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/amgcl-build)
-    if (result)
+        RESULT_VARIABLE result
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/amgcl-build)
+    if(result)
         message(FATAL_ERROR "Build & install step for AMGCL failed: ${result}")
     endif()
 endmacro()
