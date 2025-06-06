@@ -52,7 +52,7 @@ namespace OpFlow::Meta {
 
     template <typename... T>
     struct firstOf {
-        using type = typename std::tuple_element<0, std::tuple<T...>>::type;
+        using type = T...[0];
     };
 
     template <typename... Ts>
@@ -61,7 +61,7 @@ namespace OpFlow::Meta {
     template <typename... T>
     struct lastOf {
         // last type in the type list
-        using type = typename std::tuple_element<sizeof...(T) - 1, std::tuple<T...>>::type;
+        using type = T...[sizeof...(T) - 1];
     };
 
     template <typename... T>
@@ -172,8 +172,8 @@ namespace OpFlow::Meta {
     }
 
     template <std::size_t... Ints, std::size_t... IntsRemain, typename... Ts>
-    inline auto tuple_split_impl(std::index_sequence<Ints...>, std::index_sequence<IntsRemain...>,
-                                 std::tuple<Ts...>& t) {
+    auto tuple_split_impl(std::index_sequence<Ints...>, std::index_sequence<IntsRemain...>,
+                          std::tuple<Ts...>& t) {
         return std::make_tuple(std::forward_as_tuple(std::get<Ints>(t)...),
                                std::forward_as_tuple(std::get<IntsRemain>(t)...));
     }
