@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2021 Intel Corporation
+# Copyright (c) 2020-2025 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5.0...3.31.3)
 
 set(EXAMPLES_UI_MODE "con" CACHE STRING "EXAMPLES_UI_MODE")
 
@@ -20,45 +20,45 @@ if (WIN32)
     set_property(CACHE EXAMPLES_UI_MODE PROPERTY STRINGS "con" "gdi" "d2d")
 elseif (APPLE)
     set_property(CACHE EXAMPLES_UI_MODE PROPERTY STRINGS "con" "mac")
-else ()
+else()
     set_property(CACHE EXAMPLES_UI_MODE PROPERTY STRINGS "con" "x")
-endif ()
+endif()
 
 get_property(_available_ui_modes CACHE EXAMPLES_UI_MODE PROPERTY STRINGS)
 
 list(FIND _available_ui_modes ${EXAMPLES_UI_MODE} _find_index)
-if (NOT _find_index EQUAL -1)
+if  (NOT _find_index EQUAL -1)
     add_library(UI_LIB_${PROJECT_NAME} STATIC ${CMAKE_CURRENT_LIST_DIR}/${EXAMPLES_UI_MODE}video.cpp)
 
     if (EXAMPLES_UI_MODE STREQUAL "mac")
         enable_language(C)
-        add_library(UI_LIB_OBJECT_${PROJECT_NAME} OBJECT
-                ${CMAKE_CURRENT_LIST_DIR}/xcode/tbbExample/main.m
-                ${CMAKE_CURRENT_LIST_DIR}/xcode/tbbExample/OpenGLView.m
-                ${CMAKE_CURRENT_LIST_DIR}/xcode/tbbExample/tbbAppDelegate.m
-                )
+        add_library(UI_LIB_OBJECT_${PROJECT_NAME} OBJECT  
+            ${CMAKE_CURRENT_LIST_DIR}/xcode/tbbExample/main.m 
+            ${CMAKE_CURRENT_LIST_DIR}/xcode/tbbExample/OpenGLView.m 
+            ${CMAKE_CURRENT_LIST_DIR}/xcode/tbbExample/tbbAppDelegate.m
+        )
         target_sources(UI_LIB_${PROJECT_NAME} PUBLIC $<TARGET_OBJECTS:UI_LIB_OBJECT_${PROJECT_NAME}>)
-    endif ()
-else ()
+    endif()
+else()
     string(REPLACE ";" ", " _available_ui_modes "${_available_ui_modes}")
     message(FATAL_ERROR
-            "Selected UI mode (${EXAMPLES_UI_MODE}) is not supported on ${CMAKE_SYSTEM_NAME}.
+        "Selected UI mode (${EXAMPLES_UI_MODE}) is not supported on ${CMAKE_SYSTEM_NAME}. 
         Supported UI modes: ${_available_ui_modes}"
-            )
-endif ()
+    )
+endif()
 
 macro(set_gdi_ui_project_settings)
     find_program(RC rc REQUIRED)
     add_custom_command(TARGET UI_LIB_${PROJECT_NAME} PRE_BUILD COMMAND
-            ${RC} /r -fo ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.res ${PROJECT_SOURCE_DIR}/gui/${PROJECT_NAME}.rc
-            )
+        ${RC} /r -fo ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.res ${PROJECT_SOURCE_DIR}/gui/${PROJECT_NAME}.rc
+    )
 
     set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
     if (COMMAND target_link_options)
         target_link_options(UI_LIB_${PROJECT_NAME} PUBLIC ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.res)
-    else ()
+    else()
         set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.res)
-    endif ()
+    endif()
 endmacro()
 
 macro(set_d2d_ui_project_settings)
@@ -67,22 +67,22 @@ macro(set_d2d_ui_project_settings)
     if (IS_DIRECTORY $ENV{DXSDK_DIR})
         target_include_directories(UI_LIB_${PROJECT_NAME} PUBLIC $ENV{DXSDK_DIR}\\include)
         target_link_directories(UI_LIB_${PROJECT_NAME} PUBLIC $ENV{DXSDK_DIR}\\lib\\x64)
-    else ()
+    else()
         message(FATAL_ERROR "Cannot find the DirectX library (required by the 'd2d' UI mode)")
-    endif ()
+    endif()
 endmacro()
 
 macro(set_x_ui_project_settings)
     find_package(X11 REQUIRED)
-    target_link_libraries(UI_LIB_${PROJECT_NAME} PUBLIC ${X11_LIBRARIES})
+    target_link_libraries(UI_LIB_${PROJECT_NAME} PUBLIC  ${X11_LIBRARIES})
     target_include_directories(UI_LIB_${PROJECT_NAME} PUBLIC ${X11_INCLUDE_DIR})
 
     find_library(LIB_Xext Xext PATHS ENV LIBRARY_PATH ENV LD_LIBRARY_PATH ENV DYLD_LIBRARY_PATH)
     if (LIB_Xext)
-        target_link_libraries(UI_LIB_${PROJECT_NAME} PUBLIC ${LIB_Xext})
-    else ()
+        target_link_libraries(UI_LIB_${PROJECT_NAME} PUBLIC  ${LIB_Xext})
+    else()
         target_compile_definitions(UI_LIB_${PROJECT_NAME} PUBLIC -DX_NOSHMEM)
-    endif ()
+    endif()
 endmacro()
 
 macro(set_mac_ui_project_settings)
@@ -91,12 +91,12 @@ macro(set_mac_ui_project_settings)
     find_library(FOUNDATION_LIBRARY Foundation PATHS ENV LIBRARY_PATH ENV LD_LIBRARY_PATH ENV DYLD_LIBRARY_PATH)
     if (NOT FOUNDATION_LIBRARY)
         message(FATAL_ERROR "Cannot find the Foundation library (required by the 'mac' UI mode)")
-    endif ()
+    endif()
 
     find_library(COCOA_LIBRARY Cocoa PATHS ENV LIBRARY_PATH ENV LD_LIBRARY_PATH ENV DYLD_LIBRARY_PATH)
     if (NOT COCOA_LIBRARY)
         message(FATAL_ERROR "Cannot find the Cocoa library (required by the 'mac' UI mode)")
-    endif ()
+    endif()
 
     target_link_libraries(UI_LIB_${PROJECT_NAME} PUBLIC ${OPENGL_LIBRARIES} ${FOUNDATION_LIBRARY} ${COCOA_LIBRARY})
     target_include_directories(UI_LIB_${PROJECT_NAME} PUBLIC ${OPENGL_INCLUDE_DIR})
@@ -111,7 +111,7 @@ macro(set_mac_ui_project_settings)
     set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "MacUI/${PROJECT_NAME}.app/Contents/MacOS/")
 endmacro()
 
-if (NOT _find_index EQUAL -1)
+if  (NOT _find_index EQUAL -1)
     if ("${EXAMPLES_UI_MODE}" STREQUAL "gdi")
         set_gdi_ui_project_settings()
     elseif ("${EXAMPLES_UI_MODE}" STREQUAL "d2d")
@@ -120,8 +120,9 @@ if (NOT _find_index EQUAL -1)
         set_mac_ui_project_settings()
     elseif ("${EXAMPLES_UI_MODE}" STREQUAL "x")
         set_x_ui_project_settings()
-    endif ()
-endif ()
+    endif()
+    target_compile_options(UI_LIB_${PROJECT_NAME} PRIVATE ${TBB_CXX_STD_FLAG})
+endif()
 
 unset(_available_ui_modes)
 unset(_find_index)

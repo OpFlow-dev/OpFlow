@@ -26,11 +26,11 @@
     CGRect imageRect;
 }
 
-@property(nonatomic, retain) NSTimer *timer;
-@property(nonatomic) CGRect imageRect;
+@property (nonatomic, retain) NSTimer *timer;
+@property (nonatomic) CGRect imageRect;
 
-- (void)drawRect:(CGRect)rect;
-- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event;
+- (void) drawRect:(CGRect)rect;
+- (void) touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event;
 
 @end
 
@@ -39,17 +39,17 @@
 #import <Foundation/Foundation.h>
 #import <Cocoa/Cocoa.h>
 
-@interface OpenGLView : NSOpenGLView {
+@interface OpenGLView : NSOpenGLView{
     NSTimer *timer;
 }
 
-@property(nonatomic, retain) NSTimer *timer;
+@property (nonatomic,retain) NSTimer *timer;
 
-- (void)drawRect:(NSRect)start;
-- (void)mouseDown:(NSEvent *)theEvent;
-- (void)keyDown:(NSEvent *)theEvent;
-- (BOOL)acceptsFirstResponder;
-- (void)viewDidEndLiveResize;
+- (void) drawRect:(NSRect)start;
+- (void) mouseDown:(NSEvent *)theEvent;
+- (void) keyDown:(NSEvent *)theEvent;
+- (BOOL) acceptsFirstResponder;
+- (void) viewDidEndLiveResize;
 
 @end
 

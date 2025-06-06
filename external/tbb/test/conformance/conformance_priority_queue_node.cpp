@@ -15,7 +15,7 @@
 */
 
 #if __INTEL_COMPILER && _MSC_VER
-#pragma warning(disable : 2586)// decorated name length exceeded, name was truncated
+#pragma warning(disable : 2586) // decorated name length exceeded, name was truncated
 #endif
 
 #define CONFORMANCE_BUFFERING_NODES
@@ -28,33 +28,33 @@
 
 //! Test priority_queue_node single_push
 //! \brief \ref requirement
-TEST_CASE("priority_queue_node single_push") {
+TEST_CASE("priority_queue_node single_push"){
     conformance::test_forwarding_single_push<oneapi::tbb::flow::priority_queue_node<int>>();
 }
 
 //! Test function_node buffering
 //! \brief \ref requirement
-TEST_CASE("priority_queue_node buffering") {
+TEST_CASE("priority_queue_node buffering"){
     conformance::test_buffering<oneapi::tbb::flow::priority_queue_node<int>, int>();
 }
 
 //! Constructs an empty priority_queue_node that belongs to the same graph g as src.
 //! Any intermediate state of src, including its links to predecessors and successors, is not copied.
 //! \brief \ref requirement
-TEST_CASE("priority_queue_node copy constructor") {
+TEST_CASE("priority_queue_node copy constructor"){
     conformance::test_copy_ctor_for_buffering_nodes<oneapi::tbb::flow::priority_queue_node<int>>();
 }
 
 //! Test inheritance relations
 //! \brief \ref interface
-TEST_CASE("priority_queue_node superclasses") {
+TEST_CASE("priority_queue_node superclasses"){
     conformance::test_inheritance<oneapi::tbb::flow::priority_queue_node<int>, int, int>();
     conformance::test_inheritance<oneapi::tbb::flow::priority_queue_node<void*>, void*, void*>();
 }
 
 //! Test priority_queue_node node `try_put()` and `try_get()`
 //! \brief \ref requirement
-TEST_CASE("priority_queue_node methods") {
+TEST_CASE("priority_queue_node methods"){
     oneapi::tbb::flow::graph g;
 
     oneapi::tbb::flow::priority_queue_node<int, std::greater<int>> testing_node(g);

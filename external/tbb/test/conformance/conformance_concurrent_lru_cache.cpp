@@ -15,7 +15,7 @@
 */
 
 #if __INTEL_COMPILER && _MSC_VER
-#pragma warning(disable : 2586)// decorated name length exceeded, name was truncated
+#pragma warning(disable : 2586) // decorated name length exceeded, name was truncated
 #endif
 
 #define TBB_PREVIEW_CONCURRENT_LRU_CACHE 1
@@ -38,19 +38,19 @@ TEST_CASE("basic test for creation and use") {
     auto callback = [](int key) -> int { return key; };
     std::size_t number_of_lru_history_items = 8;
 
-    preset preset_object {callback, number_of_lru_history_items};
+    preset preset_object{callback, number_of_lru_history_items};
     preset::cache_type& cache = preset_object.cache;
 
     int dummy_key = 0;
     preset::handle_type h = cache[dummy_key];
     int value = h.value();
-    (void) value;
+    (void)value;
 }
 
 //! \brief \ref interface \ref requirement
 TEST_CASE("basic test for std::move") {
     using preset = concurrent_lru_cache_presets::preset1;
-    preset preset_object {};
+    preset preset_object{};
     preset::cache_type& cache = preset_object.cache;
 
     // retain handle object to keep an item in the cache
@@ -75,8 +75,9 @@ TEST_CASE("basic test for std::move") {
 TEST_CASE("basic test for to bool conversion") {
     using concurrent_lru_cache_presets::preset1;
 
-    preset1 preset_instance {};
+    preset1 preset_instance{};
     preset1::cache_type& cache = preset_instance.cache;
+
 
     preset1::handle_type handle;
     preset1::handle_type foobar = preset1::handle_type();
@@ -89,8 +90,12 @@ TEST_CASE("basic test for to bool conversion") {
 
     handle = std::move(handle1);
 
-    REQUIRE_MESSAGE(!preset1::handle_type(), "user-defined to-bool conversion does not work");
-    REQUIRE_MESSAGE(handle, "user-defined to-bool conversion does not work");
+    REQUIRE_MESSAGE(
+        !preset1::handle_type(),
+        "user-defined to-bool conversion does not work");
+    REQUIRE_MESSAGE(
+        handle,
+        "user-defined to-bool conversion does not work");
 
     handle = preset1::handle_type();
 }
@@ -98,23 +103,28 @@ TEST_CASE("basic test for to bool conversion") {
 //! \brief \ref requirement
 TEST_CASE("basic test for cache hit") {
     using preset = concurrent_lru_cache_presets::preset_call_count<__LINE__>;
-    preset preset_object {};
+    preset preset_object{};
     preset::cache_type& cache = preset_object.cache;
 
     int dummy_key = 0;
     cache[dummy_key];
     cache[dummy_key];
 
-    REQUIRE_MESSAGE(preset::counter_type::calls == 1, "value function should be called only on a cache miss");
+    REQUIRE_MESSAGE(
+        preset::counter_type::calls == 1,
+        "value function should be called only on a cache miss");
 }
 
 //! \brief \ref requirement
 TEST_CASE("basic test for unused objects") {
     using preset = concurrent_lru_cache_presets::preset_instance_count;
-    preset preset_object {};
+    preset preset_object{};
 
-    for (std::size_t i = 0; i < preset_object.number_of_lru_history_items; ++i) preset_object.cache[i];
+    for (std::size_t i = 0; i < preset_object.number_of_lru_history_items; ++i)
+        preset_object.cache[i];
 
-    REQUIRE_MESSAGE(preset_object.source.instances_count() == preset_object.number_of_lru_history_items + 1,
-                    "cache should respect number of stored unused objects to number passed in constructor");
+    REQUIRE_MESSAGE(
+        preset_object.source.instances_count() == preset_object.number_of_lru_history_items+1,
+        "cache should respect number of stored unused objects to number passed in constructor");
 }
+

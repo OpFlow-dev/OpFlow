@@ -20,5 +20,5 @@
 namespace tbb {}
 
 namespace oneapi {
-    namespace tbb = ::tbb;
+namespace tbb = ::tbb;
 }

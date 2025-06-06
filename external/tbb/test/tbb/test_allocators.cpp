@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2005-2021 Intel Corporation
+    Copyright (c) 2005-2025 Intel Corporation
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -14,12 +14,23 @@
     limitations under the License.
 */
 
+#include <tbb/version.h> // For __TBB_GLIBCXX_VERSION and __TBB_CPP20_PRESENT
+
+// Intel LLVM compiler triggers a deprecation warning in the implementation of std::allocator_traits::destroy
+// inside Standard Library while using STL PMR containers since std::polymorphic_allocator::destroy is deprecated since C++20
+#define TEST_LLVM_COMPILER_PMR_DESTROY_DEPRECATED_BROKEN __INTEL_LLVM_COMPILER == 20250000 && __TBB_GLIBCXX_VERSION == 110000 && __TBB_CPP20_PRESENT
+
+#if TEST_LLVM_COMPILER_PMR_DESTROY_DEPRECATED_BROKEN
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #include "tbb/cache_aligned_allocator.h"
 #include "tbb/tbb_allocator.h"
 
 // the real body of the test is there:
-#include "common/allocator_stl_test_common.h"
 #include "common/allocator_test_common.h"
+#include "common/allocator_stl_test_common.h"
 
 //! \file test_allocators.cpp
 //! \brief Test for [memory_allocation.cache_aligned_allocator memory_allocation.tbb_allocator memory_allocation.cache_aligned_resource] specifications
@@ -28,11 +39,11 @@
 //! Test that cache_aligned_allocate() throws bad_alloc if cannot allocate memory.
 //! \brief \ref requirement
 TEST_CASE("Test cache_aligned_allocate throws") {
-#if __APPLE__
-    // On macOS*, failure to map memory results in messages to stderr;
-    // suppress them.
-    DisableStderr disableStderr;
-#endif
+    #if __APPLE__
+        // On macOS*, failure to map memory results in messages to stderr;
+        // suppress them.
+        DisableStderr disableStderr;
+    #endif
 
     using namespace tbb::detail::r1;
 
@@ -40,11 +51,11 @@ TEST_CASE("Test cache_aligned_allocate throws") {
     // to not cause warp around in system allocator after adding object header
     // during address2 allocation.
     const size_t itemsize = 1024;
-    const size_t nitems = 1024;
-    void *address1 = NULL;
+    const size_t nitems   = 1024;
+    void *address1 = nullptr;
     try {
         address1 = cache_aligned_allocate(nitems * itemsize);
-    } catch (...) {
+    } catch(...) {
         // intentionally empty
     }
     REQUIRE_MESSAGE(address1, "cache_aligned_allocate unable to obtain 1024*1024 bytes");
@@ -52,8 +63,10 @@ TEST_CASE("Test cache_aligned_allocate throws") {
     bool exception_caught = false;
     try {
         // Try allocating more memory than left in the address space; should cause std::bad_alloc
-        (void) cache_aligned_allocate(~size_t(0) - itemsize * nitems + cache_line_size());
-    } catch (std::bad_alloc &) { exception_caught = true; } catch (...) {
+        (void)cache_aligned_allocate(~size_t(0) - itemsize * nitems + cache_line_size());
+    } catch (std::bad_alloc&) {
+        exception_caught = true;
+    } catch (...) {
         REQUIRE_MESSAGE(false, "Unexpected exception type (std::bad_alloc was expected)");
         exception_caught = true;
     }
@@ -62,9 +75,7 @@ TEST_CASE("Test cache_aligned_allocate throws") {
     try {
         cache_aligned_deallocate(address1);
     } catch (...) {
-        REQUIRE_MESSAGE(
-                false,
-                "cache_aligned_deallocate did not accept the address obtained with cache_aligned_allocate");
+        REQUIRE_MESSAGE(false, "cache_aligned_deallocate did not accept the address obtained with cache_aligned_allocate");
     }
 }
 #endif /* TBB_USE_EXCEPTIONS */
@@ -93,9 +104,13 @@ TEST_CASE("polymorphic_allocator test") {
     tbb::cache_aligned_resource aligned_resource;
     tbb::cache_aligned_resource equal_aligned_resource(std::pmr::get_default_resource());
     REQUIRE_MESSAGE(aligned_resource.is_equal(equal_aligned_resource),
-                    "Underlying upstream resources should be equal.");
+            "Underlying upstream resources should be equal.");
     REQUIRE_MESSAGE(!aligned_resource.is_equal(*std::pmr::null_memory_resource()),
-                    "Cache aligned resource upstream shouldn't be equal to the standard resource.");
+            "Cache aligned resource upstream shouldn't be equal to the standard resource.");
     TestAllocatorWithSTL(std::pmr::polymorphic_allocator<void>(&aligned_resource));
 }
+#endif
+
+#if TEST_LLVM_COMPILER_PMR_DESTROY_DEPRECATED_BROKEN
+#pragma clang diagnostic pop // "-Wdeprecated-declarations"
 #endif

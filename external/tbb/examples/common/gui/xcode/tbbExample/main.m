@@ -19,18 +19,18 @@
 
 #if TARGET_OS_IPHONE
 
-#import "tbbAppDelegate.h"
 #import <UIKit/UIKit.h>
+#import "tbbAppDelegate.h"
 
 void get_screen_resolution(int *x, int *y) {
     // Getting landscape screen resolution in any case
     CGRect imageRect = [[UIScreen mainScreen] bounds];
-    *x = imageRect.size.width > imageRect.size.height ? imageRect.size.width : imageRect.size.height;
-    *y = imageRect.size.width < imageRect.size.height ? imageRect.size.width : imageRect.size.height;
+    *x=imageRect.size.width>imageRect.size.height?imageRect.size.width:imageRect.size.height;
+    *y=imageRect.size.width<imageRect.size.height?imageRect.size.width:imageRect.size.height;
     return;
 }
 
-int cocoa_main(int argc, char *argv[]) {
+int cocoa_main(int argc, char * argv[]) {
     @autoreleasepool {
         return UIApplicationMain(argc, argv, nil, NSStringFromClass([tbbAppDelegate class]));
     }
@@ -40,5 +40,8 @@ int cocoa_main(int argc, char *argv[]) {
 
 #import <Cocoa/Cocoa.h>
 
-int cocoa_main(int argc, char *argv[]) { return NSApplicationMain(argc, (const char **) argv); }
+int cocoa_main(int argc, char *argv[])
+{
+    return NSApplicationMain(argc, (const char **)argv);
+}
 #endif

@@ -18,70 +18,70 @@
 #define __TBB_null_rw_mutex_H
 
 #include "detail/_config.h"
-#include "detail/_mutex_common.h"
 #include "detail/_namespace_injection.h"
+#include "detail/_mutex_common.h"
 
 namespace tbb {
-    namespace detail {
-        namespace d1 {
+namespace detail {
+namespace d1 {
 
-            //! A rw mutex which does nothing
-            /** A null_rw_mutex is a rw mutex that does nothing and simulates successful operation.
+//! A rw mutex which does nothing
+/** A null_rw_mutex is a rw mutex that does nothing and simulates successful operation.
     @ingroup synchronization */
-            class null_rw_mutex {
-            public:
-                //! Constructors
-                constexpr null_rw_mutex() noexcept = default;
+class null_rw_mutex {
+public:
+    //! Constructors
+    constexpr null_rw_mutex() noexcept = default;
 
-                //! Destructor
-                ~null_rw_mutex() = default;
+    //! Destructor
+    ~null_rw_mutex() = default;
 
-                //! No Copy
-                null_rw_mutex(const null_rw_mutex&) = delete;
-                null_rw_mutex& operator=(const null_rw_mutex&) = delete;
+    //! No Copy
+    null_rw_mutex(const null_rw_mutex&) = delete;
+    null_rw_mutex& operator=(const null_rw_mutex&) = delete;
 
-                //! Represents acquisition of a mutex.
-                class scoped_lock {
-                public:
-                    //! Constructors
-                    constexpr scoped_lock() noexcept = default;
-                    scoped_lock(null_rw_mutex&, bool = true) {}
+    //! Represents acquisition of a mutex.
+    class scoped_lock {
+    public:
+        //! Constructors
+        constexpr scoped_lock() noexcept = default;
+        scoped_lock(null_rw_mutex&, bool = true) {}
 
-                    //! Destructor
-                    ~scoped_lock() = default;
+        //! Destructor
+        ~scoped_lock() = default;
 
-                    //! No Copy
-                    scoped_lock(const scoped_lock&) = delete;
-                    scoped_lock& operator=(const scoped_lock&) = delete;
+        //! No Copy
+        scoped_lock(const scoped_lock&) = delete;
+        scoped_lock& operator=(const scoped_lock&) = delete;
 
-                    void acquire(null_rw_mutex&, bool = true) {}
-                    bool try_acquire(null_rw_mutex&, bool = true) { return true; }
-                    void release() {}
-                    bool upgrade_to_writer() { return true; }
-                    bool downgrade_to_reader() { return true; }
+        void acquire(null_rw_mutex&, bool = true) {}
+        bool try_acquire(null_rw_mutex&, bool = true) { return true; }
+        void release() {}
+        bool upgrade_to_writer() { return true; }
+        bool downgrade_to_reader() { return true; }
 
-                    bool is_writer() const { return true; }
-                };
+        bool is_writer() const { return true; }
+    };
 
-                //! Mutex traits
-                static constexpr bool is_rw_mutex = true;
-                static constexpr bool is_recursive_mutex = true;
-                static constexpr bool is_fair_mutex = true;
+    //! Mutex traits
+    static constexpr bool is_rw_mutex = true;
+    static constexpr bool is_recursive_mutex = true;
+    static constexpr bool is_fair_mutex = true;
 
-                void lock() {}
-                bool try_lock() { return true; }
-                void unlock() {}
-                void lock_shared() {}
-                bool try_lock_shared() { return true; }
-                void unlock_shared() {}
-            };// class null_rw_mutex
+    void lock() {}
+    bool try_lock() { return true; }
+    void unlock() {}
+    void lock_shared() {}
+    bool try_lock_shared() { return true; }
+    void unlock_shared() {}
+}; // class null_rw_mutex
 
-        }// namespace d1
-    }    // namespace detail
+} // namespace d1
+} // namespace detail
 
-    inline namespace v1 {
-        using detail::d1::null_rw_mutex;
-    }// namespace v1
-}// namespace tbb
+inline namespace v1 {
+using detail::d1::null_rw_mutex;
+} // namespace v1
+} // namespace tbb
 
 #endif /* __TBB_null_rw_mutex_H */

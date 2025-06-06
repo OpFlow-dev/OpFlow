@@ -17,7 +17,7 @@
 #define TBB_PREVIEW_MUTEXES 1
 
 #if __INTEL_COMPILER && _MSC_VER
-#pragma warning(disable : 2586)// decorated name length exceeded, name was truncated
+#pragma warning(disable : 2586) // decorated name length exceeded, name was truncated
 #endif
 
 #include "../conformance/conformance_mutex.h"
@@ -30,10 +30,14 @@
 //! \brief Test for [preview] functionality
 
 //! \brief \ref error_guessing
-TEST_CASE("test upgrade/downgrade with rw_mutex") { test_rwm_upgrade_downgrade<tbb::rw_mutex>(); }
+TEST_CASE("test upgrade/downgrade with rw_mutex") {
+    test_rwm_upgrade_downgrade<tbb::rw_mutex>();
+}
 
 //! \brief \ref error_guessing
-TEST_CASE("test mutex with native threads") { test_with_native_threads::test<tbb::mutex>(); }
+TEST_CASE("test mutex with native threads") {
+    test_with_native_threads::test<tbb::mutex>();
+}
 
 //! \brief \ref error_guessing
 TEST_CASE("test rw_mutex with native threads") {
@@ -68,9 +72,9 @@ TEST_CASE("Shared mutexes (reader/writer) test") {
 //! Compatibility with the standard
 //! \brief \ref interface \ref requirement
 TEST_CASE("ISO interface test") {
-    GeneralTest<TBB_MutexFromISO_Mutex<oneapi::tbb::mutex>>("ISO Adaprive Mutex");
+    GeneralTest<TBB_MutexFromISO_Mutex<oneapi::tbb::mutex> >("ISO Adaprive Mutex");
     GeneralTest<TBB_MutexFromISO_Mutex<oneapi::tbb::rw_mutex>>("ISO Adaptive RW Mutex");
-    TestTryAcquire<TBB_MutexFromISO_Mutex<oneapi::tbb::mutex>>("ISO Adaptive  Mutex");
+    TestTryAcquire<TBB_MutexFromISO_Mutex<oneapi::tbb::mutex> >("ISO Adaptive  Mutex");
     TestTryAcquire<TBB_MutexFromISO_Mutex<oneapi::tbb::rw_mutex>>("ISO Adaptive RW Mutex");
     TestTryAcquireReader<TBB_MutexFromISO_Mutex<oneapi::tbb::rw_mutex>>("ISO Adaptive RW Mutex");
     TestReaderWriterLock<TBB_MutexFromISO_Mutex<oneapi::tbb::rw_mutex>>("ISO Adaptive RW Mutex");

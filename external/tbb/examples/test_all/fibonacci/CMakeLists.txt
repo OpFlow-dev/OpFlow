@@ -1,4 +1,4 @@
-# Copyright (c) 2019-2021 Intel Corporation
+# Copyright (c) 2019-2025 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5.0...3.31.3)
 
 project(fibonacci CXX)
 
@@ -22,9 +22,9 @@ set_common_project_settings(tbb)
 
 add_executable(fibonacci fibonacci.cpp)
 target_link_libraries(fibonacci
-        TBB::tbb
-        Threads::Threads
-        $<$<PLATFORM_ID:Linux>:rt>)  # Link "rt" library on Linux
+                      TBB::tbb
+                      Threads::Threads
+                      $<$<PLATFORM_ID:Linux>:rt>)  # Link "rt" library on Linux
 target_compile_options(fibonacci PRIVATE ${TBB_CXX_STD_FLAG})
 
 set(EXECUTABLE "$<TARGET_FILE:fibonacci>")

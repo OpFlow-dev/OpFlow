@@ -4,15 +4,13 @@ Advanced Topic: Other Kinds of Iteration Spaces
 ===============================================
 
 
-The examples so far have used the class ``blocked_range<T>`` to specify
-ranges. This class is useful in many situations, but it does not fit
-every situation. You can use |full_name|
-to define your own iteration space objects. The object must specify how
-it can be split into subspaces by providing a basic splitting
-constructor, an optional proportional splitting constructor (accompanied
-with a trait value that enables its usage), and two predicate methods.
-If your class is called ``R``, the methods and constructors should be as
-follows:
+The examples so far have used the class ``blocked_range<T>`` to specify ranges.
+This class is useful in many situations, but it does not fit every situation.
+You can use |full_name| to define your own iteration space objects. The object
+must specify how it can be split into subspaces by providing a basic splitting
+constructor, an optional proportional splitting constructor, and two predicate
+methods. If your class is called ``R``, the methods and constructors should be
+as follows:
 
 
 ::
@@ -25,10 +23,8 @@ follows:
        bool is_divisible() const;
        // Splits r into subranges r and *this
        R( R& r, split );
-       // Splits r into subranges r and *this in proportion p
+       // (optional) Splits r into subranges r and *this in proportion p
        R( R& r, proportional_split p );
-       // Allows usage of proportional splitting constructor
-       static const bool is_splittable_in_proportion = true;
        ...
    };
        
@@ -60,9 +56,7 @@ constructor is optional and takes the second argument of type
 that return the values of the proportion. These values should be used to
 split ``r`` accordingly, so that the updated ``r`` corresponds to the
 left part of the proportion, and the constructed object corresponds to
-the right part. The proportional splitting constructor will be used only
-if the static constant ``is_splittable_in_proportion`` is defined in the
-class and assigned the value of ``true``.
+the right part.
 
 
 Both splitting constructors should guarantee that the updated ``r`` part
@@ -78,4 +72,42 @@ along its longest axis. When used with ``parallel_for``, it causes the
 loop to be "recursively blocked" in a way that improves cache usage.
 This nice cache behavior means that using ``parallel_for`` over a
 ``blocked_range2d<T>`` can make a loop run faster than the sequential
-equivalent, even on a single processor.
+equivalent, even on a single processor. 
+
+The ``blocked_range2d`` allows you to use different value types for
+its first dimension, *rows*, and the second one, *columns*.
+That means you can combine indexes, pointers, and iterators into a joint
+iteration space. Use the methods ``rows()`` and ``cols()`` to obtain
+``blocked_range`` objects that represent the respective dimensions.
+
+The ``blocked_range3d`` class template extends this approach to 3D by adding
+``pages()`` as the first dimension, followed by ``rows()`` and ``cols()``.
+
+The ``blocked_nd_range<T,N>`` class template represents a blocked iteration
+space of any dimensionality. Unlike the previously described 2D and 3D ranges,
+``blocked_nd_range`` uses the same value type for all its axes, and its
+constructor requires you to pass N instances of ``blocked_range<T>`` instead of
+individual boundary values. The change in the naming pattern reflects these
+differences.
+
+
+Example of a Multidimensional Iteration Space
+------------------------------------------------
+
+The example demonstrates calculation of a 3-dimensional filter over the pack
+of feature maps.
+
+The ``convolution3d`` function iterates over the output cells, assigning to
+each cell the result of the ``kernel3d`` function that combines the values
+from a range in the feature maps.
+
+To run the computation in parallel, ``tbb::parallel_for`` is called with
+``tbb::blocked_nd_range<int,3>`` as an argument. The body function processes
+the received 3D subrange in nested loops, using the method ``dim`` to get
+the loop boundaries for each dimension.
+
+
+.. literalinclude:: ./examples/blocked_nd_range_example.cpp
+   :language: c++
+   :start-after: /*begin_blocked_nd_range_example*/
+   :end-before: /*end_blocked_nd_range_example*/

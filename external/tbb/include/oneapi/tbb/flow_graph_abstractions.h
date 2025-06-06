@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2005-2021 Intel Corporation
+    Copyright (c) 2005-2024 Intel Corporation
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,33 +18,34 @@
 #define __TBB_flow_graph_abstractions_H
 
 namespace tbb {
-    namespace detail {
-        namespace d1 {
+namespace detail {
+namespace d2 {
 
-            //! Pure virtual template classes that define interfaces for async communication
-            class graph_proxy {
-            public:
-                //! Inform a graph that messages may come from outside, to prevent premature graph completion
-                virtual void reserve_wait() = 0;
+//! Pure virtual template classes that define interfaces for async communication
+class graph_proxy {
+public:
+    //! Inform a graph that messages may come from outside, to prevent premature graph completion
+    virtual void reserve_wait() = 0;
 
-                //! Inform a graph that a previous call to reserve_wait is no longer in effect
-                virtual void release_wait() = 0;
+    //! Inform a graph that a previous call to reserve_wait is no longer in effect
+    virtual void release_wait() = 0;
 
-                virtual ~graph_proxy() {}
-            };
+    virtual ~graph_proxy() {}
+};
 
-            template <typename Input>
-            class receiver_gateway : public graph_proxy {
-            public:
-                //! Type of inputing data into FG.
-                typedef Input input_type;
+template <typename Input>
+class receiver_gateway : public graph_proxy {
+public:
+    //! Type of inputing data into FG.
+    typedef Input input_type;
 
-                //! Submit signal from an asynchronous activity to FG.
-                virtual bool try_put(const input_type&) = 0;
-            };
+    //! Submit signal from an asynchronous activity to FG.
+    virtual bool try_put(const input_type&) = 0;
+};
 
-        }// namespace d1
+} // d2
 
-    }// namespace detail
-}// namespace tbb
+
+} // detail
+} // tbb
 #endif

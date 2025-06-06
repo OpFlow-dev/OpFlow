@@ -1,5 +1,4 @@
 # Code Samples of oneAPI Threading Building Blocks (oneTBB)
-
 Examples using oneTBB Flow Graph feature.
 
 | Code sample name | Description

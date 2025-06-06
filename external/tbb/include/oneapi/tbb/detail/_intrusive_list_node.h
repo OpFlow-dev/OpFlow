@@ -18,24 +18,24 @@
 #define _TBB_detail__intrusive_list_node_H
 
 namespace tbb {
-    namespace detail {
-        namespace d1 {
+namespace detail {
+namespace d1 {
 
-            //! Data structure to be inherited by the types that can form intrusive lists.
-            /** Intrusive list is formed by means of the member_intrusive_list<T> template class.
+//! Data structure to be inherited by the types that can form intrusive lists.
+/** Intrusive list is formed by means of the member_intrusive_list<T> template class.
     Note that type T must derive from intrusive_list_node either publicly or
     declare instantiation member_intrusive_list<T> as a friend.
     This class implements a limited subset of std::list interface. **/
-            struct intrusive_list_node {
-                intrusive_list_node* my_prev_node {};
-                intrusive_list_node* my_next_node {};
+struct intrusive_list_node {
+    intrusive_list_node* my_prev_node{};
+    intrusive_list_node* my_next_node{};
 #if TBB_USE_ASSERT
-                intrusive_list_node() { my_prev_node = my_next_node = this; }
+    intrusive_list_node() { my_prev_node = my_next_node = this; }
 #endif /* TBB_USE_ASSERT */
-            };
+};
 
-        }// namespace d1
-    }    // namespace detail
-}// namespace tbb
+} // namespace d1
+} // namespace detail
+} // namespace tbb
 
-#endif// _TBB_detail__intrusive_list_node_H
+#endif // _TBB_detail__intrusive_list_node_H

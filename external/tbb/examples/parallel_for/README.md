@@ -1,5 +1,4 @@
 # Code Samples of oneAPI Threading Building Blocks (oneTBB)
-
 Examples using `parallel_for` algorithm.
 
 | Code sample name | Description

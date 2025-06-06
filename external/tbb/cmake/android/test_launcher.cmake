@@ -17,10 +17,10 @@ include(${CMAKE_CURRENT_LIST_DIR}/environment.cmake)
 # transfer data to device
 execute_on_device("mkdir -m 755 -p ${ANDROID_DEVICE_TESTING_DIRECTORY}")
 
-file(GLOB_RECURSE BINARIES_LIST "${BINARIES_PATH}/*.so*" "${BINARIES_PATH}/${TEST_NAME}")
-foreach (BINARY_FILE ${BINARIES_LIST})
+file (GLOB_RECURSE BINARIES_LIST "${BINARIES_PATH}/*.so*" "${BINARIES_PATH}/${TEST_NAME}")
+foreach(BINARY_FILE ${BINARIES_LIST})
     transfer_data(${BINARY_FILE})
-endforeach ()
+endforeach()
 
 # execute binary
 execute_on_device("chmod -R 755 ${ANDROID_DEVICE_TESTING_DIRECTORY}")

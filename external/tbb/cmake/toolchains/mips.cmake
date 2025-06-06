@@ -15,7 +15,7 @@
 # Prevent double invocation.
 if (MIPS_TOOLCHAIN_INCLUDED)
     return()
-endif ()
+endif()
 set(MIPS_TOOLCHAIN_INCLUDED TRUE)
 
 set(CMAKE_SYSTEM_NAME Linux)

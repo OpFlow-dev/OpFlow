@@ -21,26 +21,26 @@
 #include "_template_helpers.h"
 
 namespace tbb {
-    namespace detail {
-        inline namespace d0 {
+namespace detail {
+inline namespace d0 {
 
-            //! Block of space aligned sufficiently to construct an array T with N elements.
-            /** The elements are not constructed or destroyed by this class.
+//! Block of space aligned sufficiently to construct an array T with N elements.
+/** The elements are not constructed or destroyed by this class.
     @ingroup memory_allocation */
-            template <typename T, std::size_t N = 1>
-            class aligned_space {
-                alignas(alignof(T)) std::uint8_t aligned_array[N * sizeof(T)];
+template<typename T, std::size_t N = 1>
+class aligned_space {
+    alignas(alignof(T)) std::uint8_t aligned_array[N * sizeof(T)];
 
-            public:
-                //! Pointer to beginning of array
-                T* begin() const { return punned_cast<T*>(&aligned_array); }
+public:
+    //! Pointer to beginning of array
+    T* begin() const { return punned_cast<T*>(&aligned_array); }
 
-                //! Pointer to one past last element in array.
-                T* end() const { return begin() + N; }
-            };
+    //! Pointer to one past last element in array.
+    T* end() const { return begin() + N; }
+};
 
-        }// namespace d0
-    }    // namespace detail
-}// namespace tbb
+} // namespace d0
+} // namespace detail
+} // namespace tbb
 
 #endif /* __TBB_aligned_space_H */

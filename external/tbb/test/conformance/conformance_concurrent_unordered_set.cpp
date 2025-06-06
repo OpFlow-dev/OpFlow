@@ -15,13 +15,14 @@
 */
 
 #if __INTEL_COMPILER && _MSC_VER
-#pragma warning(disable : 2586)// decorated name length exceeded, name was truncated
+#pragma warning(disable : 2586) // decorated name length exceeded, name was truncated
 #endif
 
+
 #include "oneapi/tbb/concurrent_unordered_set.h"
-#include <common/concurrent_unordered_common.h>
 #include <common/test.h>
 #include <common/utils.h>
+#include <common/concurrent_unordered_common.h>
 #include <memory>
 #include <type_traits>
 
@@ -34,10 +35,8 @@ struct AllowMultimapping<oneapi::tbb::concurrent_unordered_multiset<Args...>> : 
 template <typename Key>
 using Allocator = LocalCountingAllocator<std::allocator<Key>>;
 
-using set_type
-        = oneapi::tbb::concurrent_unordered_set<int, std::hash<int>, std::equal_to<int>, Allocator<int>>;
-using multiset_type
-        = oneapi::tbb::concurrent_unordered_multiset<int, std::hash<int>, std::equal_to<int>, Allocator<int>>;
+using set_type = oneapi::tbb::concurrent_unordered_set<int, std::hash<int>, std::equal_to<int>, Allocator<int>>;
+using multiset_type = oneapi::tbb::concurrent_unordered_multiset<int, std::hash<int>, std::equal_to<int>, Allocator<int>>;
 
 template <template <typename...> class ContainerType>
 void test_member_types() {
@@ -46,16 +45,14 @@ void test_member_types() {
                   "Incorrect default template hasher");
     static_assert(std::is_same<typename default_container_type::key_equal, std::equal_to<int>>::value,
                   "Incorrect default template key equality");
-    static_assert(std::is_same<typename default_container_type::allocator_type,
-                               oneapi::tbb::tbb_allocator<int>>::value,
+    static_assert(std::is_same<typename default_container_type::allocator_type, oneapi::tbb::tbb_allocator<int>>::value,
                   "Incorrect default template allocator");
 
-    auto test_hasher = [](const int &) -> std::size_t { return 0; };
-    auto test_equality = [](const int &, const int &) -> bool { return true; };
+    auto test_hasher = [](const int&)->std::size_t { return 0; };
+    auto test_equality = [](const int&, const int&)->bool { return true; };
     using test_allocator_type = std::allocator<int>;
 
-    using container_type
-            = ContainerType<int, decltype(test_hasher), decltype(test_equality), test_allocator_type>;
+    using container_type = ContainerType<int, decltype(test_hasher), decltype(test_equality), test_allocator_type>;
 
     static_assert(std::is_same<typename container_type::key_type, int>::value,
                   "Incorrect container key_type member type");
@@ -72,26 +69,23 @@ void test_member_types() {
     static_assert(std::is_same<typename container_type::key_equal, decltype(test_equality)>::value,
                   "Incorrect container key_equal member type");
 
-    using transparent_container_type
-            = ContainerType<int, hasher_with_transparent_key_equal, std::equal_to<int>, test_allocator_type>;
+    using transparent_container_type = ContainerType<int, hasher_with_transparent_key_equal,
+                                                     std::equal_to<int>, test_allocator_type>;
 
-    static_assert(
-            std::is_same<typename transparent_container_type::key_equal, transparent_key_equality>::value,
-            "Incorrect container key_equal member type");
+    static_assert(std::is_same<typename transparent_container_type::key_equal, transparent_key_equality>::value,
+                  "Incorrect container key_equal member type");
     static_assert(std::is_same<typename container_type::allocator_type, test_allocator_type>::value,
                   "Incorrect container allocator_type member type");
 
     using value_type = typename container_type::value_type;
-    static_assert(std::is_same<typename container_type::reference, value_type &>::value,
+    static_assert(std::is_same<typename container_type::reference, value_type&>::value,
                   "Incorrect container reference member type");
-    static_assert(std::is_same<typename container_type::const_reference, const value_type &>::value,
+    static_assert(std::is_same<typename container_type::const_reference, const value_type&>::value,
                   "Incorrect container const_reference member type");
     using allocator_type = typename container_type::allocator_type;
-    static_assert(std::is_same<typename container_type::pointer,
-                               typename std::allocator_traits<allocator_type>::pointer>::value,
+    static_assert(std::is_same<typename container_type::pointer, typename std::allocator_traits<allocator_type>::pointer>::value,
                   "Incorrect container pointer member type");
-    static_assert(std::is_same<typename container_type::const_pointer,
-                               typename std::allocator_traits<allocator_type>::const_pointer>::value,
+    static_assert(std::is_same<typename container_type::const_pointer, typename std::allocator_traits<allocator_type>::const_pointer>::value,
                   "Incorrect container const_pointer member type");
 
     static_assert(utils::is_forward_iterator<typename container_type::iterator>::value,
@@ -114,33 +108,31 @@ void test_member_types() {
 
 struct CusetTraits : UnorderedMoveTraitsBase {
     template <typename T, typename Allocator>
-    using container_type
-            = oneapi::tbb::concurrent_unordered_set<T, std::hash<T>, std::equal_to<T>, Allocator>;
+    using container_type = oneapi::tbb::concurrent_unordered_set<T, std::hash<T>, std::equal_to<T>, Allocator>;
 
     template <typename T>
     using container_value_type = T;
 
     using init_iterator_type = move_support_tests::FooIterator;
-};// struct CusetTraits
+}; // struct CusetTraits
 
 struct CumultisetTraits : UnorderedMoveTraitsBase {
     template <typename T, typename Allocator>
-    using container_type
-            = oneapi::tbb::concurrent_unordered_multiset<T, std::hash<T>, std::equal_to<T>, Allocator>;
+    using container_type = oneapi::tbb::concurrent_unordered_multiset<T, std::hash<T>, std::equal_to<T>, Allocator>;
 
     template <typename T>
     using container_value_type = T;
 
     using init_iterator_type = move_support_tests::FooIterator;
-};// struct CumultisetTraits
+}; // struct CumultisetTraits
 
 #if __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
-template <template <typename...> typename TSet>
+template <template <typename ...> typename TSet>
 void test_deduction_guides() {
     using ComplexType = const std::string *;
     std::vector<ComplexType> v;
     std::string s = "s";
-    auto l = {ComplexType(&s), ComplexType(&s)};
+    auto l = { ComplexType(&s), ComplexType(&s)};
     using custom_allocator_type = std::allocator<ComplexType>;
 
     // check TSet(InputIterator,InputIterator)
@@ -153,25 +145,24 @@ void test_deduction_guides() {
 
     // check TSet(InputIterator,InputIterator, size_t, Hasher, Equality)
     TSet s3(v.begin(), v.end(), 5, degenerate_hash<ComplexType>(), std::less<ComplexType>());
-    static_assert(
-            std::is_same<decltype(s3),
-                         TSet<ComplexType, degenerate_hash<ComplexType>, std::less<ComplexType>>>::value);
+    static_assert(std::is_same<decltype(s3), TSet<ComplexType, degenerate_hash<ComplexType>,
+        std::less<ComplexType>>>::value);
 
     // check TSet(InputIterator,InputIterator, size_t, Hasher, Equality, Allocator)
     TSet s4(v.begin(), v.end(), 5, degenerate_hash<ComplexType>(), std::less<ComplexType>(),
-            custom_allocator_type {});
+            custom_allocator_type{});
     static_assert(std::is_same<decltype(s4), TSet<ComplexType, degenerate_hash<ComplexType>,
-                                                  std::less<ComplexType>, custom_allocator_type>>::value);
+        std::less<ComplexType>, custom_allocator_type>>::value);
 
     // check TSet(InputIterator,InputIterator, size_t, Allocator)
-    TSet s5(v.begin(), v.end(), 5, custom_allocator_type {});
+    TSet s5(v.begin(), v.end(), 5, custom_allocator_type{});
     static_assert(std::is_same<decltype(s5), TSet<ComplexType, std::hash<ComplexType>,
-                                                  std::equal_to<ComplexType>, custom_allocator_type>>::value);
+        std::equal_to<ComplexType>, custom_allocator_type>>::value);
 
     // check TSet(InputIterator,InputIterator, size_t, Hasher, Allocator)
-    TSet s6(v.begin(), v.end(), 5, degenerate_hash<ComplexType>(), custom_allocator_type {});
+    TSet s6(v.begin(), v.end(), 5, degenerate_hash<ComplexType>(), custom_allocator_type{});
     static_assert(std::is_same<decltype(s6), TSet<ComplexType, degenerate_hash<ComplexType>,
-                                                  std::equal_to<ComplexType>, custom_allocator_type>>::value);
+        std::equal_to<ComplexType>, custom_allocator_type>>::value);
 
     // check TSet(std::initializer_list)
     TSet s7(l);
@@ -183,33 +174,30 @@ void test_deduction_guides() {
 
     // check TSet(std::initializer_list, size_t, Hasher, Equality)
     TSet s9(l, 5, degenerate_hash<ComplexType>(), std::less<ComplexType>());
-    static_assert(
-            std::is_same<decltype(s9),
-                         TSet<ComplexType, degenerate_hash<ComplexType>, std::less<ComplexType>>>::value);
+    static_assert(std::is_same<decltype(s9), TSet<ComplexType, degenerate_hash<ComplexType>,
+        std::less<ComplexType>>>::value);
 
     // check TSet(std::initializer_list, size_t, Hasher, Equality, Allocator)
-    TSet s10(l, 5, degenerate_hash<ComplexType>(), std::less<ComplexType>(), custom_allocator_type {});
+    TSet s10(l, 5, degenerate_hash<ComplexType>(), std::less<ComplexType>(), custom_allocator_type{});
     static_assert(std::is_same<decltype(s10), TSet<ComplexType, degenerate_hash<ComplexType>,
-                                                   std::less<ComplexType>, custom_allocator_type>>::value);
+        std::less<ComplexType>, custom_allocator_type>>::value);
 
     // check TSet(std::initializer_list, size_t, Allocator)
-    TSet s11(l, 5, custom_allocator_type {});
-    static_assert(
-            std::is_same<decltype(s11), TSet<ComplexType, std::hash<ComplexType>, std::equal_to<ComplexType>,
-                                             custom_allocator_type>>::value);
+    TSet s11(l, 5, custom_allocator_type{});
+    static_assert(std::is_same<decltype(s11), TSet<ComplexType, std::hash<ComplexType>,
+        std::equal_to<ComplexType>, custom_allocator_type>>::value);
 
     // check TSet(std::initializer_list, size_t, Hasher, Allocator)
-    TSet s12(l, 5, std::hash<ComplexType>(), custom_allocator_type {});
-    static_assert(
-            std::is_same<decltype(s12), TSet<ComplexType, std::hash<ComplexType>, std::equal_to<ComplexType>,
-                                             custom_allocator_type>>::value);
+    TSet s12(l, 5, std::hash<ComplexType>(), custom_allocator_type{});
+    static_assert(std::is_same<decltype(s12), TSet<ComplexType, std::hash<ComplexType>,
+        std::equal_to<ComplexType>, custom_allocator_type>>::value);
 
     // check TSet(TSet &)
     TSet s13(s1);
     static_assert(std::is_same<decltype(s13), decltype(s1)>::value);
 
     // check TSet(TSet &, Allocator)
-    TSet s14(s5, custom_allocator_type {});
+    TSet s14(s5, custom_allocator_type{});
     // TODO: investigate why no implicit deduction guides generated for this ctor
     static_assert(std::is_same<decltype(s14), decltype(s5)>::value);
 
@@ -218,11 +206,11 @@ void test_deduction_guides() {
     static_assert(std::is_same<decltype(s15), decltype(s1)>::value);
 
     // check TSet(TSet &&, Allocator)
-    TSet s16(std::move(s5), custom_allocator_type {});
+    TSet s16(std::move(s5), custom_allocator_type{});
     // TODO: investigate why no implicit deduction guides generated for this ctor
     static_assert(std::is_same<decltype(s16), decltype(s5)>::value);
 }
-#endif// __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
+#endif // __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
 
 //! Testing concurrent_unordered_set member types
 //! \brief \ref interface \ref requirement
@@ -232,15 +220,21 @@ TEST_CASE("concurrent_unordered_set member types") {
 
 //! Testing requirements of concurrent_unordered_set
 //! \brief \ref interface \ref requirement
-TEST_CASE("concurrent_unordered_set requirements") { test_basic<set_type>(); }
+TEST_CASE("concurrent_unordered_set requirements") {
+    test_basic<set_type>();
+}
 
 //! Testing multithreading support in concurrent_unordered_set
 //! \brief \ref requirement
-TEST_CASE("concurrent_unordered_set multithreading support") { test_concurrent<set_type>(); }
+TEST_CASE("concurrent_unordered_set multithreading support") {
+    test_concurrent<set_type>();
+}
 
 //! Testing move constructors and assignment operator in concurrent_unordered_set
 //! \brief \ref interface \ref requirement
-TEST_CASE("concurrent_unordered_set move semantics support") { test_rvalue_ref_support<CusetTraits>(); }
+TEST_CASE("concurrent_unordered_set move semantics support") {
+    test_rvalue_ref_support<CusetTraits>();
+}
 
 //! Testing std::initializer_list constructors and modifiers in concurrent_unordered_set
 //! \brief \ref interface \ref requirement
@@ -289,11 +283,15 @@ TEST_CASE("concurrent_unordered_multiset member types") {
 
 //! Testing requirements of concurrent_unordered_multiset
 //! \brief \ref interface \ref requirement
-TEST_CASE("concurrent_unordered_multiset requirements") { test_basic<multiset_type>(); }
+TEST_CASE("concurrent_unordered_multiset requirements") {
+    test_basic<multiset_type>();
+}
 
 //! Testing move constructors and assignment operator in concurrent_unordered_multiset
 //! \brief \ref requirement
-TEST_CASE("concurrent_unordered_multiset multithreading support") { test_concurrent<multiset_type>(); }
+TEST_CASE("concurrent_unordered_multiset multithreading support") {
+    test_concurrent<multiset_type>();
+}
 
 //! Testing move constructors and assignment operator in concurrent_unordered_multiset
 //! \brief \ref interface \ref requirement
@@ -342,4 +340,6 @@ TEST_CASE("concurrent_unordered_multiset comparisons") {
 
 //! Testing of merge operation in concurrent_unordered_set and concurrent_unordered_multiset
 //! \brief \ref interface \ref requirement
-TEST_CASE("merge operations") { node_handling_tests::test_merge<set_type, multiset_type>(1000); }
+TEST_CASE("merge operations") {
+    node_handling_tests::test_merge<set_type, multiset_type>(1000);
+}

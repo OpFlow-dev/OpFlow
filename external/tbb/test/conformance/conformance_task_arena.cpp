@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2005-2021 Intel Corporation
+    Copyright (c) 2005-2022 Intel Corporation
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 #include "common/test.h"
 #include "common/utils.h"
 
-#include "oneapi/tbb/enumerable_thread_specific.h"
-#include "oneapi/tbb/parallel_for.h"
 #include "oneapi/tbb/task_arena.h"
 #include "oneapi/tbb/task_scheduler_observer.h"
+#include "oneapi/tbb/enumerable_thread_specific.h"
+#include "oneapi/tbb/parallel_for.h"
 
 //! \file conformance_task_arena.cpp
 //! \brief Test for [scheduler.task_arena scheduler.task_scheduler_observer] specification
@@ -29,17 +29,15 @@
 //! Test for uninitilized arena
 //! \brief \ref requirement \ref interface
 TEST_CASE("Test current_thread_index") {
-    REQUIRE_MESSAGE((tbb::this_task_arena::current_thread_index() == tbb::task_arena::not_initialized),
-                    "TBB was initialized state");
+    REQUIRE_MESSAGE((tbb::this_task_arena::current_thread_index() == tbb::task_arena::not_initialized), "TBB was initialized state");
 }
 
 //! Test task arena interfaces
 //! \brief \ref requirement \ref interface
 TEST_CASE("Arena interfaces") {
     //! Initialization interfaces
-    oneapi::tbb::task_arena a(1, 1);
-    a.initialize();
-    std::atomic<bool> done {false};
+    oneapi::tbb::task_arena a(1,1); a.initialize();
+    std::atomic<bool> done{ false };
     //! Enqueue interface
     a.enqueue([&done] {
         CHECK(oneapi::tbb::this_task_arena::max_concurrency() == 2);
@@ -50,10 +48,14 @@ TEST_CASE("Arena interfaces") {
         //! oneapi::tbb::this_task_arena interfaces
         CHECK(oneapi::tbb::this_task_arena::current_thread_index() >= 0);
         //! Attach interface
-        oneapi::tbb::task_arena attached_arena {oneapi::tbb::task_arena::attach()};
+        oneapi::tbb::task_arena attached_arena{oneapi::tbb::task_arena::attach()};
         CHECK(attached_arena.is_active());
+        oneapi::tbb::task_arena attached_arena2{oneapi::tbb::attach()};
+        CHECK(attached_arena2.is_active());
     });
-    while (!done) { utils::yield(); }
+    while (!done) {
+        utils::yield();
+    }
     //! Terminate interface
     a.terminate();
 }
@@ -68,36 +70,44 @@ TEST_CASE("Task isolation") {
         ets.local() = i;
         // Run the second parallel loop in an isolated region to prevent the current thread
         // from taking tasks related to the outer parallel loop.
-        oneapi::tbb::this_task_arena::isolate(
-                [&] { oneapi::tbb::parallel_for(0, N2, utils::DummyBody(10)); });
+        oneapi::tbb::this_task_arena::isolate([&]{
+            oneapi::tbb::parallel_for(0, N2, utils::DummyBody(10));
+        });
         REQUIRE(ets.local() == i);
     });
 }
 
-class conformance_observer : public oneapi::tbb::task_scheduler_observer {
+class conformance_observer: public oneapi::tbb::task_scheduler_observer {
 public:
-    std::atomic<bool> is_entry_called {false};
-    std::atomic<bool> is_exit_called {false};
+    std::atomic<bool> is_entry_called{false};
+    std::atomic<bool> is_exit_called{false};
 
-    conformance_observer(oneapi::tbb::task_arena &a) : oneapi::tbb::task_scheduler_observer(a) {
-        observe(true);// activate the observer
+    conformance_observer( oneapi::tbb::task_arena &a ) : oneapi::tbb::task_scheduler_observer(a) {
+        observe(true); // activate the observer
     }
 
-    void on_scheduler_entry(bool) override { is_entry_called.store(true, std::memory_order_relaxed); }
+    ~conformance_observer() {
+        observe(false);
+    }
 
-    void on_scheduler_exit(bool) override { is_exit_called.store(true, std::memory_order_relaxed); }
+    void on_scheduler_entry(bool) override {
+        is_entry_called.store(true, std::memory_order_relaxed);
+    }
+
+    void on_scheduler_exit(bool) override {
+        is_exit_called.store(true, std::memory_order_relaxed);
+    }
 
     bool is_callbacks_called() {
         return is_entry_called.load(std::memory_order_relaxed)
-               && is_exit_called.load(std::memory_order_relaxed);
+            && is_exit_called.load(std::memory_order_relaxed);
     }
 };
 
 //! Test task arena observer interfaces
 //! \brief \ref requirement \ref interface
 TEST_CASE("Task arena observer") {
-    oneapi::tbb::task_arena a;
-    a.initialize();
+    oneapi::tbb::task_arena a; a.initialize();
     conformance_observer observer(a);
     a.execute([&] {
         oneapi::tbb::parallel_for(0, 100, utils::DummyBody(10), oneapi::tbb::simple_partitioner());
@@ -114,3 +124,110 @@ TEST_CASE("Task arena copy constructor") {
     REQUIRE(arena.max_concurrency() == copy.max_concurrency());
     REQUIRE(arena.is_active() == copy.is_active());
 }
+
+
+//! Basic test for arena::enqueue with task handle
+//! \brief \ref interface \ref requirement
+TEST_CASE("enqueue task_handle") {
+    oneapi::tbb::task_arena arena;
+    oneapi::tbb::task_group tg;
+
+    //This flag is intentionally made non-atomic for Thread Sanitizer
+    //to raise a flag if implementation of task_group is incorrect
+    bool run{false};
+
+    auto task_handle = tg.defer([&]{ run = true; });
+
+    arena.enqueue(std::move(task_handle));
+    tg.wait();
+
+    CHECK(run == true);
+}
+
+//! Basic test for this_task_arena::enqueue with task handle
+//! \brief \ref interface \ref requirement
+TEST_CASE("this_task_arena::enqueue task_handle") {
+    oneapi::tbb::task_arena arena;
+    oneapi::tbb::task_group tg;
+
+    //This flag is intentionally made non-atomic for Thread Sanitizer
+    //to raise a flag if implementation of task_group is incorrect
+    bool run{false};
+
+    arena.execute([&]{
+        auto task_handle = tg.defer([&]{ run = true; });
+
+        oneapi::tbb::this_task_arena::enqueue(std::move(task_handle));
+    });
+
+    tg.wait();
+
+    CHECK(run == true);
+}
+
+//TODO: Add
+//! Basic test for this_task_arena::enqueue with functor
+
+//! Test case for the common use-case of prolonging task_group lifetime
+//! \brief \ref interface \ref requirement
+TEST_CASE("this_task_arena::enqueue prolonging task_group") {
+    oneapi::tbb::task_arena arena;
+    oneapi::tbb::task_group tg;
+
+    //This flag is intentionally made non-atomic for Thread Sanitizer
+    //to raise a flag if implementation of task_group is incorrect
+    bool run{false};
+
+    //block the task_group to wait on it
+    auto task_handle = tg.defer([]{});
+
+    arena.execute([&]{
+        oneapi::tbb::this_task_arena::enqueue([&]{
+            run = true;
+            //release the task_group
+            task_handle = oneapi::tbb::task_handle{};
+        });
+    });
+
+    tg.wait();
+
+    CHECK(run == true);
+}
+
+#if TBB_USE_EXCEPTIONS
+//! Basic test for exceptions in task_arena::enqueue with task_handle
+//! \brief \ref interface \ref requirement
+TEST_CASE("task_arena::enqueue(task_handle) exception propagation"){
+    oneapi::tbb::task_group tg;
+    oneapi::tbb::task_arena arena;
+
+    oneapi::tbb::task_handle h = tg.defer([&]{
+        volatile bool suppress_unreachable_code_warning = true;
+        if (suppress_unreachable_code_warning) {
+            throw std::runtime_error{ "" };
+        }
+    });
+
+    arena.enqueue(std::move(h));
+
+    CHECK_THROWS_AS(tg.wait(), std::runtime_error);
+}
+
+//! Basic test for exceptions in this_task_arena::enqueue with task_handle
+//! \brief \ref interface \ref requirement
+TEST_CASE("this_task_arena::enqueue(task_handle) exception propagation"){
+    oneapi::tbb::task_group tg;
+
+    oneapi::tbb::task_handle h = tg.defer([&]{
+        volatile bool suppress_unreachable_code_warning = true;
+        if (suppress_unreachable_code_warning) {
+            throw std::runtime_error{ "" };
+        }
+    });
+
+    oneapi::tbb::this_task_arena::enqueue(std::move(h));
+
+    CHECK_THROWS_AS(tg.wait(), std::runtime_error);
+}
+
+#endif // TBB_USE_EXCEPTIONS

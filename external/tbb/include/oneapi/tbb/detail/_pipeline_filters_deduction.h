@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2005-2021 Intel Corporation
+    Copyright (c) 2005-2023 Intel Corporation
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,32 +18,29 @@
 #define __TBB__pipeline_filters_deduction_H
 
 #include "_config.h"
-#include <type_traits>
 #include <utility>
+#include <type_traits>
 
 namespace tbb {
-    namespace detail {
-        namespace d1 {
+namespace detail {
+namespace d1 {
 
-            template <typename Input, typename Output>
-            struct declare_fitler_types {
-                using input_type =
-                        typename std::remove_const<typename std::remove_reference<Input>::type>::type;
-                using output_type =
-                        typename std::remove_const<typename std::remove_reference<Output>::type>::type;
-            };
+template <typename Input, typename Output>
+struct declare_filter_types {
+    using input_type = typename std::remove_const<typename std::remove_reference<Input>::type>::type;
+    using output_type = typename std::remove_const<typename std::remove_reference<Output>::type>::type;
+};
 
-            template <typename T>
-            struct body_types;
+template <typename T> struct filter_body_types;
 
-            template <typename T, typename Input, typename Output>
-            struct body_types<Output (T::*)(Input) const> : declare_fitler_types<Input, Output> {};
+template <typename T, typename Input, typename Output>
+struct filter_body_types<Output(T::*)(Input) const> : declare_filter_types<Input, Output> {};
 
-            template <typename T, typename Input, typename Output>
-            struct body_types<Output (T::*)(Input)> : declare_fitler_types<Input, Output> {};
+template <typename T, typename Input, typename Output>
+struct filter_body_types<Output(T::*)(Input)> : declare_filter_types<Input, Output> {};
 
-        }// namespace d1
-    }    // namespace detail
-}// namespace tbb
+} // namespace d1
+} // namespace detail
+} // namespace tbb
 
-#endif// __TBB__pipeline_filters_deduction_H
+#endif // __TBB__pipeline_filters_deduction_H

@@ -25,6 +25,8 @@
 //! \brief \ref error_guessing \ref interface
 TEST_CASE("Test implicit linkage") {
     // Pulling something from the library so that it is indeed required during the linkage
-    REQUIRE_MESSAGE(TBB_runtime_interface_version() == TBB_INTERFACE_VERSION,
-                    "Running with the library of different version than the test was compiled against.");
+    REQUIRE_MESSAGE(
+        TBB_runtime_interface_version()==TBB_INTERFACE_VERSION,
+        "Running with the library of different version than the test was compiled against."
+    );
 }

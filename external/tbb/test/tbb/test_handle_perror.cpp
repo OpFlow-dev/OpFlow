@@ -23,21 +23,23 @@
 
 #define __TBB_NO_IMPLICIT_LINKAGE 1
 
-#include "../../src/tbb/assert_impl.h"// Out-of-line TBB assertion handling routines are instantiated here.
-#include "../../src/tbb/exception.cpp"
+#include "../../src/tbb/assert_impl.h" // Out-of-line TBB assertion handling routines are instantiated here.
 #include "common/test.h"
 #include "oneapi/tbb/detail/_exception.h"
+#include "../../src/tbb/exception.cpp"
+#include <stdexcept>
 #include <cerrno>
 #include <iostream>
-#include <stdexcept>
 
 namespace tbb {
-    namespace detail {
-        namespace r1 {
-            bool terminate_on_exception() { return false; }
-        }// namespace r1
-    }    // namespace detail
-}// namespace tbb
+namespace detail {
+namespace r1 {
+bool terminate_on_exception() {
+    return false;
+}
+}
+}
+}
 
 #if TBB_USE_EXCEPTIONS
 
@@ -47,7 +49,7 @@ TEST_CASE("test tbb::detail::r1::handle_perror") {
 
     try {
         tbb::detail::r1::handle_perror(EAGAIN, "apple");
-    } catch (std::runtime_error& e) {
+    } catch( std::runtime_error& e ) {
         REQUIRE(std::memcmp(e.what(), "apple: ", 7) == 0);
         REQUIRE_MESSAGE(std::strlen(std::strstr(e.what(), std::strerror(EAGAIN))), "Bad error message");
         caught = true;
@@ -55,4 +57,4 @@ TEST_CASE("test tbb::detail::r1::handle_perror") {
     REQUIRE(caught);
 }
 
-#endif// TBB_USE_EXCEPTIONS
+#endif // TBB_USE_EXCEPTIONS

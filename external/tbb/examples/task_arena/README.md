@@ -1,5 +1,4 @@
 # Code Samples of oneAPI Threading Building Blocks (oneTBB)
-
 Examples using the `task_arena` feature.
 
 | Code sample name | Description

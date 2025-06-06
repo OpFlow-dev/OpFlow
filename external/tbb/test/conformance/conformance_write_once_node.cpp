@@ -15,7 +15,7 @@
 */
 
 #if __INTEL_COMPILER && _MSC_VER
-#pragma warning(disable : 2586)// decorated name length exceeded, name was truncated
+#pragma warning(disable : 2586) // decorated name length exceeded, name was truncated
 #endif
 
 #define CONFORMANCE_BUFFERING_NODES
@@ -28,45 +28,44 @@
 
 //! Test function_node broadcast
 //! \brief \ref requirement
-TEST_CASE("write_once_node broadcast") {
+TEST_CASE("write_once_node broadcast"){
     conformance::test_forwarding<oneapi::tbb::flow::write_once_node<int>, int>(1);
 }
 
 //! Test write_once_node buffering
 //! \brief \ref requirement
-TEST_CASE("write_once_node buffering") {
+TEST_CASE("write_once_node buffering"){
     conformance::test_buffering<oneapi::tbb::flow::write_once_node<int>, int>();
 }
 
-//! The node that is constructed has a reference to the same graph object as src,with an invalid internal buffer item.
+//! The node that is constructed has a reference to the same graph object as src,with an invalid internal buffer item. 
 //! The buffered value and list of successors are not copied from src.
 //! \brief \ref requirement
-TEST_CASE("write_once_node copy constructor") {
+TEST_CASE("write_once_node copy constructor"){
     conformance::test_copy_ctor_for_buffering_nodes<oneapi::tbb::flow::write_once_node<int>>();
 }
 
 //! Test inheritance relations
 //! \brief \ref interface
-TEST_CASE("write_once_node superclasses") {
+TEST_CASE("write_once_node superclasses"){
     conformance::test_inheritance<oneapi::tbb::flow::write_once_node<int>, int, int>();
     conformance::test_inheritance<oneapi::tbb::flow::write_once_node<void*>, void*, void*>();
 }
 
 //! Test overwrite_node node constructor
 //! \brief \ref requirement
-TEST_CASE("write_once_node constructor") {
+TEST_CASE("write_once_node constructor"){
     oneapi::tbb::flow::graph g;
     oneapi::tbb::flow::overwrite_node<int> testing_node(g);
 
     int tmp = -1;
     CHECK_MESSAGE((!testing_node.is_valid()), "Constructed node has invalid internal buffer item");
-    CHECK_MESSAGE((!testing_node.try_get(tmp)),
-                  "Gets from the node are non-destructive, but the first `try_get' fails");
+    CHECK_MESSAGE((!testing_node.try_get(tmp)), "Gets from the node are non-destructive, but the first `try_get' fails");
 }
 
 //! Test write_once_node node `is_valid()` and `clear()`
 //! \brief \ref requirement
-TEST_CASE("write_once_node methods") {
+TEST_CASE("write_once_node methods"){
     oneapi::tbb::flow::graph g;
     oneapi::tbb::flow::write_once_node<int> testing_node(g);
 
@@ -84,6 +83,6 @@ TEST_CASE("write_once_node methods") {
 //! The following test shows the possibility to connect the node to a reserving join_node,
 //! avoiding direct calls to the try_get() method from the body of the successor node
 //! \brief \ref requirement
-TEST_CASE("write_once_node with reserving join_node as successor") {
+TEST_CASE("write_once_node with reserving join_node as successor"){
     conformance::test_with_reserving_join_node_class<oneapi::tbb::flow::write_once_node<int>>();
 }
