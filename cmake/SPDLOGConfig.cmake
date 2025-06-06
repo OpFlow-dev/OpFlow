@@ -17,25 +17,28 @@
 macro(CONFIG_AND_INSTALL_SPDLOG)
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/spdlog-build)
     execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}"
-            -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-            -DSPDLOG_BUILD_EXAMPLE=OFF
-            -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} ${CMAKE_CURRENT_LIST_DIR}/../external/spdlog
-            RESULT_VARIABLE result
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/spdlog-build)
-    if (result)
+        -DCMAKE_CXX_STANDARD=20
+        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -DSPDLOG_BUILD_EXAMPLE=OFF
+        -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DSPDLOG_USE_STD_FORMAT=ON
+        ${CMAKE_CURRENT_LIST_DIR}/../external/spdlog
+        RESULT_VARIABLE result
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/spdlog-build)
+    if(result)
         message(FATAL_ERROR "CMake step for spdlog failed: ${result}")
-    endif ()
+    endif()
     execute_process(COMMAND ${CMAKE_COMMAND} --build . -j
-            RESULT_VARIABLE result
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/spdlog-build)
-    if (result)
+        RESULT_VARIABLE result
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/spdlog-build)
+    if(result)
         message(FATAL_ERROR "Build step for spdlog failed: ${result}")
-    endif ()
+    endif()
     execute_process(COMMAND ${CMAKE_COMMAND} --install .
-            RESULT_VARIABLE result
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/spdlog-build)
-    if (result)
+        RESULT_VARIABLE result
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/spdlog-build)
+    if(result)
         message(FATAL_ERROR "Install step for spdlog failed: ${result}")
-    endif ()
+    endif()
 endmacro()
