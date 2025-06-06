@@ -38,8 +38,8 @@ namespace OpFlow {
 
 template <typename T>
     requires std::derived_from<T, OpFlow::StringifiableObj>
-struct std::formatter<T> : formatter<std::string> {
-    auto format(const OpFlow::StringifiableObj& a, auto& ctx) {
+struct std::formatter<T> : std::formatter<std::string> {
+    auto format(const OpFlow::StringifiableObj& a, auto& ctx) const {
         return std::formatter<std::string>::format(a.toString(), ctx);
     }
 };
