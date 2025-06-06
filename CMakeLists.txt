@@ -21,6 +21,8 @@ set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD
     # `Help/dev/experimental.rst` in the CMake source corresponding to
     # your CMake build for the exact value to use.
     "a9e1cf81-9932-4810-974b-6eccaf14e457")
+set(CMAKE_EXPERIMENTAL_EXPORT_BUILD_DATABASE 4bd552e2-b7fb-429a-ab23-c83ef53f3f13)
+set(CMAKE_EXPORT_BUILD_DATABASE 1)
 
 # ----------------------------------------------------------------------------
 # Start opflow project
