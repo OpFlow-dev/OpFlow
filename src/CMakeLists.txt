@@ -13,6 +13,10 @@ list(APPEND OPFLOW_HEADERS
     ${CMAKE_SOURCE_DIR}/include/Version
     ${CMAKE_SOURCE_DIR}/include/OpFlow)
 
+set(CMAKE_CXX_FLAGS_DEBUG "-Og -g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g")
+
 if(OPFLOW_ENABLE_MODULE)
     # ----------------------------------------------------------------------------
     # C++20 module version
@@ -20,7 +24,6 @@ if(OPFLOW_ENABLE_MODULE)
     add_library(opflow)
 
     target_compile_definitions(opflow INTERFACE OPFLOW_USE_MODULE)
-    target_compile_features(opflow PUBLIC cxx_std_26)
     set_property(TARGET opflow PROPERTY CXX_SCAN_FOR_MODULES ON)
     target_sources(opflow
         PUBLIC FILE_SET CXX_MODULES
@@ -31,6 +34,7 @@ if(OPFLOW_ENABLE_MODULE)
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/src
         FILES ${OPFLOW_HEADERS})
+    target_compile_features(opflow PUBLIC cxx_std_23)
     install(TARGETS opflow
         EXPORT opflow-targets
         FILE_SET CXX_MODULES DESTINATION ${CMAKE_INSTALL_LIBDIR}/cxx/opflow
