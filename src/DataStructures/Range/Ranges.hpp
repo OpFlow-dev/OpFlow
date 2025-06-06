@@ -329,19 +329,17 @@ namespace OpFlow::DS {
 
 }// namespace OpFlow::DS
 
-namespace std {
-    template <std::size_t dim>
-    struct hash<OpFlow::DS::Range<dim>> {
-    public:
-        std::size_t operator()(const OpFlow::DS::Range<dim>& r) const noexcept {
-            std::array<int, 3 * dim> arr;
-            for (std::size_t i = 0; i < dim; ++i) {
-                arr[i] = r.start[i];
-                arr[i + dim] = r.end[i];
-                arr[i + 2 * dim] = r.stride[i];
-            }
-            return XXHash64::hash(arr.data(), sizeof(arr), 0);
+template <std::size_t dim>
+struct std::hash<OpFlow::DS::Range<dim>> {
+public:
+    std::size_t operator()(const OpFlow::DS::Range<dim>& r) const noexcept {
+        std::array<int, 3 * dim> arr;
+        for (std::size_t i = 0; i < dim; ++i) {
+            arr[i] = r.start[i];
+            arr[i + dim] = r.end[i];
+            arr[i + 2 * dim] = r.stride[i];
         }
-    };
-}// namespace std
+        return XXHash64::hash(arr.data(), sizeof(arr), 0);
+    }
+};
 #endif//OPFLOW_RANGES_HPP
