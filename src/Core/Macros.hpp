@@ -14,9 +14,9 @@
 #define OPFLOW_MACROS_HPP
 
 #ifndef OPFLOW_INSIDE_MODULE
-#include "spdlog/spdlog.h"
 #include <cassert>
 #include <cstring>
+#include <spdlog/spdlog.h>
 #include <utility>
 #endif
 #define OPFLOW_INLINE inline
@@ -49,7 +49,7 @@
 #endif// OPFLOW_USE_MODULE
 
 // Field Macros
-#include "Core/Field/FieldMacros.hpp"
+#include "Core/Meta.hpp"
 
 #define OP_ERRMSG_DIM_MISMATCH "Specified dims count & Tensor dims count mismatch."
 #define OP_ERRMSG_HIOD_SCHEME_ON_BD                                                                          \
@@ -66,12 +66,21 @@ namespace OpFlow {
     inline static int getWorkerId(MPI_Comm comm);
 }
 #define SPD_AUGMENTED_LOG(X, ...)                                                                            \
-    spdlog::X(std::format("[{}:{}@{}][Rank{}] ", __FILENAME__, __FUNCTION__, __LINE__,                       \
-                          OpFlow::getWorkerId(MPI_COMM_WORLD))                                               \
-              + std::format(__VA_ARGS__))
+    do {                                                                                                     \
+        if consteval {                                                                                       \
+            spdlog::X(std::format("[{}:{}@{}][Rank{}] ", __FILENAME__, __FUNCTION__, __LINE__,               \
+                                  OpFlow::getWorkerId(MPI_COMM_WORLD))                                       \
+                      + std::format(__VA_ARGS__));                                                           \
+        }                                                                                                    \
+    } while (0)
 #else
 #define SPD_AUGMENTED_LOG(X, ...)                                                                            \
-    spdlog::X(std::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__) + std::format(__VA_ARGS__))
+    do {                                                                                                     \
+        if consteval {                                                                                       \
+            spdlog::X(std::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__)                       \
+                      + std::format(__VA_ARGS__));                                                           \
+        }                                                                                                    \
+    } while (0)
 #endif
 
 #ifndef OP_DEBUGLEVEL
