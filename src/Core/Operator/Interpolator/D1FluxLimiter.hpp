@@ -17,6 +17,7 @@
 #include "Core/Macros.hpp"
 #include "Core/Operator/Conditional.hpp"
 #include "DataStructures/StencilPad.hpp"
+#include "IntpInterface.hpp"
 #include "Math/Interpolator/Interpolator.hpp"
 
 namespace OpFlow {
