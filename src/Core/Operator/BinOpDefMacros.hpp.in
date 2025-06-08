@@ -24,14 +24,14 @@
                           || (SemiStructuredFieldExprType<T1> && SemiStructuredFieldExprType<T2>) )          \
                 if (expr.arg1.loc != expr.arg2.loc) {                                                        \
                     OP_ERROR("Operand {} and {}'s loc not same.", expr.arg1.name, expr.arg2.name);           \
-                    std::string loc1 = fmt::format(                                                          \
+                    std::string loc1 = std::format(                                                          \
                             "{{ {}", expr.arg1.loc[0] == LocOnMesh::Corner ? "Corner" : "Center");           \
-                    std::string loc2 = fmt::format(                                                          \
+                    std::string loc2 = std::format(                                                          \
                             "{{ {}", expr.arg2.loc[0] == LocOnMesh::Corner ? "Corner" : "Center");           \
                     for (auto i = 1; i < internal::FieldExprTrait<T1>::dim; ++i) {                           \
-                        loc1 += fmt::format(", {}",                                                          \
+                        loc1 += std::format(", {}",                                                          \
                                             expr.arg1.loc[i] == LocOnMesh::Corner ? "Corner" : "Center");    \
-                        loc2 += fmt::format(", {}",                                                          \
+                        loc2 += std::format(", {}",                                                          \
                                             expr.arg2.loc[i] == LocOnMesh::Corner ? "Corner" : "Center");    \
                     }                                                                                        \
                     loc1 += " }";                                                                            \
@@ -41,7 +41,7 @@
                     OP_ABORT;                                                                                \
                 }                                                                                            \
             expr.initPropsFrom(expr.arg1);                                                                   \
-            expr.name = fmt::format("{} {} {}", expr.arg1.name, #op, expr.arg2.name);                        \
+            expr.name = std::format("{} {} {}", expr.arg1.name, #op, expr.arg2.name);                        \
             if constexpr (StructuredFieldExprType<T1> && StructuredFieldExprType<T2>) {                      \
                 expr.accessibleRange                                                                         \
                         = DS::commonRange(expr.arg1.accessibleRange, expr.arg2.accessibleRange);             \
@@ -60,7 +60,7 @@
         template <typename T1, FieldExprType T2>                                                             \
         static void prepare(const Expression<Name##Op, ScalarExpr<T1>, T2>& expr) {                          \
             expr.initPropsFrom(expr.arg2);                                                                   \
-            expr.name = fmt::format("{} {} {}", expr.arg1.val, #op, expr.arg2.name);                         \
+            expr.name = std::format("{} {} {}", expr.arg1.val, #op, expr.arg2.name);                         \
             if constexpr (StructuredFieldExprType<Expression<Name##Op, ScalarExpr<T1>, T2>>)                 \
                 expr.assignableRange.setEmpty();                                                             \
             else if constexpr (SemiStructuredFieldExprType<Expression<Name##Op, ScalarExpr<T1>, T2>>) {      \
@@ -72,7 +72,7 @@
         template <FieldExprType T1, typename T2>                                                             \
         static void prepare(const Expression<Name##Op, T1, ScalarExpr<T2>>& expr) {                          \
             expr.initPropsFrom(expr.arg1);                                                                   \
-            expr.name = fmt::format("{} {} {}", expr.arg1.name, #op, expr.arg2.val);                         \
+            expr.name = std::format("{} {} {}", expr.arg1.name, #op, expr.arg2.val);                         \
             if constexpr (StructuredFieldExprType<Expression<Name##Op, T1, ScalarExpr<T2>>>)                 \
                 expr.assignableRange.setEmpty();                                                             \
             else if constexpr (SemiStructuredFieldExprType<Expression<Name##Op, T1, ScalarExpr<T2>>>) {      \
@@ -199,14 +199,14 @@
                             T1> && StructuredFieldExprType<T2> || SemiStructuredFieldExprType<T1> && SemiStructuredFieldExprType<T2>) \
                 if (expr.arg1.loc != expr.arg2.loc) {                                                                                 \
                     OP_ERROR("Operand {} and {}'s loc not same.", expr.arg1.name, expr.arg2.name);                                    \
-                    std::string loc1 = fmt::format(                                                                                   \
+                    std::string loc1 = std::format(                                                                                   \
                             "{{ {}", expr.arg1.loc[0] == LocOnMesh::Corner ? "Corner" : "Center");                                    \
-                    std::string loc2 = fmt::format(                                                                                   \
+                    std::string loc2 = std::format(                                                                                   \
                             "{{ {}", expr.arg2.loc[0] == LocOnMesh::Corner ? "Corner" : "Center");                                    \
                     for (auto i = 1; i < internal::FieldExprTrait<T1>::dim; ++i) {                                                    \
-                        loc1 += fmt::format(", {}",                                                                                   \
+                        loc1 += std::format(", {}",                                                                                   \
                                             expr.arg1.loc[i] == LocOnMesh::Corner ? "Corner" : "Center");                             \
-                        loc2 += fmt::format(", {}",                                                                                   \
+                        loc2 += std::format(", {}",                                                                                   \
                                             expr.arg2.loc[i] == LocOnMesh::Corner ? "Corner" : "Center");                             \
                     }                                                                                                                 \
                     loc1 += " }";                                                                                                     \
@@ -216,7 +216,7 @@
                     OP_ABORT;                                                                                                         \
                 }                                                                                                                     \
             expr.initPropsFrom(expr.arg1);                                                                                            \
-            expr.name = fmt::format("{}({}, {})", #func, expr.arg1.name, expr.arg2.name);                                             \
+            expr.name = std::format("{}({}, {})", #func, expr.arg1.name, expr.arg2.name);                                             \
             if constexpr (StructuredFieldExprType<T1> && StructuredFieldExprType<T2>) {                                               \
                 expr.accessibleRange                                                                                                  \
                         = DS::commonRange(expr.arg1.accessibleRange, expr.arg2.accessibleRange);                                      \
@@ -235,7 +235,7 @@
         template <typename T1, FieldExprType T2>                                                                                      \
         static void prepare(const Expression<Name##Op, ScalarExpr<T1>, T2>& expr) {                                                   \
             expr.initPropsFrom(expr.arg2);                                                                                            \
-            expr.name = fmt::format("{}({}, {})", #func, expr.arg1.val, expr.arg2.name);                                              \
+            expr.name = std::format("{}({}, {})", #func, expr.arg1.val, expr.arg2.name);                                              \
             if constexpr (StructuredFieldExprType<Expression<Name##Op, ScalarExpr<T1>, T2>>)                                          \
                 expr.assignableRange.setEmpty();                                                                                      \
             else if constexpr (SemiStructuredFieldExprType<Expression<Name##Op, ScalarExpr<T1>, T2>>) {                               \
@@ -247,7 +247,7 @@
         template <FieldExprType T1, typename T2>                                                                                      \
         static void prepare(const Expression<Name##Op, T1, ScalarExpr<T2>>& expr) {                                                   \
             expr.initPropsFrom(expr.arg1);                                                                                            \
-            expr.name = fmt::format("{}({}, {})", #func, expr.arg1.name, expr.arg2.val);                                              \
+            expr.name = std::format("{}({}, {})", #func, expr.arg1.name, expr.arg2.val);                                              \
             if constexpr (StructuredFieldExprType<Expression<Name##Op, T1, ScalarExpr<T2>>>)                                          \
                 expr.assignableRange.setEmpty();                                                                                      \
             else if constexpr (SemiStructuredFieldExprType<Expression<Name##Op, T1, ScalarExpr<T2>>>) {                               \

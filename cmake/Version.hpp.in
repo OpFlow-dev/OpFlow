@@ -3,5 +3,5 @@
 #endif
 
 namespace OpFlow::internal {
-    inline constexpr static auto OPFLOW_VERSION_STRING = std::string_view {"@OPFLOW_VERSION_STRING@"};
+    inline constexpr auto OPFLOW_VERSION_STRING = std::string_view {"@OPFLOW_VERSION_STRING@"};
 }
