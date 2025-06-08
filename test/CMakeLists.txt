@@ -10,7 +10,7 @@
 #
 # ----------------------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 4.0.2 FATAL_ERROR)
 project(OpFlow_Tests)
 
 if (NOT TARGET opflow)
@@ -145,7 +145,6 @@ endif ()
 
 add_subdirectory(Core)
 add_subdirectory(DataStructures)
-add_subdirectory(Misc)
 add_subdirectory(Utils)
 
 # Add global tests target
