@@ -718,7 +718,7 @@ namespace amgcl {
         // Use Power method when power_iters > 0.
         // When scale = true, scale the matrix by its inverse diagonal.
         template <bool scale, class Matrix>
-        static typename math::scalar_of<typename backend::value_type<Matrix>::type>::type
+        typename math::scalar_of<typename backend::value_type<Matrix>::type>::type
         spectral_radius(const Matrix &A, int power_iters = 0) {
             AMGCL_TIC("spectral radius");
             typedef typename backend::value_type<Matrix>::type value_type;
