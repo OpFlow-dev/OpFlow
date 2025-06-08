@@ -73,10 +73,8 @@ struct task_group_context_impl;
 
 namespace d2 {
 
-namespace {
 template<typename F>
 d1::task* task_ptr_or_nullptr(F&& f);
-}
 
 template<typename F>
 class function_task : public task_handle_task  {

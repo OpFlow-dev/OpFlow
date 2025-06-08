@@ -37,8 +37,8 @@ template<typename... T> void suppress_unused_warning(T&&...) {}
 /** It should be used only in situations where having a compile-time upper
   bound is more useful than a run-time exact answer.
   @ingroup memory_allocation */
-constexpr size_t max_nfs_size = 128;
-constexpr std::size_t max_nfs_size_exp = 7;
+constexpr inline size_t max_nfs_size = 128;
+constexpr inline std::size_t max_nfs_size_exp = 7;
 static_assert(1 << max_nfs_size_exp == max_nfs_size, "max_nfs_size_exp must be a log2(max_nfs_size)");
 
 //! Class that implements exponential backoff.
