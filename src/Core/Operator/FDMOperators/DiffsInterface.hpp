@@ -16,7 +16,7 @@
 #include "Core/Expr/Expression.hpp"
 #include "Core/Meta.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
 #define UNARY_OP_FUNC_DEF(func_name)                                                                         \
     template <typename Kernel>                                                                               \

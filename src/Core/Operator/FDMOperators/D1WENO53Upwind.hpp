@@ -20,7 +20,7 @@
 #include "DataStructures/Range/Ranges.hpp"
 #include "Math/Function/Numeric.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <std ::size_t d>
     struct D1WENO53Upwind {
         constexpr static auto bc_width = 3;

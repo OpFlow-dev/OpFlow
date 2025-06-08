@@ -16,7 +16,7 @@
 #include "CartesianFieldExprTrait.hpp"
 #include "StructuredFieldExpr.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     template <typename Derived>
     struct CartesianFieldExpr : StructuredFieldExpr<Derived> {

@@ -19,7 +19,7 @@
 #include "Core/Meta.hpp"
 #include "DataStructures/Arrays/Tensor/FixedSizeTensor.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <std::integral auto... ns>
     struct Convolution {
         constexpr static int d = sizeof...(ns);

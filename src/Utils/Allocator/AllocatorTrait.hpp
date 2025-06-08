@@ -13,7 +13,7 @@
 #ifndef OPFLOW_ALLOCATORTRAIT_HPP
 #define OPFLOW_ALLOCATORTRAIT_HPP
 
-namespace OpFlow::Utils {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     namespace internal {
         template <typename T>
         struct AllocatorTrait;

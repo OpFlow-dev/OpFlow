@@ -19,7 +19,7 @@
 #include "DataStructures/Index/ColoredIndex.hpp"
 #include "DataStructures/StencilPad.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename T, template <typename...> typename map_impl = DS::fake_map_default>
     struct StencilField;
 

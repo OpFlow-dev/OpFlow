@@ -18,7 +18,7 @@
 #include <string>
 #endif
 
-namespace OpFlow::Utils {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     template <std::size_t N>
     struct CXprString {
         constexpr CXprString() = default;

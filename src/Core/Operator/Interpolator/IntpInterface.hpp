@@ -16,7 +16,7 @@
 #include "Core/Expr/Expression.hpp"
 #include "Core/Meta.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     enum class IntpDirection { Cor2Cen, Cen2Cor };
 
     // default linear kernel

@@ -21,7 +21,7 @@
 #include <string>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     struct StringifiableObj {
     public:

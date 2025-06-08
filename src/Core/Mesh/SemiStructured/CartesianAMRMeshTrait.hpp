@@ -17,7 +17,7 @@
 #include "Core/Mesh/MeshTrait.hpp"
 #include "Core/Mesh/SemiStructured/SemiStructuredMeshTrait.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename Derived>
     struct CartesianAMRMeshBase;
 

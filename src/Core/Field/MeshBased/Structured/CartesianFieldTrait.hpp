@@ -18,7 +18,7 @@
 #include "DataStructures/Arrays/Tensor/PlainTensor.hpp"
 #include "DataStructures/Index/MDIndex.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename D, typename M, typename C>
     struct CartesianField;
 

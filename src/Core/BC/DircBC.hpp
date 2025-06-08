@@ -19,7 +19,7 @@
 #include "Core/Field/MeshBased/Structured/StructuredFieldExprTrait.hpp"
 #include "Core/Loops/RangeFor.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <FieldExprType F>
     struct DircBCBase : virtual public BCBase<F> {
     protected:

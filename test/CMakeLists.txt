@@ -17,6 +17,10 @@ if (NOT TARGET opflow)
     find_package(opflow REQUIRED)
 endif ()
 
+set(CMAKE_CXX_FLAGS_DEBUG "-Og -g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g")
+
 if (OPFLOW_ENABLE_COVERAGE)
     include(${CMAKE_CURRENT_LIST_DIR}/../cmake/CodeCoverage.cmake)
 else ()

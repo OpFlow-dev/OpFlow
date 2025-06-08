@@ -15,7 +15,7 @@
 
 #include "MDRangeMapper.hpp"
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     template <std::size_t dim>
     struct ColoredMDRangeMapper {
         ColoredMDRangeMapper() = default;

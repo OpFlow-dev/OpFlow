@@ -19,7 +19,7 @@
 #ifndef OPFLOW_STACKTRACER_HPP
 #define OPFLOW_STACKTRACER_HPP
 
-namespace OpFlow::Utils {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     struct StackTracer {
         std::vector<std::string> msg;
 

@@ -29,7 +29,7 @@
 #endif
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <FieldExprType F>
     struct EvenSplitStrategy : AbstractSplitStrategy<F> {
         [[nodiscard]] std::string strategyName() const override { return "Even split"; }

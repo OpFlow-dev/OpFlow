@@ -18,7 +18,7 @@
 #include "Core/Operator/Interpolator/IntpInterface.hpp"
 #include "Math/Interpolator/Interpolator.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <std::size_t d, IntpDirection dir>
     struct D1Linear {
         constexpr static auto bc_width = 1;

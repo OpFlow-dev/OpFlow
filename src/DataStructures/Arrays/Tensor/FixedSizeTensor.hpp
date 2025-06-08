@@ -20,7 +20,7 @@
 #include <array>
 #endif
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     namespace internal {
         template <std::size_t N>
         constexpr int accumulate_product(std::array<int, N> arr) {

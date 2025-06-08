@@ -33,7 +33,7 @@
 #include <memory>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename D, typename M, typename C = DS::PlainTensor<D, internal::MeshTrait<M>::dim>>
     struct CartesianField : CartesianFieldExpr<CartesianField<D, M, C>> {
         using index_type = typename internal::CartesianFieldExprTrait<CartesianField>::index_type;

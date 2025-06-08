@@ -22,7 +22,7 @@
 #include <optional>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     enum class SemiStructSolverType {
         None,// only for un-preconditioned cases
         Jacobi,

@@ -29,7 +29,7 @@
 #include <oneapi/tbb/detail/_range_common.h>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     /// \brief Serial version of range for
     /// \tparam dim Range dim
     /// \tparam F Functor type

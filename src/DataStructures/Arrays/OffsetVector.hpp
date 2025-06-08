@@ -20,7 +20,7 @@
 #include <vector>
 #endif
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     template <typename T>
     struct OffsetVector {
     protected:

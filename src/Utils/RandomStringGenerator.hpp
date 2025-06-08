@@ -22,7 +22,7 @@
 #include <string>
 #endif
 
-namespace OpFlow::Utils {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     // copied from https://stackoverflow.com/a/444614
     template <typename T = std::mt19937>
     inline auto random_generator() -> T {

@@ -27,7 +27,7 @@
 #include <vtkXMLPolyDataWriter.h>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     inline auto int_pow(int a, int n) {
         auto ret = 1;
         for (auto i = 0; i < n; ++i) ret *= a;

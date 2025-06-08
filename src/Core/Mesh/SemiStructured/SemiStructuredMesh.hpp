@@ -15,7 +15,7 @@
 
 #include "Core/Mesh/MeshBase.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename Derived>
     struct SemiStructuredMesh : MeshBase<Derived> {};
 }// namespace OpFlow

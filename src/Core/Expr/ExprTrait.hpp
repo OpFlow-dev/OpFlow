@@ -19,7 +19,7 @@
 #include <type_traits>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     namespace internal {
         /// Trait class for an expr type
         /// \tparam T The expr type

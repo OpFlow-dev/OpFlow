@@ -20,7 +20,7 @@
 #include "IntpInterface.hpp"
 #include "Math/Interpolator/Interpolator.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename K>
     concept FluxLimiterKernel = requires(double r) {
         { K::eval(r) } -> std::same_as<double>;

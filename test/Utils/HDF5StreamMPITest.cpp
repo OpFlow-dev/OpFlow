@@ -10,8 +10,9 @@
 //
 //  ----------------------------------------------------------------------------
 
-#include <OpFlow>
 #include <gmock/gmock.h>
+#include <print>
+import opflow;
 
 using namespace OpFlow;
 
@@ -79,7 +80,7 @@ TEST_F(H5RWMPITest, ReadAfterWrite) {
     Utils::H5Stream istream(filename, StreamIn);
     istream >> v;
     rangeFor_s(u.getLocalReadableRange(), [&](auto i) {
-        if (u[i] != v[i]) OP_ERROR("NOT EQUAL AT {}", i);
+        if (u[i] != v[i]) std::print(std::cerr,"NOT EQUAL AT {}", i);
         ASSERT_EQ(u[i], v[i]);
     });
 }
@@ -137,7 +138,7 @@ TEST_F(H5RWMPITest, GeneralSplitWite) {
     Utils::H5Stream stream("./u.general.split.h5");
     stream << Utils::TimeStamp(0) << u;
     u.resplitWithStrategy(s.get());
-    OP_INFO("local range = {}", u.localRange.toString());
+    std::print("local range = {}", u.localRange.toString());
     stream << Utils::TimeStamp(1.) << u;
     u.initBy([](auto&& x) { return getWorkerId(); });
     stream << Utils::TimeStamp(2) << u;

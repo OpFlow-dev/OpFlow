@@ -19,7 +19,7 @@
 #include "Core/Meta.hpp"
 #include "RangeFor.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <FieldExprType E, typename Func>
     requires std::invocable<Func, DS::MDIndex<internal::FieldExprTrait<E>::dim>> auto structFor(E& expr,
                                                                                                 Func&& func) {

@@ -17,7 +17,7 @@
 #include "Core/Field/MeshBased/Structured/CartesianFieldExprTrait.hpp"
 #include "DataStructures/Range/Ranges.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <std::size_t d>
     struct D1FirstOrderBiasedDownwind {
         constexpr static auto bc_width = 1;

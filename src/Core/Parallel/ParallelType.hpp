@@ -13,7 +13,7 @@
 #ifndef OPFLOW_PARALLELTYPE_HPP
 #define OPFLOW_PARALLELTYPE_HPP
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     using ParallelType = unsigned int;
     struct ParallelIdentifier {
         constexpr unsigned int static None = 0;

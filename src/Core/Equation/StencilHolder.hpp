@@ -17,7 +17,7 @@
 #include "Core/Macros.hpp"
 #include "DataStructures/StencilPad.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename... E>
     struct StencilHolder;
 

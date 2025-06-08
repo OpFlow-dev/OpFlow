@@ -16,7 +16,7 @@
 #include "Core/Operator/Interpolator/D1FluxLimiter.hpp"
 #include "Core/Operator/Interpolator/FluxLimiterKernels.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     // This file contains handy alias for commonly used flux limiter based interpolators.
 
     // QUICK scheme

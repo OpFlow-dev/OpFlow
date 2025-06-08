@@ -18,7 +18,7 @@
 #include <optional>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     enum class StructSolverType {
         None, /* None only for un-preconditioned cases */

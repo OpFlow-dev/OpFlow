@@ -22,7 +22,7 @@
 #include <unordered_map>
 #endif
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     template <std::size_t max_size, typename K, typename V>
     struct fake_map {
     private:

@@ -10,9 +10,9 @@
 //
 //  ----------------------------------------------------------------------------
 
-#include <OpFlow>
 #include <gmock/gmock.h>
 
+import opflow;
 using namespace OpFlow;
 
 class DircBCTest : public testing::Test {

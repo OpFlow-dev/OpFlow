@@ -32,7 +32,7 @@
 #include "Core/Solvers/Struct/StructSolverPrecond.hpp"
 #include "Core/Solvers/Struct/StructSolverSMG.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <StructSolverType type = StructSolverType::GMRES,
               StructSolverType pType = StructSolverType::None, typename F, StructuredFieldExprType T>
     auto Solve(const F& func, T&& target, StructSolverParams<type> params = StructSolverParams<type> {},

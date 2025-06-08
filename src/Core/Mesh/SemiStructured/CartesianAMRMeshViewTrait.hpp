@@ -15,7 +15,7 @@
 
 #include "Core/Mesh/SemiStructured/SemiStructuredMeshTrait.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename T>
     requires CartesianAMRMeshType<T>&&
             Meta::isTemplateInstance<CartesianAMRMesh, T>::value struct CartesianAMRMeshView;

@@ -19,7 +19,7 @@
 #include <cstdlib>
 #endif
 
-namespace OpFlow::Utils {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     template <typename T, std::size_t align = 64>
     struct AlignedAllocator {
         static auto allocate(std::size_t size) {

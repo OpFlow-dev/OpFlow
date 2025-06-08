@@ -22,7 +22,7 @@
 #include <omp.h>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <FieldExprType E, typename Func, typename ReOp>
     auto structReduce(E& expr, ReOp&& op, Func&& func) {
         return structReduce(expr, expr.props.accessibleRange, std::forward<ReOp>(op),

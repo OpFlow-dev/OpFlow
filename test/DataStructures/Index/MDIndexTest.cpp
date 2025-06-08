@@ -10,8 +10,8 @@
 //
 // ----------------------------------------------------------------------------
 
-#include "DataStructures/Index/MDIndex.hpp"
 #include <gmock/gmock.h>
+import opflow;
 
 using namespace OpFlow;
 

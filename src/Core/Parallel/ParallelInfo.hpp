@@ -28,7 +28,7 @@
 #include <oneapi/tbb.h>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     struct NodeInfo {
         DistributeMemType type;
         int node_count;
@@ -48,7 +48,7 @@ namespace OpFlow {
         DeviceInfo deviceInfo {};
     };
 
-    static inline auto makeParallelInfo() {
+    inline auto makeParallelInfo() {
         ParallelInfo ret;
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
         ret.parallelType |= ParallelIdentifier::DistributeMem;

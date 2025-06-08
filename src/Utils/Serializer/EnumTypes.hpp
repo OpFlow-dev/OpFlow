@@ -20,7 +20,7 @@
 #include <string>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     inline std::ostream& operator<<(std::ostream& o, const BCType& type) {
         switch (type) {

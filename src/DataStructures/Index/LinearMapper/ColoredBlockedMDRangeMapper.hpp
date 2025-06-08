@@ -16,7 +16,7 @@
 #include "BlockedMDRangeMapper.hpp"
 #include "DataStructures/Index/ColoredIndex.hpp"
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     /// @brief A mapper that maps a colored MDIndex to a linear index.
     /// @tparam dim The dimension of the MDIndex.
     /// @note The color lies in the outer-most dimension, i.e., the index picks the BlockedMDRangeMapper

@@ -11,8 +11,9 @@
 //  ----------------------------------------------------------------------------
 
 //#define OPFLOW_ENABLE_STACK_TRACE 1
-#include <OpFlow>
 #include <gmock/gmock.h>
+#include <print>
+import opflow;
 
 using namespace OpFlow;
 using namespace testing;
@@ -150,7 +151,7 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson_Periodic) {
                              -1, 4,  -1, -1, -1, 4,  -1, -1, -1, -1, -1, 4,  -1, -1, -1, -1, 4,  -1, 1},
             rhs {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0};
 
-    OP_INFO("{}", mat.toString());
+    std::print("{}", mat.toString());
 
     for (int i = 0; i < ptr.size(); ++i) { ASSERT_EQ(ptr[i], mat.row[i]); }
     for (int i = 0; i < col.size(); ++i) { ASSERT_EQ(col[i], mat.col[i]); }

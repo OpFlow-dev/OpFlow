@@ -16,7 +16,7 @@
 #include "Core/Mesh/SemiStructured/SemiStructuredMesh.hpp"
 #include "Core/Mesh/SemiStructured/SemiStructuredMeshTrait.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename Derived>
     struct CartesianAMRMeshBase : SemiStructuredMesh<Derived> {
         auto x(int d, const auto& i) const { return this->derived().x(d, i); }

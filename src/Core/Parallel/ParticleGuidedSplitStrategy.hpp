@@ -27,7 +27,7 @@
 #include <vector>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <int d>
     struct Particle {
         std::array<double, d> x;

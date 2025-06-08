@@ -22,7 +22,7 @@
 #include <string>
 #endif
 
-namespace OpFlow::Utils {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     struct TecplotASCIIStream;
 
     namespace internal {

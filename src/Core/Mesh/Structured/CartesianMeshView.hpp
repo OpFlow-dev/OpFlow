@@ -19,7 +19,7 @@
 #include <memory>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename T>
         requires CartesianMeshType<T> && Meta::isTemplateInstance<CartesianMesh, T>::value
     struct CartesianMeshView : CartesianMeshBase<CartesianMeshView<T>> {

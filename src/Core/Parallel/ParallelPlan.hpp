@@ -16,7 +16,7 @@
 #include "Core/Field/FieldExprTrait.hpp"
 #include "Core/Parallel/ParallelInfo.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     struct ParallelPlan {
         ParallelInfo info;
         int distributed_workers_count = 1;
@@ -35,7 +35,7 @@ namespace OpFlow {
         [[nodiscard]] bool deviceMode() const { return heterogeneous_workers_count > 0; }
     };
 
-    constexpr static inline ParallelPlan makeParallelPlan(ParallelInfo info, ParallelType pbit) {
+    constexpr inline ParallelPlan makeParallelPlan(ParallelInfo info, ParallelType pbit) {
         bool dist_bit = pbit & ParallelIdentifier::DistributeMem,
              sm_bit = pbit & ParallelIdentifier::SharedMem,
              device_bit = pbit & ParallelIdentifier::Heterogeneous;

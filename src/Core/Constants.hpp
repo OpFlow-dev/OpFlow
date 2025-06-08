@@ -13,7 +13,7 @@
 #ifndef OPFLOW_CONSTANTS_HPP
 #define OPFLOW_CONSTANTS_HPP
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     using ConstantI = unsigned int;
 
     // Access Flags

@@ -20,7 +20,7 @@
 #include <oneapi/tbb/parallel_for.h>
 #endif
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     struct CSRMatrix {
         CSRMatrix() : row(1), col(0), rhs(0), val(0) { row[0] = 0; }
         CSRMatrix(int n_row, int nnz_per_row) { resize(n_row, nnz_per_row); }

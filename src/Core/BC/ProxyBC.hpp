@@ -17,7 +17,7 @@
 #include "Core/BC/DircBC.hpp"
 #include "Core/BC/NeumBC.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     template <FieldExprType From, FieldExprType To>
     requires std::constructible_from<typename internal::FieldExprTrait<To>::elem_type,

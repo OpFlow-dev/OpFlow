@@ -15,7 +15,7 @@
 
 #include "Core/Meta.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename Op>
     struct ArgChecker;
 

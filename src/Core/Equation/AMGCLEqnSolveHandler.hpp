@@ -44,7 +44,7 @@
 
 #include "Core/Solvers/IJ/IJSolver.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     template <typename F, typename T, typename M, typename S>
     struct AMGCLEqnSolveHandler;

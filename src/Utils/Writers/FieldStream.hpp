@@ -15,7 +15,7 @@
 
 #include "Utils/Writers/Streams.hpp"
 
-namespace OpFlow::Utils {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     template <typename Derived>
     struct FieldStream : Stream<Derived> {
         void fixedMesh() { this->derived().fixedMeshImpl(); }

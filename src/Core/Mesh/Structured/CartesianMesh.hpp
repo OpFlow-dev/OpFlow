@@ -29,7 +29,7 @@
 #include <cstdarg>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     enum class MeshExtMode { Undefined, Symm, Periodic, Uniform };
 
     template <typename Dim>

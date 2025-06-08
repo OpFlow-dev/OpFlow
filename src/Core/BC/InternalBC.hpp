@@ -19,7 +19,7 @@
 #include <mpi.h>
 #endif
 
-namespace OpFlow::Core::BC {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Core::BC {
     template <typename F>
     struct InternalBC : virtual public BCBase<F> {
     protected:

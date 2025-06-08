@@ -19,7 +19,7 @@
 #include "DataStructures/Index/LevelMDIndex.hpp"
 #include "DataStructures/Range/LevelRanges.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename D, typename M, typename C>
     struct CartAMRField;
 

@@ -19,7 +19,7 @@
 #include <string>
 #endif
 
-namespace OpFlow::Utils::Serializer {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils::Serializer {
     template <typename T>
         requires Meta::BracketIndexable<T> && requires(T t) {
             { t.empty() } -> std::same_as<bool>;

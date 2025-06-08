@@ -13,7 +13,7 @@
 #ifndef OPFLOW_COOMATRIX_HPP
 #define OPFLOW_COOMATRIX_HPP
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     struct COOMatrix {};
 }// namespace OpFlow::DS
 

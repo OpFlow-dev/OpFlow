@@ -37,7 +37,7 @@
 #include <HYPRE_sstruct_mv.h>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename F, typename T, typename S>
     struct HYPREEqnSolveHandler;
 

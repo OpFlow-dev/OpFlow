@@ -15,7 +15,7 @@
 
 #include "TensorTrait.hpp"
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     template <typename Derived>
     struct Tensor {
         using scalar_type = typename internal::TensorTrait<Derived>::scalar_type;

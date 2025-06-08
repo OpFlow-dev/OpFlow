@@ -15,7 +15,7 @@
 
 #include "Core/Field/FieldExpr.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename Derived>
     struct ParticleFieldExpr : FieldExpr<Derived> {};
 }// namespace OpFlow

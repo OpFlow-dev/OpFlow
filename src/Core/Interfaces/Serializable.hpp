@@ -17,7 +17,7 @@
 #include <vector>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     struct SerializableObj {
     public:

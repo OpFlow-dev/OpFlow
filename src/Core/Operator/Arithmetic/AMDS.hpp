@@ -29,7 +29,7 @@
 #include <utility>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     DEFINE_BINOP(Add, +)
     DEFINE_BINOP(Mul, *)

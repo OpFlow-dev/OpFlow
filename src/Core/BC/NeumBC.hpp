@@ -18,7 +18,7 @@
 #include "Core/Field/MeshBased/MeshBasedFieldExprTrait.hpp"
 #include "Core/Field/MeshBased/Structured/StructuredFieldExprTrait.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <FieldExprType F>
     struct NeumBCBase : virtual public BCBase<F> {
     protected:

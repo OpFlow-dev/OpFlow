@@ -25,7 +25,7 @@
 #include "Core/Meta.hpp"
 #include "DataStructures/Arrays/Tensor/PlainTensor.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     /// The Cartesian AMR field type
     /// \warning This is a special impl version. It relies on the sparse storage trait of the data container

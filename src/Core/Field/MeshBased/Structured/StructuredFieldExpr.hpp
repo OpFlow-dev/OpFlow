@@ -23,7 +23,7 @@
 #include <vector>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     namespace internal {
         template <typename R>
         struct NeighborInfo {

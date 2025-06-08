@@ -21,7 +21,7 @@
 #include <array>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename Dim>
     struct CartesianMesh;// pre-declare here for later use
 
