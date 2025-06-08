@@ -15,7 +15,7 @@
 
 #include "StructSolver.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <>
     struct StructSolverParams<StructSolverType::BICGSTAB> : StructSolverParamsBase {
         std::optional<Real> absTol;

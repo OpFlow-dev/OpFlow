@@ -20,7 +20,7 @@
 #include "Utils/ConstexprString.hpp"
 #include "Utils/NamedFunctor.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <Utils::NamedFunctorType auto Functor>
     struct UniOpAdaptor {
         constexpr static auto bc_width = 0;

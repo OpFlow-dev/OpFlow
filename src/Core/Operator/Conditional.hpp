@@ -19,7 +19,7 @@
 #include "Core/Meta.hpp"
 #include "Core/Operator/Operator.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     struct CondOp {
         template <ExprType C, ExprType T1, ExprType T2>
         OPFLOW_STRONG_INLINE static auto couldSafeEval(const C& c, const T1& t1, const T2& t2, auto&& i) {

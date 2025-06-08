@@ -10,8 +10,9 @@
 //
 // ----------------------------------------------------------------------------
 
-#include <OpFlow>
 #include <gmock/gmock.h>
+#include <print>
+import opflow;
 
 using namespace OpFlow;
 using namespace testing;
@@ -162,7 +163,7 @@ TEST_F(Intp1DFluxLimiterCornerToCenterTest, ValueCheck) {
     auto t = d1IntpCornerToCenter<0, D1QUICK>(-v, u);
     t.prepare();
     rangeFor_s(t.accessibleRange, [&](auto&& i) {
-        OP_INFO("t = {}, v = {}, i = {}", t[i], v[i], i);
+        std::print("t = {}, v = {}, i = {}", t[i], v[i], i);
         ASSERT_NEAR(t[i], v[i], 1e-10);
     });
 }

@@ -24,7 +24,7 @@
 #include <string>
 #endif
 
-namespace OpFlow::Utils {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     struct RawBinaryOStream;
     struct RawBinaryIStream;
 
@@ -77,7 +77,7 @@ namespace OpFlow::Utils {
     };
 }// namespace OpFlow::Utils
 
-namespace OpFlow::Utils {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     /// \brief Stream operator for CartesianField
     /// \note
     /// The structure of CartesianField raw file:

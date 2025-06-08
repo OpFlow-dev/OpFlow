@@ -15,7 +15,7 @@
 
 #include "Core/Mesh/Structured/StructuredMeshTrait.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename T>
     requires CartesianMeshType<T>&&
             Meta::isTemplateInstance<CartesianMesh, T>::value struct CartesianMeshView;

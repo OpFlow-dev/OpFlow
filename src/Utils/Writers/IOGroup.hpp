@@ -19,7 +19,7 @@
 #include <tuple>
 #endif
 
-namespace OpFlow::Utils {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     struct IOGroupInterface {
         virtual ~IOGroupInterface() = default;
         virtual void dump(const TimeStamp& t) = 0;

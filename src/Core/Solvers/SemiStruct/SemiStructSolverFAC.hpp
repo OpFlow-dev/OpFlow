@@ -15,7 +15,7 @@
 
 #include "SemiStructSolver.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <>
     struct SemiStructSolverParams<SemiStructSolverType::FAC> : SemiStructSolverParamsBase {
         std::optional<int> logging;

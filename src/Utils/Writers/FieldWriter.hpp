@@ -24,7 +24,7 @@
 #include <string>
 #endif
 
-namespace OpFlow::Utils::Writer {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils::Writer {
     template <typename FieldType>
     class FieldWriter : public virtual IO::WriterBase {
     public:

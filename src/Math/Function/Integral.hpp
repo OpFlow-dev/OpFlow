@@ -13,7 +13,7 @@
 #ifndef OPFLOW_INTEGRAL_HPP
 #define OPFLOW_INTEGRAL_HPP
 
-namespace OpFlow::Math {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Math {
 
     inline constexpr int round_to_range(int i, int start, int end) {
         int off = i - start;

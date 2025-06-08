@@ -19,7 +19,7 @@
 #include <concepts>
 #endif
 
-namespace OpFlow::Utils {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     template <auto Functor, auto Name, typename... Args>
     // Invokable check. Omit Args to mute this check
         requires((sizeof...(Args) == 0) || std::invocable<Meta::RealType<decltype(Functor)>, Args...>)

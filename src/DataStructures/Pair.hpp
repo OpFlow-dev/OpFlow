@@ -13,7 +13,7 @@
 #ifndef OPFLOW_PAIR_HPP
 #define OPFLOW_PAIR_HPP
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     template <typename T>
     struct Pair {
         T start, end;

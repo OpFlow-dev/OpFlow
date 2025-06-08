@@ -21,7 +21,7 @@
 #include <vector>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     struct CSRMatrixGenerator {
         template <typename S, typename M>
         static auto generate(S& s, M&& mapper, const std::vector<bool>& pin_flags) {

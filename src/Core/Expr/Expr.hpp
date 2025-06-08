@@ -21,7 +21,7 @@
 #include <string>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     template <typename Derived, bool rw, bool dir>
     struct Expr;

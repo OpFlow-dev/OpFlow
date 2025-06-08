@@ -10,9 +10,9 @@
 //
 //  ----------------------------------------------------------------------------
 
-#include <OpFlow>
-#include <cmath>
 #include <gmock/gmock.h>
+#include <print>
+import opflow;
 
 using namespace OpFlow;
 using namespace testing;
@@ -100,7 +100,7 @@ TEST_F(EqnSetTest, SimplePoisson_2Eqn) {
 
     rangeFor_s(p.assignableRange, [&](auto&& k) {
         if (std::isnan(p[k]) || std::isnan(p_true[k])) {
-            OP_INFO("p[{}] = {}, p2[{}] = {}, p_true[{}] = {}", k, p[k], k, p2[k], k, p_true[k]);
+            std::print("p[{}] = {}, p2[{}] = {}, p_true[{}] = {}", k, p[k], k, p2[k], k, p_true[k]);
         }
         ASSERT_NEAR(p[k], p_true[k], std::abs(1e-10 * p_true[k]));
         ASSERT_NEAR(p2[k], p[k], std::abs(1e-10 * p[k]));
@@ -156,7 +156,7 @@ TEST_F(EqnSetTest, SimplePoisson_Neum_2Eqn) {
 
     rangeFor_s(p.assignableRange, [&](auto&& k) {
         if (std::isnan(p[k]) || std::isnan(p_true[k])) {
-            OP_INFO("p[{}] = {}, p2[{}] = {}, p_true[{}] = {}", k, p[k], k, p2[k], k, p_true[k]);
+            std::print("p[{}] = {}, p2[{}] = {}, p_true[{}] = {}", k, p[k], k, p2[k], k, p_true[k]);
         }
 
         ASSERT_NEAR(p[k], p_true[k], std::abs(1e-10 * p_true[k]));
@@ -245,7 +245,7 @@ TEST_F(EqnSetTest, SimplePoisson_10Eqn) {
 
     rangeFor_s(p.assignableRange, [&](auto&& k) {
         if (std::isnan(p[k]) || std::isnan(p_true[k])) {
-            OP_INFO("p[{}] = {}, p2[{}] = {}, p_true[{}] = {}", k, p[k], k, p2[k], k, p_true[k]);
+            std::print("p[{}] = {}, p2[{}] = {}, p_true[{}] = {}", k, p[k], k, p2[k], k, p_true[k]);
         }
         ASSERT_NEAR(p[k], p_true[k], std::abs(1e-10 * p_true[k]));
         ASSERT_NEAR(p2[k], p[k], std::abs(1e-10 * p[k]));

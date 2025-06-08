@@ -27,7 +27,7 @@
 #include <utility>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     namespace internal {
         template <typename T, typename U>

@@ -10,8 +10,9 @@
 //
 //  ----------------------------------------------------------------------------
 
-#include <OpFlow>
 #include <gmock/gmock.h>
+#include <print>
+import opflow;
 
 using namespace OpFlow;
 using namespace testing;
@@ -84,11 +85,11 @@ protected:
             auto p_ref = p_true.evalAt(i);
             auto rel_res = std::abs(c_res) / std::abs(p_ref);
             if (std::isnan(c_res)) {
-                OP_ERROR("Check fail: res = nan @ {}", i);
+                std::print(std::cerr,"Check fail: res = nan @ {}", i);
                 ret = false;
             }
             if (rel_res > rel) {
-                OP_ERROR("Check fail: res = {} / {} @ {}", c_res, rel_res, i);
+                std::print(std::cerr,"Check fail: res = {} / {} @ {}", c_res, rel_res, i);
                 ret = false;
             }
         });

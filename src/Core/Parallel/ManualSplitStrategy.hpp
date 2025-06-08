@@ -26,7 +26,7 @@
 #include <vector>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     /// \brief Manually specified split ranges strategy
     /// (usually used for debug or adapt to external parallel strategies)
     /// \tparam F FieldType

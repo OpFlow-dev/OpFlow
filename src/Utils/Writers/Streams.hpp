@@ -26,7 +26,7 @@
 #include <utility>
 #endif
 
-namespace OpFlow::Utils {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
 
     struct TimeStamp {
         double time {};

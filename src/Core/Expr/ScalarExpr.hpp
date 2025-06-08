@@ -20,7 +20,7 @@
 #include <type_traits>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename T>
     struct ScalarExpr : Expr<ScalarExpr<T>> {
         T val;

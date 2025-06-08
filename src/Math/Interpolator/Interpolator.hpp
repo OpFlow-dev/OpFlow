@@ -15,7 +15,7 @@
 
 #include "Core/Macros.hpp"
 
-namespace OpFlow::Math {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Math {
 
     struct Interpolator1D {
         OPFLOW_STRONG_INLINE static auto intp(double x1, auto y1, double x2, auto y2) {

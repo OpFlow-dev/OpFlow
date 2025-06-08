@@ -10,14 +10,10 @@
 //
 // ----------------------------------------------------------------------------
 
-#include "Core/Mesh/Structured/CartesianMesh.hpp"
-#include "Core/BasicDataTypes.hpp"
-#include "Core/Mesh/Structured/CartesianMeshTrait.hpp"
-#include "Core/Mesh/Structured/CartesianMeshView.hpp"
-#include "Core/Mesh/Structured/CartesianMeshViewTrait.hpp"
-#include <fmt/format.h>
 #include <gmock/gmock.h>
 #include <iostream>
+
+import opflow;
 
 using namespace OpFlow;
 using namespace OpFlow::Meta;

@@ -20,7 +20,7 @@
 #include "Core/Expr/ExprTrait.hpp"
 #include "Core/Operator/Operator.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename Op, ExprType... Args>
     struct Expression;
 

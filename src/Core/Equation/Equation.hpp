@@ -23,7 +23,7 @@
 #include <tuple>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <ExprType Lhs, ExprType Rhs>
     struct Equation {
         using LhsType = Lhs;

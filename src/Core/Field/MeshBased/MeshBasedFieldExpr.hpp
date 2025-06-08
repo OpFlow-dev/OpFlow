@@ -19,7 +19,7 @@
 #include "Core/Macros.hpp"
 #include "MeshBasedFieldExprTrait.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename Derived>
     struct MeshBasedFieldExpr : FieldExpr<Derived> {
         using MeshType = typename internal::MeshBasedFieldExprTrait<Derived>::mesh_type;

@@ -30,7 +30,7 @@
 #endif
 #endif
 
-namespace OpFlow::Utils {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     struct H5Stream;
 
     namespace internal {

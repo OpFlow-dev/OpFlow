@@ -62,7 +62,7 @@
 #ifndef OPFLOW_INSIDE_MODULE
 #include <mpi.h>
 #endif
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     inline static int getWorkerId(MPI_Comm comm);
 }
 #define SPD_AUGMENTED_LOG(X, ...)                                                                            \
@@ -118,7 +118,7 @@ namespace OpFlow {
 #if !defined(NDEBUG) && defined(OPFLOW_ENABLE_STACK_TRACE)
 #include "Utils/StackTracer.hpp"
 // global stack tracer
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     inline static Utils::StackTracer stackTracer;
 }
 

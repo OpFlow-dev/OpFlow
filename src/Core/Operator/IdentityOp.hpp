@@ -18,7 +18,7 @@
 #include "Core/Field/FieldExprTrait.hpp"
 #include "Core/Meta.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     /// \brief Identity op
     /// Used in the context of composed op as a fallback option
     struct IdentityOp {

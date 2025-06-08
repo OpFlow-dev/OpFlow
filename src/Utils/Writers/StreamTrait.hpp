@@ -18,7 +18,7 @@
 #include <type_traits>
 #endif
 
-namespace OpFlow::Utils {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     namespace internal {
         template <typename T>
         struct StreamTrait;

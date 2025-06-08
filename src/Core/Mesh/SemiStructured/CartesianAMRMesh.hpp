@@ -35,7 +35,7 @@
 #endif
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename Dim>
     struct CartesianAMRMesh : CartesianAMRMeshBase<CartesianAMRMesh<Dim>> {
         static constexpr Size dim = Dim::value;

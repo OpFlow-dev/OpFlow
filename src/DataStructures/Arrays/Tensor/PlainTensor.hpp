@@ -27,7 +27,7 @@
 #include <memory>
 #endif
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     template <typename ScalarType, int d, typename Allocator>
         requires Utils::StaticAllocatorType<ScalarType, Allocator>
     struct PlainTensor;

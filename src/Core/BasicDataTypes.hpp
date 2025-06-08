@@ -18,7 +18,7 @@
 #include <exception>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     using Index = int;
     using Rank = long long;

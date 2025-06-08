@@ -29,7 +29,7 @@
 #ifndef OPFLOW_CLASSIFY_HPP
 #define OPFLOW_CLASSIFY_HPP
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     DEFINE_UNIFUNC(FPclassify, std::fpclassify, fpclassify)
     DEFINE_UNIFUNC(Isfinite, std::isfinite, isfinite)
     DEFINE_UNIFUNC(Isinf, std::isinf, isinf)

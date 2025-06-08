@@ -18,7 +18,7 @@
 #include <vector>
 #endif
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
 
     struct STLGeometry3D {
         using Edge = Index[2];

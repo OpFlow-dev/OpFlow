@@ -10,9 +10,9 @@
 //
 // ----------------------------------------------------------------------------
 
-#include <OpFlow>
 #include <gmock/gmock.h>
 
+import opflow;
 using namespace OpFlow;
 
 TEST(MetaTest, StaticFor) {
@@ -39,10 +39,10 @@ TEST(MetaTest, StaticForStep2) {
 
 TEST(MetaTest, TupleSplit) {
     struct A {
-        A() { OP_INFO("A ctor"); }
-        A(const A&) { OP_INFO("A C-ctor"); }
-        A(A&&) { OP_INFO("A M-ctor"); }
-        ~A() { OP_INFO("~A()"); }
+        A() { }
+        A(const A&) { }
+        A(A&&) { }
+        ~A() { }
     };
     A a;
     auto t = std::forward_as_tuple(a, A(), a);

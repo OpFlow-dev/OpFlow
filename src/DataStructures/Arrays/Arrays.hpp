@@ -23,7 +23,7 @@
 #include <utility>
 #endif
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     // General array
     template <typename dType, int k>
     using DenseTensor = PlainTensor<dType, k>;

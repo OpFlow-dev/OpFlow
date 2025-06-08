@@ -16,7 +16,7 @@
 #include "Core/Macros.hpp"
 #include "Core/Mesh/MeshTrait.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     template <typename Derived>
     struct MeshBase {

@@ -17,7 +17,7 @@
 #include "Core/Field/MeshBased/Structured/StructuredFieldExprTrait.hpp"
 #include "DataStructures/Range/Ranges.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <FieldExprType F>
     struct LogicalBCBase : virtual public BCBase<F> {
     public:

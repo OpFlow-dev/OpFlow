@@ -20,7 +20,7 @@
 #include "Core/Operator/Operator.hpp"
 #include "Core/Operator/UniOpDefMacros.hpp.in"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     DEFINE_BINOP(And, &&)
     DEFINE_BINOP(Or, ||)
     DEFINE_UNIOP(Not, !)

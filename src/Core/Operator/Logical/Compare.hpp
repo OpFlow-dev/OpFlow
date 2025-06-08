@@ -23,7 +23,7 @@
 #include <cmath>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     DEFINE_BINOP(GreaterThan, >)
     DEFINE_BINOP(GreaterThanOrEqual, >=)
     DEFINE_BINOP(LessThan, <)

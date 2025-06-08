@@ -20,7 +20,7 @@
 #include <array>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     template <typename Derived>
     struct SemiStructuredFieldExpr : MeshBasedFieldExpr<Derived> {

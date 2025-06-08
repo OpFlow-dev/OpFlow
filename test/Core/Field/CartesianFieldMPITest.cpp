@@ -10,9 +10,10 @@
 //
 //  ----------------------------------------------------------------------------
 
-#include <OpFlow>
 #include <gmock/gmock.h>
 #include <tuple>
+#include <print>
+import opflow;
 
 using namespace OpFlow;
 
@@ -128,7 +129,7 @@ TEST_F(CartesianFieldMPITest, PeriodicValueCheck) {
     u.updatePadding();
     u_local.updatePadding();
     rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) {
-        if (u[i] != u_local[i]) OP_INFO("Not equal at {} {} != {}", i, u[i], u_local[i]);
+        if (u[i] != u_local[i]) std::print("Not equal at {} {} != {}", i, u[i], u_local[i]);
         ASSERT_EQ(u[i], u_local[i]);
     });
 }
@@ -159,7 +160,7 @@ TEST_F(CartesianFieldMPITest, Serializable_PeriodicValueCheck) {
     rangeFor_s(u.getLocalWritableRange(), [&](auto&& i) { u[i] = Int {mapper(i)}; });
     u.updatePadding();
     rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) {
-        if (u[i].i != mapper(i)) OP_INFO("Not equal at {} {} != {}", i, u[i].i, mapper(i));
+        if (u[i].i != mapper(i)) std::print("Not equal at {} {} != {}", i, u[i].i, mapper(i));
         ASSERT_EQ(u[i].i, mapper(i));
     });
 }

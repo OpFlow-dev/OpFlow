@@ -21,7 +21,7 @@
 #include "RangeFor.hpp"
 #include "StructFor.hpp"
 
-namespace OpFlow::internal {
+OPFLOW_MODULE_EXPORT namespace OpFlow::internal {
     struct FieldAssigner {
         template <BasicArithOp Op = BasicArithOp::Eq>
         static auto& assign(auto&& src, auto&& dst) {

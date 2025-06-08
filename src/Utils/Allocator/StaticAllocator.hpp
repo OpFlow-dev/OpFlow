@@ -19,7 +19,7 @@
 #include <utility>
 #endif
 
-namespace OpFlow::Utils {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     template <typename D, typename T>
     concept StaticAllocatorType = requires(std::size_t s) {
         { T::allocate(s) } -> std::same_as<D*>;

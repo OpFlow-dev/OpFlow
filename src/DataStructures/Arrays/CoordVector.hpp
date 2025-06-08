@@ -19,7 +19,7 @@
 #include <cmath>
 #endif
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     template <Meta::Numerical T>
     struct CoordVector : OffsetVector<T> {
     public:

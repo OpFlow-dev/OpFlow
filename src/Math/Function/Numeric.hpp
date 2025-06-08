@@ -21,7 +21,7 @@
 #include <type_traits>
 #endif
 
-namespace OpFlow::Math {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Math {
 
     template <typename T>
     inline constexpr int signum(T x, std::false_type is_signed) {

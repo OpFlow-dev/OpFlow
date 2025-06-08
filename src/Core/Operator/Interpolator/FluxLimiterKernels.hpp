@@ -19,7 +19,7 @@
 #include <ratio>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     enum class KappaScheme {
         CDS,  // Central difference, kappa = 1
         QUICK,// Quadratic-upwind interpolation, kappa = 1/2

@@ -16,7 +16,7 @@
 #include "DataStructures/Index/MDIndex.hpp"
 #include "DataStructures/Range/Ranges.hpp"
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     template <std::size_t d>
     struct MDRangeMapper {
         MDRangeMapper() = default;

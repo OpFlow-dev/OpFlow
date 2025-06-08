@@ -24,7 +24,7 @@
 #include <vector>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename E, typename T>
     struct EqnHolder;
 

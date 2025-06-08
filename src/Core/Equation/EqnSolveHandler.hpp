@@ -13,7 +13,7 @@
 #ifndef OPFLOW_EQNSOLVEHANDLER_HPP
 #define OPFLOW_EQNSOLVEHANDLER_HPP
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     struct EqnSolveState {
         int niter = 0;
         double relerr = 0, abserr = 0;

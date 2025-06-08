@@ -21,7 +21,7 @@
 #include <string>
 #endif
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     template <typename T>
     struct ColoredIndex;
 

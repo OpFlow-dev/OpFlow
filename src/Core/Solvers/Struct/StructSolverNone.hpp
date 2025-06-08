@@ -15,7 +15,7 @@
 
 #include "StructSolver.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     // note: the None solver type is only created for unification of the upper level solver API
     // where None indicates un-preconditioned solver. Any use of these types otherwise is illegal.

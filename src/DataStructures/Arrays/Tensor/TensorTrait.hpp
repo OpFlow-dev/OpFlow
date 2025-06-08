@@ -17,7 +17,7 @@
 #include <type_traits>
 #endif
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     template <typename Derived>
     struct Tensor;
 

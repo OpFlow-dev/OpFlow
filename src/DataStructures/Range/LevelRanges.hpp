@@ -21,7 +21,7 @@
 #include <concepts>
 #endif
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     template <std::size_t dim>
     struct LevelRangedIndex;
 

@@ -15,7 +15,7 @@
 
 #include "DataStructures/Geometry/BasicElements.hpp"
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     template <typename PointType, typename BoxType>
     struct KdTree {
         constexpr static auto dim = PointType::dim;

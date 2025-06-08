@@ -15,7 +15,7 @@
 
 #include "StructSolver.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <StructSolverType Type, StructSolverType PrecondType>
     struct PrecondStructSolver {
         constexpr auto static type = Type;

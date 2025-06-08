@@ -22,7 +22,7 @@
 #include <utility>
 #endif
 
-namespace OpFlow::Meta {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Meta {
 
     template <int k>
     struct int_ : std::integral_constant<int, k> {};

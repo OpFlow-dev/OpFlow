@@ -48,7 +48,7 @@
 #endif
 #endif
 
-namespace OpFlow::Utils {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     struct VTKAMRStream;
 
     namespace internal {

@@ -19,7 +19,7 @@
 #include <vector>
 #endif
 
-namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     template <std::size_t d>
     struct LevelMDRangeMapper {
         LevelMDRangeMapper() = default;

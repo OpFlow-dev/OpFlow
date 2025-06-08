@@ -19,7 +19,7 @@
 #endif
 #endif
 
-namespace OpFlow::Utils {
+OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
 #ifdef OPFLOW_HAS_MMAN_H
     template <typename T>
     struct VirtualMemAllocator {

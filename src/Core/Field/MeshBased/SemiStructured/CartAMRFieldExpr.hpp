@@ -20,7 +20,7 @@
 #include <vector>
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     template <typename Derived>
     struct CartAMRFieldExpr : SemiStructuredFieldExpr<Derived> {

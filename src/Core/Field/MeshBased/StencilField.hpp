@@ -25,7 +25,7 @@
 #include "DataStructures/StencilPad.hpp"
 #include "Math/Interpolator/Interpolator.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     template <StructuredFieldExprType T, template <typename...> typename map_impl>
     struct StencilField<T, map_impl>

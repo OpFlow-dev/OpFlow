@@ -15,7 +15,7 @@
 
 #include "Core/Expr/ExprTrait.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename T>
     struct ScalarExpr;
 
