@@ -70,7 +70,7 @@
 #endif
 #endif
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename Solver>
     struct IJSolverParams {
         typename Solver::params p;
