@@ -228,7 +228,7 @@ inline void fgt_node( void* codeptr, string_resource_index t, void *g, void *out
     fgt_internal_create_output_port( codeptr, output_port, output_port, FLOW_OUTPUT_PORT_0 );
 }
 
-static void fgt_node_with_body( void* codeptr, string_resource_index t, void *g, void *output_port, void *body ) {
+inline void fgt_node_with_body( void* codeptr, string_resource_index t, void *g, void *output_port, void *body ) {
     itt_make_task_group( d1::ITT_DOMAIN_FLOW, output_port, FLOW_NODE, g, FLOW_GRAPH, t );
     fgt_internal_create_output_port(codeptr, output_port, output_port, FLOW_OUTPUT_PORT_0 );
     fgt_body( output_port, body );
