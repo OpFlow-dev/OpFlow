@@ -50,7 +50,6 @@
 #include "Core/Field/Analytical/AnalyticalFieldExpr.hpp"
 #include "Core/Field/FieldExpr.hpp"
 #include "Core/Field/FieldExprTrait.hpp"
-#include "Core/Field/FieldMacros.hpp"
 #include "Core/Field/MeshBased/MeshBasedFieldExpr.hpp"
 #include "Core/Field/MeshBased/MeshBasedFieldExprTrait.hpp"
 #include "Core/Field/MeshBased/SemiStructured/CartAMRField.hpp"

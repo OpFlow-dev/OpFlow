@@ -26,13 +26,13 @@
 #include "Core/Parallel/ParallelPlan.hpp"
 
 namespace OpFlow {
-    void static inline InitEnvironment(int* argc, char*** argv) {
+    void inline InitEnvironment(int* argc, char*** argv) {
 #ifdef OPFLOW_WITH_MPI
         MPI_Init(argc, argv);
 #endif
     }
 
-    void static inline FinalizeEnvironment() {
+    void inline FinalizeEnvironment() {
 #ifdef OPFLOW_WITH_MPI
         MPI_Finalize();
 #endif
@@ -48,15 +48,15 @@ namespace OpFlow {
         inline ParallelPlan GLOBAL_PARALLELPLAN;
     }// namespace internal
 
-    inline static auto& getGlobalParallelInfo() { return internal::GLOBAL_PARALLELINFO; }
+    inline auto& getGlobalParallelInfo() { return internal::GLOBAL_PARALLELINFO; }
 
-    inline static auto& getGlobalParallelPlan() { return internal::GLOBAL_PARALLELPLAN; }
+    inline auto& getGlobalParallelPlan() { return internal::GLOBAL_PARALLELPLAN; }
 
-    inline static void setGlobalParallelInfo(const ParallelInfo& info) {
+    inline void setGlobalParallelInfo(const ParallelInfo& info) {
         internal::GLOBAL_PARALLELINFO = info;
     }
 
-    inline static void setGlobalParallelPlan(const ParallelPlan& plan) {
+    inline void setGlobalParallelPlan(const ParallelPlan& plan) {
         internal::GLOBAL_PARALLELPLAN = plan;
 #ifdef OPFLOW_WITH_OPENMP
         omp_set_num_threads(plan.shared_memory_workers_count);
@@ -64,9 +64,9 @@ namespace OpFlow {
     }
 
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
-    inline static int getWorkerId(MPI_Comm comm = MPI_COMM_WORLD) {
+    inline int getWorkerId(MPI_Comm comm = MPI_COMM_WORLD) {
 #else
-    inline static int getWorkerId() {
+    inline int getWorkerId() {
 #endif
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
         int rank;
@@ -78,9 +78,9 @@ namespace OpFlow {
     }
 
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
-    inline static int getWorkerCount(MPI_Comm comm = MPI_COMM_WORLD) {
+    inline int getWorkerCount(MPI_Comm comm = MPI_COMM_WORLD) {
 #else
-    inline static int getWorkerCount() {
+    inline int getWorkerCount() {
 #endif
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
         int size;
@@ -91,10 +91,10 @@ namespace OpFlow {
 #endif
     }
 
-    inline static void printVersion() {
+    inline void printVersion() {
         std::cout << "OpFlow version: " << internal::OPFLOW_VERSION_STRING << std::endl;
     }
 
-    inline static auto getVersionStr() { return std::string {internal::OPFLOW_VERSION_STRING}; }
+    inline auto getVersionStr() { return std::string {internal::OPFLOW_VERSION_STRING}; }
 }// namespace OpFlow
 #endif//OPFLOW_ENVIRONMENT_HPP

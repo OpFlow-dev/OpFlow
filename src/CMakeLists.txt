@@ -34,7 +34,7 @@ if(OPFLOW_ENABLE_MODULE)
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/src
         FILES ${OPFLOW_HEADERS})
-    target_compile_features(opflow PUBLIC cxx_std_23)
+    target_compile_features(opflow PUBLIC cxx_std_26)
     install(TARGETS opflow
         EXPORT opflow-targets
         FILE_SET CXX_MODULES DESTINATION ${CMAKE_INSTALL_LIBDIR}/cxx/opflow
