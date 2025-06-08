@@ -54,8 +54,8 @@ TEST_F(H5RWTest, SeparateFile) {
     Utils::H5Stream stream("./u.sf.h5");
     stream.dumpToSeparateFile();
     stream << Utils::TimeStamp(1e-4) << u << Utils::TimeStamp(1000.) << u;
-    ASSERT_TRUE(std::filesystem::exists(fmt::format("./u.sf_{:.6f}.h5", 1e-4))
-                && std::filesystem::exists(fmt::format("./u.sf_{:.6f}.h5", 1000.)));
+    ASSERT_TRUE(std::filesystem::exists(std::format("./u.sf_{:.6f}.h5", 1e-4))
+                && std::filesystem::exists(std::format("./u.sf_{:.6f}.h5", 1000.)));
 }
 
 TEST_F(H5RWTest, ReadAfterWrite) {

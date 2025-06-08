@@ -57,7 +57,7 @@ TEST(IOGroupTest, SeparateFile) {
     u = 1;
     group.dump(Utils::TimeStamp(1.));
     u = 0;
-    Utils::H5Stream readstream(fmt::format("./u_{:.6f}.h5", 0.), StreamIn);
+    Utils::H5Stream readstream(std::format("./u_{:.6f}.h5", 0.), StreamIn);
     readstream >> u;
 
     ASSERT_EQ((u[DS::MDIndex<2> {0, 0}]), 2);

@@ -47,7 +47,7 @@ public:
 
 TEST_F(H5RWMPITest, WriteToFile) {
     u = 1.;
-    std::string filename = fmt::format("./u.wrf.mpi{}.h5", getWorkerCount());
+    std::string filename = std::format("./u.wrf.mpi{}.h5", getWorkerCount());
     Utils::H5Stream stream(filename);
     stream << u;
     ASSERT_TRUE(true);
@@ -55,11 +55,11 @@ TEST_F(H5RWMPITest, WriteToFile) {
 
 TEST_F(H5RWMPITest, SeparateFile) {
     u = 1.;
-    Utils::H5Stream stream(fmt::format("./u.sf.mpi{}.h5", getWorkerCount()));
+    Utils::H5Stream stream(std::format("./u.sf.mpi{}.h5", getWorkerCount()));
     stream.dumpToSeparateFile();
     stream << Utils::TimeStamp(1e-4) << u << Utils::TimeStamp(1000.) << u;
-    ASSERT_TRUE(std::filesystem::exists(fmt::format("./u.sf.mpi{}_{:.6f}.h5", getWorkerCount(), 1e-4))
-                && std::filesystem::exists(fmt::format("./u.sf.mpi{}_{:.6f}.h5", getWorkerCount(), 1000.)));
+    ASSERT_TRUE(std::filesystem::exists(std::format("./u.sf.mpi{}_{:.6f}.h5", getWorkerCount(), 1e-4))
+                && std::filesystem::exists(std::format("./u.sf.mpi{}_{:.6f}.h5", getWorkerCount(), 1000.)));
 }
 
 TEST_F(H5RWMPITest, ReadAfterWrite) {
@@ -67,7 +67,7 @@ TEST_F(H5RWMPITest, ReadAfterWrite) {
     // Therefore, we need to close the stream before reading.
     if (DS::inRange(u.getLocalWritableRange(), DS::MDIndex<2> {2, 2})) u[DS::MDIndex<2>(2, 2)] = 2.;
     u.updatePadding();
-    std::string filename = fmt::format("./u.raw.mpi{}.h5", getWorkerCount());
+    std::string filename = std::format("./u.raw.mpi{}.h5", getWorkerCount());
 
     {
         Utils::H5Stream stream(filename);
@@ -85,7 +85,7 @@ TEST_F(H5RWMPITest, ReadAfterWrite) {
 }
 
 TEST_F(H5RWMPITest, ReadAtTime) {
-    std::string filename = fmt::format("./u.rat.mpi{}.h5", getWorkerCount());
+    std::string filename = std::format("./u.rat.mpi{}.h5", getWorkerCount());
 
     {
         Utils::H5Stream stream(filename);
@@ -111,7 +111,7 @@ TEST_F(H5RWMPITest, ReadAfterWriteInEqualDim) {
     auto map = DS::MDRangeMapper<2> {u.accessibleRange};
     rangeFor(u.getLocalWritableRange(), [&](auto&& i) { u[i] = map(i); });
     u.updatePadding();
-    std::string filename = fmt::format("./u.ieq.mpi{}.h5", getWorkerCount());
+    std::string filename = std::format("./u.ieq.mpi{}.h5", getWorkerCount());
 
     Utils::H5Stream stream(filename);
     stream << u;

@@ -41,8 +41,8 @@ protected:
         t.dim;
     }
     [[nodiscard]] auto serialize(const T& idx) const {
-        auto ret = fmt::format("({}", idx[0]);
-        for (auto i = 1; i < idx.dim; ++i) { ret += fmt::format(", {}", idx[i]); }
+        auto ret = std::format("({}", idx[0]);
+        for (auto i = 1; i < idx.dim; ++i) { ret += std::format(", {}", idx[i]); }
         ret += ")";
         return ret;
     }
@@ -64,7 +64,7 @@ TEST_F(RangedIndexTest, MoveToNext) {
     for (auto linear = 0; linear < total; ++linear, ++index) {
         auto target = fromLinear(linear);
         if (debug)
-            std::cout << fmt::format("Lin. = {:>3d}, Target = {}, Current = {}", linear, serialize(target),
+            std::cout << std::format("Lin. = {:>3d}, Target = {}, Current = {}", linear, serialize(target),
                                      serialize(index))
                       << std::endl;
         for (auto i = 0; i < index.dim; ++i) { ASSERT_EQ(target[i], index[i]); }
@@ -76,7 +76,7 @@ TEST_F(RangedIndexTest, GetLast) {
     auto target = fromLinear(total - 1);
     auto last = index.last();
     if (debug)
-        std::cout << fmt::format("Lin. = {:>3d}, Target = {}, Current = {}", total - 1, serialize(target),
+        std::cout << std::format("Lin. = {:>3d}, Target = {}, Current = {}", total - 1, serialize(target),
                                  serialize(last))
                   << std::endl;
     for (auto i = 0; i < index.dim; ++i) { ASSERT_EQ(target[i], last[i]); }
@@ -88,7 +88,7 @@ TEST_F(RangedIndexTest, MoveToPre) {
     for (auto linear = total - 1; linear >= 0; --linear, --index) {
         auto target = fromLinear(linear);
         if (debug)
-            std::cout << fmt::format("Lin. = {:>3d}, Target = {}, Current = {}", linear, serialize(target),
+            std::cout << std::format("Lin. = {:>3d}, Target = {}, Current = {}", linear, serialize(target),
                                      serialize(index))
                       << std::endl;
         for (auto i = 0; i < index.dim; ++i) { ASSERT_EQ(target[i], index[i]); }
