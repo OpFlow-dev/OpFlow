@@ -36,8 +36,8 @@ namespace detail {
 
 namespace d1 {
 using slot_id = unsigned short;
-constexpr slot_id no_slot = slot_id(~0);
-constexpr slot_id any_slot = slot_id(~1);
+constexpr inline slot_id no_slot = slot_id(~0);
+constexpr inline slot_id any_slot = slot_id(~1);
 
 class task;
 class wait_context;
