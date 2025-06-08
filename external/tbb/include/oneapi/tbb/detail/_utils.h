@@ -188,7 +188,7 @@ constexpr bool is_aligned(T* pointer, std::uintptr_t alignment) {
 }
 
 #if TBB_USE_ASSERT
-static void* const poisoned_ptr = reinterpret_cast<void*>(-1);
+inline void* const poisoned_ptr = reinterpret_cast<void*>(-1);
 
 //! Set p to invalid pointer value.
 template<typename T>
