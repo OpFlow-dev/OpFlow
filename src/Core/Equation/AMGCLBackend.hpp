@@ -27,7 +27,7 @@
 #endif
 #include "EqnSolveHandler.hpp"
 
-namespace OpFlow {
+OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename Solver, typename D>
     struct AMGCLBackend {
         constexpr static bool _enable_mpi = !requires { typename Solver::col_type; };
