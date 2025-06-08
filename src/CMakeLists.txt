@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # CMakeLists.txt for the opflow library
 # ----------------------------------------------------------------------------
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 4.0.2 FATAL_ERROR)
 
 file(GLOB_RECURSE OPFLOW_HEADERS
     ${CMAKE_SOURCE_DIR}/src/*.hpp)
@@ -23,11 +23,12 @@ if(OPFLOW_ENABLE_MODULE)
     # ----------------------------------------------------------------------------
     add_library(opflow)
 
-    target_compile_definitions(opflow INTERFACE OPFLOW_USE_MODULE)
+    target_compile_definitions(opflow PUBLIC OPFLOW_USE_MODULE)
     set_property(TARGET opflow PROPERTY CXX_SCAN_FOR_MODULES ON)
     target_sources(opflow
         PUBLIC FILE_SET CXX_MODULES
-        FILES ${CMAKE_SOURCE_DIR}/src/opflow.cppm)
+        FILES ${CMAKE_SOURCE_DIR}/src/opflow.cppm
+        ${CMAKE_SOURCE_DIR}/src/amgcl.cppm)
     target_sources(opflow
         PUBLIC FILE_SET HEADERS
         BASE_DIRS

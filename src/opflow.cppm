@@ -1,26 +1,22 @@
 module;
 
-#define AMGCL_NO_BOOST
 #include <HYPRE.h>
 #include <HYPRE_sstruct_ls.h>
 #include <HYPRE_sstruct_mv.h>
 #include <TECIO.h>
-#include <amgcl/adapter/zero_copy.hpp>
-#include <amgcl/profiler.hpp>
 #include <oneapi/tbb.h>
 #include <oneapi/tbb/detail/_range_common.h>
 #include <spdlog/spdlog.h>
-#ifdef OPFLOW_WITH_MPI
-#include <amgcl/mpi/distributed_matrix.hpp>
-#include <amgcl/mpi/make_solver.hpp>
-#endif
 
 #include <cstdarg>
 #include <any>
 #include <filesystem>
 #include <fstream>
+#include <print>
+#include <iostream>
 
 export module opflow;
+export import ext.amgcl;
 
 #define OPFLOW_INSIDE_MODULE
 
