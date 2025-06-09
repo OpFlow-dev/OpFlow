@@ -36,6 +36,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     concept Stringifiable = std::is_base_of_v<StringifiableObj, T>;
 }// namespace OpFlow
 
+OPFLOW_MODULE_EXPORT
 template <typename T>
     requires std::derived_from<T, OpFlow::StringifiableObj>
 struct std::formatter<T> : std::formatter<std::string> {
