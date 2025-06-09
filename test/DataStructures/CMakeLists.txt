@@ -22,5 +22,7 @@ add_gmock(MDIndexTest ${CMAKE_CURRENT_SOURCE_DIR}/Index/MDIndexTest.cpp)
 add_gmock(StencilPadTest ${CMAKE_CURRENT_LIST_DIR}/StencilPadTest.cpp)
 
 # Mappers
-add_gmock(BlockedMDRangeMapperTest ${CMAKE_CURRENT_LIST_DIR}/Index/BlockedMDRangeMapperTest.cpp)
-add_gmock(ColoredBlockedMDRangeMapperTest ${CMAKE_CURRENT_LIST_DIR}/Index/ColoredBlockedMDRangeMapperTest.cpp)
+if(NOT OPFLOW_ENABLE_MODULE)
+    add_gmock(BlockedMDRangeMapperTest ${CMAKE_CURRENT_LIST_DIR}/Index/BlockedMDRangeMapperTest.cpp)
+    add_gmock(ColoredBlockedMDRangeMapperTest ${CMAKE_CURRENT_LIST_DIR}/Index/ColoredBlockedMDRangeMapperTest.cpp)
+endif()

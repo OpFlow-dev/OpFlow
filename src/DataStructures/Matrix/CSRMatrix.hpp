@@ -108,19 +108,27 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
                 max_val_width = std::max(max_val_width, (int) std::formatted_size("{}", v));
             }
             max_val_width = std::min(max_val_width, 10);
+            max_val_width = std::max(max_val_width, 6);
             for (int irow = 0; irow < row.size() - 1; ++irow) {
-                ret += std::format("row {:>{}}: [{:>{}}, {:> {}.4E}] ", irow, max_rank_width, col[row[irow]],
-                                   max_col_width, val[row[irow]], max_val_width);
+                // fixme: gcc 15.1.0 formatting with floating point is not working properly
+                // ret += std::format("row {:>{}}: [{:>{}}, {:>{}.4E}] ", irow, max_rank_width, col[row[irow]],
+                //                    max_col_width, val[row[irow]], max_val_width);
+                ret += std::format("row {:>{}}: [{:>{}}, {:>}] ", irow, max_rank_width, col[row[irow]],
+                                   max_col_width, val[row[irow]]);
                 for (int icol = row[irow] + 1; icol < row[irow + 1]; ++icol) {
-                    ret += std::format("[{:>{}}, {:> {}.4E}] ", col[icol], max_col_width, val[icol],
-                                       max_val_width);
+                    // ret += std::format("[{:>{}}, {:> {}.4E}] ", col[icol], max_col_width, val[icol],
+                    //                    max_val_width);
+                    ret += std::format("[{:>{}}, {:>}] ", col[icol], max_col_width, val[icol]);
                 }
                 for (int icol = row[irow + 1]; icol < row[irow] + max_nnz_per_row; ++icol) {
-                    ret += std::string(std::formatted_size("[{:>{}}, {:> {}.4E}] ", 0, max_col_width, 1.0,
-                                                           max_val_width),
+                    // ret += std::string(std::formatted_size("[{:>{}}, {:> {}.4E}] ", 0, max_col_width, 1.0,
+                    //                                        max_val_width),
+                    //                    ' ');
+                    ret += std::string(std::formatted_size("[{:>{}}, {:>}] ", 0, max_col_width, 1.0, max_val_width),
                                        ' ');
                 }
-                ret += std::format("rhs: {:> {}.4E}\n", rhs[irow], max_val_width);
+                // ret += std::format("rhs: {:> {}.4E}\n", rhs[irow], max_val_width);
+                ret += std::format("rhs: {:>}\n", rhs[irow]);
             }
             return ret;
         }

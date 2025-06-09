@@ -37,8 +37,11 @@ add_gmock(RangeForTest ${CMAKE_CURRENT_LIST_DIR}/Loops/RangeForTest.cpp)
 add_gmock(RangeReduceTest ${CMAKE_CURRENT_LIST_DIR}/Loops/RangeReduceTest.cpp)
 
 # Parallel
+if (NOT OPFLOW_ENABLE_MODULE)
+# fixme: this test depends on the macro OPFLOW_TEST_ENVIRONMENT
 add_gmock(EvenSplitStrategyTest ${CMAKE_CURRENT_LIST_DIR}/Parallel/EvenSplitStrategyTest.cpp)
 add_gmock(ParticleGuidedSplitStrategyTest ${CMAKE_CURRENT_LIST_DIR}/Parallel/ParticleGuidedSplitStrategyTest.cpp)
+endif()
 add_gmock_mpi(MPITest 16 ${CMAKE_CURRENT_LIST_DIR}/Parallel/MPITest.cpp)
 
 # Equation
