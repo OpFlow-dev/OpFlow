@@ -15,13 +15,13 @@
 */
 
 #if __INTEL_COMPILER && _MSC_VER
-#pragma warning(disable : 2586) // decorated name length exceeded, name was truncated
+#pragma warning(disable : 2586)// decorated name length exceeded, name was truncated
 #endif
 
 #include "oneapi/tbb/concurrent_unordered_map.h"
+#include <common/concurrent_unordered_common.h>
 #include <common/test.h>
 #include <common/utils.h>
-#include <common/concurrent_unordered_common.h>
 #include <memory>
 #include <type_traits>
 
@@ -34,24 +34,22 @@ struct AllowMultimapping<oneapi::tbb::concurrent_unordered_multimap<Args...>> : 
 template <typename Key, typename Mapped>
 using Allocator = LocalCountingAllocator<std::allocator<std::pair<const Key, Mapped>>>;
 
-using map_type = oneapi::tbb::concurrent_unordered_map<int, int, std::hash<int>, std::equal_to<int>, Allocator<int, int>>;
-using multimap_type = oneapi::tbb::concurrent_unordered_multimap<int, int, std::hash<int>, std::equal_to<int>, Allocator<int, int>>;
+using map_type = oneapi::tbb::concurrent_unordered_map<int, int, std::hash<int>, std::equal_to<int>,
+                                                       Allocator<int, int>>;
+using multimap_type = oneapi::tbb::concurrent_unordered_multimap<int, int, std::hash<int>, std::equal_to<int>,
+                                                                 Allocator<int, int>>;
 
 template <>
 struct SpecialTests<map_type> {
-    static void Test() {
-        SpecialMapTests<map_type>();
-    }
+    static void Test() { SpecialMapTests<map_type>(); }
 };
 
 template <>
 struct SpecialTests<multimap_type> {
-    static void Test() {
-        SpecialMultiMapTests<multimap_type>();
-    }
+    static void Test() { SpecialMultiMapTests<multimap_type>(); }
 };
 
-template <template <typename... > class ContainerType>
+template <template <typename...> class ContainerType>
 void test_member_types() {
     using default_container_type = ContainerType<int, int>;
     static_assert(std::is_same<typename default_container_type::hasher, std::hash<int>>::value,
@@ -62,12 +60,12 @@ void test_member_types() {
                                oneapi::tbb::tbb_allocator<std::pair<const int, int>>>::value,
                   "Incorrect default template allocator");
 
-    auto test_hasher = [](const int&)->std::size_t { return 0; };
-    auto test_equality = [](const int&, const int&)->bool { return true; };
+    auto test_hasher = [](const int&) -> std::size_t { return 0; };
+    auto test_equality = [](const int&, const int&) -> bool { return true; };
     using test_allocator_type = std::allocator<std::pair<const int, int>>;
 
-    using container_type = ContainerType<int, int, decltype(test_hasher),
-                                         decltype(test_equality), test_allocator_type>;
+    using container_type
+            = ContainerType<int, int, decltype(test_hasher), decltype(test_equality), test_allocator_type>;
 
     static_assert(std::is_same<typename container_type::key_type, int>::value,
                   "Incorrect container key_type member type");
@@ -89,8 +87,9 @@ void test_member_types() {
     using transparent_container_type = ContainerType<int, int, hasher_with_transparent_key_equal,
                                                      std::equal_to<int>, test_allocator_type>;
 
-    static_assert(std::is_same<typename transparent_container_type::key_equal, transparent_key_equality>::value,
-                  "Incorrect container key_equal member type");
+    static_assert(
+            std::is_same<typename transparent_container_type::key_equal, transparent_key_equality>::value,
+            "Incorrect container key_equal member type");
     static_assert(std::is_same<typename container_type::allocator_type, test_allocator_type>::value,
                   "Incorrect container allocator_type member type");
 
@@ -100,9 +99,11 @@ void test_member_types() {
     static_assert(std::is_same<typename container_type::const_reference, const value_type&>::value,
                   "Incorrect container const_reference member type");
     using allocator_type = typename container_type::allocator_type;
-    static_assert(std::is_same<typename container_type::pointer, typename std::allocator_traits<allocator_type>::pointer>::value,
+    static_assert(std::is_same<typename container_type::pointer,
+                               typename std::allocator_traits<allocator_type>::pointer>::value,
                   "Incorrect container pointer member type");
-    static_assert(std::is_same<typename container_type::const_pointer, typename std::allocator_traits<allocator_type>::const_pointer>::value,
+    static_assert(std::is_same<typename container_type::const_pointer,
+                               typename std::allocator_traits<allocator_type>::const_pointer>::value,
                   "Incorrect container const_pointer member type");
 
     static_assert(utils::is_forward_iterator<typename container_type::iterator>::value,
@@ -129,7 +130,7 @@ void test_deduction_guides() {
     using ComplexType = std::pair<int, std::string>;
     using ComplexTypeConst = std::pair<const int, std::string>;
     std::vector<ComplexType> v;
-    auto l = { ComplexTypeConst(1, "one"), ComplexTypeConst(2, "two")};
+    auto l = {ComplexTypeConst(1, "one"), ComplexTypeConst(2, "two")};
     using custom_allocator_type = std::allocator<ComplexTypeConst>;
 
     // check TMap(InputIterator, InputIterator)
@@ -146,22 +147,23 @@ void test_deduction_guides() {
 
     // check TMap(InputIterator, InputIterator, size_t, Hasher, Equality)
     TMap m3(v.begin(), v.end(), 4, degenerate_hash<int>(), std::less<int>());
-    static_assert(std::is_same<decltype(m3), TMap<int, std::string, degenerate_hash<int>, std::less<int>>>::value);
+    static_assert(
+            std::is_same<decltype(m3), TMap<int, std::string, degenerate_hash<int>, std::less<int>>>::value);
 
     // check TMap(InputIterator, InputIterator, size_t, Hasher, Equality, Allocator)
-    TMap m4(v.begin(), v.end(), 4, degenerate_hash<int>(), std::less<int>(), custom_allocator_type{});
-    static_assert(std::is_same<decltype(m4), TMap<int, std::string, degenerate_hash<int>,
-        std::less<int>, custom_allocator_type>>::value);
+    TMap m4(v.begin(), v.end(), 4, degenerate_hash<int>(), std::less<int>(), custom_allocator_type {});
+    static_assert(std::is_same<decltype(m4), TMap<int, std::string, degenerate_hash<int>, std::less<int>,
+                                                  custom_allocator_type>>::value);
 
     // check TMap(InputIterator, InputIterator, size_t, Allocator)
-    TMap m5(v.begin(), v.end(), 5, custom_allocator_type{});
-    static_assert(std::is_same<decltype(m5), TMap<int, std::string, std::hash<int>,
-        std::equal_to<int>, custom_allocator_type>>::value);
+    TMap m5(v.begin(), v.end(), 5, custom_allocator_type {});
+    static_assert(std::is_same<decltype(m5), TMap<int, std::string, std::hash<int>, std::equal_to<int>,
+                                                  custom_allocator_type>>::value);
 
     // check TMap(InputIterator, InputIterator, size_t, Hasher, Allocator)
-    TMap m6(v.begin(), v.end(), 4, degenerate_hash<int>(), custom_allocator_type{});
-    static_assert(std::is_same<decltype(m6), TMap<int, std::string, degenerate_hash<int>,
-        std::equal_to<int>, custom_allocator_type>>::value);
+    TMap m6(v.begin(), v.end(), 4, degenerate_hash<int>(), custom_allocator_type {});
+    static_assert(std::is_same<decltype(m6), TMap<int, std::string, degenerate_hash<int>, std::equal_to<int>,
+                                                  custom_allocator_type>>::value);
 
     // check TMap(std::initializer_list)
     TMap m7(l);
@@ -177,22 +179,23 @@ void test_deduction_guides() {
 
     // check TMap(std::initializer_list, size_t, Hasher, Equality)
     TMap m10(l, 4, degenerate_hash<int>(), std::less<int>());
-    static_assert(std::is_same<decltype(m10), TMap<int, std::string, degenerate_hash<int>, std::less<int>>>::value);
+    static_assert(
+            std::is_same<decltype(m10), TMap<int, std::string, degenerate_hash<int>, std::less<int>>>::value);
 
     // check TMap(std::initializer_list, size_t, Hasher, Equality, Allocator)
-    TMap m11(l, 4, degenerate_hash<int>(), std::less<int>(), custom_allocator_type{});
-    static_assert(std::is_same<decltype(m11), TMap<int, std::string, degenerate_hash<int>,
-        std::less<int>, custom_allocator_type>>::value);
+    TMap m11(l, 4, degenerate_hash<int>(), std::less<int>(), custom_allocator_type {});
+    static_assert(std::is_same<decltype(m11), TMap<int, std::string, degenerate_hash<int>, std::less<int>,
+                                                   custom_allocator_type>>::value);
 
     // check TMap(std::initializer_list, size_t, Allocator)
-    TMap m12(l, 4, custom_allocator_type{});
-    static_assert(std::is_same<decltype(m12), TMap<int, std::string, std::hash<int>,
-        std::equal_to<int>, custom_allocator_type>>::value);
+    TMap m12(l, 4, custom_allocator_type {});
+    static_assert(std::is_same<decltype(m12), TMap<int, std::string, std::hash<int>, std::equal_to<int>,
+                                                   custom_allocator_type>>::value);
 
     // check TMap(std::initializer_list, size_t, Hasher, Allocator)
-    TMap m13(l, 4, degenerate_hash<int>(), custom_allocator_type{});
-    static_assert(std::is_same<decltype(m13), TMap<int, std::string, degenerate_hash<int>,
-        std::equal_to<int>, custom_allocator_type>>::value);
+    TMap m13(l, 4, degenerate_hash<int>(), custom_allocator_type {});
+    static_assert(std::is_same<decltype(m13), TMap<int, std::string, degenerate_hash<int>, std::equal_to<int>,
+                                                   custom_allocator_type>>::value);
 
     // check TMap(TMap &)
     TMap m14(m1);
@@ -200,7 +203,7 @@ void test_deduction_guides() {
 
     // check TMap(TMap &, Allocator)
     // TODO: investigate why no implicit deduction guides generated for this ctor
-    TMap m15(m5, custom_allocator_type{});
+    TMap m15(m5, custom_allocator_type {});
     static_assert(std::is_same<decltype(m15), decltype(m5)>::value);
 
     // check TMap(TMap &&)
@@ -209,7 +212,7 @@ void test_deduction_guides() {
 
     // check TMap(TMap &&, Allocator)
     // TODO: investigate why no implicit deduction guides generated for this ctor
-    TMap m17(std::move(m5), custom_allocator_type{});
+    TMap m17(std::move(m5), custom_allocator_type {});
     static_assert(std::is_same<decltype(m17), decltype(m5)>::value);
 }
 #endif
@@ -217,29 +220,33 @@ void test_deduction_guides() {
 void test_heterogeneous_functions() {
     check_heterogeneous_functions_key_int<oneapi::tbb::concurrent_unordered_map, int, int>();
     check_heterogeneous_functions_key_int<oneapi::tbb::concurrent_unordered_multimap, int, int>();
-    check_heterogeneous_functions_key_string<oneapi::tbb::concurrent_unordered_map, std::string, std::string>();
-    check_heterogeneous_functions_key_string<oneapi::tbb::concurrent_unordered_multimap, std::string, std::string>();
+    check_heterogeneous_functions_key_string<oneapi::tbb::concurrent_unordered_map, std::string,
+                                             std::string>();
+    check_heterogeneous_functions_key_string<oneapi::tbb::concurrent_unordered_multimap, std::string,
+                                             std::string>();
 }
 
 struct CumapTraits : UnorderedMoveTraitsBase {
     template <typename T, typename Allocator>
-    using container_type = oneapi::tbb::concurrent_unordered_map<T, T, std::hash<T>, std::equal_to<T>, Allocator>;
+    using container_type
+            = oneapi::tbb::concurrent_unordered_map<T, T, std::hash<T>, std::equal_to<T>, Allocator>;
 
     template <typename T>
     using container_value_type = std::pair<const T, T>;
 
     using init_iterator_type = move_support_tests::FooPairIterator;
-}; // struct CumapTraits
+};// struct CumapTraits
 
 struct CumultimapTraits : UnorderedMoveTraitsBase {
     template <typename T, typename Allocator>
-    using container_type = oneapi::tbb::concurrent_unordered_multimap<T, T, std::hash<T>, std::equal_to<T>, Allocator>;
+    using container_type
+            = oneapi::tbb::concurrent_unordered_multimap<T, T, std::hash<T>, std::equal_to<T>, Allocator>;
 
     template <typename T>
     using container_value_type = std::pair<const T, T>;
 
     using init_iterator_type = move_support_tests::FooPairIterator;
-}; // struct CumultimapTraits
+};// struct CumultimapTraits
 
 //! Testing concurrent_unordered_map member types
 //! \brief \ref interface \ref requirement
@@ -249,21 +256,15 @@ TEST_CASE("concurrent_unordered_map member types") {
 
 //! Testing requirements of concurrent_unordered_map
 //! \brief \ref interface \ref requirement
-TEST_CASE("concurrent_unordered_map requirements") {
-    test_basic<map_type>();
-}
+TEST_CASE("concurrent_unordered_map requirements") { test_basic<map_type>(); }
 
 //! Testing multithreading support in concurrent_unordered_map
 //! \brief \ref requirement
-TEST_CASE("concurrent_unordered_map multithreading support") {
-    test_concurrent<map_type>();
-}
+TEST_CASE("concurrent_unordered_map multithreading support") { test_concurrent<map_type>(); }
 
 //! Testing move constructors and assignment operator in concurrent_unordered_map
 //! \brief \ref interface \ref requirement
-TEST_CASE("concurrent_unordered_map move semantics support") {
-    test_rvalue_ref_support<CumapTraits>();
-}
+TEST_CASE("concurrent_unordered_map move semantics support") { test_rvalue_ref_support<CumapTraits>(); }
 
 //! Testing std::initializer_list constructors and modifiers in concurrent_unordered_map
 //! \brief \ref interface \ref requirement
@@ -287,7 +288,8 @@ TEST_CASE("std::allocator_traits support in concurrent_unordered_map") {
 //! \brief \ref interface \ref requirement
 TEST_CASE("heterogeneous overloads in concurrent_unordered_map") {
     check_heterogeneous_functions_key_int<oneapi::tbb::concurrent_unordered_map, int, int>();
-    check_heterogeneous_functions_key_string<oneapi::tbb::concurrent_unordered_map, std::string, std::string>();
+    check_heterogeneous_functions_key_string<oneapi::tbb::concurrent_unordered_map, std::string,
+                                             std::string>();
 }
 
 //! Testing insert overloads with generic pair in concurrent_unordered_map
@@ -318,15 +320,11 @@ TEST_CASE("concurrent_unordered_multimap member types") {
 
 //! Testing requirements of concurrent_unordered_multimap
 //! \brief \ref interface \ref requirement
-TEST_CASE("concurrent_unordered_multimap requirements") {
-    test_basic<multimap_type>();
-}
+TEST_CASE("concurrent_unordered_multimap requirements") { test_basic<multimap_type>(); }
 
 //! Testing multithreading support in concurrent_unordered_multimap
 //! \brief \ref requirement
-TEST_CASE("concurrent_unordered_multimap multithreading support") {
-    test_concurrent<multimap_type>();
-}
+TEST_CASE("concurrent_unordered_multimap multithreading support") { test_concurrent<multimap_type>(); }
 
 //! Testing move constructors and assignment operator in concurrent_unordered_multimap
 //! \brief \ref interface \ref requirement
@@ -356,7 +354,8 @@ TEST_CASE("std::allocator_traits support in concurrent_unordered_multimap") {
 //! \brief \ref interface \ref requirement
 TEST_CASE("heterogeneous overloads in concurrent_unordered_multimap") {
     check_heterogeneous_functions_key_int<oneapi::tbb::concurrent_unordered_multimap, int, int>();
-    check_heterogeneous_functions_key_string<oneapi::tbb::concurrent_unordered_multimap, std::string, std::string>();
+    check_heterogeneous_functions_key_string<oneapi::tbb::concurrent_unordered_multimap, std::string,
+                                             std::string>();
 }
 
 //! Testing insert overloads with generic pair in concurrent_unordered_multimap
@@ -381,6 +380,4 @@ TEST_CASE("concurrent_unordered_multimap comparisons") {
 
 //! Testing of merge operations in concurrent_unordered_map and concurrent_unordered_multimap
 //! \brief \ref interface \ref requirement
-TEST_CASE("merge operations") {
-    node_handling_tests::test_merge<map_type, multimap_type>(1000);
-}
+TEST_CASE("merge operations") { node_handling_tests::test_merge<map_type, multimap_type>(1000); }

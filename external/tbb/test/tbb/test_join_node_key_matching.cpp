@@ -29,8 +29,8 @@ void test_deduction_guides() {
     using tuple_type = std::tuple<int, int, double>;
 
     graph g;
-    auto body_int = [](const int&)->int { return 1; };
-    auto body_double = [](const double&)->int { return 1; };
+    auto body_int = [](const int&) -> int { return 1; };
+    auto body_double = [](const double&) -> int { return 1; };
 
     join_node j1(g, body_int, body_int, body_double);
     static_assert(std::is_same_v<decltype(j1), join_node<tuple_type, key_matching<int>>>);
@@ -56,31 +56,38 @@ void test_deduction_guides() {
 //! \brief \ref error_guessing
 TEST_CASE("Serial test on tuples") {
     INFO("key_matching\n");
-    generate_test<serial_test, std::tuple<MyKeyFirst<int, double>, MyKeySecond<int, float> >, tbb::flow::key_matching<int> >::do_test();
-    generate_test<serial_test, std::tuple<MyKeyFirst<std::string, double>, MyKeySecond<std::string, float> >, tbb::flow::key_matching<std::string> >::do_test();
-    generate_test<serial_test, std::tuple<MyKeyFirst<std::string, double>, MyKeySecond<std::string, float>, MyKeyWithBrokenMessageKey<std::string, int> >, tbb::flow::key_matching<std::string&> >::do_test();
+    generate_test<serial_test, std::tuple<MyKeyFirst<int, double>, MyKeySecond<int, float>>,
+                  tbb::flow::key_matching<int>>::do_test();
+    generate_test<serial_test, std::tuple<MyKeyFirst<std::string, double>, MyKeySecond<std::string, float>>,
+                  tbb::flow::key_matching<std::string>>::do_test();
+    generate_test<serial_test,
+                  std::tuple<MyKeyFirst<std::string, double>, MyKeySecond<std::string, float>,
+                             MyKeyWithBrokenMessageKey<std::string, int>>,
+                  tbb::flow::key_matching<std::string&>>::do_test();
 }
 
 #if __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
 //! Test deduction guides
 //! \brief \ref requirement
-TEST_CASE("Test deduction guides"){
-    test_deduction_guides();
-}
+TEST_CASE("Test deduction guides") { test_deduction_guides(); }
 #endif
 
 //! Test parallel key matching on special input types
 //! \brief \ref error_guessing
-TEST_CASE("Parallel test on tuples"){
-    generate_test<parallel_test, std::tuple<MyKeyFirst<int, double>, MyKeySecond<int, float> >, tbb::flow::key_matching<int> >::do_test();
-    generate_test<parallel_test, std::tuple<MyKeyFirst<int, double>, MyKeySecond<int, float> >, tbb::flow::key_matching<int&> >::do_test();
-    generate_test<parallel_test, std::tuple<MyKeyFirst<std::string, double>, MyKeySecond<std::string, float> >, tbb::flow::key_matching<std::string&> >::do_test();
+TEST_CASE("Parallel test on tuples") {
+    generate_test<parallel_test, std::tuple<MyKeyFirst<int, double>, MyKeySecond<int, float>>,
+                  tbb::flow::key_matching<int>>::do_test();
+    generate_test<parallel_test, std::tuple<MyKeyFirst<int, double>, MyKeySecond<int, float>>,
+                  tbb::flow::key_matching<int&>>::do_test();
+    generate_test<parallel_test, std::tuple<MyKeyFirst<std::string, double>, MyKeySecond<std::string, float>>,
+                  tbb::flow::key_matching<std::string&>>::do_test();
 }
 
 #if __TBB_CPP20_CONCEPTS_PRESENT
 template <std::size_t Count>
 struct tuple_helper {
-    using type = decltype(std::tuple_cat(std::declval<std::tuple<int>>(), std::declval<typename tuple_helper<Count - 1>::type>()));
+    using type = decltype(std::tuple_cat(std::declval<std::tuple<int>>(),
+                                         std::declval<typename tuple_helper<Count - 1>::type>()));
 };
 
 template <>
@@ -90,25 +97,30 @@ struct tuple_helper<1> {
 
 template <typename... Args>
 concept can_initialize_join_node = requires(tbb::flow::graph& g, Args... args) {
-    tbb::flow::join_node<typename tuple_helper<sizeof...(Args)>::type,
-                         tbb::flow::key_matching<int>>(g, args...);
+    tbb::flow::join_node<typename tuple_helper<sizeof...(Args)>::type, tbb::flow::key_matching<int>>(g,
+                                                                                                     args...);
 };
 
 // Helper for the concepts which checks if key_matching join_node cannot be instantiated if
 // one of its constructor arguments do not satisfy join_node_function_object concept
 // This structure substitutes IncorrectT to the sequence of arguments on IncorrectArgIndex position
 // The remaining arguments in the sequence are CorrectT
-template <std::size_t ArgCount, std::size_t IncorrectArgIndex, typename CorrectT, typename IncorrectT, typename... Args>
+template <std::size_t ArgCount, std::size_t IncorrectArgIndex, typename CorrectT, typename IncorrectT,
+          typename... Args>
 struct multiple_arguments_initialization_helper {
     // Current index is not equal to IncorrectArgIndex - substitute CorrectT at the end of the arguments sequence and continue
-    static constexpr bool value = multiple_arguments_initialization_helper<ArgCount - 1, IncorrectArgIndex - 1, CorrectT, IncorrectT, Args..., CorrectT>::value;
+    static constexpr bool value
+            = multiple_arguments_initialization_helper<ArgCount - 1, IncorrectArgIndex - 1, CorrectT,
+                                                       IncorrectT, Args..., CorrectT>::value;
 };
 
 template <std::size_t ArgCount, typename CorrectT, typename IncorrectT, typename... Args>
 struct multiple_arguments_initialization_helper<ArgCount, 0, CorrectT, IncorrectT, Args...> {
     // Current index is equal to IncorrectArgIndex - substitute IncorrectT at the end of the sequence and continue
     // No more incorrect indices would be added - continue with MAX_TUPLE_TEST_SIZE variable as current incorrect index
-    static constexpr bool value = multiple_arguments_initialization_helper<ArgCount - 1, MAX_TUPLE_TEST_SIZE, CorrectT, IncorrectT, Args..., IncorrectT>::value;
+    static constexpr bool value
+            = multiple_arguments_initialization_helper<ArgCount - 1, MAX_TUPLE_TEST_SIZE, CorrectT,
+                                                       IncorrectT, Args..., IncorrectT>::value;
 };
 
 template <std::size_t IncorrectArgIndex, typename CorrectT, typename IncorrectT, typename... Args>
@@ -122,37 +134,46 @@ struct multiple_arguments_initialization_helper<0, IncorrectArgIndex, CorrectT, 
 template <std::size_t ArgCount, std::size_t CurrentIncorrectIndex, typename CorrectT, typename IncorrectT>
 struct incorrect_arg_index_iteration_helper {
     // CurrentIncorrectIndex is not equal to max - check with current and continue
-    static constexpr bool value = multiple_arguments_initialization_helper<ArgCount, CurrentIncorrectIndex, CorrectT, IncorrectT>::value ||
-                                  incorrect_arg_index_iteration_helper<ArgCount, CurrentIncorrectIndex + 1, CorrectT, IncorrectT>::value;
+    static constexpr bool value = multiple_arguments_initialization_helper<ArgCount, CurrentIncorrectIndex,
+                                                                           CorrectT, IncorrectT>::value
+                                  || incorrect_arg_index_iteration_helper<ArgCount, CurrentIncorrectIndex + 1,
+                                                                          CorrectT, IncorrectT>::value;
 };
 
 template <std::size_t ArgCount, std::size_t CurrentIncorrectIndex, typename CorrectT, typename IncorrectT>
-requires (ArgCount == CurrentIncorrectIndex + 1)
-struct incorrect_arg_index_iteration_helper<ArgCount, CurrentIncorrectIndex, CorrectT, IncorrectT> {
+requires(ArgCount == CurrentIncorrectIndex + 1) struct incorrect_arg_index_iteration_helper<
+        ArgCount, CurrentIncorrectIndex, CorrectT, IncorrectT> {
     // CurrentIncorrectIndex is equal to max - check and stop
-    static constexpr bool value = multiple_arguments_initialization_helper<ArgCount, CurrentIncorrectIndex, CorrectT, IncorrectT>::value;
+    static constexpr bool value = multiple_arguments_initialization_helper<ArgCount, CurrentIncorrectIndex,
+                                                                           CorrectT, IncorrectT>::value;
 };
 
 // Helper which iterates over argument count. value is true if initialization (with all possible incorrect indices) is successful for at least one ArgCount
 template <std::size_t CurrentArgCount, typename CorrectT, typename IncorrectT>
 struct arg_count_iteration_helper {
     // CurrentArgCount is not equal to max - check and continue
-    static constexpr bool value = incorrect_arg_index_iteration_helper<CurrentArgCount, /*StartIncorrectIndex = */0, CorrectT, IncorrectT>::value ||
-                                  arg_count_iteration_helper<CurrentArgCount + 1, CorrectT, IncorrectT>::value;
+    static constexpr bool value
+            = incorrect_arg_index_iteration_helper<CurrentArgCount, /*StartIncorrectIndex = */ 0, CorrectT,
+                                                   IncorrectT>::value
+              || arg_count_iteration_helper<CurrentArgCount + 1, CorrectT, IncorrectT>::value;
 };
 
 template <typename CorrectT, typename IncorrectT>
 struct arg_count_iteration_helper<MAX_TUPLE_TEST_SIZE, CorrectT, IncorrectT> {
     // CurrentArgCount is equal to max - check and stop
-    static constexpr bool value = incorrect_arg_index_iteration_helper<MAX_TUPLE_TEST_SIZE, /*StartIncorrectIndex = */0, CorrectT, IncorrectT>::value;
+    static constexpr bool value
+            = incorrect_arg_index_iteration_helper<MAX_TUPLE_TEST_SIZE, /*StartIncorrectIndex = */ 0,
+                                                   CorrectT, IncorrectT>::value;
 };
 
 template <typename CorrectT, typename IncorrectT>
-concept can_initialize_join_node_with_incorrect_argument = arg_count_iteration_helper</*StartArgCount = */2, CorrectT, IncorrectT>::value;
+concept can_initialize_join_node_with_incorrect_argument
+        = arg_count_iteration_helper</*StartArgCount = */ 2, CorrectT, IncorrectT>::value;
 
 template <std::size_t CurrentArgCount, typename CorrectT, typename... Args>
 struct join_node_correct_initialization_helper {
-    static constexpr bool value = join_node_correct_initialization_helper<CurrentArgCount - 1, CorrectT, Args..., CorrectT>::value;
+    static constexpr bool value = join_node_correct_initialization_helper<CurrentArgCount - 1, CorrectT,
+                                                                          Args..., CorrectT>::value;
 };
 
 template <typename CorrectT, typename... Args>
@@ -162,26 +183,36 @@ struct join_node_correct_initialization_helper<0, CorrectT, Args...> {
 
 template <std::size_t CurrentArgCount, typename CorrectT>
 struct arg_count_correct_initialization_helper {
-    static constexpr bool value = join_node_correct_initialization_helper<CurrentArgCount, CorrectT>::value &&
-                                  arg_count_correct_initialization_helper<CurrentArgCount + 1, CorrectT>::value;
+    static constexpr bool value
+            = join_node_correct_initialization_helper<CurrentArgCount, CorrectT>::value
+              && arg_count_correct_initialization_helper<CurrentArgCount + 1, CorrectT>::value;
 };
 
 template <typename CorrectT>
 struct arg_count_correct_initialization_helper<MAX_TUPLE_TEST_SIZE, CorrectT> {
-    static constexpr bool value = join_node_correct_initialization_helper<MAX_TUPLE_TEST_SIZE, CorrectT>::value;
+    static constexpr bool value
+            = join_node_correct_initialization_helper<MAX_TUPLE_TEST_SIZE, CorrectT>::value;
 };
 
 template <typename CorrectT>
-concept can_initialize_join_node_with_correct_argument = arg_count_correct_initialization_helper</*Start = */2, CorrectT>::value;
+concept can_initialize_join_node_with_correct_argument
+        = arg_count_correct_initialization_helper</*Start = */ 2, CorrectT>::value;
 
 //! \brief \ref error_guessing
 TEST_CASE("join_node constraints") {
     using namespace test_concepts::join_node_function_object;
     static_assert(can_initialize_join_node_with_correct_argument<Correct<int, int>>);
-    static_assert(!can_initialize_join_node_with_incorrect_argument<Correct<int, int>, NonCopyable<int, int>>);
-    static_assert(!can_initialize_join_node_with_incorrect_argument<Correct<int, int>, NonDestructible<int, int>>);
-    static_assert(!can_initialize_join_node_with_incorrect_argument<Correct<int, int>, NoOperatorRoundBrackets<int, int>>);
-    static_assert(!can_initialize_join_node_with_incorrect_argument<Correct<int, int>, WrongInputOperatorRoundBrackets<int, int>>);
-    static_assert(!can_initialize_join_node_with_incorrect_argument<Correct<int, int>, WrongReturnOperatorRoundBrackets<int, int>>);
+    static_assert(
+            !can_initialize_join_node_with_incorrect_argument<Correct<int, int>, NonCopyable<int, int>>);
+    static_assert(
+            !can_initialize_join_node_with_incorrect_argument<Correct<int, int>, NonDestructible<int, int>>);
+    static_assert(!can_initialize_join_node_with_incorrect_argument<Correct<int, int>,
+                                                                    NoOperatorRoundBrackets<int, int>>);
+    static_assert(
+            !can_initialize_join_node_with_incorrect_argument<Correct<int, int>,
+                                                              WrongInputOperatorRoundBrackets<int, int>>);
+    static_assert(
+            !can_initialize_join_node_with_incorrect_argument<Correct<int, int>,
+                                                              WrongReturnOperatorRoundBrackets<int, int>>);
 }
-#endif // __TBB_CPP20_CONCEPTS_PRESENT
+#endif// __TBB_CPP20_CONCEPTS_PRESENT

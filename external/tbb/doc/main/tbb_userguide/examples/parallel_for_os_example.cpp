@@ -23,24 +23,20 @@ using namespace oneapi::tbb;
 
 class ApplyFoo {
     float *const my_a;
+
 public:
-    void operator()( const blocked_range<size_t>& r ) const {
+    void operator()(const blocked_range<size_t> &r) const {
         float *a = my_a;
-        for( size_t i=r.begin(); i!=r.end(); ++i )
-            Foo(a[i]);
+        for (size_t i = r.begin(); i != r.end(); ++i) Foo(a[i]);
     }
-    ApplyFoo( float a[] ) :
-        my_a(a)
-    {}
+    ApplyFoo(float a[]) : my_a(a) {}
 };
 /*end_parallel_for_os_1*/
 
 /*begin_parallel_for_os_2*/
 #include "oneapi/tbb.h"
 
-void ParallelApplyFoo( float a[], size_t n ) {
-    parallel_for(blocked_range<size_t>(0,n), ApplyFoo(a));
-}
+void ParallelApplyFoo(float a[], size_t n) { parallel_for(blocked_range<size_t>(0, n), ApplyFoo(a)); }
 /*end_parallel_for_os_2*/
 
 int main() {

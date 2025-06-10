@@ -35,16 +35,13 @@ int main() {
     join_node join(follows(handlers));
 
     int sum = 0;
-    function_node summer(follows(join), serial,
-                            [&](const std::tuple<int, int, int>& v) {
-                                int sub_sum = std::get<0>(v) + std::get<1>(v) + std::get<2>(v);
-                                sum += sub_sum;
-                                return sub_sum;
-                            });
+    function_node summer(follows(join), serial, [&](const std::tuple<int, int, int>& v) {
+        int sub_sum = std::get<0>(v) + std::get<1>(v) + std::get<2>(v);
+        sum += sub_sum;
+        return sub_sum;
+    });
 
-    for (int i = 1; i <= 10; ++i) {
-        input.try_put(i);
-    }
+    for (int i = 1; i <= 10; ++i) { input.try_put(i); }
     g.wait_for_all();
 }
 /*end_helpers_for_expressing_graphs_preview_api_example*/

@@ -17,37 +17,28 @@
 /*begin_parallel_phase_example*/
 #define TBB_PREVIEW_PARALLEL_PHASE 1
 
-#include "oneapi/tbb/task_arena.h"
 #include "oneapi/tbb/parallel_for.h"
 #include "oneapi/tbb/parallel_sort.h"
+#include "oneapi/tbb/task_arena.h"
 
 #include <vector>
 
 int main() {
-    oneapi::tbb::task_arena ta {
-        tbb::task_arena::automatic, /*reserved_for_masters=*/1,
-        tbb::task_arena::priority::normal,
-        tbb::task_arena::leave_policy::fast
-    };
+    oneapi::tbb::task_arena ta {tbb::task_arena::automatic, /*reserved_for_masters=*/1,
+                                tbb::task_arena::priority::normal, tbb::task_arena::leave_policy::fast};
 
     std::vector<int> data(1000);
 
     {
-        oneapi::tbb::task_arena::scoped_parallel_phase phase{ta};
+        oneapi::tbb::task_arena::scoped_parallel_phase phase {ta};
         ta.execute([&data]() {
-            oneapi::tbb::parallel_for(std::size_t(0), data.size(), [&data](std::size_t i) {
-                data[i] = static_cast<int>(i*i);
-            });
+            oneapi::tbb::parallel_for(std::size_t(0), data.size(),
+                                      [&data](std::size_t i) { data[i] = static_cast<int>(i * i); });
         });
 
-        for (std::size_t i = 1; i < data.size(); ++i) {
-            data[i] += data[i-1];
-        }
+        for (std::size_t i = 1; i < data.size(); ++i) { data[i] += data[i - 1]; }
 
-        ta.execute([&data]() {
-            oneapi::tbb::parallel_sort(data.begin(), data.end());
-        });
-
+        ta.execute([&data]() { oneapi::tbb::parallel_sort(data.begin(), data.end()); });
     }
 }
 /*end_parallel_phase_example*/

@@ -15,19 +15,19 @@
 */
 
 #if __INTEL_COMPILER && _MSC_VER
-#pragma warning(disable : 2586) // decorated name length exceeded, name was truncated
+#pragma warning(disable : 2586)// decorated name length exceeded, name was truncated
 #endif
 
 #include "conformance_mutex.h"
 
-#include "oneapi/tbb/spin_mutex.h"
 #include "oneapi/tbb/mutex.h"
-#include "oneapi/tbb/spin_rw_mutex.h"
-#include "oneapi/tbb/rw_mutex.h"
-#include "oneapi/tbb/queuing_mutex.h"
-#include "oneapi/tbb/queuing_rw_mutex.h"
 #include "oneapi/tbb/null_mutex.h"
 #include "oneapi/tbb/null_rw_mutex.h"
+#include "oneapi/tbb/queuing_mutex.h"
+#include "oneapi/tbb/queuing_rw_mutex.h"
+#include "oneapi/tbb/rw_mutex.h"
+#include "oneapi/tbb/spin_mutex.h"
+#include "oneapi/tbb/spin_rw_mutex.h"
 
 //! \file conformance_mutex.cpp
 //! \brief Test for [mutex.spin_mutex mutex.spin_rw_mutex mutex.queuing_mutex mutex.queuing_rw_mutex mutex.mutex mutex.rw_mutex mutex.speculative_spin_mutex mutex.speculative_spin_rw_mutex mutex.null_mutex mutex.null_rw_mutex] specifications
@@ -50,7 +50,8 @@ TEST_CASE("Basic Locable requirement test") {
 #endif
     // NullMutexes
     GeneralTest<oneapi::tbb::null_mutex, utils::AtomicCounter<oneapi::tbb::null_mutex>>("Null Mutex", false);
-    GeneralTest<oneapi::tbb::null_rw_mutex, utils::AtomicCounter<oneapi::tbb::null_rw_mutex>>("Null RW Mutex", false);
+    GeneralTest<oneapi::tbb::null_rw_mutex, utils::AtomicCounter<oneapi::tbb::null_rw_mutex>>("Null RW Mutex",
+                                                                                              false);
     TestNullMutex<oneapi::tbb::null_mutex>("Null Mutex");
     TestNullMutex<oneapi::tbb::null_rw_mutex>("Null RW Mutex");
 }
@@ -97,16 +98,16 @@ TEST_CASE("Shared mutexes (reader/writer) test") {
 //! Compatibility with the standard
 //! \brief \ref interface \ref requirement
 TEST_CASE("ISO interface test") {
-    GeneralTest<TBB_MutexFromISO_Mutex<oneapi::tbb::spin_mutex> >("ISO Spin Mutex");
-    GeneralTest<TBB_MutexFromISO_Mutex<oneapi::tbb::spin_rw_mutex> >("ISO Spin RW Mutex");
-    GeneralTest<TBB_MutexFromISO_Mutex<oneapi::tbb::mutex> >("ISO Adaprive Mutex");
+    GeneralTest<TBB_MutexFromISO_Mutex<oneapi::tbb::spin_mutex>>("ISO Spin Mutex");
+    GeneralTest<TBB_MutexFromISO_Mutex<oneapi::tbb::spin_rw_mutex>>("ISO Spin RW Mutex");
+    GeneralTest<TBB_MutexFromISO_Mutex<oneapi::tbb::mutex>>("ISO Adaprive Mutex");
     GeneralTest<TBB_MutexFromISO_Mutex<oneapi::tbb::rw_mutex>>("ISO Adaptive RW Mutex");
-    TestTryAcquire<TBB_MutexFromISO_Mutex<oneapi::tbb::spin_mutex> >("ISO Spin Mutex");
-    TestTryAcquire<TBB_MutexFromISO_Mutex<oneapi::tbb::spin_rw_mutex> >("ISO Spin RW Mutex");
-    TestTryAcquire<TBB_MutexFromISO_Mutex<oneapi::tbb::mutex> >("ISO Adaptive  Mutex");
+    TestTryAcquire<TBB_MutexFromISO_Mutex<oneapi::tbb::spin_mutex>>("ISO Spin Mutex");
+    TestTryAcquire<TBB_MutexFromISO_Mutex<oneapi::tbb::spin_rw_mutex>>("ISO Spin RW Mutex");
+    TestTryAcquire<TBB_MutexFromISO_Mutex<oneapi::tbb::mutex>>("ISO Adaptive  Mutex");
     TestTryAcquire<TBB_MutexFromISO_Mutex<oneapi::tbb::rw_mutex>>("ISO Adaptive RW Mutex");
-    TestTryAcquireReader<TBB_MutexFromISO_Mutex<oneapi::tbb::spin_rw_mutex> >("ISO Spin RW Mutex");
-    TestReaderWriterLock<TBB_MutexFromISO_Mutex<oneapi::tbb::spin_rw_mutex> >("ISO Spin RW Mutex");
+    TestTryAcquireReader<TBB_MutexFromISO_Mutex<oneapi::tbb::spin_rw_mutex>>("ISO Spin RW Mutex");
+    TestReaderWriterLock<TBB_MutexFromISO_Mutex<oneapi::tbb::spin_rw_mutex>>("ISO Spin RW Mutex");
     TestTryAcquireReader<TBB_MutexFromISO_Mutex<oneapi::tbb::rw_mutex>>("ISO Adaptive RW Mutex");
     TestReaderWriterLock<TBB_MutexFromISO_Mutex<oneapi::tbb::rw_mutex>>("ISO Adaptive RW Mutex");
 }

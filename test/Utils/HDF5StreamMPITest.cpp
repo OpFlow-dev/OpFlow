@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2023 by the OpFlow developers
+//  Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -80,7 +80,7 @@ TEST_F(H5RWMPITest, ReadAfterWrite) {
     Utils::H5Stream istream(filename, StreamIn);
     istream >> v;
     rangeFor_s(u.getLocalReadableRange(), [&](auto i) {
-        if (u[i] != v[i]) std::print(std::cerr,"NOT EQUAL AT {}", i);
+        if (u[i] != v[i]) std::print(std::cerr, "NOT EQUAL AT {}", i);
         ASSERT_EQ(u[i], v[i]);
     });
 }

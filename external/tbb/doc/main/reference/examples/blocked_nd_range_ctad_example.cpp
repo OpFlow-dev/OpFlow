@@ -50,12 +50,12 @@ int main() {
         oneapi::tbb::blocked_nd_range nd_range1(endings);
 
         // Deduced as blocked_nd_range<int, 3>
-        oneapi::tbb::blocked_nd_range nd_range2({100, 200, 300}, /*grainsize = */10);
+        oneapi::tbb::blocked_nd_range nd_range2({100, 200, 300}, /*grainsize = */ 10);
     }
     /*end_blocked_nd_range_ctad_example_2*/
 }
 
-#else 
+#else
 // Skip
 int main() {}
 #endif

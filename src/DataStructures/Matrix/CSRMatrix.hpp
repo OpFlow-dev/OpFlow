@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2023 by the OpFlow developers
+//  Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -124,8 +124,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
                     // ret += std::string(std::formatted_size("[{:>{}}, {:> {}.4E}] ", 0, max_col_width, 1.0,
                     //                                        max_val_width),
                     //                    ' ');
-                    ret += std::string(std::formatted_size("[{:>{}}, {:>}] ", 0, max_col_width, 1.0, max_val_width),
-                                       ' ');
+                    ret += std::string(
+                            std::formatted_size("[{:>{}}, {:>}] ", 0, max_col_width, 1.0, max_val_width),
+                            ' ');
                 }
                 // ret += std::format("rhs: {:> {}.4E}\n", rhs[irow], max_val_width);
                 ret += std::format("rhs: {:>}\n", rhs[irow]);

@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2023 by the OpFlow developers
+// Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -39,10 +39,10 @@ TEST(MetaTest, StaticForStep2) {
 
 TEST(MetaTest, TupleSplit) {
     struct A {
-        A() { }
-        A(const A&) { }
-        A(A&&) { }
-        ~A() { }
+        A() {}
+        A(const A&) {}
+        A(A&&) {}
+        ~A() {}
     };
     A a;
     auto t = std::forward_as_tuple(a, A(), a);

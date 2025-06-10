@@ -36,9 +36,7 @@ int main() {
     make_edges(input, handlers);
     make_edges(handlers, buffer);
 
-    for (int i = 1; i <= 10; ++i) {
-        input.try_put(i);
-    }
+    for (int i = 1; i <= 10; ++i) { input.try_put(i); }
     g.wait_for_all();
 }
 /*end_make_edges_function_example*/

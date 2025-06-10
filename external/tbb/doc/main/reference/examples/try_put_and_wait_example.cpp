@@ -25,9 +25,7 @@ struct f2_body : f1_body {};
 struct f3_body : f1_body {};
 
 struct f4_body {
-    int operator()(const std::tuple<int, int>& input) {
-        return 0;
-    }
+    int operator()(const std::tuple<int, int>& input) { return 0; }
 };
 
 /*begin_try_put_and_wait_example*/
@@ -47,13 +45,13 @@ int main() {
     flow::graph g;
     flow::broadcast_node<int> start_node(g);
 
-    flow::function_node<int, int> f1(g, flow::unlimited, f1_body{});
-    flow::function_node<int, int> f2(g, flow::unlimited, f2_body{});
-    flow::function_node<int, int> f3(g, flow::unlimited, f3_body{});
+    flow::function_node<int, int> f1(g, flow::unlimited, f1_body {});
+    flow::function_node<int, int> f2(g, flow::unlimited, f2_body {});
+    flow::function_node<int, int> f3(g, flow::unlimited, f3_body {});
 
     flow::join_node<std::tuple<int, int>> join(g);
 
-    flow::function_node<std::tuple<int, int>, int> f4(g, flow::serial, f4_body{});
+    flow::function_node<std::tuple<int, int>, int> f4(g, flow::serial, f4_body {});
 
     flow::make_edge(start_node, f1);
     flow::make_edge(f1, f2);

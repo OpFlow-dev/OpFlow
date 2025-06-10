@@ -15,17 +15,16 @@
 */
 
 #if __INTEL_COMPILER && _MSC_VER
-#pragma warning(disable : 2586) // decorated name length exceeded, name was truncated
+#pragma warning(disable : 2586)// decorated name length exceeded, name was truncated
 #endif
 
 #define SEQUENCER_NODE
 
-#include "conformance_flowgraph.h"
 #include "common/test_invoke.h"
+#include "conformance_flowgraph.h"
 
 //! \file conformance_sequencer_node.cpp
 //! \brief Test for [flow_graph.sequencer_node] specification
-
 
 #if __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
 template <typename Body>
@@ -49,15 +48,15 @@ void test_deduction_guides_common(Body body) {
 std::size_t sequencer_body_f(const int&) { return 1; }
 
 void test_deduction_guides() {
-    test_deduction_guides_common([](const int&)->std::size_t { return 1; });
-    test_deduction_guides_common([](const int&) mutable ->std::size_t { return 1; });
+    test_deduction_guides_common([](const int&) -> std::size_t { return 1; });
+    test_deduction_guides_common([](const int&) mutable -> std::size_t { return 1; });
     test_deduction_guides_common(sequencer_body_f);
 }
 #endif
 
 //! Test deduction guides
 //! \brief \ref interface \ref requirement
-TEST_CASE("Deduction guides"){
+TEST_CASE("Deduction guides") {
 #if __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
     test_deduction_guides();
 #endif
@@ -65,14 +64,14 @@ TEST_CASE("Deduction guides"){
 
 //! Test sequencer_node single_push
 //! \brief \ref requirement
-TEST_CASE("sequencer_node single_push"){
+TEST_CASE("sequencer_node single_push") {
     conformance::sequencer_functor<int> sequencer;
     conformance::test_forwarding_single_push<oneapi::tbb::flow::sequencer_node<int>>(sequencer);
 }
 
 //! Test function_node buffering
 //! \brief \ref requirement
-TEST_CASE("sequencer_node buffering"){
+TEST_CASE("sequencer_node buffering") {
     conformance::sequencer_functor<int> sequencer;
     conformance::test_buffering<oneapi::tbb::flow::sequencer_node<int>, int>(sequencer);
 }
@@ -80,21 +79,21 @@ TEST_CASE("sequencer_node buffering"){
 //! Constructs an empty sequencer_node that belongs to the same graph g as src.
 //! Any intermediate state of src, including its links to predecessors and successors, is not copied.
 //! \brief \ref requirement
-TEST_CASE("sequencer_node copy constructor"){
+TEST_CASE("sequencer_node copy constructor") {
     conformance::sequencer_functor<int> sequencer;
     conformance::test_copy_ctor_for_buffering_nodes<oneapi::tbb::flow::sequencer_node<int>>(sequencer);
 }
 
 //! Test inheritance relations
 //! \brief \ref interface
-TEST_CASE("sequencer_node superclasses"){
+TEST_CASE("sequencer_node superclasses") {
     conformance::test_inheritance<oneapi::tbb::flow::sequencer_node<int>, int, int>();
     conformance::test_inheritance<oneapi::tbb::flow::sequencer_node<void*>, void*, void*>();
 }
 
 //! Test the sequencer_node rejects duplicate sequencer numbers
 //! \brief \ref interface
-TEST_CASE("sequencer_node rejects duplicate"){
+TEST_CASE("sequencer_node rejects duplicate") {
     oneapi::tbb::flow::graph g;
     conformance::sequencer_functor<int> sequencer;
 
@@ -108,7 +107,7 @@ TEST_CASE("sequencer_node rejects duplicate"){
 
 //! Test queue_node node `try_put()` and `try_get()`
 //! \brief \ref requirement
-TEST_CASE("queue_node methods"){
+TEST_CASE("queue_node methods") {
     oneapi::tbb::flow::graph g;
     conformance::sequencer_functor<int> sequencer;
 
@@ -134,22 +133,23 @@ TEST_CASE("queue_node methods"){
 //! The example demonstrates ordering capabilities of the sequencer_node.
 //! While being processed in parallel, the data is passed to the successor node in the exact same order it was read.
 //! \brief \ref requirement
-TEST_CASE("sequencer_node ordering"){
+TEST_CASE("sequencer_node ordering") {
     using namespace oneapi::tbb::flow;
     using message = conformance::sequencer_functor<int>::seq_message;
     graph g;
 
     // Due to parallelism the node can push messages to its successors in any order
-    function_node<message, message> process(g, unlimited, [] (message msg) {
+    function_node<message, message> process(g, unlimited, [](message msg) {
         msg.data++;
         return msg;
     });
 
     sequencer_node<message> ordering(g, conformance::sequencer_functor<int>());
 
-    std::atomic<std::size_t> counter{0};
-    function_node<message> writer(g, tbb::flow::serial, [&] (const message& msg) {
-        CHECK_MESSAGE((msg.id == counter++), "The data is passed to the successor node in the exact same order it was read");
+    std::atomic<std::size_t> counter {0};
+    function_node<message> writer(g, tbb::flow::serial, [&](const message& msg) {
+        CHECK_MESSAGE((msg.id == counter++),
+                      "The data is passed to the successor node in the exact same order it was read");
     });
 
     tbb::flow::make_edge(process, ordering);
@@ -171,26 +171,28 @@ TEST_CASE("sequencer_node and std::invoke") {
 
     graph g;
 
-    function_node<std::size_t, test_invoke::SmartID<std::size_t>> starter(g, unlimited, [](std::size_t x) { return test_invoke::SmartID(x); });
-    sequencer_node<test_invoke::SmartID<std::size_t>> seq1(g, &test_invoke::SmartID<std::size_t>::get_id); // Member function
-    sequencer_node<test_invoke::SmartID<std::size_t>> seq2(g, &test_invoke::SmartID<std::size_t>::id); // Member object
+    function_node<std::size_t, test_invoke::SmartID<std::size_t>> starter(
+            g, unlimited, [](std::size_t x) { return test_invoke::SmartID(x); });
+    sequencer_node<test_invoke::SmartID<std::size_t>> seq1(
+            g, &test_invoke::SmartID<std::size_t>::get_id);// Member function
+    sequencer_node<test_invoke::SmartID<std::size_t>> seq2(
+            g, &test_invoke::SmartID<std::size_t>::id);// Member object
 
     std::size_t expected_item = 0;
 
-    function_node<test_invoke::SmartID<std::size_t>, std::size_t> check(g, serial, [&](const test_invoke::SmartID<std::size_t>& x) {
-        CHECK(x.id == expected_item);
-        ++expected_item;
-        return x.id;
-    });
+    function_node<test_invoke::SmartID<std::size_t>, std::size_t> check(
+            g, serial, [&](const test_invoke::SmartID<std::size_t>& x) {
+                CHECK(x.id == expected_item);
+                ++expected_item;
+                return x.id;
+            });
 
     // Build the first graph
     make_edge(starter, seq1);
     make_edge(seq1, check);
 
     std::size_t objects_count = 10;
-    for (std::size_t i = 0; i < objects_count; ++i) {
-        starter.try_put(objects_count - i - 1);
-    }
+    for (std::size_t i = 0; i < objects_count; ++i) { starter.try_put(objects_count - i - 1); }
 
     g.wait_for_all();
 
@@ -202,13 +204,11 @@ TEST_CASE("sequencer_node and std::invoke") {
     make_edge(seq2, check);
     expected_item = 0;
 
-    for (std::size_t i = 0; i < objects_count; ++i) {
-        starter.try_put(objects_count - i - 1);
-    }
+    for (std::size_t i = 0; i < objects_count; ++i) { starter.try_put(objects_count - i - 1); }
 
     g.wait_for_all();
 
     CHECK(expected_item == objects_count);
 }
 
-#endif // __TBB_CPP17_INVOKE_PRESENT
+#endif// __TBB_CPP17_INVOKE_PRESENT

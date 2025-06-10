@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2023 by the OpFlow developers
+// Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -111,8 +111,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     }
 
     template <typename T>
-        requires Meta::BracketIndexable<T>
-    auto boxMerge(const T &boxes) {
+    requires Meta::BracketIndexable<T> auto boxMerge(const T &boxes) {
         OP_ASSERT(boxes.size() > 0);
         auto ret = boxes[0];
         constexpr static auto dim = decltype(ret)::dim;

@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2023 by the OpFlow developers
+//  Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -22,7 +22,8 @@
 OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     template <typename D, typename T>
     concept StaticAllocatorType = requires(std::size_t s) {
-        { T::allocate(s) } -> std::same_as<D*>;
+        { T::allocate(s) }
+        ->std::same_as<D*>;
         T::deallocate(std::declval<D*>(), s);
     };
 }// namespace OpFlow::Utils

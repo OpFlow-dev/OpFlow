@@ -44,7 +44,7 @@ using T10 = make_tuple<T9, MyKeyWithBrokenMessageKey<std::string, size_t>>;
 //! Serial test with different tuple sizes
 //! \brief \ref error_guessing
 TEST_CASE_TEMPLATE_N_ARGS("Serial N tests on tuples") {
-     generate_test<serial_test, T, tbb::flow::key_matching<std::string&>>::do_test();
+    generate_test<serial_test, T, tbb::flow::key_matching<std::string&>>::do_test();
 }
 
 //! Parallel test with different tuple sizes

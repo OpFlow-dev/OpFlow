@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2023 by the OpFlow developers
+//  Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -62,24 +62,24 @@
 #ifndef OPFLOW_INSIDE_MODULE
 #include <mpi.h>
 #endif
-OPFLOW_MODULE_EXPORT namespace OpFlow {
-    inline static int getWorkerId(MPI_Comm comm);
-}
+OPFLOW_MODULE_EXPORT namespace OpFlow { inline static int getWorkerId(MPI_Comm comm); }
 #define SPD_AUGMENTED_LOG(X, ...)                                                                            \
     do {                                                                                                     \
-        if consteval {                                                                                       \
-            spdlog::X(std::format("[{}:{}@{}][Rank{}] ", __FILENAME__, __FUNCTION__, __LINE__,               \
-                                  OpFlow::getWorkerId(MPI_COMM_WORLD))                                       \
-                      + std::format(__VA_ARGS__));                                                           \
-        }                                                                                                    \
+        if                                                                                                   \
+            consteval {                                                                                      \
+                spdlog::X(std::format("[{}:{}@{}][Rank{}] ", __FILENAME__, __FUNCTION__, __LINE__,           \
+                                      OpFlow::getWorkerId(MPI_COMM_WORLD))                                   \
+                          + std::format(__VA_ARGS__));                                                       \
+            }                                                                                                \
     } while (0)
 #else
 #define SPD_AUGMENTED_LOG(X, ...)                                                                            \
     do {                                                                                                     \
-        if consteval {                                                                                       \
-            spdlog::X(std::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__)                       \
-                      + std::format(__VA_ARGS__));                                                           \
-        }                                                                                                    \
+        if                                                                                                   \
+            consteval {                                                                                      \
+                spdlog::X(std::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__)                   \
+                          + std::format(__VA_ARGS__));                                                       \
+            }                                                                                                \
     } while (0)
 #endif
 
@@ -118,9 +118,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 #if !defined(NDEBUG) && defined(OPFLOW_ENABLE_STACK_TRACE)
 #include "Utils/StackTracer.hpp"
 // global stack tracer
-OPFLOW_MODULE_EXPORT namespace OpFlow {
-    inline static Utils::StackTracer stackTracer;
-}
+OPFLOW_MODULE_EXPORT namespace OpFlow { inline static Utils::StackTracer stackTracer; }
 
 #define OP_STACK_PUSH(...)                                                                                   \
     do {                                                                                                     \

@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2023 by the OpFlow developers
+//  Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -23,17 +23,20 @@
 OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename K>
     concept FluxLimiterKernel = requires(double r) {
-        { K::eval(r) } -> std::same_as<double>;
+        { K::eval(r) }
+        ->std::same_as<double>;
     };
 
     template <typename K>
     concept LinearFluxLimiterKernel
-            = FluxLimiterKernel<K> && requires(DS::StencilPad<DS::MDIndex<2>> pad, double r) {
-                  // should take slop_u & slop_f in a type only support + and * to a number
-                  { K::eval(pad, pad) } -> std::same_as<DS::StencilPad<DS::MDIndex<2>>>;
-                  // should take normal separate slops instead of ratio
-                  { K::eval(r, r) } -> std::same_as<double>;
-              };
+            = FluxLimiterKernel<K>&& requires(DS::StencilPad<DS::MDIndex<2>> pad, double r) {
+        // should take slop_u & slop_f in a type only support + and * to a number
+        { K::eval(pad, pad) }
+        ->std::same_as<DS::StencilPad<DS::MDIndex<2>>>;
+        // should take normal separate slops instead of ratio
+        { K::eval(r, r) }
+        ->std::same_as<double>;
+    };
 
     namespace internal {
         template <FluxLimiterKernel Kernel, std::size_t d, IntpDirection dir>

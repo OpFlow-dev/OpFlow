@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2023 by the OpFlow developers
+// Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -34,12 +34,10 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
 
     }// namespace internal
     template <Meta::Numerical T, auto... n>
-        requires(std::integral<decltype(n)> && ...)
-    struct FixedSizeTensor;
+    requires(std::integral<decltype(n)> && ...) struct FixedSizeTensor;
     namespace internal {
         template <Meta::Numerical T, auto... n>
-            requires(std::integral<decltype(n)> && ...)
-        struct TensorTrait<FixedSizeTensor<T, n...>> {
+        requires(std::integral<decltype(n)>&&...) struct TensorTrait<FixedSizeTensor<T, n...>> {
             using scalar_type = T;
             static constexpr auto dim = sizeof...(n);
         };
@@ -48,16 +46,15 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         struct is_fixed_size_tensor : std::false_type {};
 
         template <Meta::Numerical T, auto... n>
-            requires(std::integral<decltype(n)> && ...)
-        struct is_fixed_size_tensor<FixedSizeTensor<T, n...>> : std::true_type {};
+        requires(std::integral<decltype(n)>&&...) struct is_fixed_size_tensor<FixedSizeTensor<T, n...>>
+            : std::true_type {};
     }// namespace internal
 
     template <typename T>
     concept FixedSizeTensorType = internal::is_fixed_size_tensor<Meta::RealType<T>>::value;
 
     template <Meta::Numerical T, auto... n>
-        requires(std::integral<decltype(n)> && ...)
-    struct FixedSizeTensor : Tensor<FixedSizeTensor<T, n...>> {
+    requires(std::integral<decltype(n)> && ...) struct FixedSizeTensor : Tensor<FixedSizeTensor<T, n...>> {
         constexpr static auto N = sizeof...(n);
         constexpr FixedSizeTensor() = default;
         constexpr explicit FixedSizeTensor(T val) { _val.fill(val); }

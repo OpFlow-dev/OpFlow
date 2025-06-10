@@ -14,8 +14,8 @@
     limitations under the License.
 */
 
-#include "common/parallel_reduce_common.h"
 #include "common/concurrency_tracker.h"
+#include "common/parallel_reduce_common.h"
 #include "common/test_invoke.h"
 
 #include "../tbb/test_partitioner.h"
@@ -27,12 +27,8 @@
 class RotOp {
 public:
     using Type = int;
-    int operator() ( int x, int i ) const {
-        return ( x<<1 ) ^ i;
-    }
-    int join( int x, int y ) const {
-        return operator()( x, y );
-    }
+    int operator()(int x, int i) const { return (x << 1) ^ i; }
+    int join(int x, int y) const { return operator()(x, y); }
 };
 
 template <class Op>
@@ -41,17 +37,17 @@ struct ReduceBody {
     result_type my_value;
 
     ReduceBody() : my_value() {}
-    ReduceBody( ReduceBody &, oneapi::tbb::split ) : my_value() {}
+    ReduceBody(ReduceBody&, oneapi::tbb::split) : my_value() {}
 
-    void operator() ( const oneapi::tbb::blocked_range<int>& r ) {
+    void operator()(const oneapi::tbb::blocked_range<int>& r) {
         utils::ConcurrencyTracker ct;
-        for ( int i = r.begin(); i != r.end(); ++i ) {
+        for (int i = r.begin(); i != r.end(); ++i) {
             Op op;
             my_value = op(my_value, i);
         }
     }
 
-    void join( const ReduceBody& y ) {
+    void join(const ReduceBody& y) {
         Op op;
         my_value = op.join(my_value, y.my_value);
     }
@@ -70,9 +66,10 @@ public:
     MoveOnlyWrapper& operator=(const MoveOnlyWrapper&) = delete;
 
     bool operator==(const MoveOnlyWrapper& other) const { return my_obj == other.my_obj; }
+
 private:
     T my_obj;
-}; // class MoveOnlyWrapper
+};// class MoveOnlyWrapper
 
 // The container wrapper that is copyable but the copy constructor fails if the source container is non-empty
 // If such an empty container is provided as an identity into parallel reduce algorithm with rvalue-friendly body,
@@ -108,7 +105,7 @@ public:
 
 private:
     std::list<T> my_list;
-}; // class EmptyCopyList
+};// class EmptyCopyList
 
 template <class Partitioner>
 void TestDeterministicReductionFor() {
@@ -119,37 +116,38 @@ void TestDeterministicReductionFor() {
 
     BodyType benchmark_body;
     deterministic_reduce_invoker(range, benchmark_body, Partitioner());
-    for ( int i=0; i<100; ++i ) {
+    for (int i = 0; i < 100; ++i) {
         BodyType measurement_body;
         deterministic_reduce_invoker(range, measurement_body, Partitioner());
-        REQUIRE_MESSAGE( benchmark_body.my_value == measurement_body.my_value,
-        "parallel_deterministic_reduce behaves differently from run to run" );
+        REQUIRE_MESSAGE(benchmark_body.my_value == measurement_body.my_value,
+                        "parallel_deterministic_reduce behaves differently from run to run");
 
-        Type lambda_measurement_result = deterministic_reduce_invoker<Type>( range,
-            [](const oneapi::tbb::blocked_range<int>& br, Type value) -> Type {
-                utils::ConcurrencyTracker ct;
-                for ( int ii = br.begin(); ii != br.end(); ++ii ) {
+        Type lambda_measurement_result = deterministic_reduce_invoker<Type>(
+                range,
+                [](const oneapi::tbb::blocked_range<int>& br, Type value) -> Type {
+                    utils::ConcurrencyTracker ct;
+                    for (int ii = br.begin(); ii != br.end(); ++ii) {
+                        RotOp op;
+                        value = op(value, ii);
+                    }
+                    return value;
+                },
+                [](const Type& v1, const Type& v2) -> Type {
                     RotOp op;
-                    value = op(value, ii);
-                }
-                return value;
-            },
-            [](const Type& v1, const Type& v2) -> Type {
-                RotOp op;
-                return op.join(v1,v2);
-            },
-            Partitioner()
-        );
-        REQUIRE_MESSAGE( benchmark_body.my_value == lambda_measurement_result,
-            "lambda-based parallel_deterministic_reduce behaves differently from run to run" );
+                    return op.join(v1, v2);
+                },
+                Partitioner());
+        REQUIRE_MESSAGE(benchmark_body.my_value == lambda_measurement_result,
+                        "lambda-based parallel_deterministic_reduce behaves differently from run to run");
     }
 }
 
 //! Test that deterministic reduction returns the same result during several measurements
 //! \brief \ref requirement \ref interface
 TEST_CASE("Test deterministic reduce correctness") {
-    for ( auto concurrency_level : utils::concurrency_range() ) {
-        oneapi::tbb::global_control control(oneapi::tbb::global_control::max_allowed_parallelism, concurrency_level);
+    for (auto concurrency_level : utils::concurrency_range()) {
+        oneapi::tbb::global_control control(oneapi::tbb::global_control::max_allowed_parallelism,
+                                            concurrency_level);
         TestDeterministicReductionFor<oneapi::tbb::simple_partitioner>();
         TestDeterministicReductionFor<oneapi::tbb::static_partitioner>();
         TestDeterministicReductionFor<utils_default_partitioner>();
@@ -160,8 +158,9 @@ TEST_CASE("Test deterministic reduce correctness") {
 //! \brief \ref requirement \ref interface
 TEST_CASE("Test partitioners interaction with various ranges") {
     using namespace test_partitioner_utils::interaction_with_range_and_partitioner;
-    for ( auto concurrency_level : utils::concurrency_range() ) {
-        oneapi::tbb::global_control control(oneapi::tbb::global_control::max_allowed_parallelism, concurrency_level);
+    for (auto concurrency_level : utils::concurrency_range()) {
+        oneapi::tbb::global_control control(oneapi::tbb::global_control::max_allowed_parallelism,
+                                            concurrency_level);
 
         test_partitioner_utils::SimpleReduceBody body;
         oneapi::tbb::affinity_partitioner ap;
@@ -169,19 +168,26 @@ TEST_CASE("Test partitioners interaction with various ranges") {
         parallel_reduce(Range1(/*assert_in_split*/ true, /*assert_in_proportional_split*/ false), body, ap);
         parallel_reduce(Range6(false, true), body, ap);
 
-        parallel_reduce(Range1(/*assert_in_split*/ true, /*assert_in_proportional_split*/ false), body, oneapi::tbb::static_partitioner());
+        parallel_reduce(Range1(/*assert_in_split*/ true, /*assert_in_proportional_split*/ false), body,
+                        oneapi::tbb::static_partitioner());
         parallel_reduce(Range6(false, true), body, oneapi::tbb::static_partitioner());
 
-        parallel_reduce(Range1(/*assert_in_split*/ false, /*assert_in_proportional_split*/ true), body, oneapi::tbb::simple_partitioner());
+        parallel_reduce(Range1(/*assert_in_split*/ false, /*assert_in_proportional_split*/ true), body,
+                        oneapi::tbb::simple_partitioner());
         parallel_reduce(Range6(false, true), body, oneapi::tbb::simple_partitioner());
 
-        parallel_reduce(Range1(/*assert_in_split*/ false, /*assert_in_proportional_split*/ true), body, oneapi::tbb::auto_partitioner());
+        parallel_reduce(Range1(/*assert_in_split*/ false, /*assert_in_proportional_split*/ true), body,
+                        oneapi::tbb::auto_partitioner());
         parallel_reduce(Range6(false, true), body, oneapi::tbb::auto_partitioner());
 
-        parallel_deterministic_reduce(Range1(/*assert_in_split*/true, /*assert_in_proportional_split*/ false), body, oneapi::tbb::static_partitioner());
+        parallel_deterministic_reduce(
+                Range1(/*assert_in_split*/ true, /*assert_in_proportional_split*/ false), body,
+                oneapi::tbb::static_partitioner());
         parallel_deterministic_reduce(Range6(false, true), body, oneapi::tbb::static_partitioner());
 
-        parallel_deterministic_reduce(Range1(/*assert_in_split*/false, /*assert_in_proportional_split*/ true), body, oneapi::tbb::simple_partitioner());
+        parallel_deterministic_reduce(
+                Range1(/*assert_in_split*/ false, /*assert_in_proportional_split*/ true), body,
+                oneapi::tbb::simple_partitioner());
         parallel_deterministic_reduce(Range6(false, true), body, oneapi::tbb::simple_partitioner());
     }
 }
@@ -197,32 +203,44 @@ void test_preduce_invoke_basic(const Body& body, const Reduction& reduction) {
     test_invoke::SmartValue identity(0);
 
     CHECK(result == oneapi::tbb::parallel_reduce(range, identity, body, reduction).get());
-    CHECK(result == oneapi::tbb::parallel_reduce(range, identity, body, reduction, oneapi::tbb::simple_partitioner()).get());
-    CHECK(result == oneapi::tbb::parallel_reduce(range, identity, body, reduction, oneapi::tbb::auto_partitioner()).get());
-    CHECK(result == oneapi::tbb::parallel_reduce(range, identity, body, reduction, oneapi::tbb::static_partitioner()).get());
+    CHECK(result
+          == oneapi::tbb::parallel_reduce(range, identity, body, reduction, oneapi::tbb::simple_partitioner())
+                     .get());
+    CHECK(result
+          == oneapi::tbb::parallel_reduce(range, identity, body, reduction, oneapi::tbb::auto_partitioner())
+                     .get());
+    CHECK(result
+          == oneapi::tbb::parallel_reduce(range, identity, body, reduction, oneapi::tbb::static_partitioner())
+                     .get());
     oneapi::tbb::affinity_partitioner aff;
     CHECK(result == oneapi::tbb::parallel_reduce(range, identity, body, reduction, aff).get());
 
     CHECK(result == oneapi::tbb::parallel_deterministic_reduce(range, identity, body, reduction).get());
-    CHECK(result == oneapi::tbb::parallel_deterministic_reduce(range, identity, body, reduction, oneapi::tbb::simple_partitioner()).get());
-    CHECK(result == oneapi::tbb::parallel_deterministic_reduce(range, identity, body, reduction, oneapi::tbb::static_partitioner()).get());
+    CHECK(result
+          == oneapi::tbb::parallel_deterministic_reduce(range, identity, body, reduction,
+                                                        oneapi::tbb::simple_partitioner())
+                     .get());
+    CHECK(result
+          == oneapi::tbb::parallel_deterministic_reduce(range, identity, body, reduction,
+                                                        oneapi::tbb::static_partitioner())
+                     .get());
 }
 
 //! Test that parallel_reduce uses std::invoke to run the body
 //! \brief \ref interface \ref requirement
 TEST_CASE("parallel_[deterministic_]reduce and std::invoke") {
-    auto regular_reduce = [](const test_invoke::SmartRange<test_invoke::SmartValue>& range, const test_invoke::SmartValue& idx) {
+    auto regular_reduce = [](const test_invoke::SmartRange<test_invoke::SmartValue>& range,
+                             const test_invoke::SmartValue& idx) {
         test_invoke::SmartValue result = idx;
-        for (auto i = range.begin(); i.get() != range.end().get(); ++i) {
-            result = result + i;
-        }
+        for (auto i = range.begin(); i.get() != range.end().get(); ++i) { result = result + i; }
         return result;
     };
     auto regular_join = [](const test_invoke::SmartValue& lhs, const test_invoke::SmartValue& rhs) {
         return lhs + rhs;
     };
 
-    test_preduce_invoke_basic(&test_invoke::SmartRange<test_invoke::SmartValue>::reduction, &test_invoke::SmartValue::operator+);
+    test_preduce_invoke_basic(&test_invoke::SmartRange<test_invoke::SmartValue>::reduction,
+                              &test_invoke::SmartValue::operator+);
     test_preduce_invoke_basic(&test_invoke::SmartRange<test_invoke::SmartValue>::reduction, regular_join);
     test_preduce_invoke_basic(regular_reduce, &test_invoke::SmartValue::operator+);
 }
@@ -243,11 +261,11 @@ void test_vector_of_lists_rvalue_reduce_basic(const Runner& runner, PartitionerC
     for (std::size_t i = 0; i < n_vectors; ++i) {
         list_type list;
 
-        list.insert(list.end(), inner_type{1});
-        list.insert(list.end(), inner_type{2});
-        list.insert(list.end(), inner_type{3});
-        list.insert(list.end(), inner_type{4});
-        list.insert(list.end(), inner_type{5});
+        list.insert(list.end(), inner_type {1});
+        list.insert(list.end(), inner_type {2});
+        list.insert(list.end(), inner_type {3});
+        list.insert(list.end(), inner_type {4});
+        list.insert(list.end(), inner_type {5});
         vector_of_lists.emplace_back(std::move(list));
     }
 
@@ -269,16 +287,17 @@ void test_vector_of_lists_rvalue_reduce_basic(const Runner& runner, PartitionerC
         return new_list;
     };
 
-    list_type result = runner(range, list_type{}, reduce_body, join_body, std::forward<PartitionerContext>(args)...);
+    list_type result
+            = runner(range, list_type {}, reduce_body, join_body, std::forward<PartitionerContext>(args)...);
 
     list_type expected_result;
 
     for (std::size_t i = 0; i < n_vectors; ++i) {
-        expected_result.insert(expected_result.end(), inner_type{1});
-        expected_result.insert(expected_result.end(), inner_type{2});
-        expected_result.insert(expected_result.end(), inner_type{3});
-        expected_result.insert(expected_result.end(), inner_type{4});
-        expected_result.insert(expected_result.end(), inner_type{5});
+        expected_result.insert(expected_result.end(), inner_type {1});
+        expected_result.insert(expected_result.end(), inner_type {2});
+        expected_result.insert(expected_result.end(), inner_type {3});
+        expected_result.insert(expected_result.end(), inner_type {4});
+        expected_result.insert(expected_result.end(), inner_type {5});
     }
 
     REQUIRE_MESSAGE(expected_result == result, "Incorrect reduce result");
@@ -286,14 +305,16 @@ void test_vector_of_lists_rvalue_reduce_basic(const Runner& runner, PartitionerC
 
 struct ReduceRunner {
     template <typename... Args>
-    auto operator()(Args&&... args) const -> decltype(oneapi::tbb::parallel_reduce(std::forward<Args>(args)...)) {
+    auto operator()(Args&&... args) const
+            -> decltype(oneapi::tbb::parallel_reduce(std::forward<Args>(args)...)) {
         return oneapi::tbb::parallel_reduce(std::forward<Args>(args)...);
     }
 };
 
 struct DeterministicReduceRunner {
     template <typename... Args>
-    auto operator()(Args&&... args) const -> decltype(oneapi::tbb::parallel_deterministic_reduce(std::forward<Args>(args)...)) {
+    auto operator()(Args&&... args) const
+            -> decltype(oneapi::tbb::parallel_deterministic_reduce(std::forward<Args>(args)...)) {
         return oneapi::tbb::parallel_deterministic_reduce(std::forward<Args>(args)...);
     }
 };
@@ -304,15 +325,15 @@ void test_vector_of_lists_rvalue_reduce() {
     oneapi::tbb::task_group_context context;
 
     test_vector_of_lists_rvalue_reduce_basic(runner);
-    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::auto_partitioner{});
-    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::simple_partitioner{});
-    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::static_partitioner{});
+    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::auto_partitioner {});
+    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::simple_partitioner {});
+    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::static_partitioner {});
     test_vector_of_lists_rvalue_reduce_basic(runner, af_partitioner);
 
     test_vector_of_lists_rvalue_reduce_basic(runner, context);
-    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::auto_partitioner{}, context);
-    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::simple_partitioner{}, context);
-    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::static_partitioner{}, context);
+    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::auto_partitioner {}, context);
+    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::simple_partitioner {}, context);
+    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::static_partitioner {}, context);
     test_vector_of_lists_rvalue_reduce_basic(runner, af_partitioner, context);
 }
 
@@ -321,12 +342,12 @@ void test_vector_of_lists_rvalue_deterministic_reduce() {
     oneapi::tbb::task_group_context context;
 
     test_vector_of_lists_rvalue_reduce_basic(runner);
-    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::simple_partitioner{});
-    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::static_partitioner{});
+    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::simple_partitioner {});
+    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::static_partitioner {});
 
     test_vector_of_lists_rvalue_reduce_basic(runner, context);
-    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::simple_partitioner{}, context);
-    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::static_partitioner{}, context);
+    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::simple_partitioner {}, context);
+    test_vector_of_lists_rvalue_reduce_basic(runner, oneapi::tbb::static_partitioner {}, context);
 }
 
 //! \brief \ref interface \ref requirement

@@ -14,10 +14,10 @@
     limitations under the License.
 */
 
-#include "common/parallel_for_each_common.h"
 #include "common/concepts_common.h"
-#include <vector>
+#include "common/parallel_for_each_common.h"
 #include <iterator>
+#include <vector>
 
 //! \file test_parallel_for_each.cpp
 //! \brief Test for [algorithms.parallel_for_each]
@@ -55,81 +55,74 @@ struct cpp20_iterator {
         return it;
     }
 
-    cpp20_iterator& operator--()
-        requires std::derived_from<Category, std::bidirectional_iterator_tag>
-    {
+    cpp20_iterator& operator--() requires std::derived_from<Category, std::bidirectional_iterator_tag> {
         --my_ptr;
         return *this;
     }
 
-    cpp20_iterator operator--(int)
-        requires std::derived_from<Category, std::bidirectional_iterator_tag>
-    {
+    cpp20_iterator operator--(int) requires std::derived_from<Category, std::bidirectional_iterator_tag> {
         auto it = *this;
         --*this;
         return it;
     }
 
-    cpp20_iterator& operator+=(difference_type n)
-        requires std::derived_from<Category, std::random_access_iterator_tag>
-    {
+    cpp20_iterator&
+    operator+=(difference_type n) requires std::derived_from<Category, std::random_access_iterator_tag> {
         my_ptr += n;
         return *this;
     }
 
-    cpp20_iterator& operator-=(difference_type n)
-        requires std::derived_from<Category, std::random_access_iterator_tag>
-    {
+    cpp20_iterator&
+    operator-=(difference_type n) requires std::derived_from<Category, std::random_access_iterator_tag> {
         my_ptr -= n;
         return *this;
     }
 
     T& operator[](difference_type n) const
-        requires std::derived_from<Category, std::random_access_iterator_tag>
-    {
+            requires std::derived_from<Category, std::random_access_iterator_tag> {
         return my_ptr[n];
     }
 
     friend bool operator==(const cpp20_iterator&, const cpp20_iterator&) = default;
 
-    friend auto operator<=>(const cpp20_iterator&, const cpp20_iterator&)
-        requires std::derived_from<Category, std::random_access_iterator_tag> = default;
+    friend auto operator<=>(const cpp20_iterator&, const cpp20_iterator&) requires std::derived_from<
+            Category, std::random_access_iterator_tag> = default;
 
-    friend cpp20_iterator operator+(cpp20_iterator i, difference_type n)
-        requires std::derived_from<Category, std::random_access_iterator_tag>
-    {
+    friend cpp20_iterator
+    operator+(cpp20_iterator i,
+              difference_type n) requires std::derived_from<Category, std::random_access_iterator_tag> {
         return cpp20_iterator(i.my_ptr + n);
     }
 
-    friend cpp20_iterator operator+(difference_type n, cpp20_iterator i)
-        requires std::derived_from<Category, std::random_access_iterator_tag>
-    {
+    friend cpp20_iterator
+    operator+(difference_type n,
+              cpp20_iterator i) requires std::derived_from<Category, std::random_access_iterator_tag> {
         return i + n;
     }
 
-    friend cpp20_iterator operator-(cpp20_iterator i, difference_type n)
-        requires std::derived_from<Category, std::random_access_iterator_tag>
-    {
+    friend cpp20_iterator
+    operator-(cpp20_iterator i,
+              difference_type n) requires std::derived_from<Category, std::random_access_iterator_tag> {
         return cpp20_iterator(i.my_ptr - n);
     }
 
     friend difference_type operator-(const cpp20_iterator& x, const cpp20_iterator& y) {
         return x.my_ptr - y.my_ptr;
     }
+
 private:
     T* my_ptr = nullptr;
-}; // class cpp20_iterator
-#endif // __TBB_CPP20_CONCEPTS_PRESENT
+};    // class cpp20_iterator
+#endif// __TBB_CPP20_CONCEPTS_PRESENT
 
 //! Test forward access iterator support
 //! \brief \ref error_guessing \ref interface
 TEST_CASE("Forward iterator support") {
-    for ( auto concurrency_level : utils::concurrency_range() ) {
+    for (auto concurrency_level : utils::concurrency_range()) {
         tbb::global_control control(tbb::global_control::max_allowed_parallelism, concurrency_level);
-        for(size_t depth = 0; depth <= depths_nubmer; ++depth) {
+        for (size_t depth = 0; depth <= depths_nubmer; ++depth) {
             g_tasks_expected = 0;
-            for (size_t i=0; i < depth; ++i)
-                g_tasks_expected += FindNumOfTasks(g_depths[i].value());
+            for (size_t i = 0; i < depth; ++i) g_tasks_expected += FindNumOfTasks(g_depths[i].value());
             TestIterator_Modifiable<utils::ForwardIterator<value_t>>(depth);
         }
     }
@@ -138,12 +131,11 @@ TEST_CASE("Forward iterator support") {
 //! Test random access iterator support
 //! \brief \ref error_guessing \ref interface
 TEST_CASE("Random access iterator support") {
-    for ( auto concurrency_level : utils::concurrency_range() ) {
+    for (auto concurrency_level : utils::concurrency_range()) {
         tbb::global_control control(tbb::global_control::max_allowed_parallelism, concurrency_level);
-        for(size_t depth = 0; depth <= depths_nubmer; ++depth) {
+        for (size_t depth = 0; depth <= depths_nubmer; ++depth) {
             g_tasks_expected = 0;
-            for (size_t i=0; i < depth; ++i)
-                g_tasks_expected += FindNumOfTasks(g_depths[i].value());
+            for (size_t i = 0; i < depth; ++i) g_tasks_expected += FindNumOfTasks(g_depths[i].value());
             TestIterator_Modifiable<value_t*>(depth);
         }
     }
@@ -152,40 +144,37 @@ TEST_CASE("Random access iterator support") {
 //! Test const random access iterator support
 //! \brief \ref error_guessing \ref interface
 TEST_CASE("Const random access iterator support") {
-    for ( auto concurrency_level : utils::concurrency_range() ) {
+    for (auto concurrency_level : utils::concurrency_range()) {
         tbb::global_control control(tbb::global_control::max_allowed_parallelism, concurrency_level);
-        for(size_t depth = 0; depth <= depths_nubmer; ++depth) {
+        for (size_t depth = 0; depth <= depths_nubmer; ++depth) {
             g_tasks_expected = 0;
-            for (size_t i=0; i < depth; ++i)
-                g_tasks_expected += FindNumOfTasks(g_depths[i].value());
+            for (size_t i = 0; i < depth; ++i) g_tasks_expected += FindNumOfTasks(g_depths[i].value());
             TestIterator_Const<utils::ConstRandomIterator<value_t>>(depth);
         }
     }
-
 }
 
 //! Test container based overload
 //! \brief \ref error_guessing \ref interface
 TEST_CASE("Container based overload - forward iterator based container") {
-    container_based_overload_test_case<utils::ForwardIterator>(/*expected_value*/1);
+    container_based_overload_test_case<utils::ForwardIterator>(/*expected_value*/ 1);
 }
 
 //! Test container based overload
 //! \brief \ref error_guessing \ref interface
 TEST_CASE("Container based overload - random access iterator based container") {
-    container_based_overload_test_case<utils::RandomIterator>(/*expected_value*/1);
+    container_based_overload_test_case<utils::RandomIterator>(/*expected_value*/ 1);
 }
 
 // Test for iterators over values convertible to work item type
 //! \brief \ref error_guessing \ref interface
 TEST_CASE("Using with values convertible to work item type") {
-    for ( auto concurrency_level : utils::concurrency_range() ) {
+    for (auto concurrency_level : utils::concurrency_range()) {
         tbb::global_control control(tbb::global_control::max_allowed_parallelism, concurrency_level);
         using Iterator = size_t*;
-        for(size_t depth = 0; depth <= depths_nubmer; ++depth) {
+        for (size_t depth = 0; depth <= depths_nubmer; ++depth) {
             g_tasks_expected = 0;
-            for (size_t i=0; i < depth; ++i)
-                g_tasks_expected += FindNumOfTasks(g_depths[i].value());
+            for (size_t i = 0; i < depth; ++i) g_tasks_expected += FindNumOfTasks(g_depths[i].value());
             // Test for iterators over values convertible to work item type
             TestIterator_Common<Iterator>(depth);
             TestBody<FakeTaskGeneratorBody_RvalueRefVersion, Iterator>(depth);
@@ -201,9 +190,7 @@ TEST_CASE("That all workers sleep when no work") {
     std::vector<std::size_t> vec(N, 0);
 
     tbb::parallel_for_each(vec.begin(), vec.end(), [&](std::size_t& in) {
-        for (int i = 0; i < 1000; ++i) {
-            ++in;
-        }
+        for (int i = 0; i < 1000; ++i) { ++in; }
     });
     TestCPUUserTime(utils::get_platform_max_threads());
 }
@@ -211,15 +198,16 @@ TEST_CASE("That all workers sleep when no work") {
 #if __TBB_CPP20_CONCEPTS_PRESENT
 
 template <typename Iterator, typename Body>
-concept can_call_parallel_for_each_with_iterator = requires( Iterator it, const Body& body, tbb::task_group_context ctx ) {
+concept can_call_parallel_for_each_with_iterator
+        = requires(Iterator it, const Body& body, tbb::task_group_context ctx) {
     tbb::parallel_for_each(it, it, body);
     tbb::parallel_for_each(it, it, body, ctx);
 };
 
 template <typename ContainerBasedSequence, typename Body>
-concept can_call_parallel_for_each_with_cbs = requires( ContainerBasedSequence cbs,
-                                                        const ContainerBasedSequence const_cbs,
-                                                        const Body& body, tbb::task_group_context ctx ) {
+concept can_call_parallel_for_each_with_cbs
+        = requires(ContainerBasedSequence cbs, const ContainerBasedSequence const_cbs, const Body& body,
+                   tbb::task_group_context ctx) {
     tbb::parallel_for_each(cbs, body);
     tbb::parallel_for_each(cbs, body, ctx);
     tbb::parallel_for_each(const_cbs, body);
@@ -229,18 +217,18 @@ concept can_call_parallel_for_each_with_cbs = requires( ContainerBasedSequence c
 using CorrectCBS = test_concepts::container_based_sequence::Correct;
 
 template <typename Body>
-concept can_call_parallel_for_each =
-    can_call_parallel_for_each_with_iterator<CorrectCBS::iterator, Body> &&
-    can_call_parallel_for_each_with_cbs<CorrectCBS, Body>;
+concept can_call_parallel_for_each = can_call_parallel_for_each_with_iterator<CorrectCBS::iterator, Body>&&
+        can_call_parallel_for_each_with_cbs<CorrectCBS, Body>;
 
 template <typename Iterator>
 using CorrectBody = test_concepts::parallel_for_each_body::Correct<decltype(*std::declval<Iterator>())>;
 
 void test_pfor_each_iterator_constraints() {
-    using CorrectIterator = typename std::vector<int>::iterator; // random_access_iterator
-    using IncorrectIterator = std::ostream_iterator<int>; // output_iterator
+    using CorrectIterator = typename std::vector<int>::iterator;// random_access_iterator
+    using IncorrectIterator = std::ostream_iterator<int>;       // output_iterator
     static_assert(can_call_parallel_for_each_with_iterator<CorrectIterator, CorrectBody<CorrectIterator>>);
-    static_assert(!can_call_parallel_for_each_with_iterator<IncorrectIterator, CorrectBody<IncorrectIterator>>);
+    static_assert(
+            !can_call_parallel_for_each_with_iterator<IncorrectIterator, CorrectBody<IncorrectIterator>>);
 }
 
 void test_pfor_each_container_based_sequence_constraints() {
@@ -291,13 +279,9 @@ void test_with_cpp20_iterator() {
     cpp20_iterator<no_copy_move, Category> begin(elements.data());
     cpp20_iterator<no_copy_move, Category> end(elements.data() + n);
 
-    oneapi::tbb::parallel_for_each(begin, end, [](no_copy_move& element) {
-        element.item = 42;
-    });
+    oneapi::tbb::parallel_for_each(begin, end, [](no_copy_move& element) { element.item = 42; });
 
-    for (std::size_t index = 0; index < n; ++index) {
-        CHECK(elements[index].item == 42);
-    }
+    for (std::size_t index = 0; index < n; ++index) { CHECK(elements[index].item == 42); }
 }
 
 //! \brief \ref error_guessing \ref regression
@@ -328,4 +312,4 @@ TEST_CASE("parallel_for_each with cpp20 iterator") {
     test_with_cpp20_iterator<std::random_access_iterator_tag>();
 }
 
-#endif // __TBB_CPP20_CONCEPTS_PRESENT
+#endif// __TBB_CPP20_CONCEPTS_PRESENT

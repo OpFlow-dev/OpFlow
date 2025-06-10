@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2023 by the OpFlow developers
+// Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -21,11 +21,10 @@
 
 OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     template <auto Functor, auto Name, typename... Args>
-    // Invokable check. Omit Args to mute this check
-        requires((sizeof...(Args) == 0) || std::invocable<Meta::RealType<decltype(Functor)>, Args...>)
-                // Name type check. Must be a valid constexpr string
-                && (CXprStringType<Meta::RealType<decltype(Name)>>)
-    struct NamedFunctor {
+            // Invokable check. Omit Args to mute this check
+            requires((sizeof...(Args) == 0) || std::invocable<Meta::RealType<decltype(Functor)>, Args...>)
+            // Name type check. Must be a valid constexpr string
+            && (CXprStringType<Meta::RealType<decltype(Name)>>) struct NamedFunctor {
         constexpr NamedFunctor() = default;
 
         constexpr static auto getFunc() { return _func; }

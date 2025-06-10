@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2023 by the OpFlow developers
+// Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -74,8 +74,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         }
 
         template <typename Other>
-            requires(internal::MeshTrait<Other>::dim == dim)
-        auto& operator=(const CartesianMeshView<Other>& view) {
+        requires(internal::MeshTrait<Other>::dim == dim) auto&
+        operator=(const CartesianMeshView<Other>& view) {
             _dims = view.getDims();
             _range = view.getRange();
             _ext_range = view.getExtRange();
