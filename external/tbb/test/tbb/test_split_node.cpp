@@ -18,18 +18,16 @@
 
 #include "tbb/flow_graph.h"
 
+#include "common/graph_utils.h"
 #include "common/test.h"
 #include "common/utils.h"
 #include "common/utils_assert.h"
-#include "common/graph_utils.h"
-
 
 //! \file test_split_node.cpp
 //! \brief Test for [flow_graph.split_node] specification
 
-
 #if defined(_MSC_VER) && _MSC_VER < 1600
-    #pragma warning (disable : 4503) //disabling the "decorated name length exceeded" warning for VS2008 and earlier
+#pragma warning(disable : 4503)//disabling the "decorated name length exceeded" warning for VS2008 and earlier
 #endif
 
 //
@@ -38,39 +36,39 @@
 
 const int Count = 300;
 const int MaxPorts = 10;
-const int MaxNInputs = 5; // max # of input_nodes to register for each split_node input in parallel test
+const int MaxNInputs = 5;// max # of input_nodes to register for each split_node input in parallel test
 
-std::vector<bool> flags;   // for checking output
+std::vector<bool> flags;// for checking output
 
-template<typename T>
+template <typename T>
 class name_of {
 public:
-    static const char* name() { return  "Unknown"; }
+    static const char *name() { return "Unknown"; }
 };
-template<>
+template <>
 class name_of<int> {
 public:
-    static const char* name() { return  "int"; }
+    static const char *name() { return "int"; }
 };
-template<>
+template <>
 class name_of<float> {
 public:
-    static const char* name() { return  "float"; }
+    static const char *name() { return "float"; }
 };
-template<>
+template <>
 class name_of<double> {
 public:
-    static const char* name() { return  "double"; }
+    static const char *name() { return "double"; }
 };
-template<>
+template <>
 class name_of<long> {
 public:
-    static const char* name() { return  "long"; }
+    static const char *name() { return "long"; }
 };
-template<>
+template <>
 class name_of<short> {
 public:
-    static const char* name() { return  "short"; }
+    static const char *name() { return "short"; }
 };
 
 // T must be arithmetic, and shouldn't wrap around for reasonable sizes of Count (which is now 150, and maxPorts is 10,
@@ -80,35 +78,36 @@ public:
 // to receive.  If there is only one input node, the series order will be maintained; if more than one,
 // this is not guaranteed.
 
-template<int N>
+template <int N>
 struct tuple_helper {
-    template<typename TupleType>
-    static void set_element( TupleType &t, int i) {
-        std::get<N-1>(t) = (typename std::tuple_element<N-1,TupleType>::type)(i * (N+1));
-        tuple_helper<N-1>::set_element(t, i);
+    template <typename TupleType>
+    static void set_element(TupleType &t, int i) {
+        std::get<N - 1>(t) = (typename std::tuple_element<N - 1, TupleType>::type)(i * (N + 1));
+        tuple_helper<N - 1>::set_element(t, i);
     }
 };
 
-template<>
+template <>
 struct tuple_helper<1> {
-    template<typename TupleType>
+    template <typename TupleType>
     static void set_element(TupleType &t, int i) {
-        std::get<0>(t) = (typename std::tuple_element<0,TupleType>::type)(i * 2);
+        std::get<0>(t) = (typename std::tuple_element<0, TupleType>::type)(i * 2);
     }
 };
 
 // if we start N input_bodys they will all have the addend N, and my_count should be initialized to 0 .. N-1.
 // the output tuples should have all the sequence, but the order will in general vary.
-template<typename TupleType>
+template <typename TupleType>
 class my_input_body {
     typedef TupleType TT;
     static const int N = std::tuple_size<TT>::value;
     int my_count;
     int addend;
+
 public:
-    my_input_body(int init_val, int addto) : my_count(init_val), addend(addto) { }
-    TT operator()( tbb::flow_control &fc) {
-        if(my_count >= Count){
+    my_input_body(int init_val, int addto) : my_count(init_val), addend(addto) {}
+    TT operator()(tbb::flow_control &fc) {
+        if (my_count >= Count) {
             fc.stop();
             return TT();
         }
@@ -121,10 +120,10 @@ public:
 
 // allocator for split_node.
 
-template<int N, typename SType>
+template <int N, typename SType>
 class makeSplit {
 public:
-    static SType *create(tbb::flow::graph& g) {
+    static SType *create(tbb::flow::graph &g) {
         SType *temp = new SType(g);
         return temp;
     }
@@ -133,90 +132,86 @@ public:
 
 // holder for sink_node pointers for eventual deletion
 
-static void* all_sink_nodes[MaxPorts];
+static void *all_sink_nodes[MaxPorts];
 
-
-template<int ELEM, typename SType>
+template <int ELEM, typename SType>
 class sink_node_helper {
 public:
     typedef typename SType::input_type TT;
-    typedef typename std::tuple_element<ELEM-1,TT>::type IT;
+    typedef typename std::tuple_element<ELEM - 1, TT>::type IT;
     typedef typename tbb::flow::queue_node<IT> my_sink_node_type;
     static void print_parallel_remark() {
-        sink_node_helper<ELEM-1,SType>::print_parallel_remark();
+        sink_node_helper<ELEM - 1, SType>::print_parallel_remark();
         INFO(", " << name_of<IT>::name());
     }
     static void print_serial_remark() {
-        sink_node_helper<ELEM-1,SType>::print_serial_remark();
+        sink_node_helper<ELEM - 1, SType>::print_serial_remark();
         INFO(", " << name_of<IT>::name());
     }
     static void add_sink_nodes(SType &my_split, tbb::flow::graph &g) {
         my_sink_node_type *new_node = new my_sink_node_type(g);
-        tbb::flow::make_edge( tbb::flow::output_port<ELEM-1>(my_split) , *new_node);
-        all_sink_nodes[ELEM-1] = (void *)new_node;
-        sink_node_helper<ELEM-1, SType>::add_sink_nodes(my_split, g);
+        tbb::flow::make_edge(tbb::flow::output_port<ELEM - 1>(my_split), *new_node);
+        all_sink_nodes[ELEM - 1] = (void *) new_node;
+        sink_node_helper<ELEM - 1, SType>::add_sink_nodes(my_split, g);
     }
 
     static void check_sink_values() {
-        my_sink_node_type *dp = reinterpret_cast<my_sink_node_type *>(all_sink_nodes[ELEM-1]);
-        for(int i = 0; i < Count; ++i) {
-            IT v{};
+        my_sink_node_type *dp = reinterpret_cast<my_sink_node_type *>(all_sink_nodes[ELEM - 1]);
+        for (int i = 0; i < Count; ++i) {
+            IT v {};
             CHECK_MESSAGE(dp->try_get(v), "");
-            flags[((int)v) / (ELEM+1)] = true;
+            flags[((int) v) / (ELEM + 1)] = true;
         }
-        for(int i = 0; i < Count; ++i) {
+        for (int i = 0; i < Count; ++i) {
             CHECK_MESSAGE(flags[i], "");
-            flags[i] = false;  // reset for next test
+            flags[i] = false;// reset for next test
         }
-        sink_node_helper<ELEM-1,SType>::check_sink_values();
+        sink_node_helper<ELEM - 1, SType>::check_sink_values();
     }
-    static void remove_sink_nodes(SType& my_split) {
-        my_sink_node_type *dp = reinterpret_cast<my_sink_node_type *>(all_sink_nodes[ELEM-1]);
-        tbb::flow::remove_edge( tbb::flow::output_port<ELEM-1>(my_split) , *dp);
+    static void remove_sink_nodes(SType &my_split) {
+        my_sink_node_type *dp = reinterpret_cast<my_sink_node_type *>(all_sink_nodes[ELEM - 1]);
+        tbb::flow::remove_edge(tbb::flow::output_port<ELEM - 1>(my_split), *dp);
         delete dp;
-        sink_node_helper<ELEM-1, SType>::remove_sink_nodes(my_split);
+        sink_node_helper<ELEM - 1, SType>::remove_sink_nodes(my_split);
     }
 };
 
-template<typename SType>
+template <typename SType>
 class sink_node_helper<1, SType> {
     typedef typename SType::input_type TT;
-    typedef typename std::tuple_element<0,TT>::type IT;
+    typedef typename std::tuple_element<0, TT>::type IT;
     typedef typename tbb::flow::queue_node<IT> my_sink_node_type;
+
 public:
-    static void print_parallel_remark() {
-        INFO("Parallel test of split_node< " << name_of<IT>::name());
-    }
-    static void print_serial_remark() {
-        INFO("Serial test of split_node< " << name_of<IT>::name());
-    }
+    static void print_parallel_remark() { INFO("Parallel test of split_node< " << name_of<IT>::name()); }
+    static void print_serial_remark() { INFO("Serial test of split_node< " << name_of<IT>::name()); }
     static void add_sink_nodes(SType &my_split, tbb::flow::graph &g) {
         my_sink_node_type *new_node = new my_sink_node_type(g);
-        tbb::flow::make_edge( tbb::flow::output_port<0>(my_split) , *new_node);
-        all_sink_nodes[0] = (void *)new_node;
+        tbb::flow::make_edge(tbb::flow::output_port<0>(my_split), *new_node);
+        all_sink_nodes[0] = (void *) new_node;
     }
     static void check_sink_values() {
         my_sink_node_type *dp = reinterpret_cast<my_sink_node_type *>(all_sink_nodes[0]);
-        for(int i = 0; i < Count; ++i) {
-            IT v{};
+        for (int i = 0; i < Count; ++i) {
+            IT v {};
             CHECK_MESSAGE(dp->try_get(v), "");
-            flags[((int)v) / 2] = true;
+            flags[((int) v) / 2] = true;
         }
-        for(int i = 0; i < Count; ++i) {
+        for (int i = 0; i < Count; ++i) {
             CHECK_MESSAGE(flags[i], "");
-            flags[i] = false;  // reset for next test
+            flags[i] = false;// reset for next test
         }
     }
-    static void remove_sink_nodes(SType& my_split) {
+    static void remove_sink_nodes(SType &my_split) {
         my_sink_node_type *dp = reinterpret_cast<my_sink_node_type *>(all_sink_nodes[0]);
-        tbb::flow::remove_edge( tbb::flow::output_port<0>(my_split) , *dp);
+        tbb::flow::remove_edge(tbb::flow::output_port<0>(my_split), *dp);
         delete dp;
     }
 };
 
 // parallel_test: create input_nodes that feed tuples into the split node
 //    and queue_nodes that receive the output.
-template<typename SType>
+template <typename SType>
 class parallel_test {
 public:
     typedef typename SType::input_type TType;
@@ -224,25 +219,23 @@ public:
     static const int N = std::tuple_size<TType>::value;
 
     static void test() {
-        input_type* all_input_nodes[MaxNInputs];
-        sink_node_helper<N,SType>::print_parallel_remark();
+        input_type *all_input_nodes[MaxNInputs];
+        sink_node_helper<N, SType>::print_parallel_remark();
         INFO(" >\n");
-        for(int i=0; i < MaxPorts; ++i) {
-            all_sink_nodes[i] = nullptr;
-        }
+        for (int i = 0; i < MaxPorts; ++i) { all_sink_nodes[i] = nullptr; }
         // try test for # inputs 1 .. MaxNInputs
-        for(int nInputs = 1; nInputs <= MaxNInputs; ++nInputs) {
+        for (int nInputs = 1; nInputs <= MaxNInputs; ++nInputs) {
             tbb::flow::graph g;
-            SType* my_split = makeSplit<N,SType>::create(g);
+            SType *my_split = makeSplit<N, SType>::create(g);
 
             // add sinks first so when inputs start spitting out values they are there to catch them
             sink_node_helper<N, SType>::add_sink_nodes((*my_split), g);
 
             // now create nInputs input_nodes, each spitting out i, i+nInputs, i+2*nInputs ...
             // each element of the tuple is i*(n+1), where n is the tuple element index (1-N)
-            for(int i = 0; i < nInputs; ++i) {
+            for (int i = 0; i < nInputs; ++i) {
                 // create input node
-                input_type *s = new input_type(g, my_input_body<TType>(i, nInputs) );
+                input_type *s = new input_type(g, my_input_body<TType>(i, nInputs));
                 tbb::flow::make_edge(*s, *my_split);
                 all_input_nodes[i] = s;
                 s->activate();
@@ -255,10 +248,8 @@ public:
             sink_node_helper<N, SType>::check_sink_values();
 
             sink_node_helper<N, SType>::remove_sink_nodes(*my_split);
-            for(int i = 0; i < nInputs; ++i) {
-                delete all_input_nodes[i];
-            }
-            makeSplit<N,SType>::destroy(my_split);
+            for (int i = 0; i < nInputs; ++i) { delete all_input_nodes[i]; }
+            makeSplit<N, SType>::destroy(my_split);
         }
     }
 };
@@ -266,19 +257,19 @@ public:
 //
 // Single predecessor, single accepting successor at each port
 
-template<typename SType>
-void test_one_serial( SType &my_split, tbb::flow::graph &g) {
+template <typename SType>
+void test_one_serial(SType &my_split, tbb::flow::graph &g) {
     typedef typename SType::input_type TType;
     static const int TUPLE_SIZE = std::tuple_size<TType>::value;
-    sink_node_helper<TUPLE_SIZE, SType>::add_sink_nodes(my_split,g);
+    sink_node_helper<TUPLE_SIZE, SType>::add_sink_nodes(my_split, g);
     typedef TType q3_input_type;
-    tbb::flow::queue_node< q3_input_type >  q3(g);
+    tbb::flow::queue_node<q3_input_type> q3(g);
 
-    tbb::flow::make_edge( q3, my_split );
+    tbb::flow::make_edge(q3, my_split);
 
     // fill the  queue with its value one-at-a-time
     flags.clear();
-    for (int i = 0; i < Count; ++i ) {
+    for (int i = 0; i < Count; ++i) {
         TType v;
         tuple_helper<TUPLE_SIZE>::set_element(v, i);
         CHECK_MESSAGE(my_split.try_put(v), "");
@@ -287,10 +278,9 @@ void test_one_serial( SType &my_split, tbb::flow::graph &g) {
 
     g.wait_for_all();
 
-    sink_node_helper<TUPLE_SIZE,SType>::check_sink_values();
+    sink_node_helper<TUPLE_SIZE, SType>::check_sink_values();
 
     sink_node_helper<TUPLE_SIZE, SType>::remove_sink_nodes(my_split);
-
 }
 
 #if __TBB_PREVIEW_FLOW_GRAPH_NODE_SET
@@ -300,16 +290,25 @@ void test_follows_and_precedes_api() {
 
     graph g;
 
-    function_node<msg_t, msg_t> f1(g, unlimited, [](msg_t msg) { return msg; } );
+    function_node<msg_t, msg_t> f1(g, unlimited, [](msg_t msg) { return msg; });
     auto f2(f1);
     auto f3(f1);
 
     std::atomic<int> body_calls;
     body_calls = 0;
 
-    function_node<int, int> f4(g, unlimited, [&](int val) { ++body_calls; return val; } );
-    function_node<float, float> f5(g, unlimited, [&](float val) { ++body_calls; return val; } );
-    function_node<double, double> f6(g, unlimited, [&](double val) { ++body_calls; return val; } );
+    function_node<int, int> f4(g, unlimited, [&](int val) {
+        ++body_calls;
+        return val;
+    });
+    function_node<float, float> f5(g, unlimited, [&](float val) {
+        ++body_calls;
+        return val;
+    });
+    function_node<double, double> f6(g, unlimited, [&](double val) {
+        ++body_calls;
+        return val;
+    });
 
     split_node<msg_t> following_node(follows(f1, f2, f3));
     make_edge(output_port<0>(following_node), f4);
@@ -329,47 +328,45 @@ void test_follows_and_precedes_api() {
     g.wait_for_all();
 
     // <number of try puts> * <number of splits by a input node> * <number of input nodes>
-    CHECK_MESSAGE( ((body_calls == 3*3*2)), "Not exact edge quantity was made");
+    CHECK_MESSAGE(((body_calls == 3 * 3 * 2)), "Not exact edge quantity was made");
 }
-#endif // __TBB_PREVIEW_FLOW_GRAPH_NODE_SET
+#endif// __TBB_PREVIEW_FLOW_GRAPH_NODE_SET
 
-template<typename SType>
+template <typename SType>
 class serial_test {
     typedef typename SType::input_type TType;
     static const int TUPLE_SIZE = std::tuple_size<TType>::value;
     static const int ELEMS = 3;
+
 public:
-static void test() {
-    tbb::flow::graph g;
-    flags.reserve(Count);
-    SType* my_split = makeSplit<TUPLE_SIZE,SType>::create(g);
-    sink_node_helper<TUPLE_SIZE, SType>::print_serial_remark(); INFO(" >\n");
+    static void test() {
+        tbb::flow::graph g;
+        flags.reserve(Count);
+        SType *my_split = makeSplit<TUPLE_SIZE, SType>::create(g);
+        sink_node_helper<TUPLE_SIZE, SType>::print_serial_remark();
+        INFO(" >\n");
 
-    test_output_ports_return_ref(*my_split);
+        test_output_ports_return_ref(*my_split);
 
-    test_one_serial<SType>(*my_split, g);
-    // build the vector with copy construction from the used split node.
-    std::vector<SType>split_vector(ELEMS, *my_split);
-    // destroy the tired old split_node in case we're accidentally reusing pieces of it.
-    makeSplit<TUPLE_SIZE,SType>::destroy(my_split);
+        test_one_serial<SType>(*my_split, g);
+        // build the vector with copy construction from the used split node.
+        std::vector<SType> split_vector(ELEMS, *my_split);
+        // destroy the tired old split_node in case we're accidentally reusing pieces of it.
+        makeSplit<TUPLE_SIZE, SType>::destroy(my_split);
 
-
-    for(int e = 0; e < ELEMS; ++e) {  // exercise each of the vector elements
-        test_one_serial<SType>(split_vector[e], g);
+        for (int e = 0; e < ELEMS; ++e) {// exercise each of the vector elements
+            test_one_serial<SType>(split_vector[e], g);
+        }
     }
-}
 
-}; // serial_test
+};// serial_test
 
-template<
-      template<typename> class TestType,  // serial_test or parallel_test
-      typename TupleType >                               // type of the input of the split
+template <template <typename> class TestType,// serial_test or parallel_test
+          typename TupleType>                // type of the input of the split
 struct generate_test {
     typedef tbb::flow::split_node<TupleType> split_node_type;
-    static void do_test() {
-        TestType<split_node_type>::test();
-    }
-}; // generate_test
+    static void do_test() { TestType<split_node_type>::test(); }
+};// generate_test
 
 #if __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
 
@@ -418,31 +415,25 @@ void test_try_put_and_wait() {
         using tuple_type = std::tuple<int, int>;
         tbb::flow::split_node<tuple_type> split(g);
 
-        tbb::flow::function_node<int, int> function1(g, tbb::flow::unlimited,
-            [&](int input) noexcept {
-                if (input == wait_message) {
-                    for (int item : new_work_items) {
-                        split.try_put(tuple_type{item, item});
-                    }
-                }
-                processed_items1.emplace_back(input);
-                return 0;
-            });
+        tbb::flow::function_node<int, int> function1(g, tbb::flow::unlimited, [&](int input) noexcept {
+            if (input == wait_message) {
+                for (int item : new_work_items) { split.try_put(tuple_type {item, item}); }
+            }
+            processed_items1.emplace_back(input);
+            return 0;
+        });
 
-        tbb::flow::function_node<int, int> function2(g, tbb::flow::unlimited,
-            [&](int input) noexcept {
-                processed_items2.emplace_back(input);
-                return 0;
-            });
+        tbb::flow::function_node<int, int> function2(g, tbb::flow::unlimited, [&](int input) noexcept {
+            processed_items2.emplace_back(input);
+            return 0;
+        });
 
         tbb::flow::make_edge(tbb::flow::output_port<0>(split), function1);
         tbb::flow::make_edge(tbb::flow::output_port<1>(split), function2);
 
-        for (int i = 0; i < wait_message; ++i) {
-            split.try_put(tuple_type{i, i});
-        }
+        for (int i = 0; i < wait_message; ++i) { split.try_put(tuple_type {i, i}); }
 
-        split.try_put_and_wait(tuple_type{wait_message, wait_message});
+        split.try_put_and_wait(tuple_type {wait_message, wait_message});
 
         std::size_t check_index1 = 0;
         std::size_t check_index2 = 0;
@@ -458,8 +449,10 @@ void test_try_put_and_wait() {
         CHECK_MESSAGE(processed_items1[check_index1++] == wait_message, "Unexpected items processing");
 
         for (std::size_t i = new_work_items.size(); i != 0; --i) {
-            CHECK_MESSAGE(processed_items1[check_index1++] == new_work_items[i - 1], "Unexpected items processing");
-            CHECK_MESSAGE(processed_items2[check_index2++] == new_work_items[i - 1], "Unexpected items processing");
+            CHECK_MESSAGE(processed_items1[check_index1++] == new_work_items[i - 1],
+                          "Unexpected items processing");
+            CHECK_MESSAGE(processed_items2[check_index2++] == new_work_items[i - 1],
+                          "Unexpected items processing");
         }
 
         CHECK_MESSAGE(processed_items2[check_index2++] == wait_message, "Unexpected items processing");
@@ -467,42 +460,47 @@ void test_try_put_and_wait() {
         g.wait_for_all();
 
         for (std::size_t i = start_work_items.size(); i != 0; --i) {
-            CHECK_MESSAGE(processed_items1[check_index1++] == start_work_items[i - 1], "Unexpected items processing");
-            CHECK_MESSAGE(processed_items2[check_index2++] == start_work_items[i - 1], "Unexpected items processing");
+            CHECK_MESSAGE(processed_items1[check_index1++] == start_work_items[i - 1],
+                          "Unexpected items processing");
+            CHECK_MESSAGE(processed_items2[check_index2++] == start_work_items[i - 1],
+                          "Unexpected items processing");
         }
     });
 }
-#endif // __TBB_PREVIEW_FLOW_GRAPH_TRY_PUT_AND_WAIT
+#endif// __TBB_PREVIEW_FLOW_GRAPH_TRY_PUT_AND_WAIT
 
 //! Test output ports and message passing with different input tuples
 //! \brief \ref requirement \ref error_guessing
-TEST_CASE("Tuple tests"){
+TEST_CASE("Tuple tests") {
     for (int p = 0; p < 2; ++p) {
-        generate_test<serial_test, std::tuple<float, double> >::do_test();
+        generate_test<serial_test, std::tuple<float, double>>::do_test();
 #if MAX_TUPLE_TEST_SIZE >= 4
-        generate_test<serial_test, std::tuple<float, double, int, long> >::do_test();
+        generate_test<serial_test, std::tuple<float, double, int, long>>::do_test();
 #endif
 #if MAX_TUPLE_TEST_SIZE >= 6
-        generate_test<serial_test, std::tuple<double, double, int, long, int, short> >::do_test();
+        generate_test<serial_test, std::tuple<double, double, int, long, int, short>>::do_test();
 #endif
 #if MAX_TUPLE_TEST_SIZE >= 8
-        generate_test<serial_test, std::tuple<float, double, double, double, float, int, float, long> >::do_test();
+        generate_test<serial_test,
+                      std::tuple<float, double, double, double, float, int, float, long>>::do_test();
 #endif
 #if MAX_TUPLE_TEST_SIZE >= 10
-        generate_test<serial_test, std::tuple<float, double, int, double, double, float, long, int, float, long> >::do_test();
+        generate_test<serial_test, std::tuple<float, double, int, double, double, float, long, int, float,
+                                              long>>::do_test();
 #endif
-        generate_test<parallel_test, std::tuple<float, double> >::do_test();
+        generate_test<parallel_test, std::tuple<float, double>>::do_test();
 #if MAX_TUPLE_TEST_SIZE >= 3
-        generate_test<parallel_test, std::tuple<float, int, long> >::do_test();
+        generate_test<parallel_test, std::tuple<float, int, long>>::do_test();
 #endif
 #if MAX_TUPLE_TEST_SIZE >= 5
-        generate_test<parallel_test, std::tuple<double, double, int, int, short> >::do_test();
+        generate_test<parallel_test, std::tuple<double, double, int, int, short>>::do_test();
 #endif
 #if MAX_TUPLE_TEST_SIZE >= 7
-        generate_test<parallel_test, std::tuple<float, int, double, float, long, float, long> >::do_test();
+        generate_test<parallel_test, std::tuple<float, int, double, float, long, float, long>>::do_test();
 #endif
 #if MAX_TUPLE_TEST_SIZE >= 9
-        generate_test<parallel_test, std::tuple<float, double, int, double, double, long, int, float, long> >::do_test();
+        generate_test<parallel_test,
+                      std::tuple<float, double, int, double, double, long, int, float, long>>::do_test();
 #endif
     }
 }
@@ -510,22 +508,16 @@ TEST_CASE("Tuple tests"){
 #if __TBB_PREVIEW_FLOW_GRAPH_NODE_SET
 //! Test decution guides
 //! \brief \ref requirement
-TEST_CASE("Test follows and precedes API"){
-    test_follows_and_precedes_api();
-}
+TEST_CASE("Test follows and precedes API") { test_follows_and_precedes_api(); }
 #endif
 
 #if __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
 //! Test decution guides
 //! \brief \ref requirement
-TEST_CASE("Deduction guides"){
-    test_deduction_guides();
-}
+TEST_CASE("Deduction guides") { test_deduction_guides(); }
 #endif
 
 #if __TBB_PREVIEW_FLOW_GRAPH_TRY_PUT_AND_WAIT
 //! \brief \ref error_guessing
-TEST_CASE("test split_node try_put_and_wait") {
-    test_try_put_and_wait();
-}
+TEST_CASE("test split_node try_put_and_wait") { test_try_put_and_wait(); }
 #endif

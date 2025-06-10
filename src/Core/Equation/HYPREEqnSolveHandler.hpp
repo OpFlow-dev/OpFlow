@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2023 by the OpFlow developers
+// Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -42,7 +42,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     struct HYPREEqnSolveHandler;
 
     template <typename F, typename T, typename S>
-    std::unique_ptr<EqnSolveHandler> makeEqnSolveHandler(F&& f, T&& t, S&& s) {
+    std::unique_ptr<EqnSolveHandler> makeEqnSolveHandler(F && f, T && t, S && s) {
         return std::make_unique<HYPREEqnSolveHandler<F, Meta::RealType<T>, Meta::RealType<S>>>(
                 OP_PERFECT_FOWD(f), OP_PERFECT_FOWD(t), OP_PERFECT_FOWD(s));
     }

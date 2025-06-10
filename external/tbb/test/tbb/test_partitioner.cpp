@@ -16,157 +16,143 @@
 
 #include "common/test.h"
 
+#include "oneapi/tbb/mutex.h"
+#include "tbb/global_control.h"
 #include "tbb/parallel_for.h"
 #include "tbb/task_arena.h"
 #include "tbb/task_scheduler_observer.h"
-#include "tbb/global_control.h"
-#include "oneapi/tbb/mutex.h"
 
-#include "common/utils.h"
-#include "common/utils_concurrency_limit.h"
 #include "common/dummy_body.h"
 #include "common/spin_barrier.h"
+#include "common/utils.h"
+#include "common/utils_concurrency_limit.h"
 
+#include <algorithm>// std::min_element
 #include <cstddef>
 #include <utility>
 #include <vector>
-#include <algorithm> // std::min_element
 
 //! \file test_partitioner.cpp
 //! \brief Test for [internal] functionality
 
 namespace task_affinity_retention {
 
-class leaving_observer : public tbb::task_scheduler_observer {
-    std::atomic<int> my_thread_count{};
-public:
-    leaving_observer(tbb::task_arena& a) : tbb::task_scheduler_observer(a) {
-        observe(true);
-    }
+    class leaving_observer : public tbb::task_scheduler_observer {
+        std::atomic<int> my_thread_count {};
 
-    void on_scheduler_entry(bool) override {
-        ++my_thread_count;
-    }
+    public:
+        leaving_observer(tbb::task_arena& a) : tbb::task_scheduler_observer(a) { observe(true); }
 
-    void on_scheduler_exit(bool) override {
-        --my_thread_count;
-    }
+        void on_scheduler_entry(bool) override { ++my_thread_count; }
 
-    void wait_leave() {
-        while (my_thread_count.load() != 0) {
-            std::this_thread::yield();
+        void on_scheduler_exit(bool) override { --my_thread_count; }
+
+        void wait_leave() {
+            while (my_thread_count.load() != 0) { std::this_thread::yield(); }
         }
-    }
-};
+    };
 
-template <typename PerBodyFunc> float test(PerBodyFunc&& body) {
-    const std::size_t num_threads = 2 * utils::get_platform_max_threads();
-    tbb::global_control concurrency(tbb::global_control::max_allowed_parallelism, num_threads);
-    tbb::task_arena big_arena(static_cast<int>(num_threads));
-    leaving_observer observer(big_arena);
+    template <typename PerBodyFunc>
+    float test(PerBodyFunc&& body) {
+        const std::size_t num_threads = 2 * utils::get_platform_max_threads();
+        tbb::global_control concurrency(tbb::global_control::max_allowed_parallelism, num_threads);
+        tbb::task_arena big_arena(static_cast<int>(num_threads));
+        leaving_observer observer(big_arena);
 
 #if __TBB_USE_THREAD_SANITIZER
-    // Reduce execution time under Thread Sanitizer
-    const std::size_t repeats = 50;
+        // Reduce execution time under Thread Sanitizer
+        const std::size_t repeats = 50;
 #elif EMSCRIPTEN
-    // Reduce execution time for emscripten
-    const std::size_t repeats = 10;
+        // Reduce execution time for emscripten
+        const std::size_t repeats = 10;
 #else
-    const std::size_t repeats = 100;
+        const std::size_t repeats = 100;
 #endif
-    const std::size_t per_thread_iters = 1000;
+        const std::size_t per_thread_iters = 1000;
 
-    using range = std::pair<std::size_t, std::size_t>;
-    using execution_trace = std::vector< std::vector<range> >;
+        using range = std::pair<std::size_t, std::size_t>;
+        using execution_trace = std::vector<std::vector<range>>;
 
-    execution_trace trace(num_threads);
-    for (auto& v : trace)
-        v.reserve(repeats);
+        execution_trace trace(num_threads);
+        for (auto& v : trace) v.reserve(repeats);
 
-    for (std::size_t repeat = 0; repeat < repeats; ++repeat) {
-        big_arena.execute([&] {
-            tbb::parallel_for(
-                tbb::blocked_range<std::size_t>(0, per_thread_iters * num_threads),
-                [&](const tbb::blocked_range<std::size_t>& r) {
-                    int thread_id = tbb::this_task_arena::current_thread_index();
-                    trace[thread_id].emplace_back(r.begin(), r.end());
+        for (std::size_t repeat = 0; repeat < repeats; ++repeat) {
+            big_arena.execute([&] {
+                tbb::parallel_for(
+                        tbb::blocked_range<std::size_t>(0, per_thread_iters * num_threads),
+                        [&](const tbb::blocked_range<std::size_t>& r) {
+                            int thread_id = tbb::this_task_arena::current_thread_index();
+                            trace[thread_id].emplace_back(r.begin(), r.end());
 
-                    const bool is_uniform_split = r.size() == per_thread_iters;
-                    CHECK_MESSAGE(is_uniform_split, "static partitioner split the range incorrectly.");
+                            const bool is_uniform_split = r.size() == per_thread_iters;
+                            CHECK_MESSAGE(is_uniform_split,
+                                          "static partitioner split the range incorrectly.");
 
-                    std::this_thread::yield();
+                            std::this_thread::yield();
 
-                    std::forward<PerBodyFunc>(body)();
-                },
-                tbb::static_partitioner()
-            );
-        });
-        // To avoid tasks stealing in the beginning of the parallel algorithm, the test waits for
-        // the threads to leave the arena, so that on the next iteration they have tasks assigned
-        // in their mailboxes and, thus, don't need to search for work to do in other task pools.
-        observer.wait_leave();
-    }
+                            std::forward<PerBodyFunc>(body)();
+                        },
+                        tbb::static_partitioner());
+            });
+            // To avoid tasks stealing in the beginning of the parallel algorithm, the test waits for
+            // the threads to leave the arena, so that on the next iteration they have tasks assigned
+            // in their mailboxes and, thus, don't need to search for work to do in other task pools.
+            observer.wait_leave();
+        }
 
-    std::size_t range_shifts = 0;
-    for (std::size_t thread_id = 0; thread_id < num_threads; ++thread_id) {
-        auto trace_size = trace[thread_id].size();
-        if (trace_size > 1) {
-            auto previous_call_range = trace[thread_id][1];
+        std::size_t range_shifts = 0;
+        for (std::size_t thread_id = 0; thread_id < num_threads; ++thread_id) {
+            auto trace_size = trace[thread_id].size();
+            if (trace_size > 1) {
+                auto previous_call_range = trace[thread_id][1];
 
-            for (std::size_t invocation = 2; invocation < trace_size; ++invocation) {
-                const auto& current_call_range = trace[thread_id][invocation];
+                for (std::size_t invocation = 2; invocation < trace_size; ++invocation) {
+                    const auto& current_call_range = trace[thread_id][invocation];
 
-                const bool is_range_changed = previous_call_range != current_call_range;
-                if (is_range_changed) {
-                    previous_call_range = current_call_range;
-                    // count thread changes its execution strategy
-                    ++range_shifts;
+                    const bool is_range_changed = previous_call_range != current_call_range;
+                    if (is_range_changed) {
+                        previous_call_range = current_call_range;
+                        // count thread changes its execution strategy
+                        ++range_shifts;
+                    }
                 }
             }
+
+#if TBB_USE_DEBUG
+            WARN_MESSAGE(trace_size <= repeats, "Thread " << thread_id << " executed extra "
+                                                          << trace_size - repeats
+                                                          << " ranges assigned to other threads.");
+            WARN_MESSAGE(trace_size >= repeats, "Thread " << thread_id << " executed " << repeats - trace_size
+                                                          << " fewer ranges than expected.");
+#endif
         }
 
 #if TBB_USE_DEBUG
-        WARN_MESSAGE(
-            trace_size <= repeats,
-            "Thread " << thread_id << " executed extra " << trace_size - repeats
-            << " ranges assigned to other threads."
-        );
-        WARN_MESSAGE(
-            trace_size >= repeats,
-            "Thread " << thread_id << " executed " << repeats - trace_size
-            << " fewer ranges than expected."
-        );
+        WARN_MESSAGE(range_shifts == 0, "Threads change subranges " << range_shifts << " times out of "
+                                                                    << num_threads * repeats - num_threads
+                                                                    << " possible.");
 #endif
+
+        return float(range_shifts) / float(repeats * num_threads);
     }
 
-#if TBB_USE_DEBUG
-    WARN_MESSAGE(
-        range_shifts == 0,
-        "Threads change subranges " << range_shifts << " times out of "
-        << num_threads * repeats - num_threads << " possible."
-    );
-#endif
+    void relaxed_test() {
+        float range_shifts_part = test(/*per body invocation call*/ [] {});
+        const float require_tolerance = 0.5f;
+        // TODO: investigate why switching could happen in more than half of the cases
+        WARN_MESSAGE((0 <= range_shifts_part && range_shifts_part <= require_tolerance),
+                     "Tasks affinitization was not respected in " << range_shifts_part * 100
+                                                                  << "% of the cases.");
+    }
 
-    return float(range_shifts) / float(repeats * num_threads);
-}
+    void strict_test() {
+        utils::SpinBarrier barrier(2 * utils::get_platform_max_threads());
+        const float tolerance = 1e-5f;
+        while (test(/*per body invocation call*/ [&barrier] { barrier.wait(); }) > tolerance)
+            ;
+    }
 
-void relaxed_test() {
-    float range_shifts_part = test(/*per body invocation call*/[]{});
-    const float require_tolerance = 0.5f;
-    // TODO: investigate why switching could happen in more than half of the cases
-    WARN_MESSAGE(
-        (0 <= range_shifts_part && range_shifts_part <= require_tolerance),
-        "Tasks affinitization was not respected in " << range_shifts_part * 100 << "% of the cases."
-    );
-}
-
-void strict_test() {
-    utils::SpinBarrier barrier(2 * utils::get_platform_max_threads());
-    const float tolerance = 1e-5f;
-    while (test(/*per body invocation call*/[&barrier] { barrier.wait(); }) > tolerance);
-}
-
-} // namespace task_affinity_retention
+}// namespace task_affinity_retention
 
 // global_control::max_allowed_parallelism functionality is not covered by TCM
 #if !__TBB_TCM_TESTING_ENABLED
@@ -186,19 +172,20 @@ void test_custom_range(int diff_mult) {
     oneapi::tbb::mutex results_mutex;
 
     for (int i = 0; i < num_trials; ++i) {
-        oneapi::tbb::parallel_for(Range(0, int(100 * utils::get_platform_max_threads()), 1), [&] (const Range& r) {
-            oneapi::tbb::mutex::scoped_lock lock(results_mutex);
-            results[i].push_back(r.size());
-        }, oneapi::tbb::static_partitioner{});
+        oneapi::tbb::parallel_for(
+                Range(0, int(100 * utils::get_platform_max_threads()), 1),
+                [&](const Range& r) {
+                    oneapi::tbb::mutex::scoped_lock lock(results_mutex);
+                    results[i].push_back(r.size());
+                },
+                oneapi::tbb::static_partitioner {});
     }
 
     for (auto& res : results) {
         REQUIRE(res.size() == utils::get_platform_max_threads());
 
         std::size_t min_size = *std::min_element(res.begin(), res.end());
-        for (auto elem : res) {
-            REQUIRE(min_size * diff_mult + 2 >= elem);
-        }
+        for (auto elem : res) { REQUIRE(min_size * diff_mult + 2 >= elem); }
     }
 }
 
@@ -206,6 +193,7 @@ void test_custom_range(int diff_mult) {
 TEST_CASE("Test partitioned tasks count and size for static_partitioner") {
     class custom_range : public oneapi::tbb::blocked_range<int> {
         using base_type = oneapi::tbb::blocked_range<int>;
+
     public:
         custom_range(int l, int r, int g) : base_type(l, r, g) {}
         custom_range(const custom_range& r) : base_type(r) {}
@@ -217,6 +205,7 @@ TEST_CASE("Test partitioned tasks count and size for static_partitioner") {
 
     class custom_range_with_psplit : public oneapi::tbb::blocked_range<int> {
         using base_type = oneapi::tbb::blocked_range<int>;
+
     public:
         custom_range_with_psplit(int l, int r, int g) : base_type(l, r, g) {}
         custom_range_with_psplit(const custom_range_with_psplit& r) : base_type(r) {}

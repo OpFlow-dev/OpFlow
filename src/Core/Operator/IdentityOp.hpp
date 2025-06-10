@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2023 by the OpFlow developers
+//  Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -25,8 +25,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         constexpr static auto bc_width = 0;
 
         template <typename E>
-            requires FieldExprType<E> || ScalarExprType<E>
-        OPFLOW_STRONG_INLINE static auto eval(const E& e, auto&& i) {
+                requires FieldExprType<E> || ScalarExprType<E> OPFLOW_STRONG_INLINE static auto eval(const E& e, auto&& i) {
             return e.evalAt(OP_PERFECT_FOWD(i));
         }
 

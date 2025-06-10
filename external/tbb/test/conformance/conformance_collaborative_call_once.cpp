@@ -15,26 +15,26 @@
 */
 
 #if _MSC_VER && !defined(__INTEL_COMPILER)
-    // unreachable code
-    #pragma warning( push )
-    #pragma warning( disable: 4702 )
+// unreachable code
+#pragma warning(push)
+#pragma warning(disable : 4702)
 #endif
 
 #if __INTEL_COMPILER && _MSC_VER
-#pragma warning(disable : 2586) // decorated name length exceeded, name was truncated
+#pragma warning(disable : 2586)// decorated name length exceeded, name was truncated
 #endif
 
 #include "common/test.h"
 #include "oneapi/tbb/collaborative_call_once.h"
 
+#include "common/spin_barrier.h"
 #include "common/utils.h"
 #include "common/utils_concurrency_limit.h"
-#include "common/spin_barrier.h"
 #include "oneapi/tbb/parallel_for.h"
 #include "oneapi/tbb/task_group.h"
 
-#include <type_traits>
 #include <exception>
+#include <type_traits>
 
 //! \file conformance_collaborative_call_once.cpp
 //! \brief Test for [algorithms.collaborative_call_once] specification
@@ -42,16 +42,16 @@
 //! Test for collaborative_once_flag member functions to be matched with spec
 //! \brief \ref interface \ref requirement
 TEST_CASE("collaborative_once_flag member functions match") {
-    REQUIRE_MESSAGE(std::is_default_constructible<oneapi::tbb::collaborative_once_flag>::value == true, 
-        "collaborative_once_flag must be default constructible");
-    REQUIRE_MESSAGE(std::is_copy_constructible<oneapi::tbb::collaborative_once_flag>::value == false, 
-        "collaborative_once_flag must not be copy constructible");
-    REQUIRE_MESSAGE(std::is_copy_assignable<oneapi::tbb::collaborative_once_flag>::value == false, 
-        "collaborative_once_flag must not be copy assignable");
-    REQUIRE_MESSAGE(std::is_move_constructible<oneapi::tbb::collaborative_once_flag>::value == false, 
-        "collaborative_once_flag must not be move constructible");
-    REQUIRE_MESSAGE(std::is_move_assignable<oneapi::tbb::collaborative_once_flag>::value == false, 
-        "collaborative_once_flag must not be move assignable");
+    REQUIRE_MESSAGE(std::is_default_constructible<oneapi::tbb::collaborative_once_flag>::value == true,
+                    "collaborative_once_flag must be default constructible");
+    REQUIRE_MESSAGE(std::is_copy_constructible<oneapi::tbb::collaborative_once_flag>::value == false,
+                    "collaborative_once_flag must not be copy constructible");
+    REQUIRE_MESSAGE(std::is_copy_assignable<oneapi::tbb::collaborative_once_flag>::value == false,
+                    "collaborative_once_flag must not be copy assignable");
+    REQUIRE_MESSAGE(std::is_move_constructible<oneapi::tbb::collaborative_once_flag>::value == false,
+                    "collaborative_once_flag must not be move constructible");
+    REQUIRE_MESSAGE(std::is_move_assignable<oneapi::tbb::collaborative_once_flag>::value == false,
+                    "collaborative_once_flag must not be move assignable");
 }
 
 //! Test for collaborative_call_once to execute function exactly once
@@ -60,15 +60,18 @@ TEST_CASE("collaborative_call_once executes function exactly once") {
     oneapi::tbb::collaborative_once_flag once_flag;
 
     for (int iter = 0; iter < 100; ++iter) {
-        oneapi::tbb::collaborative_call_once(once_flag, [](int number) {
-            // Will be executed only on first iteration
-            REQUIRE(number == 0);
-        }, iter);
+        oneapi::tbb::collaborative_call_once(
+                once_flag,
+                [](int number) {
+                    // Will be executed only on first iteration
+                    REQUIRE(number == 0);
+                },
+                iter);
     }
 
     // concurrent call
     std::size_t num_threads = utils::get_platform_max_threads();
-    utils::SpinBarrier barrier{num_threads};
+    utils::SpinBarrier barrier {num_threads};
 
     int flag = 0;
     auto func = [&flag] { flag++; };
@@ -81,7 +84,6 @@ TEST_CASE("collaborative_call_once executes function exactly once") {
     REQUIRE(flag == 1);
 }
 
-
 #if TBB_USE_EXCEPTIONS
 
 //! Exception is received only by winner thread
@@ -93,26 +95,22 @@ TEST_CASE("Exception is received only by winner thread") {
     oneapi::tbb::task_group tg;
     oneapi::tbb::collaborative_once_flag flag;
 
-    for (int i = 0; i < num_threads-1; ++i) {
+    for (int i = 0; i < num_threads - 1; ++i) {
         tg.run([&flag, &barrier] {
             barrier.wait();
             try {
-                oneapi::tbb::collaborative_call_once(flag, [] { });
-            } catch(...) {
-                REQUIRE_MESSAGE(false, "Unreachable code");
-            }
+                oneapi::tbb::collaborative_call_once(flag, [] {});
+            } catch (...) { REQUIRE_MESSAGE(false, "Unreachable code"); }
         });
     };
 
-    bool exception_happened{false};
+    bool exception_happened {false};
     try {
         oneapi::tbb::collaborative_call_once(flag, [&barrier] {
             barrier.wait();
-            throw std::exception{};
+            throw std::exception {};
         });
-    } catch (std::exception&) {
-        exception_happened = true;
-    }
+    } catch (std::exception&) { exception_happened = true; }
 
     REQUIRE_MESSAGE(exception_happened == true, "Exception hasn't been received from the winner thread");
     tg.wait();
@@ -121,5 +119,5 @@ TEST_CASE("Exception is received only by winner thread") {
 #endif
 
 #if _MSC_VER && !defined(__INTEL_COMPILER)
-    #pragma warning( pop )
+#pragma warning(pop)
 #endif

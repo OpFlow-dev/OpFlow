@@ -15,12 +15,12 @@
 */
 
 #if __INTEL_COMPILER && _MSC_VER
-#pragma warning(disable : 2586) // decorated name length exceeded, name was truncated
+#pragma warning(disable : 2586)// decorated name length exceeded, name was truncated
 #endif
 
 #define TBB_DEFINE_STD_HASH_SPECIALIZATIONS 1
-#include <tbb/concurrent_unordered_map.h>
 #include "common/concurrent_unordered_common.h"
+#include <tbb/concurrent_unordered_map.h>
 
 //! \file test_concurrent_unordered_map.cpp
 //! \brief Test for [containers.concurrent_unordered_map containers.concurrent_unordered_multimap] specifications
@@ -33,17 +33,27 @@ using MyAllocator = LocalCountingAllocator<std::allocator<std::pair<const Key, M
 
 using move_support_tests::FooWithAssign;
 
-using map_type = tbb::concurrent_unordered_map<int, int, std::hash<int>, std::equal_to<int>, MyAllocator<int, int>>;
-using multimap_type = tbb::concurrent_unordered_multimap<int, int, std::hash<int>, std::equal_to<int>, MyAllocator<int, int>>;
-using degenerate_map_type = tbb::concurrent_unordered_map<int, int, degenerate_hash<int>, std::equal_to<int>, MyAllocator<int, int>>;
-using degenerate_multimap_type = tbb::concurrent_unordered_multimap<int, int, degenerate_hash<int>, std::equal_to<int>, MyAllocator<int, int>>;
+using map_type
+        = tbb::concurrent_unordered_map<int, int, std::hash<int>, std::equal_to<int>, MyAllocator<int, int>>;
+using multimap_type = tbb::concurrent_unordered_multimap<int, int, std::hash<int>, std::equal_to<int>,
+                                                         MyAllocator<int, int>>;
+using degenerate_map_type = tbb::concurrent_unordered_map<int, int, degenerate_hash<int>, std::equal_to<int>,
+                                                          MyAllocator<int, int>>;
+using degenerate_multimap_type
+        = tbb::concurrent_unordered_multimap<int, int, degenerate_hash<int>, std::equal_to<int>,
+                                             MyAllocator<int, int>>;
 
-using checked_map_type = tbb::concurrent_unordered_map<int, CheckType<int>, std::hash<int>, std::equal_to<int>, MyAllocator<int, CheckType<int>>>;
-using checked_multimap_type = tbb::concurrent_unordered_multimap<int, CheckType<int>, std::hash<int>, std::equal_to<int>, MyAllocator<int, CheckType<int>>>;
-using checked_state_map_type = tbb::concurrent_unordered_map<intptr_t, FooWithAssign, std::hash<intptr_t>,
-                                                             std::equal_to<intptr_t>, MyAllocator<intptr_t, FooWithAssign>>;
-using checked_state_multimap_type = tbb::concurrent_unordered_multimap<intptr_t, FooWithAssign, std::hash<intptr_t>,
-                                                                       std::equal_to<intptr_t>, MyAllocator<intptr_t, FooWithAssign>>;
+using checked_map_type = tbb::concurrent_unordered_map<int, CheckType<int>, std::hash<int>,
+                                                       std::equal_to<int>, MyAllocator<int, CheckType<int>>>;
+using checked_multimap_type
+        = tbb::concurrent_unordered_multimap<int, CheckType<int>, std::hash<int>, std::equal_to<int>,
+                                             MyAllocator<int, CheckType<int>>>;
+using checked_state_map_type
+        = tbb::concurrent_unordered_map<intptr_t, FooWithAssign, std::hash<intptr_t>, std::equal_to<intptr_t>,
+                                        MyAllocator<intptr_t, FooWithAssign>>;
+using checked_state_multimap_type
+        = tbb::concurrent_unordered_multimap<intptr_t, FooWithAssign, std::hash<intptr_t>,
+                                             std::equal_to<intptr_t>, MyAllocator<intptr_t, FooWithAssign>>;
 
 struct CumapTraits : UnorderedMoveTraitsBase {
     template <typename T, typename Allocator>
@@ -53,30 +63,27 @@ struct CumapTraits : UnorderedMoveTraitsBase {
     using container_value_type = std::pair<const T, T>;
 
     using init_iterator_type = move_support_tests::FooPairIterator;
-}; // struct CumapTraits
+};// struct CumapTraits
 
 struct CumultimapTraits : UnorderedMoveTraitsBase {
     template <typename T, typename Allocator>
-    using container_type = tbb::concurrent_unordered_multimap<T, T, std::hash<T>, std::equal_to<T>, Allocator>;
+    using container_type
+            = tbb::concurrent_unordered_multimap<T, T, std::hash<T>, std::equal_to<T>, Allocator>;
 
     template <typename T>
     using container_value_type = std::pair<const T, T>;
 
     using init_iterator_type = move_support_tests::FooPairIterator;
-}; // struct CumultimapTraits
+};// struct CumultimapTraits
 
 template <>
 struct SpecialTests<map_type> {
-    static void Test() {
-        SpecialMapTests<map_type>();
-    }
+    static void Test() { SpecialMapTests<map_type>(); }
 };
 
 template <>
 struct SpecialTests<multimap_type> {
-    static void Test() {
-        SpecialMultiMapTests<multimap_type>();
-    }
+    static void Test() { SpecialMultiMapTests<multimap_type>(); }
 };
 
 struct UnorderedMapTypesTester {
@@ -84,23 +91,24 @@ struct UnorderedMapTypesTester {
     using table_type = GeneralTableType<Key, Mapped, std::hash<Key>, utils::IsEqual>;
 
     template <bool DefCtorPresent, typename ValueType>
-    void check( const std::list<ValueType>& lst ) {
+    void check(const std::list<ValueType>& lst) {
         using key_type = typename std::remove_const<typename ValueType::first_type>::type;
         using mapped_type = typename ValueType::second_type;
 
         TypeTester<DefCtorPresent, table_type<tbb::concurrent_unordered_map, key_type, mapped_type>>(lst);
-        TypeTester<DefCtorPresent, table_type<tbb::concurrent_unordered_multimap, key_type, mapped_type>>(lst);
+        TypeTester<DefCtorPresent, table_type<tbb::concurrent_unordered_multimap, key_type, mapped_type>>(
+                lst);
     }
-}; // struct UnorderedMapTypesTester
+};// struct UnorderedMapTypesTester
 
 void test_specific_types() {
     test_map_specific_types<UnorderedMapTypesTester>();
 
     // Regression test for a problem with excessive requirements of emplace()
-    test_emplace_insert<tbb::concurrent_unordered_map<int*, test::unique_ptr<int>>, std::false_type>
-                       (new int, new int);
-    test_emplace_insert<tbb::concurrent_unordered_multimap<int*, test::unique_ptr<int>>, std::false_type>
-                       (new int, new int);
+    test_emplace_insert<tbb::concurrent_unordered_map<int*, test::unique_ptr<int>>, std::false_type>(new int,
+                                                                                                     new int);
+    test_emplace_insert<tbb::concurrent_unordered_multimap<int*, test::unique_ptr<int>>, std::false_type>(
+            new int, new int);
 }
 
 //! \brief \ref stress \ref error_guessing
@@ -127,12 +135,12 @@ TEST_CASE("basic test for concurrent_unordered_multimap with elements ctor and d
 
 //! \brief \ref resource_usage
 TEST_CASE("basic test for concurrent_unordered_map with elements state check") {
-    test_basic<checked_state_map_type, /*CheckState = */std::true_type>();
+    test_basic<checked_state_map_type, /*CheckState = */ std::true_type>();
 }
 
 //! \brief \ref resource_usage
 TEST_CASE("basic test for concurrent_unordered_multimap with elements state check") {
-    test_basic<checked_state_multimap_type, /*CheckState = */std::true_type>();
+    test_basic<checked_state_multimap_type, /*CheckState = */ std::true_type>();
 }
 
 //! \brief \ref stress \ref error_guessing
@@ -178,9 +186,7 @@ TEST_CASE("multithreading support in concurrent_unordered_multimap with elements
 }
 
 //! \brief \ref interface \ref error_guessing
-TEST_CASE("range based for support in concurrent_unordered_map") {
-    test_range_based_for_support<map_type>();
-}
+TEST_CASE("range based for support in concurrent_unordered_map") { test_range_based_for_support<map_type>(); }
 
 //! \brief \ref interface \ref error_guessing
 TEST_CASE("range based for support in concurrent_unordered_multimap") {
@@ -193,21 +199,21 @@ TEST_CASE("merge and concurrent merge in concurrent_unordered_map with degenerat
 }
 
 //! \brief \ref regression
-TEST_CASE("concurrent_unordered map/multimap with specific key/mapped types") {
-    test_specific_types();
-}
+TEST_CASE("concurrent_unordered map/multimap with specific key/mapped types") { test_specific_types(); }
 
 //! \brief \ref error_guessing
 TEST_CASE("concurrent_unordered_map::swap with not always equal allocator") {
-    using not_always_equal_alloc_map_type = tbb::concurrent_unordered_map<int, int, std::hash<int>, std::equal_to<int>,
-                                                                          NotAlwaysEqualAllocator<std::pair<const int, int>>>;
+    using not_always_equal_alloc_map_type
+            = tbb::concurrent_unordered_map<int, int, std::hash<int>, std::equal_to<int>,
+                                            NotAlwaysEqualAllocator<std::pair<const int, int>>>;
     test_swap_not_always_equal_allocator<not_always_equal_alloc_map_type>();
 }
 
 //! \brief \ref error_guessing
 TEST_CASE("concurrent_unordered_multimap::swap with not always equal allocator") {
-    using not_always_equal_alloc_mmap_type = tbb::concurrent_unordered_multimap<int, int, std::hash<int>, std::equal_to<int>,
-                                                                                NotAlwaysEqualAllocator<std::pair<const int, int>>>;
+    using not_always_equal_alloc_mmap_type
+            = tbb::concurrent_unordered_multimap<int, int, std::hash<int>, std::equal_to<int>,
+                                                 NotAlwaysEqualAllocator<std::pair<const int, int>>>;
     test_swap_not_always_equal_allocator<not_always_equal_alloc_mmap_type>();
 }
 
@@ -227,37 +233,42 @@ TEST_CASE("concurrent_unordered_multimap throwing copy constructor") {
 //! \brief \ref error_guessing
 TEST_CASE("concurrent_unordered_map whitebox throwing copy constructor") {
     using allocator_type = StaticSharedCountingAllocator<std::allocator<std::pair<const int, int>>>;
-    using exception_mmap_type = tbb::concurrent_unordered_map<int, int, std::hash<int>, std::equal_to<int>, allocator_type>;
+    using exception_mmap_type
+            = tbb::concurrent_unordered_map<int, int, std::hash<int>, std::equal_to<int>, allocator_type>;
 
     exception_mmap_type map;
-    for (int i = 0; i < 10; ++i) {
-        map.insert(std::pair<const int, int>(i, 42));
-    }
+    for (int i = 0; i < 10; ++i) { map.insert(std::pair<const int, int>(i, 42)); }
 
     allocator_type::set_limits(1);
-    REQUIRE_THROWS_AS( [&] {
-        exception_mmap_type map1(map);
-        utils::suppress_unused_warning(map1);
-    }(), const std::bad_alloc);
+    REQUIRE_THROWS_AS(
+            [&] {
+                exception_mmap_type map1(map);
+                utils::suppress_unused_warning(map1);
+            }(),
+            const std::bad_alloc);
 }
 
-#endif // TBB_USE_EXCEPTIONS
+#endif// TBB_USE_EXCEPTIONS
 
 // TODO: add test_scoped_allocator support with broken macro
 
 #if __TBB_CPP20_CONCEPTS_PRESENT
 //! \brief \ref error_guessing
 TEST_CASE("container_range concept for concurrent_unordered_map ranges") {
-    static_assert(test_concepts::container_range<typename tbb::concurrent_unordered_map<int, int>::range_type>);
-    static_assert(test_concepts::container_range<typename tbb::concurrent_unordered_map<int, int>::const_range_type>);
+    static_assert(
+            test_concepts::container_range<typename tbb::concurrent_unordered_map<int, int>::range_type>);
+    static_assert(test_concepts::container_range<
+                  typename tbb::concurrent_unordered_map<int, int>::const_range_type>);
 }
 
 //! \brief \ref error_guessing
 TEST_CASE("container_range concept for concurrent_unordered_multimap ranges") {
-    static_assert(test_concepts::container_range<typename tbb::concurrent_unordered_multimap<int, int>::range_type>);
-    static_assert(test_concepts::container_range<typename tbb::concurrent_unordered_multimap<int, int>::const_range_type>);
+    static_assert(test_concepts::container_range<
+                  typename tbb::concurrent_unordered_multimap<int, int>::range_type>);
+    static_assert(test_concepts::container_range<
+                  typename tbb::concurrent_unordered_multimap<int, int>::const_range_type>);
 }
-#endif // __TBB_CPP20_CONCEPTS_PRESENT
+#endif// __TBB_CPP20_CONCEPTS_PRESENT
 
 //! \brief \ref regression
 TEST_CASE("reserve(0) issue regression test") {

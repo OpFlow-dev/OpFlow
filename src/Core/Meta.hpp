@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2023 by the OpFlow developers
+//  Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -101,8 +101,10 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Meta {
 
     template <typename T>
     concept StdRatio = requires {
-        { T::num } -> std::convertible_to<int>;
-        { T::den } -> std::convertible_to<int>;
+        { T::num }
+        ->std::convertible_to<int>;
+        { T::den }
+        ->std::convertible_to<int>;
         typename T::type;
     };
 
@@ -112,7 +114,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Meta {
     };
 
     template <typename T>
-    concept BracketIndexable = requires(T t) { t[0]; };
+    concept BracketIndexable = requires(T t) {
+        t[0];
+    };
 
     template <bool b>
     struct bool_type : std::false_type {};
@@ -124,12 +128,12 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Meta {
     struct TypeName;
 
     template <typename F, int... Is>
-    void static_for(F&& func, std::integer_sequence<int, Is...>) {
+    void static_for(F && func, std::integer_sequence<int, Is...>) {
         (func(int_<Is> {}), ...);
     }
 
     template <std::size_t N, typename F>
-    void static_for(F&& func) {
+    void static_for(F && func) {
         static_for(std::forward<F>(func), std::make_integer_sequence<int, N>());
     }
 
@@ -145,16 +149,16 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Meta {
     struct make_integer_seq_impl;
 
     template <typename T, T start, T end, T step>
-        requires(step > 0 && start < end) || (step<0 && start> end)
-    struct make_integer_seq_impl<T, start, end, step> {
+            requires(step > 0 && start < end)
+            || (step<0 && start> end) struct make_integer_seq_impl<T, start, end, step> {
         using type = typename integer_seq_cat<
                 T, std::integer_sequence<T, start>,
                 typename make_integer_seq_impl<T, start + step, end, step>::type>::type;
     };
 
     template <typename T, T start, T end, T step>
-        requires(step > 0 && start >= end) || (step < 0 && start <= end)
-    struct make_integer_seq_impl<T, start, end, step> {
+            requires(step > 0 && start >= end)
+            || (step < 0 && start <= end) struct make_integer_seq_impl<T, start, end, step> {
         using type = std::integer_sequence<T>;
     };
 
@@ -162,55 +166,55 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Meta {
     using make_integer_sequence = typename make_integer_seq_impl<T, start, end, step>::type;
 
     template <int start, int end, typename F>
-    void static_for(F&& func) {
+    void static_for(F && func) {
         static_for(std::forward<F>(func), make_integer_sequence<int, start, end>());
     }
 
     template <int start, int end, int step, typename F>
-    void static_for(F&& func) {
+    void static_for(F && func) {
         static_for(std::forward<F>(func), make_integer_sequence<int, start, end, step>());
     }
 
     template <std::size_t... Ints, std::size_t... IntsRemain, typename... Ts>
     auto tuple_split_impl(std::index_sequence<Ints...>, std::index_sequence<IntsRemain...>,
-                          std::tuple<Ts...>& t) {
+                          std::tuple<Ts...> & t) {
         return std::make_tuple(std::forward_as_tuple(std::get<Ints>(t)...),
                                std::forward_as_tuple(std::get<IntsRemain>(t)...));
     }
 
     template <std::size_t Nsplit, typename... Ts>
-    inline auto tuple_split(std::tuple<Ts...>& t) {
+    inline auto tuple_split(std::tuple<Ts...> & t) {
         static_assert(Nsplit < sizeof...(Ts));
         return tuple_split_impl(std::make_index_sequence<Nsplit>(),
                                 make_integer_sequence<std::size_t, Nsplit, sizeof...(Ts)>(), t);
     }
 
     template <typename F, typename G, typename... Ts>
-    constexpr decltype(auto) custom_invoke(F&& func, G&& getter, Ts&&... ts) {
+    constexpr decltype(auto) custom_invoke(F && func, G && getter, Ts && ... ts) {
         return std::invoke(std::forward<F>(func), getter(std::forward<Ts>(ts))...);
     }
 
     template <typename F, typename G, typename Tuple, std::size_t... Ints>
-    constexpr decltype(auto) custom_apply_impl(F&& func, G&& getter, Tuple&& tuple,
+    constexpr decltype(auto) custom_apply_impl(F && func, G && getter, Tuple && tuple,
                                                std::index_sequence<Ints...>) {
         return custom_invoke(std::forward<F>(func), std::forward<G>(getter),
                              std::get<Ints>(std::forward<Tuple>(tuple))...);
     }
 
     template <typename F, typename G, typename Tuple>
-    constexpr decltype(auto) custom_apply(F&& func, G&& getter, Tuple&& tuple) {
+    constexpr decltype(auto) custom_apply(F && func, G && getter, Tuple && tuple) {
         return custom_apply_impl(std::forward<F>(func), std::forward<G>(getter), std::forward<Tuple>(tuple),
                                  std::make_index_sequence<std::tuple_size_v<std::remove_cvref_t<Tuple>>>());
     }
 
     template <typename F, typename G, typename C, std::size_t... Ints>
-    constexpr decltype(auto) custom_apply_container_impl(F&& func, G&& getter, C&& container,
+    constexpr decltype(auto) custom_apply_container_impl(F && func, G && getter, C && container,
                                                          std::index_sequence<Ints...>) {
         return std::invoke(std::forward<F>(func), getter(container[Ints], Meta::int_<Ints>())...);
     }
 
     template <std::size_t n, typename F, typename G, typename C>
-    constexpr decltype(auto) custom_apply_container(F&& func, G&& getter, C&& container) {
+    constexpr decltype(auto) custom_apply_container(F && func, G && getter, C && container) {
         return custom_apply_container_impl(std::forward<F>(func), std::forward<G>(getter),
                                            std::forward<C>(container), std::make_index_sequence<n>());
     }

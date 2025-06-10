@@ -21,10 +21,10 @@ void Foo(float) {}
 
 using namespace oneapi::tbb;
 
-#pragma warning(disable: 588)
+#pragma warning(disable : 588)
 
 void ParallelApplyFoo(float a[], size_t n) {
-    parallel_for(size_t(0), n, [=](size_t i) {Foo(a[i]);});
+    parallel_for(size_t(0), n, [=](size_t i) { Foo(a[i]); });
 }
 /*end_parallel_for_lambda_2*/
 

@@ -18,133 +18,119 @@
 
 #include "tbb/flow_graph.h"
 
+#include "common/graph_utils.h"
 #include "common/test.h"
+#include "common/test_follows_and_precedes_api.h"
 #include "common/utils.h"
 #include "common/utils_assert.h"
-#include "common/graph_utils.h"
-#include "common/test_follows_and_precedes_api.h"
 
 #include "test_buffering_try_put_and_wait.h"
 
 //! \file test_overwrite_node.cpp
 //! \brief Test for [flow_graph.overwrite_node] specification
 
-
 #define N 300
 #define T 4
 #define M 5
 
-template< typename R >
+template <typename R>
 void simple_read_write_tests() {
     tbb::flow::graph g;
     tbb::flow::overwrite_node<R> n(g);
 
-    for ( int t = 0; t < T; ++t ) {
-        R v0(N+1);
-        std::vector< std::shared_ptr<harness_counting_receiver<R>> > r;
-        for (size_t i = 0; i < M; ++i) {
-            r.push_back( std::make_shared<harness_counting_receiver<R>>(g) );
+    for (int t = 0; t < T; ++t) {
+        R v0(N + 1);
+        std::vector<std::shared_ptr<harness_counting_receiver<R>>> r;
+        for (size_t i = 0; i < M; ++i) { r.push_back(std::make_shared<harness_counting_receiver<R>>(g)); }
+
+        CHECK_MESSAGE(n.is_valid() == false, "");
+        CHECK_MESSAGE(n.try_get(v0) == false, "");
+        if (t % 2) {
+            CHECK_MESSAGE(n.try_put(static_cast<R>(N)), "");
+            CHECK_MESSAGE(n.is_valid() == true, "");
+            CHECK_MESSAGE(n.try_get(v0) == true, "");
+            CHECK_MESSAGE(v0 == R(N), "");
         }
 
-        CHECK_MESSAGE( n.is_valid() == false, "" );
-        CHECK_MESSAGE( n.try_get( v0 ) == false, "" );
-        if ( t % 2 ) {
-            CHECK_MESSAGE( n.try_put( static_cast<R>(N) ), "" );
-            CHECK_MESSAGE( n.is_valid() == true, "" );
-            CHECK_MESSAGE( n.try_get( v0 ) == true, "" );
-            CHECK_MESSAGE( v0 == R(N), "" );
-        }
+        for (int i = 0; i < M; ++i) { tbb::flow::make_edge(n, *r[i]); }
 
-        for (int i = 0; i < M; ++i) {
-            tbb::flow::make_edge( n, *r[i] );
-        }
-
-        for (int i = 0; i < N; ++i ) {
+        for (int i = 0; i < N; ++i) {
             R v1(static_cast<R>(i));
-            CHECK_MESSAGE( n.try_put( v1 ), "" );
-            CHECK_MESSAGE( n.is_valid() == true, "" );
-            for (int j = 0; j < N; ++j ) {
+            CHECK_MESSAGE(n.try_put(v1), "");
+            CHECK_MESSAGE(n.is_valid() == true, "");
+            for (int j = 0; j < N; ++j) {
                 R v2(0);
-                CHECK_MESSAGE( n.try_get( v2 ), "" );
-                CHECK_MESSAGE( v1 == v2, "" );
+                CHECK_MESSAGE(n.try_get(v2), "");
+                CHECK_MESSAGE(v1 == v2, "");
             }
         }
         for (int i = 0; i < M; ++i) {
             size_t c = r[i]->my_count;
-            CHECK_MESSAGE( int(c) == N+t%2, "" );
+            CHECK_MESSAGE(int(c) == N + t % 2, "");
         }
-        for (int i = 0; i < M; ++i) {
-            tbb::flow::remove_edge( n, *r[i] );
-        }
-        CHECK_MESSAGE( n.try_put( R(0) ), "" );
+        for (int i = 0; i < M; ++i) { tbb::flow::remove_edge(n, *r[i]); }
+        CHECK_MESSAGE(n.try_put(R(0)), "");
         for (int i = 0; i < M; ++i) {
             size_t c = r[i]->my_count;
-            CHECK_MESSAGE( int(c) == N+t%2, "" );
+            CHECK_MESSAGE(int(c) == N + t % 2, "");
         }
         n.clear();
-        CHECK_MESSAGE( n.is_valid() == false, "" );
-        CHECK_MESSAGE( n.try_get( v0 ) == false, "" );
+        CHECK_MESSAGE(n.is_valid() == false, "");
+        CHECK_MESSAGE(n.try_get(v0) == false, "");
     }
 }
 
-template< typename R >
+template <typename R>
 class native_body : utils::NoAssign {
     tbb::flow::overwrite_node<R> &my_node;
 
 public:
+    native_body(tbb::flow::overwrite_node<R> &n) : my_node(n) {}
 
-    native_body( tbb::flow::overwrite_node<R> &n ) : my_node(n) {}
-
-    void operator()( int i ) const {
+    void operator()(int i) const {
         R v1(static_cast<R>(i));
-        CHECK_MESSAGE( my_node.try_put( v1 ), "" );
-        CHECK_MESSAGE( my_node.is_valid() == true, "" );
+        CHECK_MESSAGE(my_node.try_put(v1), "");
+        CHECK_MESSAGE(my_node.is_valid() == true, "");
     }
 };
 
-template< typename R >
+template <typename R>
 void parallel_read_write_tests() {
     tbb::flow::graph g;
     tbb::flow::overwrite_node<R> n(g);
     //Create a vector of identical nodes
-    std::vector< tbb::flow::overwrite_node<R> > ow_vec(2, n);
+    std::vector<tbb::flow::overwrite_node<R>> ow_vec(2, n);
 
-    for (size_t node_idx=0; node_idx<ow_vec.size(); ++node_idx) {
-        for ( int t = 0; t < T; ++t ) {
-            std::vector< std::shared_ptr<harness_counting_receiver<R>> > r;
-            for (size_t i = 0; i < M; ++i) {
-                r.push_back( std::make_shared<harness_counting_receiver<R>>(g) );
-            }
+    for (size_t node_idx = 0; node_idx < ow_vec.size(); ++node_idx) {
+        for (int t = 0; t < T; ++t) {
+            std::vector<std::shared_ptr<harness_counting_receiver<R>>> r;
+            for (size_t i = 0; i < M; ++i) { r.push_back(std::make_shared<harness_counting_receiver<R>>(g)); }
 
-            for (int i = 0; i < M; ++i) {
-                tbb::flow::make_edge( ow_vec[node_idx], *r[i] );
-            }
+            for (int i = 0; i < M; ++i) { tbb::flow::make_edge(ow_vec[node_idx], *r[i]); }
             R v0;
-            CHECK_MESSAGE( ow_vec[node_idx].is_valid() == false, "" );
-            CHECK_MESSAGE( ow_vec[node_idx].try_get( v0 ) == false, "" );
+            CHECK_MESSAGE(ow_vec[node_idx].is_valid() == false, "");
+            CHECK_MESSAGE(ow_vec[node_idx].try_get(v0) == false, "");
 
 #if TBB_TEST_LOW_WORKLOAD
             const int nthreads = 30;
 #else
             const int nthreads = N;
 #endif
-            utils::NativeParallelFor( nthreads, native_body<R>( ow_vec[node_idx] ) );
+            utils::NativeParallelFor(nthreads, native_body<R>(ow_vec[node_idx]));
 
             for (int i = 0; i < M; ++i) {
                 size_t c = r[i]->my_count;
-                CHECK_MESSAGE( int(c) == nthreads, "" );
+                CHECK_MESSAGE(int(c) == nthreads, "");
             }
-            for (int i = 0; i < M; ++i) {
-                tbb::flow::remove_edge( ow_vec[node_idx], *r[i] );
-            }
-            CHECK_MESSAGE( ow_vec[node_idx].try_put( R(0) ), "" );
+            for (int i = 0; i < M; ++i) { tbb::flow::remove_edge(ow_vec[node_idx], *r[i]); }
+            CHECK_MESSAGE(ow_vec[node_idx].try_put(R(0)), "");
             for (int i = 0; i < M; ++i) {
                 size_t c = r[i]->my_count;
-                CHECK_MESSAGE( int(c) == nthreads, "" );
+                CHECK_MESSAGE(int(c) == nthreads, "");
             }
             ow_vec[node_idx].clear();
-            CHECK_MESSAGE( ow_vec[node_idx].is_valid() == false, "" );
-            CHECK_MESSAGE( ow_vec[node_idx].try_get( v0 ) == false, "" );
+            CHECK_MESSAGE(ow_vec[node_idx].is_valid() == false, "");
+            CHECK_MESSAGE(ow_vec[node_idx].try_get(v0) == false, "");
         }
     }
 }
@@ -155,11 +141,12 @@ void parallel_read_write_tests() {
 void test_follows_and_precedes_api() {
     using msg_t = tbb::flow::continue_msg;
 
-    std::array<msg_t, 3> messages_for_follows = { {msg_t(), msg_t(), msg_t()} };
+    std::array<msg_t, 3> messages_for_follows = {{msg_t(), msg_t(), msg_t()}};
     std::vector<msg_t> messages_for_precedes = {msg_t()};
 
     follows_and_precedes_testing::test_follows<msg_t, tbb::flow::overwrite_node<msg_t>>(messages_for_follows);
-    follows_and_precedes_testing::test_precedes<msg_t, tbb::flow::overwrite_node<msg_t>>(messages_for_precedes);
+    follows_and_precedes_testing::test_precedes<msg_t, tbb::flow::overwrite_node<msg_t>>(
+            messages_for_precedes);
 }
 #endif
 
@@ -202,8 +189,8 @@ void test_overwrite_node_try_put_and_wait() {
         std::vector<int> processed_items;
 
         // Returns the index from which wait_for_all processing started
-        std::size_t after_start = test_buffer_push<tbb::flow::overwrite_node<int>>(start_work_items, wait_message,
-                                                                                   new_work_items, processed_items);
+        std::size_t after_start = test_buffer_push<tbb::flow::overwrite_node<int>>(
+                start_work_items, wait_message, new_work_items, processed_items);
 
         // It is expected that try_put_and_wait would process start_work_items (FIFO) and the wait_message
         // and new_work_items (FIFO) would be processed in wait_for_all
@@ -233,31 +220,29 @@ void test_overwrite_node_try_put_and_wait() {
 
             using function_node_type = tbb::flow::function_node<int, int, tbb::flow::rejecting>;
 
-            function_node_type function(g, tbb::flow::serial,
-                [&](int input) {
-                    if (input == wait_message) {
-                        buffer.try_put(new_message);
-                    }
+            function_node_type function(g, tbb::flow::serial, [&](int input) {
+                if (input == wait_message) { buffer.try_put(new_message); }
 
-                    // Explicitly clean the buffer to prevent infinite try_get by the function_node
-                    if (input == new_message) {
-                        buffer.clear();
-                    }
+                // Explicitly clean the buffer to prevent infinite try_get by the function_node
+                if (input == new_message) { buffer.clear(); }
 
-                    processed_items.emplace_back(input);
-                    return 0;
-                });
+                processed_items.emplace_back(input);
+                return 0;
+            });
 
             tbb::flow::make_edge(buffer, function);
 
-            buffer.try_put(start_message); // Occupies concurrency of function
+            buffer.try_put(start_message);// Occupies concurrency of function
 
             buffer.try_put_and_wait(wait_message);
 
-            CHECK_MESSAGE(processed_items.size() == 2, "only the start_message and wait_message should be processed");
+            CHECK_MESSAGE(processed_items.size() == 2,
+                          "only the start_message and wait_message should be processed");
             std::size_t check_index = 0;
-            CHECK_MESSAGE(processed_items[check_index++] == start_message, "unexpected start_message processing");
-            CHECK_MESSAGE(processed_items[check_index++] == wait_message, "unexpected wait_message processing");
+            CHECK_MESSAGE(processed_items[check_index++] == start_message,
+                          "unexpected start_message processing");
+            CHECK_MESSAGE(processed_items[check_index++] == wait_message,
+                          "unexpected wait_message processing");
 
             g.wait_for_all();
 
@@ -280,33 +265,31 @@ void test_overwrite_node_try_put_and_wait() {
 
             using function_node_type = tbb::flow::function_node<int, int, tbb::flow::rejecting>;
 
-            function_node_type function(g, tbb::flow::serial,
-                [&](int input) {
-                    if (input == wait_message) {
-                        buffer.try_put(new_message);
-                    }
+            function_node_type function(g, tbb::flow::serial, [&](int input) {
+                if (input == wait_message) { buffer.try_put(new_message); }
 
-                    // Explicitly clean the buffer to prevent infinite try_get by the function_node
-                    if (input == new_message) {
-                        buffer.clear();
-                    }
+                // Explicitly clean the buffer to prevent infinite try_get by the function_node
+                if (input == new_message) { buffer.clear(); }
 
-                    processed_items.emplace_back(input);
-                    limiter.decrementer().try_put(1);
-                    return 0;
-                });
+                processed_items.emplace_back(input);
+                limiter.decrementer().try_put(1);
+                return 0;
+            });
 
             tbb::flow::make_edge(buffer, limiter);
             tbb::flow::make_edge(limiter, function);
 
-            buffer.try_put(start_message); // Occupies concurrency of function
+            buffer.try_put(start_message);// Occupies concurrency of function
 
             buffer.try_put_and_wait(wait_message);
 
-            CHECK_MESSAGE(processed_items.size() == 2, "only the start_message and wait_message should be processed");
+            CHECK_MESSAGE(processed_items.size() == 2,
+                          "only the start_message and wait_message should be processed");
             std::size_t check_index = 0;
-            CHECK_MESSAGE(processed_items[check_index++] == start_message, "unexpected start_message processing");
-            CHECK_MESSAGE(processed_items[check_index++] == wait_message, "unexpected wait_message processing");
+            CHECK_MESSAGE(processed_items[check_index++] == start_message,
+                          "unexpected start_message processing");
+            CHECK_MESSAGE(processed_items[check_index++] == wait_message,
+                          "unexpected wait_message processing");
 
             g.wait_for_all();
 
@@ -321,12 +304,11 @@ void test_overwrite_node_try_put_and_wait() {
 
         std::vector<int> processed_items;
 
-        tbb::flow::function_node<int, int> f(g, tbb::flow::serial,
-            [&](int input) {
-                processed_items.emplace_back(input);
-                buffer.clear();
-                return 0;
-            });
+        tbb::flow::function_node<int, int> f(g, tbb::flow::serial, [&](int input) {
+            processed_items.emplace_back(input);
+            buffer.clear();
+            return 0;
+        });
 
         tbb::flow::make_edge(buffer, f);
 
@@ -345,50 +327,44 @@ void test_overwrite_node_try_put_and_wait() {
 
 //! Test read-write properties
 //! \brief \ref requirement \ref error_guessing
-TEST_CASE("Read-write"){
+TEST_CASE("Read-write") {
     simple_read_write_tests<int>();
     simple_read_write_tests<float>();
 }
 
 //! Read-write and ParallelFor tests under limited parallelism
 //! \brief \ref error_guessing
-TEST_CASE("Limited parallelism"){
-    for( unsigned int p=utils::MinThread; p<=utils::MaxThread; ++p ) {
+TEST_CASE("Limited parallelism") {
+    for (unsigned int p = utils::MinThread; p <= utils::MaxThread; ++p) {
         tbb::task_arena arena(p);
-        arena.execute(
-            [&]() {
-                parallel_read_write_tests<int>();
-                parallel_read_write_tests<float>();
-                test_reserving_nodes<tbb::flow::overwrite_node, size_t>();
-            }
-        );
-	}
+        arena.execute([&]() {
+            parallel_read_write_tests<int>();
+            parallel_read_write_tests<float>();
+            test_reserving_nodes<tbb::flow::overwrite_node, size_t>();
+        });
+    }
 }
 
 #if __TBB_PREVIEW_FLOW_GRAPH_NODE_SET
 //! Test follows and precedes API
 //! \brief \ref error_guessing
-TEST_CASE("Follows and precedes API"){
-    test_follows_and_precedes_api();
-}
+TEST_CASE("Follows and precedes API") { test_follows_and_precedes_api(); }
 #endif
 
 #if __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
 //! Test decution guides
 //! \brief \ref requirement
-TEST_CASE("Deduction guides"){
-    test_deduction_guides();
-}
+TEST_CASE("Deduction guides") { test_deduction_guides(); }
 #endif
 
 //! Test try_release
 //! \brief \ref error_guessing
-TEST_CASE("try_release"){
+TEST_CASE("try_release") {
     tbb::flow::graph g;
 
     tbb::flow::overwrite_node<int> on(g);
 
-    CHECK_MESSAGE ((on.try_release()== true), "try_release should return true");
+    CHECK_MESSAGE((on.try_release() == true), "try_release should return true");
 }
 
 //! Test for cancel register_predecessor_task
@@ -419,7 +395,5 @@ TEST_CASE("Cancel register_predecessor_task") {
 
 #if __TBB_PREVIEW_FLOW_GRAPH_TRY_PUT_AND_WAIT
 //! \brief \ref error_guessing
-TEST_CASE("test overwrite_node try_put_and_wait") {
-    test_overwrite_node_try_put_and_wait();
-}
+TEST_CASE("test overwrite_node try_put_and_wait") { test_overwrite_node_try_put_and_wait(); }
 #endif

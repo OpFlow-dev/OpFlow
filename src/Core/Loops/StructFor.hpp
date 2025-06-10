@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2023 by the OpFlow developers
+// Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -21,13 +21,13 @@
 
 OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <FieldExprType E, typename Func>
-    requires std::invocable<Func, DS::MDIndex<internal::FieldExprTrait<E>::dim>> auto structFor(E& expr,
-                                                                                                Func&& func) {
+    requires std::invocable<Func, DS::MDIndex<internal::FieldExprTrait<E>::dim>> auto structFor(
+            E & expr, Func && func) {
         return structFor(expr, expr.accessibleRange, std::forward<Func>(func));
     }
 
     template <FieldExprType E, typename R, typename Func>
-    Func structFor(E& expr, R&& range, Func&& func) {
+    Func structFor(E & expr, R && range, Func && func) {
         constexpr auto dim = internal::FieldExprTrait<E>::dim;
         std::array<int, dim> dims = expr.accessibleRange.getExtends();
         auto g_range = expr.accessibleRange;
@@ -36,14 +36,14 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     }
 
     template <FieldExprType E, typename Func>
-    requires std::invocable<Func, DS::MDIndex<internal::FieldExprTrait<E>::dim>> auto
-    structFor_s(E& expr, Func&& func) {
+    requires std::invocable<Func, DS::MDIndex<internal::FieldExprTrait<E>::dim>> auto structFor_s(
+            E & expr, Func && func) {
         return structFor_s(expr, expr.accessibleRange, std::forward<Func>(func));
     }
 
     template <FieldExprType E, typename R, typename Func>
-    requires std::invocable<Func, DS::MDIndex<internal::FieldExprTrait<E>::dim>> auto
-    structFor_s(E& expr, R&& range, Func&& func) {
+    requires std::invocable<Func, DS::MDIndex<internal::FieldExprTrait<E>::dim>> auto structFor_s(
+            E & expr, R && range, Func && func) {
         constexpr auto dim = internal::FieldExprTrait<E>::dim;
         std::array<int, dim> dims = expr.accessibleRange.getExtends();
         auto g_range = expr.accessibleRange;

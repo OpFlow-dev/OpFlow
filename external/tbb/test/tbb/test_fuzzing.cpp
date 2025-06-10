@@ -20,22 +20,20 @@
 #include <fuzzer/FuzzedDataProvider.h>
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  FuzzedDataProvider provider(data, size);
-  for (auto var : {"INTEL_ITTNOTIFY_GROUPS", "INTEL_LIBITTNOTIFY32",
-                   "INTEL_LIBITTNOTIFY64", "KMP_FOR_TCHECK", "KMP_FOR_TPROFILE",
-                   "TBB_ENABLE_SANITIZERS", "TBB_MALLOC_DISABLE_REPLACEMENT",
-                   "TBB_MALLOC_SET_HUGE_SIZE_THRESHOLD",
-                   "TBB_MALLOC_USE_HUGE_PAGES", "TBB_VERSION"}) {
-    std::string val = provider.ConsumeRandomLengthString();
+    FuzzedDataProvider provider(data, size);
+    for (auto var :
+         {"INTEL_ITTNOTIFY_GROUPS", "INTEL_LIBITTNOTIFY32", "INTEL_LIBITTNOTIFY64", "KMP_FOR_TCHECK",
+          "KMP_FOR_TPROFILE", "TBB_ENABLE_SANITIZERS", "TBB_MALLOC_DISABLE_REPLACEMENT",
+          "TBB_MALLOC_SET_HUGE_SIZE_THRESHOLD", "TBB_MALLOC_USE_HUGE_PAGES", "TBB_VERSION"}) {
+        std::string val = provider.ConsumeRandomLengthString();
 #if _WIN32
-    _putenv_s(var, val.c_str());
+        _putenv_s(var, val.c_str());
 #else
-    setenv(var, val.c_str(), 1);
+        setenv(var, val.c_str(), 1);
 #endif
-  }
+    }
 
-  if (std::system(CMD) != 0)
-    __builtin_trap();
+    if (std::system(CMD) != 0) __builtin_trap();
 
-  return 0;
+    return 0;
 }

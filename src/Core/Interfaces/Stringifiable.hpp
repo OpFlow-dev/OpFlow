@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2023 by the OpFlow developers
+// Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -38,8 +38,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 
 OPFLOW_MODULE_EXPORT
 template <typename T>
-    requires std::derived_from<T, OpFlow::StringifiableObj>
-struct std::formatter<T> : std::formatter<std::string> {
+requires std::derived_from<T, OpFlow::StringifiableObj> struct std::formatter<T>
+    : std::formatter<std::string> {
     auto format(const OpFlow::StringifiableObj& a, auto& ctx) const {
         return std::formatter<std::string>::format(a.toString(), ctx);
     }

@@ -25,43 +25,37 @@ using namespace tbb::flow;
 //! Example shows how to set the most performant core type as the preferred one
 //! for a graph execution.
 static void flow_graph_attach_to_arena_1() {
-/*begin_attach_to_arena_1*/
+    /*begin_attach_to_arena_1*/
     std::vector<tbb::core_type_id> core_types = tbb::info::core_types();
-    tbb::task_arena arena(
-        tbb::task_arena::constraints{}.set_core_type(core_types.back())
-    );
+    tbb::task_arena arena(tbb::task_arena::constraints {}.set_core_type(core_types.back()));
 
-    arena.execute( [&]() {
+    arena.execute([&]() {
         graph g;
-        function_node< int > f( g, unlimited, []( int ) {
-             /*the most performant core type is defined as preferred.*/
-        } );
+        function_node<int> f(g, unlimited, [](int) {
+            /*the most performant core type is defined as preferred.*/
+        });
         f.try_put(1);
         g.wait_for_all();
-    } );
-/*end_attach_to_arena_1*/
+    });
+    /*end_attach_to_arena_1*/
 }
 
 //! Reattach existing graph to an arena with the most performant core type as
 //! the preferred one for a work execution.
 static void flow_graph_attach_to_arena_2() {
-/*begin_attach_to_arena_2*/
+    /*begin_attach_to_arena_2*/
     graph g;
-    function_node< int > f( g, unlimited, []( int ) {
+    function_node<int> f(g, unlimited, [](int) {
         /*the most performant core type is defined as preferred.*/
-    } );
+    });
 
     std::vector<tbb::core_type_id> core_types = tbb::info::core_types();
-    tbb::task_arena arena(
-        tbb::task_arena::constraints{}.set_core_type(core_types.back())
-    );
+    tbb::task_arena arena(tbb::task_arena::constraints {}.set_core_type(core_types.back()));
 
-    arena.execute( [&]() {
-        g.reset();
-    } );
+    arena.execute([&]() { g.reset(); });
     f.try_put(1);
     g.wait_for_all();
-/*end_attach_to_arena_2*/
+    /*end_attach_to_arena_2*/
 }
 
 int main() {

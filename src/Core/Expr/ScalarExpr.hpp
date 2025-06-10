@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2023 by the OpFlow developers
+// Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -52,8 +52,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         static constexpr bool isConcrete() { return true; }
         void prepareImpl_final() const {}
         template <typename O>
-            requires(!std::same_as<O, ScalarExpr>)
-        bool containsImpl_final(const O&) const {
+        requires(!std::same_as<O, ScalarExpr>) bool containsImpl_final(const O&) const {
             return false;
         }
 

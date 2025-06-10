@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2023 by the OpFlow developers
+//  Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -73,11 +73,11 @@ protected:
             auto p_ref = p_true.evalAt(i);
             auto rel_res = std::abs(c_res) / std::abs(p_ref);
             if (std::isnan(c_res)) {
-                std::print(std::cerr,"Check fail: res = nan @ {}", i);
+                std::print(std::cerr, "Check fail: res = nan @ {}", i);
                 ret = false;
             }
             if (rel_res > rel) {
-                std::print(std::cerr,"Check fail: res = {} / {} @ {}", c_res, rel_res, i);
+                std::print(std::cerr, "Check fail: res = {} / {} @ {}", c_res, rel_res, i);
                 ret = false;
             }
         });
@@ -196,11 +196,11 @@ protected:
             auto p_ref = p_true.evalAt(i);
             auto rel_res = std::abs(c_res) / std::abs(p_ref);
             if (std::isnan(c_res)) {
-                std::print(std::cerr,"Check fail: res = nan @ {}", i);
+                std::print(std::cerr, "Check fail: res = nan @ {}", i);
                 ret = false;
             }
             if (rel_res > rel) {
-                std::print(std::cerr,"Check fail: res = {} / {} @ {}", c_res, rel_res, i);
+                std::print(std::cerr, "Check fail: res = {} / {} @ {}", c_res, rel_res, i);
                 ret = false;
             }
         });

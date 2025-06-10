@@ -16,9 +16,7 @@
 
 #include "oneapi/tbb/version.h"
 
-extern "C" int TBB_runtime_interface_version() {
-    return TBB_INTERFACE_VERSION;
-}
+extern "C" int TBB_runtime_interface_version() { return TBB_INTERFACE_VERSION; }
 
 extern "C" const char* TBB_runtime_version() {
     static const char version_str[] = TBB_VERSION_STRING;

@@ -16,8 +16,8 @@
 
 #include "common/config.h"
 
-#include "tbb/parallel_for.h"
 #include "tbb/global_control.h"
+#include "tbb/parallel_for.h"
 
 #include "common/test.h"
 #include "common/utils.h"
@@ -37,18 +37,17 @@
 #if TBB_USE_EXCEPTIONS && !_WIN32 && !__ANDROID__
 
 #include <limits.h>
-#include <sys/types.h>
-#include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/time.h>
+#include <sys/types.h>
 
-void limitThreads(size_t limit)
-{
+void limitThreads(size_t limit) {
     rlimit rlim;
 
     int ret = getrlimit(RLIMIT_NPROC, &rlim);
     CHECK_MESSAGE(0 == ret, "getrlimit has returned an error");
 
-    rlim.rlim_cur = (rlim.rlim_max == (rlim_t)RLIM_INFINITY) ? limit : utils::min(limit, rlim.rlim_max);
+    rlim.rlim_cur = (rlim.rlim_max == (rlim_t) RLIM_INFINITY) ? limit : utils::min(limit, rlim.rlim_max);
 
     ret = setrlimit(RLIMIT_NPROC, &rlim);
     CHECK_MESSAGE(0 == ret, "setrlimit has returned an error");
@@ -62,28 +61,24 @@ size_t getThreadLimit() {
     return rlim.rlim_cur;
 }
 
-static void* thread_routine(void*)
-{
-    return nullptr;
-}
+static void* thread_routine(void*) { return nullptr; }
 
 class Thread {
-    pthread_t mHandle{};
-    bool mValid{};
+    pthread_t mHandle {};
+    bool mValid {};
+
 public:
     Thread() {
         mValid = false;
         pthread_attr_t attr;
         // Limit the stack size not to consume all virtual memory on 32 bit platforms.
-        std::size_t stacksize = utils::max(std::size_t(128*1024), std::size_t(PTHREAD_STACK_MIN));
+        std::size_t stacksize = utils::max(std::size_t(128 * 1024), std::size_t(PTHREAD_STACK_MIN));
         if (pthread_attr_init(&attr) == 0 && pthread_attr_setstacksize(&attr, stacksize) == 0) {
             mValid = pthread_create(&mHandle, &attr, thread_routine, /* arg = */ nullptr) == 0;
         }
     }
     bool isValid() const { return mValid; }
-    void join() {
-        pthread_join(mHandle, nullptr);
-    }
+    void join() { pthread_join(mHandle, nullptr); }
 };
 
 //! Test for exception when too many threads
@@ -109,17 +104,13 @@ TEST_CASE("Too many threads") {
         try {
             // Initialize the library to create worker threads
             tbb::parallel_for(0, 2, [](int) {});
-        } catch (const std::exception & e) {
+        } catch (const std::exception& e) {
             g_exception_caught = true;
             // Do not CHECK to avoid memory allocation (we can be out of memory)
-            if (e.what()== nullptr) {
-                FAIL("Exception does not have description");
-            }
+            if (e.what() == nullptr) { FAIL("Exception does not have description"); }
         }
         // Do not CHECK to avoid memory allocation (we can be out of memory)
-        if (!g_exception_caught) {
-            FAIL("No exception was thrown on library initialization");
-        }
+        if (!g_exception_caught) { FAIL("No exception was thrown on library initialization"); }
     } else {
         WARN_MESSAGE(false, "setrlimit seems having no effect");
     }

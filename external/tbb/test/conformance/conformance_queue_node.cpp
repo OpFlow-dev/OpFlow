@@ -15,7 +15,7 @@
 */
 
 #if __INTEL_COMPILER && _MSC_VER
-#pragma warning(disable : 2586) // decorated name length exceeded, name was truncated
+#pragma warning(disable : 2586)// decorated name length exceeded, name was truncated
 #endif
 
 #define CONFORMANCE_BUFFERING_NODES
@@ -28,40 +28,39 @@
 
 //! Test queue_node single_push
 //! \brief \ref requirement
-TEST_CASE("queue_node single_push"){
+TEST_CASE("queue_node single_push") {
     conformance::test_forwarding_single_push<oneapi::tbb::flow::queue_node<int>>();
 }
 
 //! Test function_node buffering
 //! \brief \ref requirement
-TEST_CASE("queue_node buffering"){
-    conformance::test_buffering<oneapi::tbb::flow::queue_node<int>, int>();
-}
+TEST_CASE("queue_node buffering") { conformance::test_buffering<oneapi::tbb::flow::queue_node<int>, int>(); }
 
 //! Constructs an empty queue_node that belongs to the same graph g as src.
 //! Any intermediate state of src, including its links to predecessors and successors, is not copied.
 //! \brief \ref requirement
-TEST_CASE("queue_node copy constructor"){
+TEST_CASE("queue_node copy constructor") {
     conformance::test_copy_ctor_for_buffering_nodes<oneapi::tbb::flow::queue_node<int>>();
 }
 
 //! Test inheritance relations
 //! \brief \ref interface
-TEST_CASE("queue_node superclasses"){
+TEST_CASE("queue_node superclasses") {
     conformance::test_inheritance<oneapi::tbb::flow::queue_node<int>, int, int>();
     conformance::test_inheritance<oneapi::tbb::flow::queue_node<void*>, void*, void*>();
 }
 
 //! Test queue_node node `try_put()` and `try_get()`
 //! \brief \ref requirement
-TEST_CASE("queue_node methods"){
+TEST_CASE("queue_node methods") {
     oneapi::tbb::flow::graph g;
     oneapi::tbb::flow::queue_node<int> testing_node(g);
 
     int tmp1 = -1;
     int tmp2 = -1;
 
-    CHECK_MESSAGE((!testing_node.try_get(tmp1) && tmp1 == -1), "`try_get` must returns false if there is no non-reserved item currently in the node.");
+    CHECK_MESSAGE((!testing_node.try_get(tmp1) && tmp1 == -1),
+                  "`try_get` must returns false if there is no non-reserved item currently in the node.");
 
     testing_node.try_put(1);
     testing_node.try_put(2);

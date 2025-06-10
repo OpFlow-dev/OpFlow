@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2023 by the OpFlow developers
+// Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -29,13 +29,12 @@
 
 OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     template <typename ScalarType, int d, typename Allocator>
-        requires Utils::StaticAllocatorType<ScalarType, Allocator>
-    struct PlainTensor;
+    requires Utils::StaticAllocatorType<ScalarType, Allocator> struct PlainTensor;
 
     namespace internal {
         template <typename ScalarType, int d, typename Allocator>
-            requires Utils::StaticAllocatorType<ScalarType, Allocator>
-        struct TensorTrait<PlainTensor<ScalarType, d, Allocator>> {
+        requires Utils::StaticAllocatorType<ScalarType, Allocator> struct TensorTrait<
+                PlainTensor<ScalarType, d, Allocator>> {
             using scalar_type = ScalarType;
             static constexpr auto dim = d;
             using allocator_type = Allocator;
@@ -50,8 +49,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     }// namespace internal
 
     template <typename ScalarType, int d, typename Allocator = Utils::AlignedAllocator<ScalarType>>
-        requires Utils::StaticAllocatorType<ScalarType, Allocator>
-    struct PlainTensor : public Tensor<PlainTensor<ScalarType, d, Allocator>> {
+    requires Utils::StaticAllocatorType<ScalarType, Allocator> struct PlainTensor
+        : public Tensor<PlainTensor<ScalarType, d, Allocator>> {
     private:
         ScalarType* data = nullptr;
 
@@ -138,8 +137,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
 
         // operator= is simply treated as assignment
         template <typename OtherScalar>
-            requires(!std::is_same_v<Scalar, OtherScalar>)
-        auto& operator=(const PlainTensor<OtherScalar, d>& other) {
+        requires(!std::is_same_v<Scalar, OtherScalar>) auto&
+        operator=(const PlainTensor<OtherScalar, d>& other) {
             OP_ASSERT(other.raw());// assign to an empty tensor is an error
             if (!data) {
                 reShape(other);
@@ -215,8 +214,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         auto getOffset(int index) const { return index; }
 
         template <typename... I>
-            requires(std::integral<Meta::RealType<I>> && ...) && (sizeof...(I) > 1)
-        auto getOffset(I&&... i) const {
+                requires(std::integral<Meta::RealType<I>>&&...)
+                && (sizeof...(I) > 1) auto getOffset(I&&... i) const {
             return getOffset(DS::MDIndex<d> {i...});
         }
 
@@ -285,7 +284,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
             return *this;
         }
 
-        auto& operator=(const PlainTensor& other) { return this->template operator= <Scalar>(other); }
+        auto& operator=(const PlainTensor& other) { return this->template operator=<Scalar>(other); }
 
         auto& operator==(const PlainTensor& other) const { return this->val == other.val; }
 

@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2023 by the OpFlow developers
+// Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -91,8 +91,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     enum class NumberingType { ByStep, ByTime };
 
     template <typename Derived>
-    struct Stream : internal::StreamImpl<Derived, bool(internal::StreamTrait<Derived>::mode_flag& StreamIn),
-                                         bool(internal::StreamTrait<Derived>::mode_flag& StreamOut)> {
+    struct Stream : internal::StreamImpl<Derived, bool(internal::StreamTrait<Derived>::mode_flag & StreamIn),
+                                         bool(internal::StreamTrait<Derived>::mode_flag & StreamOut)> {
         void setNumberingType(NumberingType type) { this->derived().setNumberingTypeImpl(type); }
     };
 }// namespace OpFlow::Utils

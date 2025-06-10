@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2023 by the OpFlow developers
+// Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -21,10 +21,12 @@
 
 OPFLOW_MODULE_EXPORT namespace OpFlow::Utils::Serializer {
     template <typename T>
-        requires Meta::BracketIndexable<T> && requires(T t) {
-            { t.empty() } -> std::same_as<bool>;
-            { t.size() } -> std::same_as<std::size_t>;
-        }
+    requires Meta::BracketIndexable<T>&& requires(T t) {
+        { t.empty() }
+        ->std::same_as<bool>;
+        { t.size() }
+        ->std::same_as<std::size_t>;
+    }
     auto serialize_impl(const T& arr, const std::string& prefix, const std::string& postfix,
                         const std::string& splitter) {
         std::string ret = prefix;
@@ -36,7 +38,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils::Serializer {
     }
 
     template <typename T, std::size_t N>
-    auto serialize_impl(const T (&arr)[N], const std::string& prefix, const std::string& postfix,
+    auto serialize_impl(const T(&arr)[N], const std::string& prefix, const std::string& postfix,
                         const std::string& splitter) {
         std::string ret = prefix;
         if (N == 0) return ret + postfix;

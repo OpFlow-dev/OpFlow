@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2023 by the OpFlow developers
+//  Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -1235,7 +1235,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     // general exprs
     template <typename Op, typename... Args>
-    requires(sizeof...(Args) > 0) auto makeExpression(Args&&... args) {
+    requires(sizeof...(Args) > 0) auto makeExpression(Args && ... args) {
         return Expression<Op, Meta::RealType<Args>...>(std::forward<Args>(args)...);
     }
 

@@ -33,8 +33,7 @@ public:
     public:
         scoped_lock() : my_mutex_ptr(nullptr), my_writer_flag(false) {}
         scoped_lock(SharedMutexWrapper& mutex, bool write = true)
-            : my_mutex_ptr(&mutex), my_writer_flag(write)
-        {
+            : my_mutex_ptr(&mutex), my_writer_flag(write) {
             if (my_writer_flag) {
                 my_mutex_ptr->my_mutex.lock();
             } else {
@@ -86,44 +85,42 @@ public:
 
         bool upgrade_to_writer() {
             // std::shared_mutex does not have the upgrade/downgrade semantics
-            if (my_writer_flag) return true; // Already a writer
+            if (my_writer_flag) return true;// Already a writer
 
             my_mutex_ptr->my_mutex.unlock_shared();
             my_mutex_ptr->my_mutex.lock();
-            return false; // The lock was reacquired
+            return false;// The lock was reacquired
         }
 
         bool downgrade_to_reader() {
-            if (!my_writer_flag) return true; // Already a reader
+            if (!my_writer_flag) return true;// Already a reader
 
             my_mutex_ptr->my_mutex.unlock();
             my_mutex_ptr->my_mutex.lock_shared();
             return false;
         }
 
-        bool is_writer() const {
-            return my_writer_flag;
-        }
+        bool is_writer() const { return my_writer_flag; }
 
     private:
         SharedMutexWrapper* my_mutex_ptr;
-        bool                my_writer_flag;
+        bool my_writer_flag;
     };
+
 private:
     std::shared_mutex my_mutex;
-}; // struct SharedMutexWrapper
+};// struct SharedMutexWrapper
 
 int main() {
-    using map_type = oneapi::tbb::concurrent_hash_map<int, int,
-                                                      oneapi::tbb::tbb_hash_compare<int>,
+    using map_type = oneapi::tbb::concurrent_hash_map<int, int, oneapi::tbb::tbb_hash_compare<int>,
                                                       oneapi::tbb::tbb_allocator<std::pair<const int, int>>,
                                                       SharedMutexWrapper>;
 
-    map_type map; // This object will use SharedMutexWrapper for thread safety of insert/find/erase operations
+    map_type map;// This object will use SharedMutexWrapper for thread safety of insert/find/erase operations
 }
 /*end_custom_mutex_chmap_example*/
 
-#else // C++17
+#else// C++17
 // Skip
 int main() {}
 #endif

@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2023 by the OpFlow developers
+//  Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -78,7 +78,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     };
 
     template <typename... Es, typename... Ts>
-    auto makeStencilHolder(EqnHolder<EquationSet<Es...>, TargetSet<Ts...>>& eqnHolder) {
+    auto makeStencilHolder(EqnHolder<EquationSet<Es...>, TargetSet<Ts...>> & eqnHolder) {
         return StencilHolder<EquationSet<Es...>, TargetSet<Ts...>>(eqnHolder);
     }
 }// namespace OpFlow

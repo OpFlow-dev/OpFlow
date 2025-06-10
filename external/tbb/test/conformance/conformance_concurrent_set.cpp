@@ -18,9 +18,9 @@
 #define NOMINMAX
 #endif
 #include "oneapi/tbb/concurrent_set.h"
+#include <common/concurrent_ordered_common.h>
 #include <common/test.h>
 #include <common/utils.h>
-#include <common/concurrent_ordered_common.h>
 #include <memory>
 #include <type_traits>
 
@@ -41,10 +41,11 @@ void test_member_types() {
     using default_container_type = ContainerType<int>;
     static_assert(std::is_same<typename default_container_type::key_compare, std::less<int>>::value,
                   "Incorrect default template comparator");
-    static_assert(std::is_same<typename default_container_type::allocator_type, oneapi::tbb::tbb_allocator<int>>::value,
+    static_assert(std::is_same<typename default_container_type::allocator_type,
+                               oneapi::tbb::tbb_allocator<int>>::value,
                   "Incorrect default template allocator");
 
-    auto test_comparator = [](const int&, const int&)->bool { return true; };
+    auto test_comparator = [](const int&, const int&) -> bool { return true; };
     using test_allocator_type = std::allocator<int>;
 
     using container_type = ContainerType<int, decltype(test_comparator), test_allocator_type>;
@@ -70,9 +71,11 @@ void test_member_types() {
     static_assert(std::is_same<typename container_type::const_reference, const value_type&>::value,
                   "Incorrect container const_reference member type");
     using allocator_type = typename container_type::allocator_type;
-    static_assert(std::is_same<typename container_type::pointer, typename std::allocator_traits<allocator_type>::pointer>::value,
+    static_assert(std::is_same<typename container_type::pointer,
+                               typename std::allocator_traits<allocator_type>::pointer>::value,
                   "Incorrect container pointer member type");
-    static_assert(std::is_same<typename container_type::const_pointer, typename std::allocator_traits<allocator_type>::const_pointer>::value,
+    static_assert(std::is_same<typename container_type::const_pointer,
+                               typename std::allocator_traits<allocator_type>::const_pointer>::value,
                   "Incorrect container const_pointer member type");
 
     static_assert(utils::is_forward_iterator<typename container_type::iterator>::value,
@@ -86,7 +89,7 @@ void test_member_types() {
 }
 
 #if __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
-template <template <typename ...> typename TSet>
+template <template <typename...> typename TSet>
 void test_deduction_guides() {
     std::vector<int> vc({1, 2, 3});
     TSet set(vc.begin(), vc.end());
@@ -104,7 +107,7 @@ void test_deduction_guides() {
     TSet set4(vc.begin(), vc.end(), compare, allocator);
     static_assert(std::is_same_v<decltype(set4), TSet<int, decltype(compare), decltype(allocator)>>, "Wrong");
 
-    auto init_list = { int(1), int(2), int(3) };
+    auto init_list = {int(1), int(2), int(3)};
 
     TSet set5(init_list);
     static_assert(std::is_same_v<decltype(set5), TSet<int>>, "Wrong");
@@ -135,7 +138,7 @@ struct COSetTraits : OrderedMoveTraitsBase {
     using container_value_type = T;
 
     using init_iterator_type = move_support_tests::FooIterator;
-}; // struct COSetTraits
+};// struct COSetTraits
 
 struct COMultisetTraits : OrderedMoveTraitsBase {
     template <typename T, typename Allocator>
@@ -145,25 +148,19 @@ struct COMultisetTraits : OrderedMoveTraitsBase {
     using container_value_type = T;
 
     using init_iterator_type = move_support_tests::FooIterator;
-}; // struct COMultisetTraits
+};// struct COMultisetTraits
 
 //! Testing concurrent_set member types
 //! \brief \ref interface \ref requirement
-TEST_CASE("concurrent_set member types") {
-    test_member_types<oneapi::tbb::concurrent_set>();
-}
+TEST_CASE("concurrent_set member types") { test_member_types<oneapi::tbb::concurrent_set>(); }
 
 //! Testing multithreading support in concurrent_set
 //! \brief \ref requirement
-TEST_CASE("concurrent_set multithreading support") {
-    test_concurrent<set_type>();
-}
+TEST_CASE("concurrent_set multithreading support") { test_concurrent<set_type>(); }
 
 //! Testing move constructors and assignment operator in concurrent_set
 //! \brief \ref interface \ref requirement
-TEST_CASE("concurrent_set move semantics support") {
-    test_rvalue_ref_support<COSetTraits>();
-}
+TEST_CASE("concurrent_set move semantics support") { test_rvalue_ref_support<COSetTraits>(); }
 
 //! Testing std::initializer_list constructors and modifiers in concurrent_set
 //! \brief \ref interface \ref requirement
@@ -179,9 +176,7 @@ TEST_CASE("node handling support in concurrent_set") {
 
 //! Testing std::allocator_traits support in concurrent_set
 //! \brief \ref interface \ref requirement
-TEST_CASE("std::allocator_traits support in concurrent_set") {
-    test_allocator_traits_support<COSetTraits>();
-}
+TEST_CASE("std::allocator_traits support in concurrent_set") { test_allocator_traits_support<COSetTraits>(); }
 
 //! Testing heterogeneous overloads in concurrent_set
 //! \brief \ref interface \ref requirement
@@ -192,40 +187,28 @@ TEST_CASE("heterogeneous overloads in concurrent_set") {
 #if __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
 //! Testing Class Template Argument Deduction in concurrent_set
 //! \brief \ref interface \ref requirement
-TEST_CASE("CTAD support in concurrent_set") {
-    test_deduction_guides<oneapi::tbb::concurrent_set>();
-}
-#endif // __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
+TEST_CASE("CTAD support in concurrent_set") { test_deduction_guides<oneapi::tbb::concurrent_set>(); }
+#endif// __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
 
 //! Testing comparison operators in concurrent_set
 //! \brief \ref interface \ref requirement
-TEST_CASE("test concurrent_set comparisons") {
-    test_set_comparisons<oneapi::tbb::concurrent_set>();
-}
+TEST_CASE("test concurrent_set comparisons") { test_set_comparisons<oneapi::tbb::concurrent_set>(); }
 
 //! Testing concurrent_multiset member types
 //! \brief \ref interface \ref requirement
-TEST_CASE("concurrent_multiset member types") {
-    test_member_types<oneapi::tbb::concurrent_multiset>();
-}
+TEST_CASE("concurrent_multiset member types") { test_member_types<oneapi::tbb::concurrent_multiset>(); }
 
 //! Testing requirements of concurrent_multiset
 //! \brief \ref interface \ref requirement
-TEST_CASE("concurrent_multiset requirements") {
-    test_basic<multiset_type>();
-}
+TEST_CASE("concurrent_multiset requirements") { test_basic<multiset_type>(); }
 
 //! Testing multithreading support in concurrent_multiset
 //! \brief \ref requirement
-TEST_CASE("concurrent_multiset multithreading support") {
-    test_concurrent<multiset_type>();
-}
+TEST_CASE("concurrent_multiset multithreading support") { test_concurrent<multiset_type>(); }
 
 //! Testing move constructors and assignment operator in concurrent_multiset
 //! \brief \ref interface \ref requirement
-TEST_CASE("concurrent_multiset multithreading support") {
-    test_rvalue_ref_support<COMultisetTraits>();
-}
+TEST_CASE("concurrent_multiset multithreading support") { test_rvalue_ref_support<COMultisetTraits>(); }
 
 //! Testing std::initializer_list constructors and modifiers in concurrent_multiset
 //! \brief \ref interface \ref requirement
@@ -257,16 +240,12 @@ TEST_CASE("heterogeneous overloads in concurrent_multiset") {
 TEST_CASE("CTAD support in concurrent_multiset") {
     test_deduction_guides<oneapi::tbb::concurrent_multiset>();
 }
-#endif // __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
+#endif// __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
 
 //! Testing comparison operators in concurrent_multiset
 //! \brief \ref interface \ref requirement
-TEST_CASE("test concurrent_set comparisons") {
-    test_set_comparisons<oneapi::tbb::concurrent_multiset>();
-}
+TEST_CASE("test concurrent_set comparisons") { test_set_comparisons<oneapi::tbb::concurrent_multiset>(); }
 
 //! Testing of merge operations in concurrent_set and concurrent_multiset
 //! \brief \ref interface \ref requirement
-TEST_CASE("merge operations") {
-    node_handling_tests::test_merge<set_type, multiset_type>(1000);
-}
+TEST_CASE("merge operations") { node_handling_tests::test_merge<set_type, multiset_type>(1000); }

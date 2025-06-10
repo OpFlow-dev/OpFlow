@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2023 by the OpFlow developers
+// Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -28,9 +28,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         using BCBase<F>::operator=;
         [[nodiscard]] BCType getBCType() const override { return type; }
 
-        [[nodiscard]] virtual std::unique_ptr<BCBase<F>> getFunctorBC(
-                std::function<typename BCBase<F>::elem_type(const typename BCBase<F>::index_type&)> f) const
-                = 0;
+        [[nodiscard]] virtual std::unique_ptr<BCBase<F>>
+        getFunctorBC(std::function<typename BCBase<F>::elem_type(const typename BCBase<F>::index_type&)> f)
+                const = 0;
     };
 
     template <MeshBasedFieldExprType F>

@@ -22,32 +22,32 @@
 #include "common/utils.h"
 #if !__TBB_TEST_SKIP_AFFINITY
 #include "common/utils_concurrency_limit.h"
-#include "tbb/global_control.h"
-#include "tbb/enumerable_thread_specific.h"
-#include "tbb/task_arena.h"
-#include "tbb/concurrent_vector.h"
-#include "tbb/concurrent_queue.h"
-#include "tbb/concurrent_priority_queue.h"
+#include "tbb/blocked_nd_range.h"
+#include "tbb/blocked_range.h"
+#include "tbb/blocked_range2d.h"
+#include "tbb/blocked_range3d.h"
+#include "tbb/cache_aligned_allocator.h"
+#include "tbb/combinable.h"
 #include "tbb/concurrent_hash_map.h"
+#include "tbb/concurrent_map.h"
+#include "tbb/concurrent_priority_queue.h"
+#include "tbb/concurrent_queue.h"
+#include "tbb/concurrent_set.h"
 #include "tbb/concurrent_unordered_map.h"
 #include "tbb/concurrent_unordered_set.h"
-#include "tbb/concurrent_map.h"
-#include "tbb/concurrent_set.h"
-#include "tbb/cache_aligned_allocator.h"
-#include "tbb/scalable_allocator.h"
-#include "tbb/tbb_allocator.h"
+#include "tbb/concurrent_vector.h"
+#include "tbb/enumerable_thread_specific.h"
+#include "tbb/global_control.h"
 #include "tbb/null_mutex.h"
 #include "tbb/null_rw_mutex.h"
 #include "tbb/queuing_mutex.h"
 #include "tbb/queuing_rw_mutex.h"
+#include "tbb/scalable_allocator.h"
 #include "tbb/spin_mutex.h"
 #include "tbb/spin_rw_mutex.h"
+#include "tbb/task_arena.h"
+#include "tbb/tbb_allocator.h"
 #include "tbb/tick_count.h"
-#include "tbb/combinable.h"
-#include "tbb/blocked_range.h"
-#include "tbb/blocked_range2d.h"
-#include "tbb/blocked_range3d.h"
-#include "tbb/blocked_nd_range.h"
 
 // Declaration of global objects are needed to check that
 // it does not initialize the task scheduler, and in particular
@@ -94,9 +94,10 @@ TEST_CASE("Check absence of scheduler initialization") {
 
     if (maxProcs >= 2) {
         int availableProcs = maxProcs / 2;
-        REQUIRE_MESSAGE(utils::limit_number_of_threads(availableProcs) == availableProcs, "limit_number_of_threads has not set the requested limitation");
+        REQUIRE_MESSAGE(utils::limit_number_of_threads(availableProcs) == availableProcs,
+                        "limit_number_of_threads has not set the requested limitation");
         REQUIRE(tbb::this_task_arena::max_concurrency() == availableProcs);
     }
 }
 
-#endif // !__TBB_TEST_SKIP_AFFINITY
+#endif// !__TBB_TEST_SKIP_AFFINITY

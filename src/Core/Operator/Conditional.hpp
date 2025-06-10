@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2023 by the OpFlow developers
+// Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -43,8 +43,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         static void prepare(const Expression<CondOp, C, T1, T2>& expr) {
             expr.initPropsFrom(expr.arg2);
             expr.name = std::format("{} ? {} : {}", expr.arg1.name, expr.arg2.name, expr.arg3.name);
-            if constexpr (MeshBasedFieldExprType<T1> && MeshBasedFieldExprType<T2>
-                          && MeshBasedFieldExprType<C>) {
+            if constexpr (MeshBasedFieldExprType<
+                                  T1> && MeshBasedFieldExprType<T2> && MeshBasedFieldExprType<C>) {
                 OP_ASSERT(expr.arg1.mesh == expr.arg2.mesh);
                 OP_ASSERT(expr.arg1.mesh == expr.arg3.mesh);
                 if constexpr (StructuredFieldExprType<T1> || SemiStructuredFieldExprType<T1>) {
@@ -178,7 +178,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     }// namespace internal
 
     template <GeneralExprType C, GeneralExprType T, GeneralExprType U>
-    auto conditional(C&& c, T&& t, U&& u) {
+    auto conditional(C && c, T && t, U && u) {
         return makeExpression<CondOp>(Meta::forward_unless_scalar(OP_PERFECT_FOWD(c)),
                                       Meta::forward_unless_scalar(OP_PERFECT_FOWD(t)),
                                       Meta::forward_unless_scalar(OP_PERFECT_FOWD(u)));

@@ -43,7 +43,7 @@ void test_deduction_guides() {
     graph g;
     broadcast_node<message_key> bm1(g), bm2(g);
     broadcast_node<tuple_type> bm3(g);
-    join_node<tuple_type, key_matching<int> > j0(g);
+    join_node<tuple_type, key_matching<int>> j0(g);
     join_node j3(j0);
     static_assert(std::is_same_v<decltype(j3), join_node<tuple_type, key_matching<int>>>);
 }
@@ -52,22 +52,33 @@ void test_deduction_guides() {
 //! Serial test with matching policies
 //! \brief \ref error_guessing
 TEST_CASE("Serial test") {
-    generate_test<serial_test, std::tuple<MyMessageKeyWithBrokenKey<int, double>, MyMessageKeyWithoutKey<int, float> >, message_based_key_matching<int> >::do_test();
-    generate_test<serial_test, std::tuple<MyMessageKeyWithoutKeyMethod<std::string, double>, MyMessageKeyWithBrokenKey<std::string, float> >, message_based_key_matching<std::string> >::do_test();
+    generate_test<serial_test,
+                  std::tuple<MyMessageKeyWithBrokenKey<int, double>, MyMessageKeyWithoutKey<int, float>>,
+                  message_based_key_matching<int>>::do_test();
+    generate_test<serial_test,
+                  std::tuple<MyMessageKeyWithoutKeyMethod<std::string, double>,
+                             MyMessageKeyWithBrokenKey<std::string, float>>,
+                  message_based_key_matching<std::string>>::do_test();
 }
 
 //! Parallel test with special key types
 //! \brief \ref error_guessing
-TEST_CASE("Parallel test"){
-    generate_test<parallel_test, std::tuple<MyMessageKeyWithBrokenKey<int, double>, MyMessageKeyWithoutKey<int, float> >, message_based_key_matching<int> >::do_test();
-    generate_test<parallel_test, std::tuple<MyMessageKeyWithoutKeyMethod<int, double>, MyMessageKeyWithBrokenKey<int, float> >, message_based_key_matching<int&> >::do_test();
-    generate_test<parallel_test, std::tuple<MyMessageKeyWithoutKey<std::string, double>, MyMessageKeyWithoutKeyMethod<std::string, float> >, message_based_key_matching<std::string&> >::do_test();
+TEST_CASE("Parallel test") {
+    generate_test<parallel_test,
+                  std::tuple<MyMessageKeyWithBrokenKey<int, double>, MyMessageKeyWithoutKey<int, float>>,
+                  message_based_key_matching<int>>::do_test();
+    generate_test<
+            parallel_test,
+            std::tuple<MyMessageKeyWithoutKeyMethod<int, double>, MyMessageKeyWithBrokenKey<int, float>>,
+            message_based_key_matching<int&>>::do_test();
+    generate_test<parallel_test,
+                  std::tuple<MyMessageKeyWithoutKey<std::string, double>,
+                             MyMessageKeyWithoutKeyMethod<std::string, float>>,
+                  message_based_key_matching<std::string&>>::do_test();
 }
 
 #if __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
 //! Test deduction guides
 //! \brief \ref requirement
-TEST_CASE("Deduction guides test"){
-    test_deduction_guides();
-}
+TEST_CASE("Deduction guides test") { test_deduction_guides(); }
 #endif

@@ -21,12 +21,12 @@
 #include "tbb/flow_graph.h"
 #include "tbb/global_control.h"
 
-#include "common/test.h"
-#include "common/utils.h"
-#include "common/utils_assert.h"
 #include "common/checktype.h"
 #include "common/graph_utils.h"
+#include "common/test.h"
 #include "common/test_follows_and_precedes_api.h"
+#include "common/utils.h"
+#include "common/utils_assert.h"
 
 #include <cstdio>
 
@@ -35,87 +35,81 @@
 //! \file test_queue_node.cpp
 //! \brief Test for [flow_graph.queue_node] specification
 
-
 #define N 1000
 #define C 10
 
-template< typename T >
-void spin_try_get( tbb::flow::queue_node<T> &q, T &value ) {
+template <typename T>
+void spin_try_get(tbb::flow::queue_node<T> &q, T &value) {
     int count = 0;
-    while ( q.try_get(value) != true ) {
-        if (count < 1000000) {
-            ++count;
-        }
+    while (q.try_get(value) != true) {
+        if (count < 1000000) { ++count; }
         if (count == 1000000) {
             // Perhaps, we observe the missed wakeup. Enqueue a task to wake up threads.
-            tbb::task_arena a(tbb::task_arena::attach{});
-            a.enqueue([]{});
+            tbb::task_arena a(tbb::task_arena::attach {});
+            a.enqueue([] {});
             ++count;
         }
     }
 }
 
-template< typename T >
-void check_item( T* next_value, T &value ) {
+template <typename T>
+void check_item(T *next_value, T &value) {
     int tid = value / N;
     int offset = value % N;
-    CHECK_MESSAGE( next_value[tid] == T(offset), "" );
+    CHECK_MESSAGE(next_value[tid] == T(offset), "");
     ++next_value[tid];
 }
 
-template< typename T >
+template <typename T>
 struct parallel_puts : utils::NoAssign {
 
     tbb::flow::queue_node<T> &my_q;
 
-    parallel_puts( tbb::flow::queue_node<T> &q ) : my_q(q) {}
+    parallel_puts(tbb::flow::queue_node<T> &q) : my_q(q) {}
 
     void operator()(int i) const {
         for (int j = 0; j < N; ++j) {
-            bool msg = my_q.try_put( T(N*i + j) );
-            CHECK_MESSAGE( msg == true, "" );
+            bool msg = my_q.try_put(T(N * i + j));
+            CHECK_MESSAGE(msg == true, "");
         }
     }
-
 };
 
-template< typename T >
+template <typename T>
 struct touches {
 
     bool **my_touches;
     T **my_last_touch;
     int my_num_threads;
 
-    touches( int num_threads ) : my_num_threads(num_threads) {
-        my_last_touch = new T* [my_num_threads];
-        my_touches = new bool* [my_num_threads];
-        for ( int p = 0; p < my_num_threads; ++p) {
+    touches(int num_threads) : my_num_threads(num_threads) {
+        my_last_touch = new T *[my_num_threads];
+        my_touches = new bool *[my_num_threads];
+        for (int p = 0; p < my_num_threads; ++p) {
             my_last_touch[p] = new T[my_num_threads];
-            for ( int p2 = 0; p2 < my_num_threads; ++p2)
-                my_last_touch[p][p2] = -1;
+            for (int p2 = 0; p2 < my_num_threads; ++p2) my_last_touch[p][p2] = -1;
 
-            my_touches[p] = new bool[N*my_num_threads];
-            for ( int n = 0; n < N*my_num_threads; ++n)
-                my_touches[p][n] = false;
+            my_touches[p] = new bool[N * my_num_threads];
+            for (int n = 0; n < N * my_num_threads; ++n) my_touches[p][n] = false;
         }
     }
 
     ~touches() {
-        for ( int p = 0; p < my_num_threads; ++p) {
-            delete [] my_touches[p];
-            delete [] my_last_touch[p];
+        for (int p = 0; p < my_num_threads; ++p) {
+            delete[] my_touches[p];
+            delete[] my_last_touch[p];
         }
-        delete [] my_touches;
-        delete [] my_last_touch;
+        delete[] my_touches;
+        delete[] my_last_touch;
     }
 
-    bool check( int tid, T v ) {
+    bool check(int tid, T v) {
         int v_tid = v / N;
-        if ( my_touches[tid][v] != false ) {
+        if (my_touches[tid][v] != false) {
             printf("Error: value seen twice by local thread\n");
             return false;
         }
-        if ( v <= my_last_touch[tid][v_tid] ) {
+        if (v <= my_last_touch[tid][v_tid]) {
             printf("Error: value seen in wrong order by local thread\n");
             return false;
         }
@@ -125,72 +119,65 @@ struct touches {
     }
 
     bool validate_touches() {
-        bool *all_touches = new bool[N*my_num_threads];
-        for ( int n = 0; n < N*my_num_threads; ++n)
-            all_touches[n] = false;
+        bool *all_touches = new bool[N * my_num_threads];
+        for (int n = 0; n < N * my_num_threads; ++n) all_touches[n] = false;
 
-        for ( int p = 0; p < my_num_threads; ++p) {
-            for ( int n = 0; n < N*my_num_threads; ++n) {
-                if ( my_touches[p][n] == true ) {
-                    CHECK_MESSAGE( ( all_touches[n] == false), "value see by more than one thread\n" );
+        for (int p = 0; p < my_num_threads; ++p) {
+            for (int n = 0; n < N * my_num_threads; ++n) {
+                if (my_touches[p][n] == true) {
+                    CHECK_MESSAGE((all_touches[n] == false), "value see by more than one thread\n");
                     all_touches[n] = true;
                 }
             }
         }
-        for ( int n = 0; n < N*my_num_threads; ++n) {
-            if ( !all_touches[n] )
-                printf("No touch at %d, my_num_threads = %d\n", n, my_num_threads);
+        for (int n = 0; n < N * my_num_threads; ++n) {
+            if (!all_touches[n]) printf("No touch at %d, my_num_threads = %d\n", n, my_num_threads);
             //CHECK_MESSAGE( ( all_touches[n] == true), "value not seen by any thread\n" );
         }
-        delete [] all_touches;
+        delete[] all_touches;
         return true;
     }
-
 };
 
-template< typename T >
+template <typename T>
 struct parallel_gets : utils::NoAssign {
 
     tbb::flow::queue_node<T> &my_q;
     touches<T> &my_touches;
 
-    parallel_gets( tbb::flow::queue_node<T> &q, touches<T> &t) : my_q(q), my_touches(t) {}
+    parallel_gets(tbb::flow::queue_node<T> &q, touches<T> &t) : my_q(q), my_touches(t) {}
 
     void operator()(int tid) const {
         for (int j = 0; j < N; ++j) {
             T v;
-            spin_try_get( my_q, v );
-            my_touches.check( tid, v );
+            spin_try_get(my_q, v);
+            my_touches.check(tid, v);
         }
     }
-
 };
 
-template< typename T >
+template <typename T>
 struct parallel_put_get : utils::NoAssign {
 
     tbb::flow::queue_node<T> &my_q;
     touches<T> &my_touches;
 
-    parallel_put_get( tbb::flow::queue_node<T> &q, touches<T> &t ) : my_q(q), my_touches(t) {}
+    parallel_put_get(tbb::flow::queue_node<T> &q, touches<T> &t) : my_q(q), my_touches(t) {}
 
     void operator()(int tid) const {
 
-        for ( int i = 0; i < N; i+=C ) {
-            int j_end = ( N < i + C ) ? N : i + C;
+        for (int i = 0; i < N; i += C) {
+            int j_end = (N < i + C) ? N : i + C;
             // dump about C values into the Q
-            for ( int j = i; j < j_end; ++j ) {
-                CHECK_MESSAGE( my_q.try_put( T (N*tid + j ) ) == true, "" );
-            }
+            for (int j = i; j < j_end; ++j) { CHECK_MESSAGE(my_q.try_put(T(N * tid + j)) == true, ""); }
             // receiver about C values from the Q
-            for ( int j = i; j < j_end; ++j ) {
+            for (int j = i; j < j_end; ++j) {
                 T v;
-                spin_try_get( my_q, v );
-                my_touches.check( tid, v );
+                spin_try_get(my_q, v);
+                my_touches.check(tid, v);
             }
         }
     }
-
 };
 
 //
@@ -198,7 +185,7 @@ struct parallel_put_get : utils::NoAssign {
 //
 // Item can be reserved, released, consumed ( single serial receiver )
 //
-template< typename T >
+template <typename T>
 int test_reservation() {
     tbb::flow::graph g;
     T bogus_value(-1);
@@ -211,30 +198,30 @@ int test_reservation() {
     q.try_put(T(3));
 
     T v;
-    CHECK_MESSAGE( q.reserve_item(v) == true, "" );
-    CHECK_MESSAGE( v == T(1), "" );
-    CHECK_MESSAGE( q.release_reservation() == true, "" );
+    CHECK_MESSAGE(q.reserve_item(v) == true, "");
+    CHECK_MESSAGE(v == T(1), "");
+    CHECK_MESSAGE(q.release_reservation() == true, "");
     v = bogus_value;
     g.wait_for_all();
-    CHECK_MESSAGE( q.reserve_item(v) == true, "" );
-    CHECK_MESSAGE( v == T(1), "" );
-    CHECK_MESSAGE( q.consume_reservation() == true, "" );
-    v = bogus_value;
-    g.wait_for_all();
-
-    CHECK_MESSAGE( q.try_get(v) == true, "" );
-    CHECK_MESSAGE( v == T(2), "" );
+    CHECK_MESSAGE(q.reserve_item(v) == true, "");
+    CHECK_MESSAGE(v == T(1), "");
+    CHECK_MESSAGE(q.consume_reservation() == true, "");
     v = bogus_value;
     g.wait_for_all();
 
-    CHECK_MESSAGE( q.reserve_item(v) == true, "" );
-    CHECK_MESSAGE( v == T(3), "" );
-    CHECK_MESSAGE( q.release_reservation() == true, "" );
+    CHECK_MESSAGE(q.try_get(v) == true, "");
+    CHECK_MESSAGE(v == T(2), "");
     v = bogus_value;
     g.wait_for_all();
-    CHECK_MESSAGE( q.reserve_item(v) == true, "" );
-    CHECK_MESSAGE( v == T(3), "" );
-    CHECK_MESSAGE( q.consume_reservation() == true, "" );
+
+    CHECK_MESSAGE(q.reserve_item(v) == true, "");
+    CHECK_MESSAGE(v == T(3), "");
+    CHECK_MESSAGE(q.release_reservation() == true, "");
+    v = bogus_value;
+    g.wait_for_all();
+    CHECK_MESSAGE(q.reserve_item(v) == true, "");
+    CHECK_MESSAGE(v == T(3), "");
+    CHECK_MESSAGE(q.consume_reservation() == true, "");
     v = bogus_value;
     g.wait_for_all();
 
@@ -249,97 +236,95 @@ int test_reservation() {
 //   * overlapped puts / gets
 //   * all puts finished before any getS
 //
-template< typename T >
+template <typename T>
 int test_parallel(int num_threads) {
     tbb::flow::graph g;
     tbb::flow::queue_node<T> q(g);
     tbb::flow::queue_node<T> q2(g);
     tbb::flow::queue_node<T> q3(g);
     {
-        Checker< T > my_check;
+        Checker<T> my_check;
         T bogus_value(-1);
         T j = bogus_value;
-        utils::NativeParallelFor( num_threads, parallel_puts<T>(q) );
+        utils::NativeParallelFor(num_threads, parallel_puts<T>(q));
 
         T *next_value = new T[num_threads];
         for (int tid = 0; tid < num_threads; ++tid) next_value[tid] = T(0);
 
-        for (int i = 0; i < num_threads * N; ++i ) {
-            spin_try_get( q, j );
-            check_item( next_value, j );
+        for (int i = 0; i < num_threads * N; ++i) {
+            spin_try_get(q, j);
+            check_item(next_value, j);
             j = bogus_value;
         }
-        for (int tid = 0; tid < num_threads; ++tid)  {
-            CHECK_MESSAGE( next_value[tid] == T(N), "" );
-        }
+        for (int tid = 0; tid < num_threads; ++tid) { CHECK_MESSAGE(next_value[tid] == T(N), ""); }
         delete[] next_value;
 
         j = bogus_value;
         g.wait_for_all();
-        CHECK_MESSAGE( q.try_get( j ) == false, "" );
-        CHECK_MESSAGE( j == bogus_value, "" );
+        CHECK_MESSAGE(q.try_get(j) == false, "");
+        CHECK_MESSAGE(j == bogus_value, "");
 
-        utils::NativeParallelFor( num_threads, parallel_puts<T>(q) );
+        utils::NativeParallelFor(num_threads, parallel_puts<T>(q));
 
         {
-            touches< T > t( num_threads );
-            utils::NativeParallelFor( num_threads, parallel_gets<T>(q, t) );
+            touches<T> t(num_threads);
+            utils::NativeParallelFor(num_threads, parallel_gets<T>(q, t));
             g.wait_for_all();
-            CHECK_MESSAGE( t.validate_touches(), "" );
+            CHECK_MESSAGE(t.validate_touches(), "");
         }
         j = bogus_value;
-        CHECK_MESSAGE( q.try_get( j ) == false, "" );
-        CHECK_MESSAGE( j == bogus_value, "" );
+        CHECK_MESSAGE(q.try_get(j) == false, "");
+        CHECK_MESSAGE(j == bogus_value, "");
 
         g.wait_for_all();
         {
-            touches< T > t2( num_threads );
-            utils::NativeParallelFor( num_threads, parallel_put_get<T>(q, t2) );
+            touches<T> t2(num_threads);
+            utils::NativeParallelFor(num_threads, parallel_put_get<T>(q, t2));
             g.wait_for_all();
-            CHECK_MESSAGE( t2.validate_touches(), "" );
+            CHECK_MESSAGE(t2.validate_touches(), "");
         }
         j = bogus_value;
-        CHECK_MESSAGE( q.try_get( j ) == false, "" );
-        CHECK_MESSAGE( j == bogus_value, "" );
+        CHECK_MESSAGE(q.try_get(j) == false, "");
+        CHECK_MESSAGE(j == bogus_value, "");
 
-        tbb::flow::make_edge( q, q2 );
-        tbb::flow::make_edge( q2, q3 );
+        tbb::flow::make_edge(q, q2);
+        tbb::flow::make_edge(q2, q3);
 
-        utils::NativeParallelFor( num_threads, parallel_puts<T>(q) );
+        utils::NativeParallelFor(num_threads, parallel_puts<T>(q));
         {
-            touches< T > t3( num_threads );
-            utils::NativeParallelFor( num_threads, parallel_gets<T>(q3, t3) );
+            touches<T> t3(num_threads);
+            utils::NativeParallelFor(num_threads, parallel_gets<T>(q3, t3));
             g.wait_for_all();
-            CHECK_MESSAGE( t3.validate_touches(), "" );
+            CHECK_MESSAGE(t3.validate_touches(), "");
         }
         j = bogus_value;
         g.wait_for_all();
-        CHECK_MESSAGE( q.try_get( j ) == false, "" );
+        CHECK_MESSAGE(q.try_get(j) == false, "");
         g.wait_for_all();
-        CHECK_MESSAGE( q2.try_get( j ) == false, "" );
+        CHECK_MESSAGE(q2.try_get(j) == false, "");
         g.wait_for_all();
-        CHECK_MESSAGE( q3.try_get( j ) == false, "" );
-        CHECK_MESSAGE( j == bogus_value, "" );
+        CHECK_MESSAGE(q3.try_get(j) == false, "");
+        CHECK_MESSAGE(j == bogus_value, "");
 
         // test copy constructor
-        CHECK_MESSAGE( remove_successor( q, q2 ), "" );
-        utils::NativeParallelFor( num_threads, parallel_puts<T>(q) );
+        CHECK_MESSAGE(remove_successor(q, q2), "");
+        utils::NativeParallelFor(num_threads, parallel_puts<T>(q));
         tbb::flow::queue_node<T> q_copy(q);
         j = bogus_value;
         g.wait_for_all();
-        CHECK_MESSAGE( q_copy.try_get( j ) == false, "" );
-        CHECK_MESSAGE( register_successor( q, q_copy ) == true, "" );
+        CHECK_MESSAGE(q_copy.try_get(j) == false, "");
+        CHECK_MESSAGE(register_successor(q, q_copy) == true, "");
         {
-            touches< T > t( num_threads );
-            utils::NativeParallelFor( num_threads, parallel_gets<T>(q_copy, t) );
+            touches<T> t(num_threads);
+            utils::NativeParallelFor(num_threads, parallel_gets<T>(q_copy, t));
             g.wait_for_all();
-            CHECK_MESSAGE( t.validate_touches(), "" );
+            CHECK_MESSAGE(t.validate_touches(), "");
         }
         j = bogus_value;
-        CHECK_MESSAGE( q.try_get( j ) == false, "" );
-        CHECK_MESSAGE( j == bogus_value, "" );
-        CHECK_MESSAGE( q_copy.try_get( j ) == false, "" );
-        CHECK_MESSAGE( j == bogus_value, "" );
+        CHECK_MESSAGE(q.try_get(j) == false, "");
+        CHECK_MESSAGE(j == bogus_value, "");
+        CHECK_MESSAGE(q_copy.try_get(j) == false, "");
+        CHECK_MESSAGE(j == bogus_value, "");
     }
 
     return 0;
@@ -354,14 +339,14 @@ int test_parallel(int num_threads) {
 // Chained Qs ( 2 & 3 ), single sender, items at last Q in FIFO order
 //
 
-template< typename T >
+template <typename T>
 int test_serial() {
     tbb::flow::graph g;
     tbb::flow::queue_node<T> q(g);
     tbb::flow::queue_node<T> q2(g);
-    {   // destroy the graph after manipulating it, and see if all the items in the buffers
+    {// destroy the graph after manipulating it, and see if all the items in the buffers
         // have been destroyed before the graph
-        Checker<T> my_check;  // if CheckType< U > count constructions and destructions
+        Checker<T> my_check;// if CheckType< U > count constructions and destructions
         T bogus_value(-1);
         T j = bogus_value;
 
@@ -369,94 +354,92 @@ int test_serial() {
         // Rejects attempts to add / remove predecessor
         // Rejects request from empty Q
         //
-        CHECK_MESSAGE( register_predecessor( q, q2 ) == false, "" );
-        CHECK_MESSAGE( remove_predecessor( q, q2 ) == false, "" );
-        CHECK_MESSAGE( q.try_get( j ) == false, "" );
-        CHECK_MESSAGE( j == bogus_value, "" );
+        CHECK_MESSAGE(register_predecessor(q, q2) == false, "");
+        CHECK_MESSAGE(remove_predecessor(q, q2) == false, "");
+        CHECK_MESSAGE(q.try_get(j) == false, "");
+        CHECK_MESSAGE(j == bogus_value, "");
 
         //
         // Simple puts and gets
         //
 
         for (int i = 0; i < N; ++i) {
-            bool msg = q.try_put( T(i) );
-            CHECK_MESSAGE( msg == true, "" );
+            bool msg = q.try_put(T(i));
+            CHECK_MESSAGE(msg == true, "");
         }
-
 
         for (int i = 0; i < N; ++i) {
             j = bogus_value;
-            spin_try_get( q, j );
-            CHECK_MESSAGE( i == j, "" );
+            spin_try_get(q, j);
+            CHECK_MESSAGE(i == j, "");
         }
         j = bogus_value;
         g.wait_for_all();
-        CHECK_MESSAGE( q.try_get( j ) == false, "" );
-        CHECK_MESSAGE( j == bogus_value, "" );
+        CHECK_MESSAGE(q.try_get(j) == false, "");
+        CHECK_MESSAGE(j == bogus_value, "");
 
-        tbb::flow::make_edge( q, q2 );
+        tbb::flow::make_edge(q, q2);
 
         for (int i = 0; i < N; ++i) {
-            bool msg = q.try_put( T(i) );
-            CHECK_MESSAGE( msg == true, "" );
+            bool msg = q.try_put(T(i));
+            CHECK_MESSAGE(msg == true, "");
         }
-
 
         for (int i = 0; i < N; ++i) {
             j = bogus_value;
-            spin_try_get( q2, j );
-            CHECK_MESSAGE( i == j, "" );
+            spin_try_get(q2, j);
+            CHECK_MESSAGE(i == j, "");
         }
         j = bogus_value;
         g.wait_for_all();
-        CHECK_MESSAGE( q.try_get( j ) == false, "" );
+        CHECK_MESSAGE(q.try_get(j) == false, "");
         g.wait_for_all();
-        CHECK_MESSAGE( q2.try_get( j ) == false, "" );
-        CHECK_MESSAGE( j == bogus_value, "" );
+        CHECK_MESSAGE(q2.try_get(j) == false, "");
+        CHECK_MESSAGE(j == bogus_value, "");
 
-        tbb::flow::remove_edge( q, q2 );
-        CHECK_MESSAGE( q.try_put( 1 ) == true, "" );
+        tbb::flow::remove_edge(q, q2);
+        CHECK_MESSAGE(q.try_put(1) == true, "");
         g.wait_for_all();
-        CHECK_MESSAGE( q2.try_get( j ) == false, "" );
-        CHECK_MESSAGE( j == bogus_value, "" );
+        CHECK_MESSAGE(q2.try_get(j) == false, "");
+        CHECK_MESSAGE(j == bogus_value, "");
         g.wait_for_all();
-        CHECK_MESSAGE( q.try_get( j ) == true, "" );
-        CHECK_MESSAGE( j == 1, "" );
+        CHECK_MESSAGE(q.try_get(j) == true, "");
+        CHECK_MESSAGE(j == 1, "");
 
         tbb::flow::queue_node<T> q3(g);
-        tbb::flow::make_edge( q, q2 );
-        tbb::flow::make_edge( q2, q3 );
+        tbb::flow::make_edge(q, q2);
+        tbb::flow::make_edge(q2, q3);
 
         for (int i = 0; i < N; ++i) {
-            bool msg = q.try_put( T(i) );
-            CHECK_MESSAGE( msg == true, "" );
+            bool msg = q.try_put(T(i));
+            CHECK_MESSAGE(msg == true, "");
         }
 
         for (int i = 0; i < N; ++i) {
             j = bogus_value;
-            spin_try_get( q3, j );
-            CHECK_MESSAGE( i == j, "" );
+            spin_try_get(q3, j);
+            CHECK_MESSAGE(i == j, "");
         }
         j = bogus_value;
         g.wait_for_all();
-        CHECK_MESSAGE( q.try_get( j ) == false, "" );
+        CHECK_MESSAGE(q.try_get(j) == false, "");
         g.wait_for_all();
-        CHECK_MESSAGE( q2.try_get( j ) == false, "" );
+        CHECK_MESSAGE(q2.try_get(j) == false, "");
         g.wait_for_all();
-        CHECK_MESSAGE( q3.try_get( j ) == false, "" );
-        CHECK_MESSAGE( j == bogus_value, "" );
+        CHECK_MESSAGE(q3.try_get(j) == false, "");
+        CHECK_MESSAGE(j == bogus_value, "");
 
-        tbb::flow::remove_edge( q,  q2 );
-        CHECK_MESSAGE( q.try_put( 1 ) == true, "" );
+        tbb::flow::remove_edge(q, q2);
+        CHECK_MESSAGE(q.try_put(1) == true, "");
         g.wait_for_all();
-        CHECK_MESSAGE( q2.try_get( j ) == false, "" );
-        CHECK_MESSAGE( j == bogus_value, "" );
+        CHECK_MESSAGE(q2.try_get(j) == false, "");
+        CHECK_MESSAGE(j == bogus_value, "");
         g.wait_for_all();
-        CHECK_MESSAGE( q3.try_get( j ) == false, "" );
-        CHECK_MESSAGE( j == bogus_value, "" );
+        CHECK_MESSAGE(q3.try_get(j) == false, "");
+        CHECK_MESSAGE(j == bogus_value, "");
         g.wait_for_all();
-        CHECK_MESSAGE( q.try_get( j ) == true, "" );
-        CHECK_MESSAGE( j == 1, "" );
+        CHECK_MESSAGE(q.try_get(j) == true, "");
+        CHECK_MESSAGE(j == 1, "");
     }
 
     return 0;
@@ -466,11 +449,11 @@ int test_serial() {
 #include <array>
 #include <vector>
 void test_follows_and_precedes_api() {
-    std::array<int, 3> messages_for_follows = { {0, 1, 2} };
+    std::array<int, 3> messages_for_follows = {{0, 1, 2}};
     std::vector<int> messages_for_precedes = {0, 1, 2};
 
-    follows_and_precedes_testing::test_follows <int, tbb::flow::queue_node<int>>(messages_for_follows);
-    follows_and_precedes_testing::test_precedes <int, tbb::flow::queue_node<int>>(messages_for_precedes);
+    follows_and_precedes_testing::test_follows<int, tbb::flow::queue_node<int>>(messages_for_follows);
+    follows_and_precedes_testing::test_precedes<int, tbb::flow::queue_node<int>>(messages_for_precedes);
 }
 #endif
 
@@ -521,8 +504,8 @@ void test_queue_node_try_put_and_wait() {
     {
         std::vector<int> processed_items;
 
-        std::size_t after_start = test_buffer_push<tbb::flow::queue_node<int>>(start_work_items, wait_message,
-                                                                               new_work_items, processed_items);
+        std::size_t after_start = test_buffer_push<tbb::flow::queue_node<int>>(
+                start_work_items, wait_message, new_work_items, processed_items);
 
         // Expected effect:
         // During buffer1.try_put_and_wait()
@@ -555,7 +538,7 @@ void test_queue_node_try_put_and_wait() {
                           "wait_for_all should process new_work_items FIFO");
         }
         CHECK(check_index == processed_items.size());
-    } // Test push
+    }// Test push
 
     // Test pull
     // test_buffer_pull tests the graph
@@ -573,8 +556,8 @@ void test_queue_node_try_put_and_wait() {
         std::vector<int> processed_items;
         int occupier = 42;
 
-        std::size_t after_start = test_buffer_pull<tbb::flow::queue_node<int>>(start_work_items, wait_message, occupier,
-                                                                               new_work_items, processed_items);
+        std::size_t after_start = test_buffer_pull<tbb::flow::queue_node<int>>(
+                start_work_items, wait_message, occupier, new_work_items, processed_items);
 
         // Expected effect
         // 0. task for occupier processing would be spawned by the function
@@ -594,12 +577,14 @@ void test_queue_node_try_put_and_wait() {
 
         CHECK_MESSAGE(after_start == start_work_items.size() + 2,
                       "start_work_items, occupier and wait_message should be processed by try_put_and_wait");
-        CHECK_MESSAGE(processed_items[check_index++] == occupier, "Unexpected items processing by try_put_and_wait");
+        CHECK_MESSAGE(processed_items[check_index++] == occupier,
+                      "Unexpected items processing by try_put_and_wait");
         for (auto item : start_work_items) {
             CHECK_MESSAGE(processed_items[check_index++] == item,
                           "try_put_and_wait should process start_work_items FIFO");
         }
-        CHECK_MESSAGE(processed_items[check_index++] == wait_message, "Unexpected items processing by try_put_and_wait");
+        CHECK_MESSAGE(processed_items[check_index++] == wait_message,
+                      "Unexpected items processing by try_put_and_wait");
 
         for (auto item : new_work_items) {
             CHECK_MESSAGE(processed_items[check_index++] == item,
@@ -610,7 +595,7 @@ void test_queue_node_try_put_and_wait() {
 
     // Test reserve
     {
-        int thresholds[] = { 1, 2 };
+        int thresholds[] = {1, 2};
 
         for (int threshold : thresholds) {
             std::vector<int> processed_items;
@@ -620,8 +605,8 @@ void test_queue_node_try_put_and_wait() {
             //  function is a rejecting serial function_node that puts an item to the decrementer port
             //  of the limiter inside of the body
 
-            std::size_t after_start = test_buffer_reserve<tbb::flow::queue_node<int>>(threshold,
-                start_work_items, wait_message, new_work_items, processed_items);
+            std::size_t after_start = test_buffer_reserve<tbb::flow::queue_node<int>>(
+                    threshold, start_work_items, wait_message, new_work_items, processed_items);
 
             // Expected effect:
             // 1. start_work_items would be pushed to the buffer
@@ -639,73 +624,70 @@ void test_queue_node_try_put_and_wait() {
             CHECK_MESSAGE(after_start == start_work_items.size() + 1,
                           "try_put_and_wait should start_work_items and wait_message");
             for (auto item : start_work_items) {
-                CHECK_MESSAGE(processed_items[check_index++] == item, "Unexpected start_work_items processing");
+                CHECK_MESSAGE(processed_items[check_index++] == item,
+                              "Unexpected start_work_items processing");
             }
-            CHECK_MESSAGE(processed_items[check_index++] == wait_message, "Unexpected wait_message processing");
+            CHECK_MESSAGE(processed_items[check_index++] == wait_message,
+                          "Unexpected wait_message processing");
 
             for (auto item : new_work_items) {
-                CHECK_MESSAGE(processed_items[check_index++] == item, "Unexpected start_work_items processing");
+                CHECK_MESSAGE(processed_items[check_index++] == item,
+                              "Unexpected start_work_items processing");
             }
         }
     }
 }
-#endif // __TBB_PREVIEW_FLOW_GRAPH_TRY_PUT_AND_WAIT
+#endif// __TBB_PREVIEW_FLOW_GRAPH_TRY_PUT_AND_WAIT
 
 //! Test serial, parallel behavior and reservation under parallelism
 //! \brief \ref requirement \ref error_guessing
-TEST_CASE("Parallel, serial test"){
+TEST_CASE("Parallel, serial test") {
     for (int p = 2; p <= 4; ++p) {
         tbb::global_control thread_limit(tbb::global_control::max_allowed_parallelism, p);
         tbb::task_arena arena(p);
-        arena.execute(
-            [&]() {
-                test_serial<int>();
-                test_serial<CheckType<int> >();
-                test_parallel<int>(p);
-                test_parallel<CheckType<int> >(p);
-            }
-        );
-	}
+        arena.execute([&]() {
+            test_serial<int>();
+            test_serial<CheckType<int>>();
+            test_parallel<int>(p);
+            test_parallel<CheckType<int>>(p);
+        });
+    }
 }
 
 //! Test reset and cancellation
 //! \brief \ref error_guessing
-TEST_CASE("Resets test"){
+TEST_CASE("Resets test") {
     INFO("Testing resets\n");
-    test_resets<int, tbb::flow::queue_node<int> >();
-    test_resets<float, tbb::flow::queue_node<float> >();
+    test_resets<int, tbb::flow::queue_node<int>>();
+    test_resets<float, tbb::flow::queue_node<float>>();
 }
 
 #if __TBB_PREVIEW_FLOW_GRAPH_NODE_SET
 //! Test follows and precedes API
 //! \brief \ref error_guessing
-TEST_CASE("Test follows and precedes API"){
-    test_follows_and_precedes_api();
-}
+TEST_CASE("Test follows and precedes API") { test_follows_and_precedes_api(); }
 #endif
 
 #if __TBB_CPP17_DEDUCTION_GUIDES_PRESENT
 //! Test decution guides
 //! \brief \ref requirement
-TEST_CASE("Deduction guides"){
-    test_deduction_guides();
-}
+TEST_CASE("Deduction guides") { test_deduction_guides(); }
 #endif
 
 //! Test operations on a reserved queue_node
 //! \brief \ref error_guessing
-TEST_CASE("queue_node with reservation"){
+TEST_CASE("queue_node with reservation") {
     tbb::flow::graph g;
 
     tbb::flow::queue_node<int> q(g);
 
     bool res = q.try_put(42);
-    CHECK_MESSAGE( res, "queue_node must accept input." );
+    CHECK_MESSAGE(res, "queue_node must accept input.");
 
     int val = 1;
     res = q.try_reserve(val);
-    CHECK_MESSAGE( res, "queue_node must reserve as it has an item." );
-    CHECK_MESSAGE( (val == 42), "queue_node must reserve once passed item." );
+    CHECK_MESSAGE(res, "queue_node must reserve as it has an item.");
+    CHECK_MESSAGE((val == 42), "queue_node must reserve once passed item.");
 
     int out_arg = -1;
     CHECK_MESSAGE((q.try_reserve(out_arg) == false), "Reserving a reserved node should fail.");
@@ -719,7 +701,5 @@ TEST_CASE("queue_node with reservation"){
 
 #if __TBB_PREVIEW_FLOW_GRAPH_TRY_PUT_AND_WAIT
 //! \brief \ref error_guessing
-TEST_CASE("test queue_node try_put_and_wait") {
-    test_queue_node_try_put_and_wait();
-}
+TEST_CASE("test queue_node try_put_and_wait") { test_queue_node_try_put_and_wait(); }
 #endif

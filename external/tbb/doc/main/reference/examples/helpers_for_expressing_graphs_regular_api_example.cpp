@@ -47,9 +47,7 @@ int main() {
     make_edge(cuber, std::get<2>(join.input_ports()));
     make_edge(join, summer);
 
-    for (int i = 1; i <= 10; ++i) {
-        input.try_put(i);
-    }
+    for (int i = 1; i <= 10; ++i) { input.try_put(i); }
     g.wait_for_all();
 }
 /*end_helpers_for_expressing_graphs_regular_api_example*/

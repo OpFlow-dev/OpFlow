@@ -18,17 +18,15 @@
 
 /*begin_parallel_sort_ranges_extension_example*/
 #include <array>
-#include <span> // requires C++20
 #include <oneapi/tbb/parallel_sort.h>
+#include <span>// requires C++20
 
 std::span<int> get_span() {
     static std::array<int, 3> arr = {3, 2, 1};
     return std::span<int>(arr);
 }
 
-int main() {
-    tbb::parallel_sort(get_span());
-}
+int main() { tbb::parallel_sort(get_span()); }
 /*end_parallel_sort_ranges_extension_example*/
 
 #else

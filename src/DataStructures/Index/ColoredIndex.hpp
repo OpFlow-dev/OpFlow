@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2023 by the OpFlow developers
+//  Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -106,7 +106,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         constexpr auto copy() const { return *this; }
 
         template <std::size_t dim = 0>
-            requires requires { dim < d; }
+        requires requires {
+            dim < d;
+        }
         constexpr auto next(int steps = 1) const {
             auto c = copy();
             c.idx[dim] += steps;
@@ -114,7 +116,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         }
 
         template <std::size_t dim = 0>
-            requires requires { dim < d; }
+        requires requires {
+            dim < d;
+        }
         constexpr auto prev(int steps = 1) const {
             auto c = copy();
             c.idx[dim] -= steps;
@@ -273,8 +277,8 @@ namespace std {
 
     template <std::size_t d>
     struct hash<OpFlow::DS::ColoredIndex<OpFlow::DS::LevelMDIndex<d>>> {
-        std::size_t
-        operator()(const OpFlow::DS::ColoredIndex<OpFlow::DS::LevelMDIndex<d>>& i) const noexcept {
+        std::size_t operator()(const OpFlow::DS::ColoredIndex<OpFlow::DS::LevelMDIndex<d>>& i) const
+                noexcept {
             auto idx = i.get();
             return XXHash64::hash(idx.data(), idx.size() * sizeof(int), 0);
         }

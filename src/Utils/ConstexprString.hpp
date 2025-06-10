@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2023 by the OpFlow developers
+// Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -34,8 +34,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
         constexpr bool operator==(const CXprString& other) const { return _str == other._str; }
 
         template <std::size_t NN>
-            requires(NN != N)
-        constexpr bool operator==(const CXprString<NN>& other) const {
+        requires(NN != N) constexpr bool operator==(const CXprString<NN>& other) const {
             return false;
         }
 
@@ -60,7 +59,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     concept CXprStringType = internal::is_cxpr_string<T>::value;
 
     template <std::size_t N>
-    constexpr auto makeCXprString(const char (&str)[N]) {
+    constexpr auto makeCXprString(const char(&str)[N]) {
         return CXprString<N>(str);
     }
 }// namespace OpFlow::Utils

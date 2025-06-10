@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2023 by the OpFlow developers
+// Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -30,9 +30,10 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 
     template <typename T>
     concept Serializable = std::is_base_of_v<SerializableObj, T> || requires(T t) {
-        { t.serialize() } -> std::same_as<std::vector<std::byte>>;
-        { t.deserialize(std::vector<std::byte> {}) };
-        { t.deserialize(std::declval<const std::byte*>(), std::size_t(0)) };
+        { t.serialize() }
+        ->std::same_as<std::vector<std::byte>>;
+        {t.deserialize(std::vector<std::byte> {})};
+        {t.deserialize(std::declval<const std::byte*>(), std::size_t(0))};
     };
 }// namespace OpFlow
 

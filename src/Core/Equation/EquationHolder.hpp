@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2023 by the OpFlow developers
+//  Copyright (c) 2019 - 2025 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -99,7 +99,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     };
 
     template <typename... Fs, typename... Ts, std::size_t... Ints>
-    auto makeEqnHolder_impl(std::tuple<Fs...>&& getters, std::tuple<Ts&...>&& targets,
+    auto makeEqnHolder_impl(std::tuple<Fs...> && getters, std::tuple<Ts&...> && targets,
                             std::index_sequence<Ints...>) {
         if constexpr (sizeof...(Ts) == 1)
             return EqnHolder<EquationSet<decltype(std::declval<Meta::RealType<Fs>>()(
@@ -113,7 +113,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                              TargetSet<Meta::RealType<Ts>...>>(getters, targets);
     }
     template <typename... Fs, typename... Ts, std::size_t... Ints>
-    auto makeEqnHolder_impl(std::tuple<Fs...>& getters, std::tuple<Ts&...>& targets,
+    auto makeEqnHolder_impl(std::tuple<Fs...> & getters, std::tuple<Ts&...> & targets,
                             std::index_sequence<Ints...>) {
         if constexpr (sizeof...(Ts) == 1)
             return EqnHolder<EquationSet<decltype(std::declval<Meta::RealType<Fs>>()(
@@ -128,12 +128,12 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     }
 
     template <typename... Fs, typename... Ts>
-    auto makeEqnHolder(std::tuple<Fs...>& getters, std::tuple<Ts&...>& targets) {
+    auto makeEqnHolder(std::tuple<Fs...> & getters, std::tuple<Ts&...> & targets) {
         return makeEqnHolder_impl(OP_PERFECT_FOWD(getters), OP_PERFECT_FOWD(targets),
                                   std::make_index_sequence<sizeof...(Fs)>());
     }
     template <typename... Fs, typename... Ts>
-    auto makeEqnHolder(std::tuple<Fs...>&& getters, std::tuple<Ts&...>&& targets) {
+    auto makeEqnHolder(std::tuple<Fs...> && getters, std::tuple<Ts&...> && targets) {
         return makeEqnHolder_impl(OP_PERFECT_FOWD(getters), OP_PERFECT_FOWD(targets),
                                   std::make_index_sequence<sizeof...(Fs)>());
     }
