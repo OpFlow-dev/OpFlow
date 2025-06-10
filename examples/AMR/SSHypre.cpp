@@ -1,9 +1,9 @@
 #include "SSHypre.hpp"
-#include "fmt/format.h"
 #include <HYPRE.h>
 #include <HYPRE_sstruct_ls.h>
 #include <HYPRE_sstruct_mv.h>
 #include <iostream>
+#include <format>
 
 void sshypre_d2() {
 #ifndef MPI_COMM_WORLD
@@ -242,5 +242,5 @@ void sshypre_d2() {
     HYPRE_SStructFACGetNumIterations(solver, &num_iterations);
     HYPRE_SStructFACGetFinalRelativeResidualNorm(solver, &final_res_norm);
     HYPRE_SStructFACDestroy2(solver);
-    std::cout << fmt::format("Iter = {}, Res = {}\n", num_iterations, final_res_norm);
+    std::cout << std::format("Iter = {}, Res = {}\n", num_iterations, final_res_norm);
 }
