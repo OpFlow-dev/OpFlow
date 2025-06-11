@@ -5,6 +5,7 @@ on:
     paths:
       - '**.c'
       - '**.cpp'
+      - '**.cppm'
       - '**.h'
       - '**.hpp'
       - '**.cmake'
@@ -14,6 +15,7 @@ on:
     paths:
       - '**.c'
       - '**.cpp'
+      - '**.cppm'
       - '**.h'
       - '**.hpp'
       - '**.cmake'
@@ -21,20 +23,15 @@ on:
       - '.github/workflows/Build.yml'
 jobs:
   generate:
-    name: ${{ matrix.os }}/${{ matrix.compiler }}/MPI${{ matrix.mpi }}/${{ matrix.mode }}
-    runs-on: ${{ matrix.os }}
+    name: MPI${{ matrix.mpi }}/${{ matrix.mode }}
+    runs-on: ubuntu-24.04
+    container: 
+      image: luohaothu/gcc-trunk:latest
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-12]
-        compiler: [clang, gcc]
         mpi: [ON, OFF]
         mode: [Debug, Release]
-        exclude :
-          - os: macos-12
-            compiler: clang
-            mpi: ON
-            mode: Release # clang tends to emit illegal inst for macOS with MPI on release mode (-O3)
     if: "!contains(github.event.head_commit.message, 'skip build')"
     steps:
       - name: Checkout
@@ -42,69 +39,30 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      - name: Install dependence
-        run: |
-          export INPUT_MPI=${{ matrix.mpi }}
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          brew install doxygen tbb llvm
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            sudo apt update && sudo apt install -y gcc-12 g++-12 python3-pip python3-sphinx lcov libboost-all-dev libomp-12-dev clang-12
-            if [ "$INPUT_MPI" == "ON" ]; then
-               sudo apt install -y libopenmpi-dev libhdf5-mpi-dev
-            else
-              sudo apt install -y libhdf5-dev
-            fi
-          elif [ "$RUNNER_OS" == "macOS" ]; then
-            brew install lcov boost
-            if [ "$INPUT_MPI" == "ON" ]; then
-               brew install open-mpi hdf5-mpi
-            else
-              brew install hdf5
-            fi
-          else
-               echo "$RUNNER_OS not supported"
-               exit 1
-          fi
-          python3 -m pip install sphinx sphinx-rtd-dark-mode breathe
       - name: Make directory
         run: mkdir -p build
       - name: Generate
         working-directory: ./build
         run: |
-          # need to add the python path to the environment
-          if [ "$RUNNER_OS" == "macOS" ]; then
-            export PATH="$PATH:/Library/Frameworks/Python.framework/Versions/3.11/bin"
-          fi
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          if [ "${{ matrix.compiler }}" == "clang" ]; then
-            if [ "$RUNNER_OS" == "Linux" ]; then
-              cmake -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DCMAKE_C_COMPILER=clang-12 -DCMAKE_CXX_COMPILER=clang++-12 \
-                    -DOPFLOW_WITH_HDF5=ON -DBENCHMARK_ENABLE_TESTING=OFF -DOPFLOW_BUILD_ALL=ON -DOPFLOW_INSTALL=OFF \
-                    -DOPFLOW_WITH_VTK=OFF -DOPFLOW_TBB_EXTERNAL=ON -DDOXYGEN_DIR=$(brew --prefix doxygen)/bin \
-                    -DTBB_DIR=$(brew --prefix tbb)/lib/cmake/TBB -DOPFLOW_WITH_MPI=${{ matrix.mpi }} ..
-            else
-              cmake -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DCMAKE_C_COMPILER=/usr/local/opt/llvm/bin/clang \
-                    -DCMAKE_CXX_COMPILER=/usr/local/opt/llvm/bin/clang++ \
-                    -DOPFLOW_WITH_HDF5=ON -DBENCHMARK_ENABLE_TESTING=OFF -DOPFLOW_BUILD_ALL=ON -DOPFLOW_INSTALL=OFF \
-                    -DOPFLOW_WITH_VTK=OFF -DOPFLOW_TBB_EXTERNAL=ON -DDOXYGEN_DIR=$(brew --prefix doxygen)/bin \
-                    -DTBB_DIR=$(brew --prefix tbb)/lib/cmake/TBB -DOPFLOW_WITH_MPI=${{ matrix.mpi }} ..
-            fi
-          else
-            cmake -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DCMAKE_C_COMPILER=gcc-12 -DCMAKE_CXX_COMPILER=g++-12 \
-                  -DOPFLOW_WITH_HDF5=ON -DBENCHMARK_ENABLE_TESTING=OFF -DOPFLOW_BUILD_ALL=ON -DOPFLOW_INSTALL=OFF \
-                  -DOPFLOW_WITH_VTK=OFF -DOPFLOW_TBB_EXTERNAL=ON -DDOXYGEN_DIR=$(brew --prefix doxygen)/bin \
-                  -DTBB_DIR=$(brew --prefix tbb)/lib/cmake/TBB -DOPFLOW_WITH_MPI=${{ matrix.mpi }} ..
-          fi
+          wget https://github.com/Kitware/CMake/releases/download/v4.0.2/cmake-4.0.2-linux-x86_64.sh
+          chmod +x cmake-4.0.2-linux-x86_64.sh
+          mkdir -p cmake
+          ./cmake-4.0.2-linux-x86_64.sh --skip-license --prefix=$(pwd)/cmake
+          apt update && apt install -y ninja-build libhdf5-dev libhdf5-openmpi-dev libboost-all-dev python3-pip python3-sphinx doxygen
+          export PATH=$(pwd)/cmake/bin:$PATH
+          cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -G Ninja -B build \
+                -DCMAKE_INSTALL_PREFIX=$(pwd)/install -DOPFLOW_BUILD_ALL=ON -DOPFLOW_ENABLE_MODULE=ON \
+                -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DOPFLOW_WITH_HDF5=ON -DOPFLOW_WITH_MPI=${{ matrix.mpi }} 
           if [ "$RUNNER_OS" == "Linux" ]; then
-            cmake --build . -t All_CI --parallel 2 --config ${{ matrix.mode }}
+            cmake --build build -t All_CI --parallel $(nproc) --config ${{ matrix.mode }}
           else
-            cmake --build . -t All_CI --parallel 3 --config ${{ matrix.mode }}
+            cmake --build build -t All_CI --parallel $(nproc) --config ${{ matrix.mode }}
           fi
       - name: Test
         working-directory: ./build
         run: |
           if [ "$RUNNER_OS" == "Linux" ]; then
-            ctest --parallel 2 -C ${{ matrix.mode }} -VV
+            ctest --parallel $(nproc) -C ${{ matrix.mode }} -VV
           else
-            ctest --parallel 3 -C ${{ matrix.mode }} -VV
+            ctest --parallel $(nproc) -C ${{ matrix.mode }} -VV
           fi
