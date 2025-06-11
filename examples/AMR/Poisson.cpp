@@ -83,7 +83,8 @@ void Poisson() {
                      .build();
     //p.initBy([](auto&& x) { return std::sqrt(Math::pow2(x[0] - 0.5) + Math::pow2(x[1] - 0.75)) - 0.15; });
     p = 0;
-    auto root = std::format("Result_{:%m-%d_%H-%M-%S}/", std::chrono::current_zone()->to_local(std::chrono::system_clock::now()));
+    auto root = std::format("Result_{:%m-%d_%H-%M-%S}/",
+                            std::chrono::current_zone()->to_local(std::chrono::system_clock::now()));
     std::filesystem::create_directory(root);
 
     SemiStructSolverParams<SemiStructSolverType::FAC> params;
