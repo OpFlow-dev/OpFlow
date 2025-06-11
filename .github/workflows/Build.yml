@@ -44,6 +44,11 @@ jobs:
       - name: Generate
         working-directory: ./build
         run: |
+          wget https://github.com/Kitware/CMake/releases/download/v4.0.2/cmake-4.0.2-linux-x86_64.sh
+          chmod +x cmake-4.0.2-linux-x86_64.sh
+          mkdir -p cmake
+          ./cmake-4.0.2-linux-x86_64.sh --skip-license --prefix=$(pwd)/cmake
+          export PATH=$(pwd)/cmake/bin:$PATH
           cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -G Ninja \
                 -DCMAKE_INSTALL_PREFIX=$(pwd)/install -DOPFLOW_BUILD_ALL=ON -DOPFLOW_ENABLE_MODULE=ON \
                 -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DOPFLOW_WITH_HDF5=ON -DOPFLOW_WITH_MPI=${{ matrix.mpi }} ..
