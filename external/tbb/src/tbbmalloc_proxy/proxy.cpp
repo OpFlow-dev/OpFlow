@@ -399,7 +399,7 @@ const char *known_bytecodes[] = {
         "4883EC384885C975",      // release _msize() 9.0
         "4C8BC1488B0DA6E4040033",// an old win64 SDK
 #endif
-#else// _WIN32
+#else   // _WIN32                                                                                            \
         //  "========================================================" - 56 symbols
         "8BFF558BEC8B",        // multiple
         "8BFF558BEC83",        // release free() & _msize() 10.0.40219.325, _msize() ucrtbase.dll
