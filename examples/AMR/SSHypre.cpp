@@ -2,8 +2,8 @@
 #include <HYPRE.h>
 #include <HYPRE_sstruct_ls.h>
 #include <HYPRE_sstruct_mv.h>
-#include <iostream>
 #include <format>
+#include <iostream>
 
 void sshypre_d2() {
 #ifndef MPI_COMM_WORLD
