@@ -35,5 +35,3 @@ jobs:
         tags: |
           luohaothu/gcc-trunk:latest
           luohaothu/gcc-trunk:${{ github.run_number }}
-        cache-from: type=registry,ref=luohaothu/gcc-trunk:latest
-        cache-to: type=inline
