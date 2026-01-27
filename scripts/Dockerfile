@@ -1,11 +1,31 @@
-# 使用 Ubuntu 24.04 作为基础镜像
+ARG GCC_VERSION
+ARG LLVM_VERSION
+
 FROM ubuntu:24.04
 
-# 设置非交互式安装
+ARG GCC_VERSION
+ARG LLVM_VERSION
+
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 安装编译 GCC 所需的依赖
+# Use Tsinghua Tuna mirror for faster apt installs (Ubuntu 24.04 uses DEB822 sources).
+RUN cp /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list.d/ubuntu.sources.bak && \
+    cat > /etc/apt/sources.list.d/ubuntu.sources <<'EOF'
+Types: deb
+URIs: http://mirrors.tuna.tsinghua.edu.cn/ubuntu/
+Suites: noble noble-updates noble-backports
+Components: main restricted universe multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+Types: deb
+URIs: http://mirrors.tuna.tsinghua.edu.cn/ubuntu/
+Suites: noble-security
+Components: main restricted universe multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+EOF
+
 RUN apt-get update && apt-get install -y \
+    ca-certificates \
     wget \
     git \
     make \
@@ -18,19 +38,25 @@ RUN apt-get update && apt-get install -y \
     texinfo \
     zlib1g-dev \
     libisl-dev \
+    gnupg \
+    lsb-release \
+    software-properties-common \
+    curl \
+    ninja-build \
+    cmake \
+    python3 \
     && rm -rf /var/lib/apt/lists/*
 
-# 设置工作目录
 WORKDIR /gcc-build
 
-# 克隆 GCC 源码
-RUN git clone --depth 1 git://gcc.gnu.org/git/gcc.git gcc-source
+RUN git clone --depth 1 --branch "releases/gcc-${GCC_VERSION}" --single-branch \
+        https://mirrors.tuna.tsinghua.edu.cn/git/gcc.git gcc-source
 
-# 创建编译目录
-RUN mkdir gcc-build
+WORKDIR /gcc-build/gcc-source
 
-# 设置编译参数并开始编译安装
+RUN mkdir -p /gcc-build/gcc-build
 WORKDIR /gcc-build/gcc-build
+
 RUN ../gcc-source/configure \
     --disable-multilib \
     --enable-languages=c,c++,fortran \
@@ -38,16 +64,52 @@ RUN ../gcc-source/configure \
     && make -j$(nproc) \
     && make install
 
-# 设置环境变量
+WORKDIR /llvm-build
+RUN git clone --depth 1 --branch "llvmorg-${LLVM_VERSION}" --single-branch \
+        https://mirrors.tuna.tsinghua.edu.cn/git/llvm-project.git llvm-project
+
+RUN mkdir -p /llvm-build/build
+WORKDIR /llvm-build/build
+
+RUN cmake -G Ninja \
+    -DLLVM_ENABLE_PROJECTS="clang;lld;flang" \
+    -DLLVM_ENABLE_RTTI=ON \
+    -DLLVM_ENABLE_CXX_STD=ON \
+    -DLLVM_TARGETS_TO_BUILD=X86 \
+    -DLLVM_BUILD_EXAMPLES=OFF \
+    -DLLVM_INCLUDE_TESTS=OFF \
+    -DLLVM_INCLUDE_DOCS=OFF \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr/local \
+    ../llvm-project/llvm && \
+    ninja && \
+    ninja install
+
 ENV PATH="/usr/local/bin:${PATH}"
-ENV LD_LIBRARY_PATH="/usr/local/lib64:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/local/lib64"
+ENV CC=gcc
+ENV CXX=g++
+ENV FC=gfortran
 
-# 验证安装
-RUN gcc --version && g++ --version && gfortran --version
+RUN echo "=== GCC ===" && \
+    gcc --version && \
+    g++ --version && \
+    gfortran --version && \
+    echo "=== LLVM/Clang ===" && \
+    clang --version && \
+    clang++ --version && \
+    flang --version && \
+    echo "=== Versions ===" && \
+    echo "GCC version: $(gcc --version | head -n1)" && \
+    echo "Clang version: $(clang --version | head -n1)" && \
+    echo "Flang version: $(flang --version | head -n1)"
 
-# 清理编译文件以减小镜像大小
 WORKDIR /
-RUN rm -rf /gcc-build
+RUN rm -rf /gcc-build /llvm-build
 
-# 设置默认工作目录
 WORKDIR /workspace
+
+LABEL maintainer="luohaothu"
+LABEL description="Docker image with GCC ${GCC_VERSION} and LLVM/Clang ${LLVM_VERSION}"
+LABEL gcc.version="${GCC_VERSION}"
+LABEL llvm.version="${LLVM_VERSION}"
