@@ -84,6 +84,8 @@ RUN git clone --depth 1 --branch "llvmorg-${LLVM_VERSION}" --single-branch \
     cd / && \
     rm -rf /llvm-build
 
+WORKDIR /
+
 ENV PATH="/usr/local/bin:${PATH}"
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/local/lib64"
 ENV CC=gcc
@@ -103,7 +105,6 @@ RUN echo "=== GCC ===" && \
     echo "Clang version: $(clang --version | head -n1)" && \
     echo "Flang version: $(flang --version | head -n1)"
 
-WORKDIR /
 WORKDIR /workspace
 
 LABEL maintainer="luohaothu"
