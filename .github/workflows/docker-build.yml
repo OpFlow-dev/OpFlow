@@ -33,8 +33,6 @@ jobs:
       run: |
         chmod +x scripts/detect-latest-versions.sh
         ./scripts/detect-latest-versions.sh
-        echo "GCC_VERSION=${GCC_VERSION}" >> $GITHUB_ENV
-        echo "LLVM_VERSION=${LLVM_VERSION}" >> $GITHUB_ENV
       shell: bash
 
     - name: Format image tag
