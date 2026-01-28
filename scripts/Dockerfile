@@ -50,28 +50,25 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /gcc-build
 
 RUN git clone --depth 1 --branch "releases/gcc-${GCC_VERSION}" --single-branch \
-        https://mirrors.tuna.tsinghua.edu.cn/git/gcc.git gcc-source
-
-WORKDIR /gcc-build/gcc-source
-
-RUN mkdir -p /gcc-build/gcc-build
-WORKDIR /gcc-build/gcc-build
-
-RUN ../gcc-source/configure \
-    --disable-multilib \
-    --enable-languages=c,c++,fortran \
-    --prefix=/usr/local \
-    && make -j$(nproc) \
-    && make install
+        https://mirrors.tuna.tsinghua.edu.cn/git/gcc.git gcc-source && \
+    mkdir -p gcc-build && \
+    cd gcc-build && \
+    ../gcc-source/configure \
+        --disable-multilib \
+        --enable-languages=c,c++,fortran \
+        --prefix=/usr/local && \
+    make -j$(nproc) && \
+    make install && \
+    cd / && \
+    rm -rf /gcc-build
 
 WORKDIR /llvm-build
+
 RUN git clone --depth 1 --branch "llvmorg-${LLVM_VERSION}" --single-branch \
-        https://mirrors.tuna.tsinghua.edu.cn/git/llvm-project.git llvm-project
-
-RUN mkdir -p /llvm-build/build
-WORKDIR /llvm-build/build
-
-RUN cmake -G Ninja \
+        https://mirrors.tuna.tsinghua.edu.cn/git/llvm-project.git llvm-project && \
+    mkdir -p build && \
+    cd build && \
+    cmake -G Ninja \
     -DLLVM_ENABLE_PROJECTS="clang;lld;flang" \
     -DLLVM_ENABLE_RTTI=ON \
     -DLLVM_ENABLE_CXX_STD=ON \
@@ -83,7 +80,11 @@ RUN cmake -G Ninja \
     -DCMAKE_INSTALL_PREFIX=/usr/local \
     ../llvm-project/llvm && \
     ninja && \
-    ninja install
+    ninja install && \
+    cd / && \
+    rm -rf /llvm-build
+
+WORKDIR /
 
 ENV PATH="/usr/local/bin:${PATH}"
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/local/lib64"
@@ -103,9 +104,6 @@ RUN echo "=== GCC ===" && \
     echo "GCC version: $(gcc --version | head -n1)" && \
     echo "Clang version: $(clang --version | head -n1)" && \
     echo "Flang version: $(flang --version | head -n1)"
-
-WORKDIR /
-RUN rm -rf /gcc-build /llvm-build
 
 WORKDIR /workspace
 
