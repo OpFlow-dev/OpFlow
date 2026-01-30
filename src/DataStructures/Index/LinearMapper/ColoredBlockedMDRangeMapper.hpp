@@ -95,12 +95,12 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         }
 
         void init_mappers() {
-            for (const auto& r : ranges) { mappers.template emplace_back(r); }
+            for (const auto& r : ranges) { mappers.emplace_back(r); }
         }
 
         void init_mappers_mpi() {
 #ifdef OPFLOW_WITH_MPI
-            for (const auto& r : localRanges) { mappers.template emplace_back(r); }
+            for (const auto& r : localRanges) { mappers.emplace_back(r); }
 #else
             init_mappers();
 #endif

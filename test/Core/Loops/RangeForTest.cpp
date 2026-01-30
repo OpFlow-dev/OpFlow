@@ -10,9 +10,14 @@
 //
 // ----------------------------------------------------------------------------
 
+#include <format>
 #include <gmock/gmock.h>
 #include <iostream>
+#ifdef OPFLOW_USE_MODULE
 import opflow;
+#else
+#include <OpFlow>
+#endif
 
 using namespace OpFlow;
 using namespace testing;

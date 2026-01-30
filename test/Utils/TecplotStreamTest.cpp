@@ -11,7 +11,11 @@
 //  ----------------------------------------------------------------------------
 
 #include <gmock/gmock.h>
+#ifdef OPFLOW_USE_MODULE
 import opflow;
+#else
+#include <OpFlow>
+#endif
 
 TEST(TecIOTest, BinaryTest) {
     using namespace OpFlow;
