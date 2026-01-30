@@ -694,7 +694,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                     else if constexpr (Serializable<D>) {
                         MPI_Isend(send_buff_offsets.back().data(), send_buff_offsets.back().size(), MPI_INT,
                                   other_rank, rank, MPI_COMM_WORLD, &requests.back());
-                        requests.template emplace_back();
+                        requests.emplace_back();
                         MPI_Isend(send_buff_byte.back().data(), send_buff_byte.back().size(), MPI_BYTE,
                                   other_rank,
                                   std::hash<Meta::RealType<decltype(o_recv_range)>> {}(o_recv_range)

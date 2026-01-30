@@ -12,7 +12,11 @@
 
 #include "gtest-mpi-listener.hpp"
 #include <gmock/gmock.h>
+#ifdef OPFLOW_USE_MODULE
 import opflow;
+#else
+#include <OpFlow>
+#endif
 
 int main(int argc, char** argv) {
     // Filter out Google Test arguments

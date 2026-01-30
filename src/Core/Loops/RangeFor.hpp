@@ -112,7 +112,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 
         if (range.stride[0] == 1) {
             tbb::task_arena arena(getGlobalParallelPlan().shared_memory_workers_count);
-            arena.template execute([&]() { tbb::parallel_reduce(range, reducer); });
+            arena.execute([&]() { tbb::parallel_reduce(range, reducer); });
             return reducer.result;
         } else {
             OP_NOT_IMPLEMENTED;
