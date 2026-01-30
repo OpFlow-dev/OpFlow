@@ -23,7 +23,7 @@ if(OPFLOW_ENABLE_MODULE)
     # ----------------------------------------------------------------------------
     add_library(opflow)
 
-    target_compile_definitions(opflow PUBLIC OPFLOW_USE_MODULE)
+    target_compile_definitions(opflow PRIVATE OPFLOW_USE_MODULE)
     set_property(TARGET opflow PROPERTY CXX_SCAN_FOR_MODULES ON)
     target_sources(opflow
         PUBLIC FILE_SET CXX_MODULES
@@ -48,17 +48,21 @@ else()
     set_property(TARGET opflow PROPERTY CXX_SCAN_FOR_MODULES OFF)
     target_compile_features(opflow INTERFACE cxx_std_20)
     target_sources(opflow
-        INTERFACE FILE_SET HEADERS ${OPFLOW_HEADERS})
+        INTERFACE FILE_SET HEADERS
+        BASE_DIRS
+        ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/src
+        FILES ${OPFLOW_HEADERS})
     install(TARGETS opflow
-        EXPORT opflow-targets)
-    install(FILES ${OPFLOW_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/opflow)
+        EXPORT opflow-targets
+        FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 add_library(opflow::opflow ALIAS opflow)
 
 # Create & include the version header
 configure_file(${CMAKE_CURRENT_LIST_DIR}/../cmake/Version.hpp.in ${CMAKE_BINARY_DIR}/Version.hpp @ONLY)
 
-target_include_directories(opflow PUBLIC
+target_include_directories(opflow ${OPFLOW_TARGET_SCOPE}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/../include>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/../src>"
     "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/>"
@@ -88,17 +92,22 @@ endif()
 # ----------------------------------------------------------------------------
 # Misc definitions according to tweak options
 # ----------------------------------------------------------------------------
+if(OPFLOW_ENABLE_MODULE)
+    set(OPFLOW_TARGET_SCOPE PUBLIC)
+else()
+    set(OPFLOW_TARGET_SCOPE INTERFACE)
+endif()
 foreach(
     OPFLOW_OPTION
     OPFLOW_SINGLE_PRECISION
     OPFLOW_WITH_MPI
     OPFLOW_WITH_OPENMP)
     if(${OPFLOW_OPTION})
-        target_compile_definitions(opflow INTERFACE ${OPFLOW_OPTION})
+        target_compile_definitions(opflow ${OPFLOW_TARGET_SCOPE} ${OPFLOW_OPTION})
     endif()
 endforeach()
 if(OPFLOW_WITH_MPI)
-    target_compile_definitions(opflow INTERFACE OPFLOW_DISTRIBUTE_MODEL_MPI)
+    target_compile_definitions(opflow ${OPFLOW_TARGET_SCOPE} OPFLOW_DISTRIBUTE_MODEL_MPI)
 endif()
 
 if(OPFLOW_NO_EXCEPTIONS AND NOT MSVC)
