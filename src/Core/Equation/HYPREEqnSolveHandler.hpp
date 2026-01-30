@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2025 by the OpFlow developers
+// Copyright (c) 2019 - 2026 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -28,6 +28,8 @@
 #include "DataStructures/Index/LevelMDIndex.hpp"
 #include "DataStructures/Index/MDIndex.hpp"
 #ifndef OPFLOW_INSIDE_MODULE
+#include <format>
+#include <iostream>
 #include <memory>
 #include <numeric>
 #include <vector>
@@ -295,7 +297,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                             if (k.l != l) {
                                 HYPRE_SStructGraphAddEntries(graph, l, i.c_arr(), c_var, k.l, k.c_arr(),
                                                              c_var);
-                                std::print("GraphAddEntry: {} -> {}\n", i, k);
+                                std::cout << std::format("GraphAddEntry: {} -> {}\n", i, k);
                             }
                         }
                     });
@@ -333,8 +335,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                         for (auto& [k, v] : offsetStencil.pad) {
                             if (k.l == l) { k -= i; }
                         }
-                        std::print("index = {}\n", i);
-                        std::print("current stencil:{}\noffset stencil:{}\n", currentStencil, offsetStencil);
+                        std::cout << std::format("index = {}\n", i);
+                        std::cout << std::format("current stencil:{}\noffset stencil:{}\n", currentStencil,
+                                                 offsetStencil);
                         auto extendedStencil = offsetStencil;
                         for (auto& [k, v] : commStencil.pad) {
                             auto _target_k = k;
@@ -346,7 +349,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                                 extendedStencil.pad[_target_k] = 0;
                             }
                         }
-                        std::print("extended stencil:{}\n", extendedStencil);
+                        std::cout << std::format("extended stencil:{}\n", extendedStencil);
                         std::vector<Real> vals;
                         std::vector<int> entries(commStencil.pad.size());
                         std::iota(entries.begin(), entries.end(), 0);
@@ -366,7 +369,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                                 int entry[] = {count++};
                                 Real val[] = {v};
                                 HYPRE_SStructMatrixSetValues(A, l, i.c_arr(), 0, 1, entry, val);
-                                std::print("A[{}, {}] = {}\n", i, k, v);
+                                std::cout << std::format("A[{}, {}] = {}\n", i, k, v);
                             }
                         }
                         auto bias = -extendedStencil.bias;
