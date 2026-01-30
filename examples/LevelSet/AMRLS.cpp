@@ -12,9 +12,26 @@
 
 #include <OpFlow>
 #include <chrono>
-#include <format>
+#include <ctime>
+#include <string>
 
 using namespace OpFlow;
+
+namespace {
+    std::string make_result_root() {
+        auto now = std::chrono::system_clock::now();
+        auto now_time = std::chrono::system_clock::to_time_t(now);
+        std::tm local_tm {};
+#if defined(_WIN32)
+        localtime_s(&local_tm, &now_time);
+#else
+        localtime_r(&now_time, &local_tm);
+#endif
+        char time_buf[32];
+        std::strftime(time_buf, sizeof(time_buf), "%m-%d_%H-%M-%S", &local_tm);
+        return std::string("Result_") + time_buf + "/";
+    }
+}// namespace
 
 template <std::size_t d>
 using DU = D1WENO53Upwind<d>;
@@ -95,8 +112,7 @@ void amrls() {
         return -2 * std::sin(PI * x[0]) * std::cos(PI * x[0]) * Math::pow2(std::sin(PI * x[1]));
     });
 
-    auto root = std::format("Result_{:%m-%d_%H-%M-%S}/",
-                            std::chrono::current_zone()->to_local(std::chrono::system_clock::now()));
+    auto root = make_result_root();
     Utils::VTKAMRStream uf(root + "u"), vf(root + "v"), pf(root + "p"), p1f(root + "p1"), p2f(root + "p2"),
             p3f(root + "p3");
     uf << Utils::TimeStamp(0) << u;
@@ -290,8 +306,7 @@ void amrls_3d() {
         return -std::sin(2 * PI * x[0]) * std::sin(2 * PI * x[1]) * Math::pow2(std::sin(PI * x[2]));
     });
 
-    auto root = std::format("Result_{:%m-%d_%H-%M-%S}/",
-                            std::chrono::current_zone()->to_local(std::chrono::system_clock::now()));
+    auto root = make_result_root();
     Utils::VTKAMRStream uf(root + "u"), vf(root + "v"), wf(root + "w"), pf(root + "p"), p1f(root + "p1"),
             p2f(root + "p2"), p3f(root + "p3");
     uf << Utils::TimeStamp(0) << u;
