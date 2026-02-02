@@ -136,6 +136,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         -Wall
         -Wextra
         -Werror
+        # Suppress possible ABI warning from compiler upgrades
+        -Wno-psabi
     )
 endif()
 # MSVC-specific warnings
