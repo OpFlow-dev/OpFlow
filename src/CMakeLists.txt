@@ -42,11 +42,11 @@ if(OPFLOW_ENABLE_MODULE)
         FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 else()
     # ----------------------------------------------------------------------------
-    # C++20 header only version
+    # C++26 header only version
     # ----------------------------------------------------------------------------
     add_library(opflow INTERFACE)
     set_property(TARGET opflow PROPERTY CXX_SCAN_FOR_MODULES OFF)
-    target_compile_features(opflow INTERFACE cxx_std_20)
+    target_compile_features(opflow INTERFACE cxx_std_26)
     target_sources(opflow
         INTERFACE FILE_SET HEADERS
         BASE_DIRS
