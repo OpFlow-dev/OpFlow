@@ -39,6 +39,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         constexpr MDIndex() { idx.fill(0); };
         constexpr explicit MDIndex(int i) { idx.fill(i); }
         constexpr MDIndex(const MDIndex<d>&) noexcept = default;
+        constexpr MDIndex& operator=(const MDIndex<d>&) noexcept = default;
 
         template <Meta::WeakIntegral... T>
         constexpr explicit MDIndex(T&&... indexes) noexcept
@@ -103,9 +104,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         constexpr auto copy() const { return *this; }
 
         template <std::size_t dim = 0>
-        requires requires {
-            dim < d;
-        }
+            requires requires { dim < d; }
         constexpr auto next(int steps = 1) const {
             auto c = copy();
             c.idx[dim] += steps;
@@ -113,9 +112,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         }
 
         template <std::size_t dim = 0>
-        requires requires {
-            dim < d;
-        }
+            requires requires { dim < d; }
         constexpr auto prev(int steps = 1) const {
             auto c = copy();
             c.idx[dim] -= steps;

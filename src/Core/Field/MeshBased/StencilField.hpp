@@ -40,7 +40,8 @@ namespace OpFlow {
         StencilField(const StencilField& other)
             : internal::StructuredFieldExprTrait<T>::template twin_type<StencilField>(other),
               color(other.color), base(other.base), pinned(other.pinned) {
-            for (auto i = 0; i < internal::ExprTrait<StencilField>::dim; ++i) {
+            for (std::size_t i = 0; i < static_cast<std::size_t>(internal::ExprTrait<StencilField>::dim);
+                 ++i) {
                 bc[i].start = other.bc[i].start ? other.bc[i].start->getCopy() : nullptr;
                 if (isLogicalBC(bc[i].start->getBCType()))
                     dynamic_cast<LogicalBCBase<StencilField>*>(bc[i].start.get())->rebindField(*this);
@@ -60,7 +61,8 @@ namespace OpFlow {
             this->assignableRange = base.assignableRange;
             this->accessibleRange = base.accessibleRange;
             this->logicalRange = base.logicalRange;
-            for (auto i = 0; i < internal::MeshBasedFieldExprTrait<T>::dim; ++i) {
+            for (std::size_t i = 0; i < static_cast<std::size_t>(internal::MeshBasedFieldExprTrait<T>::dim);
+                 ++i) {
                 if (base.bc[i].start && isLogicalBC(base.bc[i].start->getBCType())) {
                     // if base.bc[i].start is a logical bc, we build a new instance of the same type bc
                     switch (base.bc[i].start->getBCType()) {
@@ -114,7 +116,7 @@ namespace OpFlow {
 
         // only used for HYPRE solvers to get the exact offset stencil pad
         void ignorePeriodicBC() {
-            for (auto i = 0; i < dim; ++i) {
+            for (std::size_t i = 0; i < static_cast<std::size_t>(dim); ++i) {
                 if (base->bc[i].start->getBCType() == BCType::Periodic) {
                     this->assignableRange.start[i] = base->logicalRange.start[i];
                     this->accessibleRange.start[i] = base->logicalRange.start[i];
@@ -128,16 +130,15 @@ namespace OpFlow {
             OP_ASSERT_MSG(base, "base ptr of stencil field is nullptr");
             // inner case, return a stencil pad
             if (DS::inRange(this->assignableRange, index)) [[likely]] {
-                    auto ret = typename internal::ExprTrait<StencilField>::elem_type {0};
-                    // note: here solution is pinned at base->assignableRange.start
-                    // rather than this->assignableRange.start; This is because
-                    // for periodic case the assignableRange of this will be changed
-                    // to logicalRange for HYPRE solver to get exact offset.
-                    if (!(pinned && index == index_type(base->assignableRange.start)))
-                        [[likely]] ret.pad[colored_index_type {index, color}] = 1.0;
-                    return ret;
-                }
-            else if (!DS::inRange(this->logicalRange, index)) {
+                auto ret = typename internal::ExprTrait<StencilField>::elem_type {0};
+                // note: here solution is pinned at base->assignableRange.start
+                // rather than this->assignableRange.start; This is because
+                // for periodic case the assignableRange of this will be changed
+                // to logicalRange for HYPRE solver to get exact offset.
+                if (!(pinned && index == index_type(base->assignableRange.start))) [[likely]]
+                    ret.pad[colored_index_type {index, color}] = 1.0;
+                return ret;
+            } else if (!DS::inRange(this->logicalRange, index)) {
                 // corner case, error & abort
                 OP_ERROR("Index {} out of range {}", index, this->logicalRange.toString());
                 OP_ABORT;
@@ -353,7 +354,8 @@ namespace OpFlow {
         void prepareImpl_final() const {}
 
         template <typename Other>
-        requires(!std::same_as<Other, StencilField>) bool containsImpl_final(const Other& o) const {
+            requires(!std::same_as<Other, StencilField>)
+        bool containsImpl_final(const Other&) const {
             return false;
         }
 
@@ -400,7 +402,8 @@ namespace OpFlow {
             this->assignableRanges = base.assignableRanges;
             this->accessibleRanges = base.accessibleRanges;
             this->maxLogicalRanges = base.maxLogicalRanges;
-            for (auto i = 0; i < internal::SemiStructuredFieldExprTrait<T>::dim; ++i) {
+            for (std::size_t i = 0;
+                 i < static_cast<std::size_t>(internal::SemiStructuredFieldExprTrait<T>::dim); ++i) {
                 this->bc[i].start
                         = genProxyBC<typename internal::SemiStructuredFieldExprTrait<StencilField>::type>(
                                 *(base.bc[i].start));
@@ -410,29 +413,29 @@ namespace OpFlow {
             }
             // allocate data
             data.resize(this->localRanges.size());
-            for (auto i = 0; i < data.size(); ++i) {
+            for (std::size_t i = 0; i < data.size(); ++i) {
                 data[i].resize(this->localRanges[i].size());
-                for (auto j = 0; j < data[i].size(); ++j) {
+                for (std::size_t j = 0; j < data[i].size(); ++j) {
                     data[i][j].reShape(this->accessibleRanges[i][j].getExtends());
                 }
             }
             block_mark.resize(this->localRanges.size());
-            for (auto i = 0; i < block_mark.size(); ++i) {
+            for (std::size_t i = 0; i < block_mark.size(); ++i) {
                 block_mark[i].resize(this->localRanges[i].size());
-                for (auto j = 0; j < block_mark[i].size(); ++j) {
+                for (std::size_t j = 0; j < block_mark[i].size(); ++j) {
                     block_mark[i][j].reShape(this->accessibleRanges[i][j].getExtends());
                 }
             }
             offset.resize(this->accessibleRanges.size());
-            for (auto i = 0; i < this->accessibleRanges.size(); ++i) {
+            for (std::size_t i = 0; i < this->accessibleRanges.size(); ++i) {
                 offset[i].resize(this->accessibleRanges[i].size());
-                for (auto j = 0; j < this->accessibleRanges[i].size(); ++j) {
+                for (std::size_t j = 0; j < this->accessibleRanges[i].size(); ++j) {
                     offset[i][j] = index_type(i, j, this->accessibleRanges[i][j].getOffset());
                 }
             }
             // init all stencils
-            for (auto l = 0; l < this->localRanges.size(); ++l) {
-                for (auto p = 0; p < this->localRanges[l].size(); ++p) {
+            for (std::size_t l = 0; l < this->localRanges.size(); ++l) {
+                for (std::size_t p = 0; p < this->localRanges[l].size(); ++p) {
                     rangeFor(this->localRanges[l][p], [&](auto&& i) {
                         auto& st = this->operator[](i);
                         st.pad[colored_index_type {i}] = 1.0;
@@ -452,8 +455,8 @@ namespace OpFlow {
 
         void updatePadding() {
             // step 1: fill all halo regions covered by parents
-            for (auto l = 1; l < this->accessibleRanges.size(); ++l) {
-                for (auto p = 0; p < this->accessibleRanges[l].size(); ++p) {
+            for (std::size_t l = 1; l < this->accessibleRanges.size(); ++l) {
+                for (std::size_t p = 0; p < this->accessibleRanges[l].size(); ++p) {
                     // here to avoid the accessibleRanges[l][p] is already been trimmed by the maxLogicalRange[l]
                     auto bc_ranges = this->localRanges[l][p]
                                              .getInnerRange(-this->mesh.buffWidth)
@@ -461,7 +464,7 @@ namespace OpFlow {
                     for (auto r_p : this->mesh.parents[l][p]) {
                         // convert the parent range into this level
                         auto p_range = this->localRanges[l - 1][r_p];
-                        for (auto i = 0; i < dim; ++i) {
+                        for (std::size_t i = 0; i < static_cast<std::size_t>(dim); ++i) {
                             p_range.start[i] *= this->mesh.refinementRatio;
                             p_range.end[i] *= this->mesh.refinementRatio;
                         }
@@ -479,15 +482,14 @@ namespace OpFlow {
                 }
             }
             // step 2: fill all halo regions covered by neighbors
-            for (auto l = 1; l < this->accessibleRanges.size(); ++l) {
-                for (auto p = 0; p < this->accessibleRanges[l].size(); ++p) {
+            for (std::size_t l = 1; l < this->accessibleRanges.size(); ++l) {
+                for (std::size_t p = 0; p < this->accessibleRanges[l].size(); ++p) {
                     auto bc_ranges = this->localRanges[l][p]
                                              .getInnerRange(-this->mesh.buffWidth)
                                              .getBCRanges(this->mesh.buffWidth);
                     for (auto r_n : this->mesh.neighbors[l][p]) {
                         // for each potential intersections
                         for (auto& bc_r : bc_ranges) {
-                            auto _r = DS::commonRange(bc_r, this->localRanges[l][r_n]);
                             rangeFor(DS::commonRange(bc_r, this->localRanges[l][r_n]), [&](auto&& i) {
                                 // copy from other fine cells
                                 auto other_i = i;
@@ -503,12 +505,12 @@ namespace OpFlow {
 
         void updateCovering() {
             auto ratio = this->mesh.refinementRatio;
-            for (auto l = 1; l < this->localRanges.size(); ++l) {
-                for (auto p = 0; p < this->localRanges[l].size(); ++p) {
+            for (std::size_t l = 1; l < this->localRanges.size(); ++l) {
+                for (std::size_t p = 0; p < this->localRanges[l].size(); ++p) {
                     for (auto& i_p : this->mesh.parents[l][p]) {
                         auto rp = this->localRanges[l - 1][i_p];
                         auto rc = this->localRanges[l][p];
-                        for (auto i = 0; i < dim; ++i) {
+                        for (std::size_t i = 0; i < static_cast<std::size_t>(dim); ++i) {
                             rc.start[i] /= ratio;
                             rc.end[i] /= ratio;
                         }
@@ -523,7 +525,7 @@ namespace OpFlow {
                             this->operator[](i) = rangeReduce_s(
                                                           rt, [](auto&& a, auto&& b) { return a + b; },
                                                           [&](auto&& k) { return this->operator[](k); })
-                                                  / Math::int_pow(ratio, dim);
+                                                  / Math::int_pow(ratio, static_cast<int>(dim));
                             this->blocked(i) = true;
                         });
                     }
@@ -545,7 +547,8 @@ namespace OpFlow {
         const auto& blocked(const index_type& i) const { return block_mark[i.l][i.p][i - offset[i.l][i.p]]; }
 
         template <typename Other>
-        requires(!std::same_as<Other, StencilField>) bool containsImpl_final(const Other& o) const {
+            requires(!std::same_as<Other, StencilField>)
+        bool containsImpl_final(const Other&) const {
             return false;
         }
 

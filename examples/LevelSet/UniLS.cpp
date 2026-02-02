@@ -79,7 +79,7 @@ void ls() {
     uf << Utils::TimeStamp(0) << u;
     vf << Utils::TimeStamp(0) << v;
 
-    int buffWidth = 5;
+    [[maybe_unused]] int buffWidth = 5;
     constexpr auto h = 1. / (n - 1);
     auto _eps = 1e-6;
     auto _1 = [&](auto&& _p, auto&& _pp) {

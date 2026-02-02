@@ -43,6 +43,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         MPI_Comm comm = MPI_COMM_WORLD;
         bool staticMat = false;
         bool pinValue = false;
+        bool printLevel = 0;
+        bool logging = false;
         std::optional<std::string> dumpPath {};
     };
 

@@ -98,7 +98,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 
         template <CartesianFieldExprType E>
         static void prepare(const Expression<D1WENO53Downwind, E>& expr) {
-            constexpr auto dim = internal::CartesianFieldExprTrait<E>::dim;
+            [[maybe_unused]] constexpr auto dim = internal::CartesianFieldExprTrait<E>::dim;
             expr.initPropsFrom(expr.arg1);
 
             // name
@@ -113,7 +113,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         }
         template <CartAMRFieldExprType E>
         static void prepare(const Expression<D1WENO53Downwind, E>& expr) {
-            constexpr auto dim = internal::CartesianFieldExprTrait<E>::dim;
+            [[maybe_unused]] constexpr auto dim = internal::CartesianFieldExprTrait<E>::dim;
             expr.initPropsFrom(expr.arg1);
 
             // name
@@ -122,7 +122,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             auto levels = expr.getLevels();
             for (auto l = 0; l < levels; ++l) {
                 auto parts = expr.accessibleRanges[l].size();
-                for (auto p = 0; p < parts; ++p) {
+                for (std::size_t p = 0; p < parts; ++p) {
                     expr.accessibleRanges[l][p].start[d] += 3;
                     expr.accessibleRanges[l][p].end[d] -= 3;
                     expr.localRanges[l][p].start[d] += 3;

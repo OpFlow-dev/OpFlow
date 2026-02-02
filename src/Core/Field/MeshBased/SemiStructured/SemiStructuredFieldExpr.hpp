@@ -37,18 +37,18 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             : MeshBasedFieldExpr<Derived>(other), localRanges(other.localRanges),
               assignableRanges(other.assignableRanges), accessibleRanges(other.accessibleRanges),
               logicalRanges(other.logicalRanges), loc(other.loc) {
-            for (auto i = 0; i < bc.size(); ++i) {
+            for (std::size_t i = 0; i < bc.size(); ++i) {
                 bc[i].start = other.bc[i].start ? other.bc[i].start->getCopy() : nullptr;
                 bc[i].end = other.bc[i].end ? other.bc[i].end->getCopy() : nullptr;
             }
         }
 
         SemiStructuredFieldExpr(SemiStructuredFieldExpr&& other) noexcept
-            : MeshBasedFieldExpr<Derived>(std::move(other)), bc(std::move(other.bc)),
-              loc(std::move(other.loc)), localRanges(std::move(other.localRanges)),
-              logicalRanges(std::move(other.logicalRanges)),
+            : MeshBasedFieldExpr<Derived>(std::move(other)), localRanges(std::move(other.localRanges)),
               assignableRanges(std::move(other.assignableRanges)),
-              accessibleRanges(std::move(other.accessibleRanges)) {}
+              accessibleRanges(std::move(other.accessibleRanges)),
+              logicalRanges(std::move(other.logicalRanges)), loc(std::move(other.loc)),
+              bc(std::move(other.bc)) {}
 
         auto getLevels() const {
             auto total = 0;

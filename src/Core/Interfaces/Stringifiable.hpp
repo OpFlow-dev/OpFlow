@@ -30,6 +30,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         [[nodiscard]] virtual std::string toString(int n, const std::string& prefix) const = 0;
 
         std::ostream& operator<<(std::ostream& os) const { return os << this->toString(); }
+
+        virtual ~StringifiableObj() = default;
     };
 
     template <typename T>
@@ -38,8 +40,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 
 OPFLOW_MODULE_EXPORT
 template <typename T>
-requires std::derived_from<T, OpFlow::StringifiableObj> struct std::formatter<T>
-    : std::formatter<std::string> {
+    requires std::derived_from<T, OpFlow::StringifiableObj>
+struct std::formatter<T> : std::formatter<std::string> {
     auto format(const OpFlow::StringifiableObj& a, auto& ctx) const {
         return std::formatter<std::string>::format(a.toString(), ctx);
     }

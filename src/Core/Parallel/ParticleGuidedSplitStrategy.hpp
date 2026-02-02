@@ -227,7 +227,7 @@ namespace OpFlow {
 
         std::unique_ptr<Node> kdtree = nullptr;
 
-        void check_state(const ParallelPlan& plan) const {
+        void check_state([[maybe_unused]] const ParallelPlan& plan) const {
             OP_ASSERT_MSG(1 << max_levels == plan.distributed_workers_count,
                           "ParticleGuidedSplitStrategy: total number of ranks must be power of 2");
         }

@@ -23,7 +23,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     struct IOGroupInterface {
         virtual ~IOGroupInterface() = default;
         virtual void dump(const TimeStamp& t) = 0;
-        virtual void read([[maybe_unused]] const TimeStamp& t) {}
+        virtual void read(const TimeStamp& /* t */) {}
         virtual void setAllInOne(bool o) = 0;
         virtual void fixedMesh() {}
         virtual void dumpToSeparateFile() {}
@@ -93,8 +93,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                     streams.back() << t;
                     [&, this]<int... Is>(std::integer_sequence<int, Is...>) {
                         streams.back().dumpMultiple(std::get<Is>(exprs)...);
-                    }
-                    (std::make_integer_sequence<int, sizeof...(Exprs)>());
+                    }(std::make_integer_sequence<int, sizeof...(Exprs)>());
                 } else {
                     Meta::static_for<sizeof...(Exprs)>(
                             [&]<int k>(Meta::int_<k>) { streams[k] << t << std::get<k>(exprs); });

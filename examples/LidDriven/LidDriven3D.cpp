@@ -94,12 +94,13 @@ int main(int argc, char* argv[]) {
     params.tol = 1e-6;
     params.maxIter = 100;
     StructSolverParams<StructSolverType::PCG> poisson_params;
-    StructSolverParams<StructSolverType::PFMG> p_params {.useZeroGuess = true,
-                                                         .relaxType = 1,
-                                                         .rapType = 0,
-                                                         .numPreRelax = 1,
-                                                         .numPostRelax = 1,
-                                                         .skipRelax = 0};
+    StructSolverParams<StructSolverType::PFMG> p_params;
+    p_params.useZeroGuess = true;
+    p_params.relaxType = 1;
+    p_params.rapType = 0;
+    p_params.numPreRelax = 1;
+    p_params.numPostRelax = 1;
+    p_params.skipRelax = 0;
     p_params.tol = 1e-10;
     auto solver = PrecondStructSolver<StructSolverType::GMRES, StructSolverType::PFMG>(params, p_params);
     auto u_handler = makeEqnSolveHandler(

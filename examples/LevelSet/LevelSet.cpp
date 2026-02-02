@@ -13,7 +13,7 @@
 #include "AMRLS.hpp"
 #include "UniLS.hpp"
 
-int main(int argc, char* argv[]) {
+int main(int /* argc */, char* /* argv */[]) {
     //ls();
     amrls_3d();
     //ls_3d();

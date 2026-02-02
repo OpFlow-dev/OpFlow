@@ -85,8 +85,8 @@ namespace OpFlow {
         }
 
         template <typename T>
-        requires std::same_as<T, CartesianField> void
-        resplitWithStrategy(AbstractSplitStrategy<T>* strategy) {
+            requires std::same_as<T, CartesianField>
+        void resplitWithStrategy(AbstractSplitStrategy<T>* strategy) {
             // this method only acts when MPI is enabled
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
             if (!strategy) return;
@@ -177,6 +177,8 @@ namespace OpFlow {
             }
             this->updateNeighbors();
             updatePaddingImpl_final();
+#else
+            (void) strategy;// intentionally unused when MPI is disabled
 #endif
         }
 
@@ -369,16 +371,12 @@ namespace OpFlow {
             // step 1: update paddings by bc extension
             // start/end record the start/end index of last padding operation
             // the latter padding op pads the outer range of the former padding zone
-            std::array<int, dim> start, end;
+            std::array<int, dim> start {}, end {};
             if constexpr (requires(D v) {
-                              { v + v }
-                              ->std::same_as<D>;
-                              { v - v }
-                              ->std::same_as<D>;
-                              { v * 1.0 }
-                              ->std::same_as<D>;
-                              { v / 1.0 }
-                              ->std::same_as<D>;
+                              { v + v } -> std::same_as<D>;
+                              { v - v } -> std::same_as<D>;
+                              { v * 1.0 } -> std::same_as<D>;
+                              { v / 1.0 } -> std::same_as<D>;
                           }) {
                 for (int i = 0; i < dim; ++i) {
                     // lower side
@@ -792,7 +790,8 @@ namespace OpFlow {
         }
 
         template <typename Other>
-        requires(!std::same_as<Other, CartesianField>) bool containsImpl_final(const Other& o) const {
+            requires(!std::same_as<Other, CartesianField>)
+        bool containsImpl_final(const Other&) const {
             return false;
         }
 
@@ -875,10 +874,11 @@ namespace OpFlow {
 
         // set a functor bc
         template <typename F>
-        requires requires(F f) {
-            { f(std::declval<typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>()) }
-            ->std::convertible_to<typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
-        }
+            requires requires(F f) {
+                {
+                    f(std::declval<typename internal::ExprTrait<CartesianField<D, M, C>>::index_type>())
+                } -> std::convertible_to<typename internal::ExprTrait<CartesianField<D, M, C>>::elem_type>;
+            }
         auto& setBC(int d, DimPos pos, BCType type, F&& functor) {
             OP_ASSERT(d < dim);
             auto& targetBC = pos == DimPos::start ? f.bc[d].start : f.bc[d].end;

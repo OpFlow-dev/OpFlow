@@ -55,7 +55,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         const auto &operator()(int i) const { return cord[i]; }
 
         auto operator<(const Point &other) const {
-            for (auto i = 0; i < dim; ++i) {
+            for (std::size_t i = 0; i < dim; ++i) {
                 if (cord[i] < other.cord[i]) return true;
                 else if (cord[i] > other.cord[i])
                     return false;
@@ -64,7 +64,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         }
 
         auto operator==(const Point &other) const {
-            for (auto i = 0; i < dim; ++i) {
+            for (std::size_t i = 0; i < dim; ++i) {
                 if (cord[i] != other.cord[i]) return false;
             }
             return true;
@@ -111,12 +111,13 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     }
 
     template <typename T>
-    requires Meta::BracketIndexable<T> auto boxMerge(const T &boxes) {
+        requires Meta::BracketIndexable<T>
+    auto boxMerge(const T &boxes) {
         OP_ASSERT(boxes.size() > 0);
         auto ret = boxes[0];
         constexpr static auto dim = decltype(ret)::dim;
-        for (auto i = 1; i < boxes.size(); ++i) {
-            for (auto j = 0; j < dim; ++j) {
+        for (std::size_t i = 1; i < boxes.size(); ++i) {
+            for (std::size_t j = 0; j < dim; ++j) {
                 ret.lo[j] = std::min(ret.lo[j], boxes[i].lo[j]);
                 ret.hi[j] = std::max(ret.hi[j], boxes[i].hi[j]);
             }
@@ -127,20 +128,20 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     template <Meta::Numerical T, std::size_t d>
     auto pointInBox(const Point<T, d> &p, const Box<T, d> &box) {
         auto ret = true;
-        for (auto i = 0; i < d; ++i) { ret &= (box.lo[i] <= p[i] && p[i] <= box.hi[i]); }
+        for (std::size_t i = 0; i < d; ++i) { ret &= (box.lo[i] <= p[i] && p[i] <= box.hi[i]); }
         return ret;
     }
 
     template <Meta::Numerical T, std::size_t d>
     auto boxInBox(const Box<T, d> &a, const Box<T, d> &b) {
         auto ret = true;
-        for (auto i = 0; i < d; ++i) { ret &= (b.lo[i] <= a.lo[i] && a.hi[i] <= b.hi[i]); }
+        for (std::size_t i = 0; i < d; ++i) { ret &= (b.lo[i] <= a.lo[i] && a.hi[i] <= b.hi[i]); }
         return ret;
     }
 
     template <Meta::Numerical T, std::size_t d>
     auto boxIntersectBox(const Box<T, d> &a, const Box<T, d> &b) {
-        for (auto i = 0; i < d; ++i) {
+        for (std::size_t i = 0; i < d; ++i) {
             auto start = std::max(a.lo[i], b.lo[i]);
             auto end = std::min(a.hi[i], b.hi[i]);
             if (start > end) return false;

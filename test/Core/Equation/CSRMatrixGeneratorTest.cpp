@@ -88,10 +88,10 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson) {
                              5,  -1, -1, 6,  -1, -1, -1, 5,  -1, -1, -1, 5,  -1, -1, -1, 6},
             rhs {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
-    for (int i = 0; i < ptr.size(); ++i) { ASSERT_EQ(ptr[i], mat.row[i]); }
-    for (int i = 0; i < col.size(); ++i) { ASSERT_EQ(col[i], mat.col[i]); }
-    for (int i = 0; i < val.size(); ++i) { ASSERT_DOUBLE_EQ(val[i], mat.val[i]); }
-    for (int i = 0; i < rhs.size(); ++i) { ASSERT_DOUBLE_EQ(rhs[i], mat.rhs[i]); }
+    for (std::size_t i = 0; i < ptr.size(); ++i) { ASSERT_EQ(ptr[i], mat.row[i]); }
+    for (std::size_t i = 0; i < col.size(); ++i) { ASSERT_EQ(col[i], mat.col[i]); }
+    for (std::size_t i = 0; i < val.size(); ++i) { ASSERT_DOUBLE_EQ(val[i], mat.val[i]); }
+    for (std::size_t i = 0; i < rhs.size(); ++i) { ASSERT_DOUBLE_EQ(rhs[i], mat.rhs[i]); }
 }
 
 TEST_F(CSRMatrixGeneratorTest, SimplePoisson_Neum) {
@@ -123,10 +123,10 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson_Neum) {
                              3,  -1, -1, 2,  -1, -1, -1, 3,  -1, -1, -1, 3,  -1, 1},
             rhs {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0};
 
-    for (int i = 0; i < ptr.size(); ++i) { ASSERT_EQ(ptr[i], mat.row[i]); }
-    for (int i = 0; i < col.size(); ++i) { ASSERT_EQ(col[i], mat.col[i]); }
-    for (int i = 0; i < val.size(); ++i) { ASSERT_DOUBLE_EQ(val[i], mat.val[i]); }
-    for (int i = 0; i < rhs.size(); ++i) { ASSERT_DOUBLE_EQ(rhs[i], mat.rhs[i]); }
+    for (std::size_t i = 0; i < ptr.size(); ++i) { ASSERT_EQ(ptr[i], mat.row[i]); }
+    for (std::size_t i = 0; i < col.size(); ++i) { ASSERT_EQ(col[i], mat.col[i]); }
+    for (std::size_t i = 0; i < val.size(); ++i) { ASSERT_DOUBLE_EQ(val[i], mat.val[i]); }
+    for (std::size_t i = 0; i < rhs.size(); ++i) { ASSERT_DOUBLE_EQ(rhs[i], mat.rhs[i]); }
 }
 
 TEST_F(CSRMatrixGeneratorTest, SimplePoisson_Periodic) {
@@ -158,10 +158,10 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson_Periodic) {
 
     std::cout << std::format("{}", mat.toString());
 
-    for (int i = 0; i < ptr.size(); ++i) { ASSERT_EQ(ptr[i], mat.row[i]); }
-    for (int i = 0; i < col.size(); ++i) { ASSERT_EQ(col[i], mat.col[i]); }
-    for (int i = 0; i < val.size(); ++i) { ASSERT_DOUBLE_EQ(val[i], mat.val[i]); }
-    for (int i = 0; i < rhs.size(); ++i) { ASSERT_DOUBLE_EQ(rhs[i], mat.rhs[i]); }
+    for (std::size_t i = 0; i < ptr.size(); ++i) { ASSERT_EQ(ptr[i], mat.row[i]); }
+    for (std::size_t i = 0; i < col.size(); ++i) { ASSERT_EQ(col[i], mat.col[i]); }
+    for (std::size_t i = 0; i < val.size(); ++i) { ASSERT_DOUBLE_EQ(val[i], mat.val[i]); }
+    for (std::size_t i = 0; i < rhs.size(); ++i) { ASSERT_DOUBLE_EQ(rhs[i], mat.rhs[i]); }
     ASSERT_TRUE(true);
 }
 
@@ -204,7 +204,7 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson_2Eqn) {
     for (int i = mat.val.size() / 2, j = 0; i < mat.val.size(); ++i, ++j) {
         ASSERT_DOUBLE_EQ(mat.val[i], mat.val[j]);
     }
-    for (int i = mat.rhs.size() / 2, j = 0; i < mat.rhs.size(); ++i, ++j) {
+    for (std::size_t i = mat.rhs.size() / 2, j = 0; i < mat.rhs.size(); ++i, ++j) {
         ASSERT_DOUBLE_EQ(mat.rhs[i], mat.rhs[j]);
     }
 }
@@ -245,7 +245,7 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson_Neum_2Eqn) {
     for (int i = mat.val.size() / 2, j = 0; i < mat.val.size(); ++i, ++j) {
         ASSERT_DOUBLE_EQ(mat.val[i], mat.val[j]);
     }
-    for (int i = mat.rhs.size() / 2, j = 0; i < mat.rhs.size(); ++i, ++j) {
+    for (std::size_t i = mat.rhs.size() / 2, j = 0; i < mat.rhs.size(); ++i, ++j) {
         ASSERT_DOUBLE_EQ(mat.rhs[i], mat.rhs[j]);
     }
 }

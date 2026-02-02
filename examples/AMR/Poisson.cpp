@@ -11,8 +11,9 @@ void Poisson() {
     using Mesh = CartesianAMRMesh<Meta::int_<2>>;
     using Field = CartAMRField<Real, Mesh>;
 
-    int n = 9, maxlevel = 2, ratio = 2, buffWidth = 1;
-    auto h = 2. / (n - 1);
+    int n = 9;
+    [[maybe_unused]] int maxlevel = 2, ratio = 2, buffWidth = 1;
+    [[maybe_unused]] auto h = 2. / (n - 1);
     /*
     auto m = MeshBuilder<Mesh>()
                      .setBaseMesh(MeshBuilder<CartesianMesh<Meta::int_<2>>>()

@@ -22,9 +22,8 @@
 
 OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename T>
-    requires CartesianAMRMeshType<T>&&
-            Meta::isTemplateInstance<CartesianAMRMesh, T>::value struct CartesianAMRMeshView
-        : CartesianAMRMeshBase<CartesianAMRMeshView<T>> {
+        requires CartesianAMRMeshType<T> && Meta::isTemplateInstance<CartesianAMRMesh, T>::value
+    struct CartesianAMRMeshView : CartesianAMRMeshBase<CartesianAMRMeshView<T>> {
     private:
         std::add_pointer_t<typename std::add_const<T>::type> base = nullptr;
         static constexpr auto dim = internal::MeshTrait<T>::dim;
@@ -35,6 +34,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         explicit CartesianAMRMeshView(const T& mesh)
             : base(mesh.getPtr()), refinementRatio(mesh.refinementRatio) {}
 
+        CartesianAMRMeshView(const CartesianAMRMeshView&) = default;
         CartesianAMRMeshView& operator=(const CartesianAMRMeshView&) = default;
         auto& operator=(const T& mesh) {
             base = mesh.getPtr();

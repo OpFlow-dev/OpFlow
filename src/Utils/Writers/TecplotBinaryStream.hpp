@@ -144,12 +144,12 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                     file_type = 0,               // 0: full, 1: grid, 2: solution
                     debug = 0,                   // 0: no-debug, 1: debug
                     is_double = isDouble ? 1 : 0;// 0: f32, 1: f64
-            int stat;
             if (!initialized) {
                 std::filesystem::path dir = path;
                 std::string parent_dir = dir.parent_path().string();
-                stat = tecini142(title.c_str(), var_list.c_str(), filename.c_str(), parent_dir.c_str(),
-                                 &file_format, &file_type, &debug, &is_double);
+                int stat = tecini142(title.c_str(), var_list.c_str(), filename.c_str(), parent_dir.c_str(),
+                                     &file_format, &file_type, &debug, &is_double);
+                (void) stat;// intentionally unused in Release mode (only used in assertion)
 #ifdef OPFLOW_WITH_MPI
                 if (!getGlobalParallelPlan().singleNodeMode()) {
                     OP_ASSERT_MSG(dim == 3, "TecIO library only support partitioned IO for 3D data. Use "
@@ -173,13 +173,13 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                 glob_k_count = (dim >= 3) ? globalRange.end[2] - globalRange.start[2] : 1,
                 imin = range.start[0] - globalRange.start[0] + 1,
                 jmin = (dim >= 2) ? range.start[1] - globalRange.start[1] + 1 : 1,
-                kmin = (dim >= 3) ? range.start[2] - globalRange.start[2] + 1 : 1,
-                imax = std::min(range.end[0] - range.start[0] + imin, glob_i_count),
-                jmax = (dim >= 2) ? std::min(range.end[1] - range.start[1] + jmin, glob_j_count) : 1,
-                kmax = (dim >= 3) ? std::min(range.end[2] - range.start[2] + kmin, glob_k_count) : 1,
-                icellmax = 0, jcellmax = 0, kcellmax = 0, strandID = 1, parentZone = 0, isBlock = 1,
-                dummy = 0, total_num_face_nodes = 1, nfconns = 0, fnmode = 0, total_num_boundary_faces = 1,
-                total_num_boundary_connections = 1;
+                kmin = (dim >= 3) ? range.start[2] - globalRange.start[2] + 1 : 1, icellmax = 0, jcellmax = 0,
+                kcellmax = 0, strandID = 1, parentZone = 0, isBlock = 1, dummy = 0, total_num_face_nodes = 1,
+                nfconns = 0, fnmode = 0, total_num_boundary_faces = 1, total_num_boundary_connections = 1;
+            [[maybe_unused]] int imax
+                    = std::min(range.end[0] - range.start[0] + imin, glob_i_count),
+                    jmax = (dim >= 2) ? std::min(range.end[1] - range.start[1] + jmin, glob_j_count) : 1,
+                    kmax = (dim >= 3) ? std::min(range.end[2] - range.start[2] + kmin, glob_k_count) : 1;
             std::vector<int> passive_var(dim + 1, 0), share(dim + 1, 1);
             share.back() = 0;
             auto extended_range = range;
@@ -289,12 +289,12 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                         file_type = 0,               // 0: full, 1: grid, 2: solution
                         debug = 0,                   // 0: no-debug, 1: debug
                         is_double = isDouble ? 1 : 0;// 0: f32, 1: f64
-                int stat;
                 if (!initialized) {
                     std::filesystem::path dir = path;
                     std::string parent_dir = dir.parent_path().string();
-                    stat = tecini142(title.c_str(), var_list.c_str(), filename.c_str(), parent_dir.c_str(),
-                                     &file_format, &file_type, &debug, &is_double);
+                    int stat = tecini142(title.c_str(), var_list.c_str(), filename.c_str(),
+                                         parent_dir.c_str(), &file_format, &file_type, &debug, &is_double);
+                    (void) stat;// intentionally unused in Release mode (only used in assertion)
 #ifdef OPFLOW_WITH_MPI
                     if (!getGlobalParallelPlan().singleNodeMode()) {
                         OP_ASSERT_MSG(dim == 3, "TecIO library only support partitioned IO for 3D data. Use "
@@ -319,13 +319,14 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                     glob_k_count = (dim >= 3) ? globalRange.end[2] - globalRange.start[2] : 1,
                     imin = range.start[0] - globalRange.start[0] + 1,
                     jmin = (dim >= 2) ? range.start[1] - globalRange.start[1] + 1 : 1,
-                    kmin = (dim >= 3) ? range.start[2] - globalRange.start[2] + 1 : 1,
-                    imax = std::min(range.end[0] - range.start[0] + imin, glob_i_count),
-                    jmax = (dim >= 2) ? std::min(range.end[1] - range.start[1] + jmin, glob_j_count) : 1,
-                    kmax = (dim >= 3) ? std::min(range.end[2] - range.start[2] + kmin, glob_k_count) : 1,
-                    icellmax = 0, jcellmax = 0, kcellmax = 0, strandID = 1, parentZone = 0, isBlock = 1,
-                    dummy = 0, total_num_face_nodes = 1, nfconns = 0, fnmode = 0,
-                    total_num_boundary_faces = 1, total_num_boundary_connections = 1;
+                    kmin = (dim >= 3) ? range.start[2] - globalRange.start[2] + 1 : 1, icellmax = 0,
+                    jcellmax = 0, kcellmax = 0, strandID = 1, parentZone = 0, isBlock = 1, dummy = 0,
+                    total_num_face_nodes = 1, nfconns = 0, fnmode = 0, total_num_boundary_faces = 1,
+                    total_num_boundary_connections = 1;
+                [[maybe_unused]] int imax
+                        = std::min(range.end[0] - range.start[0] + imin, glob_i_count),
+                        jmax = (dim >= 2) ? std::min(range.end[1] - range.start[1] + jmin, glob_j_count) : 1,
+                        kmax = (dim >= 3) ? std::min(range.end[2] - range.start[2] + kmin, glob_k_count) : 1;
                 std::vector<int> passive_var(dim + sizeof...(fs), 0), share(dim + sizeof...(fs), 0);
                 for (int i = 0; i < dim; ++i) share[i] = 1;
                 auto extended_range = range;
