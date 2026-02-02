@@ -21,8 +21,8 @@
 
 OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename T>
-        requires CartesianMeshType<T> && Meta::isTemplateInstance<CartesianMesh, T>::value
-    struct CartesianMeshView : CartesianMeshBase<CartesianMeshView<T>> {
+    requires CartesianMeshType<T>&& Meta::isTemplateInstance<CartesianMesh, T>::value struct CartesianMeshView
+        : CartesianMeshBase<CartesianMeshView<T>> {
     private:
         std::add_pointer_t<typename std::add_const<T>::type> base = nullptr;
         static constexpr auto dim = internal::MeshTrait<T>::dim;

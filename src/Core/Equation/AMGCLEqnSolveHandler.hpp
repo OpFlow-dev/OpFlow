@@ -52,8 +52,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename... Fs, typename... Ts, typename M, typename S>
     struct AMGCLEqnSolveHandler<std::tuple<Fs...>, std::tuple<Ts...>, M, S> : virtual public EqnSolveHandler {
     public:
-        using eqn_holder_type = decltype(makeEqnHolder(std::declval<std::tuple<Fs...>&>(),
-                                                       std::declval<std::tuple<Ts...>&>()));
+        using eqn_holder_type = decltype(
+                makeEqnHolder(std::declval<std::tuple<Fs...>&>(), std::declval<std::tuple<Ts...>&>()));
         using st_holder_type = decltype(makeStencilHolder(std::declval<eqn_holder_type&>()));
         constexpr static int size = sizeof...(Ts);
 
@@ -183,9 +183,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     }
 
     template <typename S>
-    std::unique_ptr<EqnSolveHandler> makeEqnSolveHandler(auto&&... fs)
-        requires(sizeof...(fs) >= 6)
-    {
+    std::unique_ptr<EqnSolveHandler> makeEqnSolveHandler(auto&&... fs) requires(sizeof...(fs) >= 6) {
         auto t = std::forward_as_tuple(OP_PERFECT_FOWD(fs)...);
         auto&& [getters, rest1] = Meta::tuple_split<sizeof...(fs) / 2 - 1>(t);
         auto&& [targets, rest2] = Meta::tuple_split<sizeof...(fs) / 2 - 1>(rest1);

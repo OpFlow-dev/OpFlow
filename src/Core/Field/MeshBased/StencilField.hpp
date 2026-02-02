@@ -130,15 +130,16 @@ namespace OpFlow {
             OP_ASSERT_MSG(base, "base ptr of stencil field is nullptr");
             // inner case, return a stencil pad
             if (DS::inRange(this->assignableRange, index)) [[likely]] {
-                auto ret = typename internal::ExprTrait<StencilField>::elem_type {0};
-                // note: here solution is pinned at base->assignableRange.start
-                // rather than this->assignableRange.start; This is because
-                // for periodic case the assignableRange of this will be changed
-                // to logicalRange for HYPRE solver to get exact offset.
-                if (!(pinned && index == index_type(base->assignableRange.start))) [[likely]]
-                    ret.pad[colored_index_type {index, color}] = 1.0;
-                return ret;
-            } else if (!DS::inRange(this->logicalRange, index)) {
+                    auto ret = typename internal::ExprTrait<StencilField>::elem_type {0};
+                    // note: here solution is pinned at base->assignableRange.start
+                    // rather than this->assignableRange.start; This is because
+                    // for periodic case the assignableRange of this will be changed
+                    // to logicalRange for HYPRE solver to get exact offset.
+                    if (!(pinned && index == index_type(base->assignableRange.start)))
+                        [[likely]] ret.pad[colored_index_type {index, color}] = 1.0;
+                    return ret;
+                }
+            else if (!DS::inRange(this->logicalRange, index)) {
                 // corner case, error & abort
                 OP_ERROR("Index {} out of range {}", index, this->logicalRange.toString());
                 OP_ABORT;
@@ -354,8 +355,7 @@ namespace OpFlow {
         void prepareImpl_final() const {}
 
         template <typename Other>
-            requires(!std::same_as<Other, StencilField>)
-        bool containsImpl_final(const Other&) const {
+        requires(!std::same_as<Other, StencilField>) bool containsImpl_final(const Other&) const {
             return false;
         }
 
@@ -547,8 +547,7 @@ namespace OpFlow {
         const auto& blocked(const index_type& i) const { return block_mark[i.l][i.p][i - offset[i.l][i.p]]; }
 
         template <typename Other>
-            requires(!std::same_as<Other, StencilField>)
-        bool containsImpl_final(const Other&) const {
+        requires(!std::same_as<Other, StencilField>) bool containsImpl_final(const Other&) const {
             return false;
         }
 

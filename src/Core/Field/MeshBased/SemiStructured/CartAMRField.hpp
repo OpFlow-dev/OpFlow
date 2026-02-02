@@ -129,11 +129,10 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         }
 
         template <typename F>
-            requires requires(F f) {
-                {
-                    f(std::declval<std::array<Real, internal::CartesianAMRMeshTrait<M>::dim>>())
-                } -> std::convertible_to<D>;
-            }
+        requires requires(F f) {
+            { f(std::declval<std::array<Real, internal::CartesianAMRMeshTrait<M>::dim>>()) }
+            ->std::convertible_to<D>;
+        }
         auto& initBy(F&& f) {
             auto levels = data.size();
 #pragma omp parallel
@@ -357,8 +356,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         auto& evalSafeAtImpl_final(const index_type& i) { return data[i.l][i.p][i - offset[i.l][i.p]]; }
 
         template <typename Other>
-            requires(!std::same_as<Other, CartAMRField>)
-        bool containsImpl_final(const Other&) const {
+        requires(!std::same_as<Other, CartAMRField>) bool containsImpl_final(const Other&) const {
             return false;
         }
 

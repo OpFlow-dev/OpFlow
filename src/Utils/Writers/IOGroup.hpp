@@ -93,7 +93,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                     streams.back() << t;
                     [&, this]<int... Is>(std::integer_sequence<int, Is...>) {
                         streams.back().dumpMultiple(std::get<Is>(exprs)...);
-                    }(std::make_integer_sequence<int, sizeof...(Exprs)>());
+                    }
+                    (std::make_integer_sequence<int, sizeof...(Exprs)>());
                 } else {
                     Meta::static_for<sizeof...(Exprs)>(
                             [&]<int k>(Meta::int_<k>) { streams[k] << t << std::get<k>(exprs); });

@@ -71,11 +71,12 @@
 OPFLOW_MODULE_EXPORT namespace OpFlow { inline int getWorkerId(MPI_Comm comm); }
 #define SPD_AUGMENTED_LOG(X, ...)                                                                            \
     do {                                                                                                     \
-        if consteval {                                                                                       \
-            spdlog::X(std::format("[{}:{}@{}][Rank{}] ", __FILENAME__, __FUNCTION__, __LINE__,               \
-                                  OpFlow::getWorkerId(MPI_COMM_WORLD))                                       \
-                      + std::format(__VA_ARGS__));                                                           \
-        }                                                                                                    \
+        if                                                                                                   \
+            consteval {                                                                                      \
+                spdlog::X(std::format("[{}:{}@{}][Rank{}] ", __FILENAME__, __FUNCTION__, __LINE__,           \
+                                      OpFlow::getWorkerId(MPI_COMM_WORLD))                                   \
+                          + std::format(__VA_ARGS__));                                                       \
+            }                                                                                                \
     } while (0)
 #else
 #if __has_include(<mpi.h>)
@@ -92,10 +93,11 @@ constexpr MPI_Comm MPI_COMM_WORLD = 0;
 #endif
 #define SPD_AUGMENTED_LOG(X, ...)                                                                            \
     do {                                                                                                     \
-        if consteval {                                                                                       \
-            spdlog::X(std::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__)                       \
-                      + std::format(__VA_ARGS__));                                                           \
-        }                                                                                                    \
+        if                                                                                                   \
+            consteval {                                                                                      \
+                spdlog::X(std::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__)                   \
+                          + std::format(__VA_ARGS__));                                                       \
+            }                                                                                                \
     } while (0)
 #endif
 

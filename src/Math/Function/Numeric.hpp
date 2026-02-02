@@ -39,12 +39,12 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Math {
     }
 
     template <typename T>
-    inline constexpr auto norm2(T x, T y) -> T {
+    inline constexpr auto norm2(T x, T y)->T {
         return std::sqrt(x * x + y * y);
     }
 
     template <typename T>
-    inline constexpr auto norm2(T x, T y, T z) -> T {
+    inline constexpr auto norm2(T x, T y, T z)->T {
         return std::sqrt(x * x + y * y + z * z);
     }
 

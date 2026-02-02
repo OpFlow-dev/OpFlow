@@ -229,7 +229,10 @@ namespace OpFlow::DS {
     };
 
     template <typename T>
-    concept isRange = requires { T::dim; } && std::is_same_v<std::remove_cvref_t<T>, Range<T::dim>>;
+    concept isRange = requires {
+        T::dim;
+    }
+    &&std::is_same_v<std::remove_cvref_t<T>, Range<T::dim>>;
 
     template <std::size_t dim1, std::size_t dim2>
     constexpr auto commonRange(const Range<dim1>& a, const Range<dim2>& b) {

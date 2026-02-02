@@ -377,7 +377,7 @@ namespace OpFlow {
                     });
                 }
             }
-            int (*rfactors)[HYPRE_MAXDIM];
+            int(*rfactors)[HYPRE_MAXDIM];
             rfactors = new int[target->getLevels()][HYPRE_MAXDIM];
             for (int l = 0; l < target->getLevels(); ++l)
                 for (int d = 0; d < HYPRE_MAXDIM; ++d) rfactors[l][d] = 1;
@@ -406,7 +406,7 @@ namespace OpFlow {
                     });
                 }
             }
-            int (*rfactors)[HYPRE_MAXDIM];
+            int(*rfactors)[HYPRE_MAXDIM];
             rfactors = new int[target->getLevels()][HYPRE_MAXDIM];
             for (int l = 0; l < target->getLevels(); ++l)
                 for (int d = 0; d < HYPRE_MAXDIM; ++d) rfactors[l][d] = 1;
@@ -438,7 +438,7 @@ namespace OpFlow {
             initx();
             HYPRE_SStructFACSetMaxLevels(solver.getSolver(), target->getLevels());
             std::vector<int> plevels(target->getLevels());
-            int (*rfactors)[HYPRE_MAXDIM];
+            int(*rfactors)[HYPRE_MAXDIM];
             std::iota(plevels.begin(), plevels.end(), 0);
             rfactors = new int[plevels.size()][HYPRE_MAXDIM];
             for (int i = 0; i < HYPRE_MAXDIM; ++i) rfactors[0][i] = 1;
