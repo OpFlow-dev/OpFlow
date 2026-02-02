@@ -257,7 +257,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow { inline Utils::StackTracer stackTracer; }
     do {                                                                                                     \
         int _rank;                                                                                           \
         MPI_Comm_rank(MPI_COMM_WORLD, &_rank);                                                               \
-        if (_rank == 0) OP_WARN(__VA_ARGS__);                                                                \
+        if (_rank == 0) { OP_WARN(__VA_ARGS__); }                                                            \
     } while (0)
 #define OP_MPI_MASTER_DEBUG(...)                                                                             \
     do {                                                                                                     \

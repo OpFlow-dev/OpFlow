@@ -23,7 +23,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     struct IOGroupInterface {
         virtual ~IOGroupInterface() = default;
         virtual void dump(const TimeStamp& t) = 0;
-        virtual void read(const TimeStamp& t) {}
+        virtual void read([[maybe_unused]] const TimeStamp& t) {}
         virtual void setAllInOne(bool o) = 0;
         virtual void fixedMesh() {}
         virtual void dumpToSeparateFile() {}

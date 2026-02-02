@@ -50,7 +50,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
 #endif
               time(other.time), first_run(other.first_run), file_inited(other.file_inited),
               group_inited(other.group_inited), fixed_mesh(other.fixed_mesh), write_mesh(other.write_mesh),
-              mode(other.mode), separate_file(other.separate_file)
+              separate_file(other.separate_file), mode(other.mode)
 #ifdef OPFLOW_WITH_MPI
               ,
               mpi_comm(other.mpi_comm)

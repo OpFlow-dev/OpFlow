@@ -74,19 +74,19 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
 
         constexpr bool operator==(const Meta::BracketIndexable auto& index) const {
             auto ret = true;
-            for (auto i = 0; i < d; ++i) ret &= this->idx[i] == index[i];
+            for (std::size_t i = 0; i < d; ++i) ret &= this->idx[i] == index[i];
             return ret;
         }
 
         constexpr auto operator+(const MDIndex& index) const {
             MDIndex ret;
-            for (auto i = 0; i < d; ++i) ret[i] = this->idx[i] + index[i];
+            for (std::size_t i = 0; i < d; ++i) ret[i] = this->idx[i] + index[i];
             return ret;
         }
 
         constexpr auto operator-(const MDIndex& index) const {
             MDIndex ret;
-            for (auto i = 0; i < d; ++i) ret[i] = this->idx[i] - index[i];
+            for (std::size_t i = 0; i < d; ++i) ret[i] = this->idx[i] - index[i];
             return ret;
         }
 
@@ -133,7 +133,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
             while (n-- > 0) ret += prefix;
             ret += "{";
             if constexpr (d > 0) ret += std::format("{}", idx[0]);
-            for (auto i = 1; i < d; ++i) ret += std::format(", {}", idx[i]);
+            for (std::size_t i = 1; i < d; ++i) ret += std::format(", {}", idx[i]);
             ret += "}";
             return ret;
         }

@@ -195,7 +195,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
             return false;
         }
 
-        Range(Range& r, tbb::detail::split split) : Range(r) {
+        Range(Range& r, [[maybe_unused]] tbb::detail::split split) : Range(r) {
             this->reValidPace();
             int max_iter = std::max_element(pace.begin(), pace.end()) - pace.begin();
             this->end[max_iter] = this->start[max_iter] + this->pace[max_iter] / 2;

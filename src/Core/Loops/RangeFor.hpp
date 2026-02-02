@@ -67,8 +67,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     /// \return The input functor
     template <typename R, typename F>
     F rangeFor(const R& range, F&& func) {
-        constexpr static auto dim = R::dim;
-        auto total_count = range.count();
+        [[maybe_unused]] constexpr static auto dim = R::dim;
+        [[maybe_unused]] auto total_count = range.count();
         auto line_size = range.end[0] - range.start[0];
         if (line_size <= 0) return std::forward<F>(func);
         if (range.stride[0] == 1) {
