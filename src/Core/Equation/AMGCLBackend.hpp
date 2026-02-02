@@ -27,24 +27,32 @@
 #endif
 #include "EqnSolveHandler.hpp"
 
-OPFLOW_MODULE_EXPORT namespace OpFlow {
+OPFLOW_MODULE_EXPORT
+
+namespace OpFlow
+{
     template <typename Solver, typename D>
-    struct AMGCLBackend {
+    struct AMGCLBackend
+    {
         constexpr static bool _enable_mpi = !requires { typename Solver::col_type; };
 
         // the static solver which performs a fresh solve on each invoke
         static EqnSolveState solve(const DS::CSRMatrix& mat, std::vector<D>& x, typename Solver::params p,
-                                   typename Solver::backend_params bp, bool verbose = false) {
+                                   typename Solver::backend_params bp, bool verbose = false)
+        {
             int rows = mat.row.size() - 1;
             std::unique_ptr<Solver> solver;
 #if defined(OPFLOW_WITH_MPI)
-            if constexpr (_enable_mpi) {
+            if constexpr (_enable_mpi)
+            {
                 amgcl::mpi::communicator world(MPI_COMM_WORLD);
                 auto A = std::make_shared<amgcl::mpi::distributed_matrix<typename Solver::backend_type>>(
-                        world,
-                        *amgcl::adapter::zero_copy(rows, mat.row.begin(), mat.col.begin(), mat.val.begin()));
+                    world,
+                    *amgcl::adapter::zero_copy(rows, mat.row.begin(), mat.col.begin(), mat.val.begin()));
                 solver = std::make_unique<Solver>(world, A, p, bp);
-            } else {
+            }
+            else
+            {
                 auto A = amgcl::adapter::zero_copy(rows, mat.row.begin(), mat.col.begin(), mat.val.begin());
                 //auto A_tie = std::tie(rows, mat.row, mat.col, mat.val);
                 solver = std::make_unique<Solver>(*A, p, bp);
@@ -59,33 +67,39 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             double error;
             std::tie(iters, error) = (*solver)(mat.rhs, x);
             if (verbose) { OP_INFO("AMGCL report: iter = {}, relerr = {}", iters, error); }
-            return EqnSolveState {iters, error};
+            return EqnSolveState{iters, error};
         }
 
         // the dynamic solver which tries to reuse the built preconditioner before
         EqnSolveState solve_dy(const DS::CSRMatrix& mat, std::vector<D>& x, typename Solver::params p,
-                               typename Solver::backend_params bp, bool verbose = false) {
+                               typename Solver::backend_params bp, bool verbose = false)
+        {
             rebuild_solver(mat, p, bp);
             OP_ASSERT_MSG(solver, "AMGCLBackend: solver not initialized.");
             auto [iters, error] = (*solver)(mat.rhs, x);
             if (verbose) { OP_INFO("AMGCL report: iter = {}, relerr = {}", iters, error); }
             solve_counter++;
-            return EqnSolveState {(int) iters, error};
+            return EqnSolveState{(int)iters, error};
         }
 
     private:
         void rebuild_solver(const DS::CSRMatrix& mat, typename Solver::params& p,
-                            typename Solver::backend_params& bp) {
-            if (!solver || rebuilt_period.has_value() && solve_counter % rebuilt_period.value() == 0) {
+                            typename Solver::backend_params& bp)
+        {
+            if (!solver || (rebuilt_period.has_value() && solve_counter % rebuilt_period.value() == 0))
+            {
                 int rows = mat.row.size() - 1;
 #if defined(OPFLOW_WITH_MPI)
-                if constexpr (_enable_mpi) {
+                if constexpr (_enable_mpi)
+                {
                     amgcl::mpi::communicator world(MPI_COMM_WORLD);
                     auto A = std::make_shared<amgcl::mpi::distributed_matrix<typename Solver::backend_type>>(
-                            world, *amgcl::adapter::zero_copy(rows, mat.row.begin(), mat.col.begin(),
-                                                              mat.val.begin()));
+                        world, *amgcl::adapter::zero_copy(rows, mat.row.begin(), mat.col.begin(),
+                                                          mat.val.begin()));
                     solver = std::make_unique<Solver>(world, A, p, bp);
-                } else {
+                }
+                else
+                {
                     auto A = amgcl::adapter::zero_copy(rows, mat.row.begin(), mat.col.begin(),
                                                        mat.val.begin());
                     solver = std::make_unique<Solver>(*A, p, bp);
@@ -96,10 +110,11 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 #endif
             }
         }
+
         std::unique_ptr<Solver> solver;
         unsigned long long solve_counter = 0;
-        std::optional<int> rebuilt_period {};
+        std::optional<int> rebuilt_period{};
     };
-}// namespace OpFlow
+} // namespace OpFlow
 
 #endif//OPFLOW_AMGCLBACKEND_HPP

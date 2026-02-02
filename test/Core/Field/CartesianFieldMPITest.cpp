@@ -23,9 +23,11 @@ import opflow;
 using namespace OpFlow;
 
 class CartesianFieldMPITest
-    : public testing::TestWithParam<std::tuple<std::array<BCType, 4>, std::array<LocOnMesh, 2>>> {
+    : public testing::TestWithParam<std::tuple<std::array<BCType, 4>, std::array<LocOnMesh, 2>>>
+{
 protected:
-    void SetUp() override {
+    void SetUp() override
+    {
         auto info = makeParallelInfo();
         setGlobalParallelInfo(info);
         setGlobalParallelPlan(makeParallelPlan(getGlobalParallelInfo(), ParallelIdentifier::DistributeMem));
@@ -41,7 +43,8 @@ protected:
     Mesh m;
 };
 
-TEST_P(CartesianFieldMPITest, RangeCheck) {
+TEST_P(CartesianFieldMPITest, RangeCheck)
+{
     const auto& [bcs, locs] = GetParam();
     auto builder = ExprBuilder<Field>().setMesh(m);
     if (isLogicalBC(bcs[0])) builder.setBC(0, DimPos::start, bcs[0]);
@@ -61,7 +64,8 @@ TEST_P(CartesianFieldMPITest, RangeCheck) {
 
     auto mr = strategy->splitRange(m.getRange(), getGlobalParallelPlan());
     // mpi only affect localRange
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < 2; ++i)
+    {
         ASSERT_EQ(u.localRange.start[i], mr.start[i]);
         int end;
         if (locs[i] == LocOnMesh::Center || bcs[i] == BCType::Periodic) end = mr.end[i];
@@ -74,7 +78,8 @@ TEST_P(CartesianFieldMPITest, RangeCheck) {
 }
 
 // should behave the same as no-ext version
-TEST_P(CartesianFieldMPITest, WithExtRangeCheck) {
+TEST_P(CartesianFieldMPITest, WithExtRangeCheck)
+{
     const auto& [bcs, locs] = GetParam();
     auto builder = ExprBuilder<Field>().setMesh(m);
     if (isLogicalBC(bcs[0])) builder.setBC(0, DimPos::start, bcs[0]);
@@ -94,7 +99,8 @@ TEST_P(CartesianFieldMPITest, WithExtRangeCheck) {
 
     auto mr = strategy->splitRange(m.getRange(), getGlobalParallelPlan());
     // mpi only affect localRange
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < 2; ++i)
+    {
         ASSERT_EQ(u.localRange.start[i], mr.start[i]);
         int end;
         if (locs[i] == LocOnMesh::Center || bcs[i] == BCType::Periodic) end = mr.end[i];
@@ -106,83 +112,99 @@ TEST_P(CartesianFieldMPITest, WithExtRangeCheck) {
     }
 }
 
-TEST_F(CartesianFieldMPITest, PeriodicValueCheck) {
+TEST_F(CartesianFieldMPITest, PeriodicValueCheck)
+{
     auto u = ExprBuilder<Field>()
-                     .setMesh(m)
-                     .setBC(0, OpFlow::DimPos::start, OpFlow::BCType::Periodic)
-                     .setBC(0, OpFlow::DimPos::end, OpFlow::BCType::Periodic)
-                     .setBC(1, OpFlow::DimPos::start, OpFlow::BCType::Periodic)
-                     .setBC(1, OpFlow::DimPos::end, OpFlow::BCType::Periodic)
-                     .setPadding(1)
-                     .setExt(1)
-                     .setSplitStrategy(strategy)
-                     .setLoc({LocOnMesh::Center, LocOnMesh::Center})
-                     .build();
+             .setMesh(m)
+             .setBC(0, OpFlow::DimPos::start, OpFlow::BCType::Periodic)
+             .setBC(0, OpFlow::DimPos::end, OpFlow::BCType::Periodic)
+             .setBC(1, OpFlow::DimPos::start, OpFlow::BCType::Periodic)
+             .setBC(1, OpFlow::DimPos::end, OpFlow::BCType::Periodic)
+             .setPadding(1)
+             .setExt(1)
+             .setSplitStrategy(strategy)
+             .setLoc({LocOnMesh::Center, LocOnMesh::Center})
+             .build();
     auto u_local = ExprBuilder<Field>()
-                           .setMesh(m)
-                           .setBC(0, OpFlow::DimPos::start, OpFlow::BCType::Periodic)
-                           .setBC(0, OpFlow::DimPos::end, OpFlow::BCType::Periodic)
-                           .setBC(1, OpFlow::DimPos::start, OpFlow::BCType::Periodic)
-                           .setBC(1, OpFlow::DimPos::end, OpFlow::BCType::Periodic)
-                           .setExt(1)
-                           .setLoc({LocOnMesh::Center, LocOnMesh::Center})
-                           .build();
+                   .setMesh(m)
+                   .setBC(0, OpFlow::DimPos::start, OpFlow::BCType::Periodic)
+                   .setBC(0, OpFlow::DimPos::end, OpFlow::BCType::Periodic)
+                   .setBC(1, OpFlow::DimPos::start, OpFlow::BCType::Periodic)
+                   .setBC(1, OpFlow::DimPos::end, OpFlow::BCType::Periodic)
+                   .setExt(1)
+                   .setLoc({LocOnMesh::Center, LocOnMesh::Center})
+                   .build();
 
-    auto mapper = DS::MDRangeMapper<2>(u.assignableRange);
+    auto mapper = DS::MDRangeMapper < 2 > (u.assignableRange);
     rangeFor_s(u.getLocalWritableRange(), [&](auto&& i) { u[i] = mapper(i); });
     rangeFor_s(u_local.getLocalWritableRange(), [&](auto&& i) { u_local[i] = mapper(i); });
     u.updatePadding();
     u_local.updatePadding();
-    rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) {
+    rangeFor_s(u.getLocalReadableRange(), [&](auto&& i)
+    {
         if (u[i] != u_local[i]) std::cout << std::format("Not equal at {} {} != {}", i, u[i], u_local[i]);
         ASSERT_EQ(u[i], u_local[i]);
     });
 }
 
-TEST_F(CartesianFieldMPITest, Serializable_PeriodicValueCheck) {
-    class Int : public virtual SerializableObj {
+TEST_F(CartesianFieldMPITest, Serializable_PeriodicValueCheck)
+{
+    class Int : public virtual SerializableObj
+    {
     public:
         int i = 0;
         Int() = default;
-        explicit Int(int i) : i(i) {}
-        [[nodiscard]] std::vector<std::byte> serialize() const override {
+
+        explicit Int(int i) : i(i)
+        {
+        }
+
+        [[nodiscard]] std::vector<std::byte> serialize() const override
+        {
             return {reinterpret_cast<const std::byte*>(&i), reinterpret_cast<const std::byte*>(&i + 1)};
         }
-        void deserialize(const std::byte* data, std::size_t size) override {
+
+        void deserialize(const std::byte* data, std::size_t) override
+        {
             std::memcpy(&i, data, sizeof(i));
         }
     };
     auto s = std::make_shared<EvenSplitStrategy<CartesianField<Int, Mesh>>>();
     auto u = ExprBuilder<CartesianField<Int, Mesh>>()
-                     .setMesh(m)
-                     .setPadding(1)
-                     .setName("uInt")
-                     .setLoc({LocOnMesh::Center, LocOnMesh::Center})
-                     .setSplitStrategy(s)
-                     .build();
+             .setMesh(m)
+             .setPadding(1)
+             .setName("uInt")
+             .setLoc({LocOnMesh::Center, LocOnMesh::Center})
+             .setSplitStrategy(s)
+             .build();
 
-    auto mapper = DS::MDRangeMapper<2>(u.assignableRange);
-    rangeFor_s(u.getLocalWritableRange(), [&](auto&& i) { u[i] = Int {mapper(i)}; });
+    auto mapper = DS::MDRangeMapper < 2 > (u.assignableRange);
+    rangeFor_s(u.getLocalWritableRange(), [&](auto&& i) { u[i] = Int{mapper(i)}; });
     u.updatePadding();
-    rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) {
+    rangeFor_s(u.getLocalReadableRange(), [&](auto&& i)
+    {
         if (u[i].i != mapper(i)) std::cout << std::format("Not equal at {} {} != {}", i, u[i].i, mapper(i));
         ASSERT_EQ(u[i].i, mapper(i));
     });
 }
 
 INSTANTIATE_TEST_SUITE_P(
-        Param2D, CartesianFieldMPITest,
-        testing::Values(std::make_tuple(std::array {BCType::Dirc, BCType::Dirc, BCType::Dirc, BCType::Dirc},
-                                        std::array {LocOnMesh::Center, LocOnMesh::Center}),
-                        std::make_tuple(std::array {BCType::Neum, BCType::Neum, BCType::Neum, BCType::Neum},
-                                        std::array {LocOnMesh ::Center, LocOnMesh::Center}),
-                        std::make_tuple(std::array {BCType::Periodic, BCType::Periodic, BCType::Periodic,
-                                                    BCType::Periodic},
-                                        std::array {LocOnMesh ::Center, LocOnMesh::Center}),
-                        std::make_tuple(std::array {BCType::Dirc, BCType::Dirc, BCType::Dirc, BCType::Dirc},
-                                        std::array {LocOnMesh ::Corner, LocOnMesh::Corner}),
-                        std::make_tuple(std::array {BCType::Neum, BCType::Neum, BCType::Neum, BCType::Neum},
-                                        std::array {LocOnMesh ::Corner, LocOnMesh::Corner}),
-                        std::make_tuple(std::array {BCType::Periodic, BCType::Periodic, BCType::Periodic,
-                                                    BCType::Periodic},
-                                        std::array {LocOnMesh ::Corner, LocOnMesh::Corner})));
+    Param2D, CartesianFieldMPITest,
+    testing::Values(std::make_tuple(std::array{BCType::Dirc, BCType::Dirc, BCType::Dirc, BCType::Dirc},
+                                    std::array{LocOnMesh::Center, LocOnMesh::Center}),
+                    std::make_tuple(std::array{BCType::Neum, BCType::Neum, BCType::Neum, BCType::Neum},
+                                    std::array{LocOnMesh::Center, LocOnMesh::Center}),
+                    std::make_tuple(std::array{
+                                        BCType::Periodic, BCType::Periodic, BCType::Periodic,
+                                        BCType::Periodic
+                                    },
+                                    std::array{LocOnMesh::Center, LocOnMesh::Center}),
+                    std::make_tuple(std::array{BCType::Dirc, BCType::Dirc, BCType::Dirc, BCType::Dirc},
+                                    std::array{LocOnMesh::Corner, LocOnMesh::Corner}),
+                    std::make_tuple(std::array{BCType::Neum, BCType::Neum, BCType::Neum, BCType::Neum},
+                                    std::array{LocOnMesh::Corner, LocOnMesh::Corner}),
+                    std::make_tuple(std::array{
+                                        BCType::Periodic, BCType::Periodic, BCType::Periodic,
+                                        BCType::Periodic
+                                    },
+                                    std::array{LocOnMesh::Corner, LocOnMesh::Corner})));

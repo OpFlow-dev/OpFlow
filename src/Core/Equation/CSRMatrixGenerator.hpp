@@ -141,14 +141,12 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         static auto generate_s(S& s, auto&& mapper, bool pinValue) {
             DS::CSRMatrix mat;
             auto target = s.template getTargetPtr<iTarget>();
-            auto commStencil = s.comm_stencils[iTarget];
             auto& uniEqn = s.template getEqnExpr<iTarget>();
             auto local_range = target->getLocalWritableRange();
             // shortcut for empty range case
             if (local_range.empty()) return mat;
             DS::MDRangeMapper local_mapper(local_range);
             // prepare: evaluate the common stencil & pre-fill the arrays
-            int stencil_size = commStencil.pad.size() * 1.5;
 
             std::vector<ptrdiff_t> row, col;
             std::vector<Real> val;
@@ -157,7 +155,6 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             auto r_last = mapper(target->getGlobalWritableRange().last(), iTarget);
             rangeFor_s(local_range, [&](auto&& i) {
                 auto r = mapper(i, iTarget);   // r is the rank of i in the target scope
-                auto r_local = local_mapper(i);// r_local is the rank of i in the block scope
                 auto currentStencil = uniEqn.evalAt(i);
                 if (pinValue && r == r_last) {
                     row.push_back(row.back() + 1);
@@ -198,7 +195,6 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         template <std::size_t iTarget, typename S>
         static auto generate_rhs(S& s, auto&& mapper, bool pinValue) {
             auto target = s.template getTargetPtr<iTarget>();
-            auto commStencil = s.comm_stencils[iTarget];
             auto& uniEqn = s.template getEqnExpr<iTarget>();
             auto local_range = target->getLocalWritableRange();
             DS::MDRangeMapper local_mapper(local_range);

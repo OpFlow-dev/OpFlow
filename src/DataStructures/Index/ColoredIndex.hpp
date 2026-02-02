@@ -136,7 +136,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
             for (auto i = 0; i < n; ++i) ret += prefix;
             ret += "{";
             if constexpr (d > 0) ret += std::format("{}", idx[0]);
-            for (auto i = 1; i < d; ++i) ret += std::format(", {}", idx[i]);
+            for (std::size_t i = 1; i < d; ++i) ret += std::format(", {}", idx[i]);
             ret += std::format(", c = {}", color);
             ret += "}";
             return ret;
