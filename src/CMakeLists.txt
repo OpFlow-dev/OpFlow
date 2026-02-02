@@ -125,3 +125,23 @@ target_link_options(opflow
     INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_LEAK}>: -fsanitize=leak>
     INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_THREAD}>: -fsanitize=thread>
     INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_UB}>: -fsanitize=undefined>)
+
+# ----------------------------------------------------------------------------
+# Compiler warnings
+# ----------------------------------------------------------------------------
+# Enable strict warnings and treat warnings as errors by default
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(opflow ${OPFLOW_TARGET_SCOPE}
+        -Wall
+        -Wextra
+        -Werror
+    )
+endif()
+# MSVC-specific warnings
+if(MSVC)
+    target_compile_options(opflow ${OPFLOW_TARGET_SCOPE}
+        /W4
+        /WX
+    )
+endif()
