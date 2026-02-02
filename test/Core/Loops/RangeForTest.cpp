@@ -33,8 +33,7 @@ protected:
         DS::MDIndex<decltype(index)::dim> ret;
         ret.set(index.range.start);
         assert(linear >= 0);
-        for (std::size_t i = 0; i < index.dim; ++i)
-        {
+        for (std::size_t i = 0; i < index.dim; ++i) {
             ret[i] += linear % ((index.range.end[i] - 1 - index.range.start[i]) / index.range.stride[i] + 1)
                       * index.range.stride[i];
             linear /= ((index.range.end[i] - 1 - index.range.start[i]) / index.range.stride[i] + 1);
@@ -59,8 +58,7 @@ protected:
 
 TEST_F(RangedIndexTest, GetTotalCount) {
     auto total = 1;
-    for (std::size_t i = 0; i < index.dim; ++i)
-    {
+    for (std::size_t i = 0; i < index.dim; ++i) {
         total *= (index.range.end[i] - index.range.start[i] - 1) / index.range.stride[i] + 1;
     }
     ASSERT_EQ(index.count(), total);

@@ -154,7 +154,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 
             auto r_last = mapper(target->getGlobalWritableRange().last(), iTarget);
             rangeFor_s(local_range, [&](auto&& i) {
-                auto r = mapper(i, iTarget);   // r is the rank of i in the target scope
+                auto r = mapper(i, iTarget);// r is the rank of i in the target scope
                 auto currentStencil = uniEqn.evalAt(i);
                 if (pinValue && r == r_last) {
                     row.push_back(row.back() + 1);

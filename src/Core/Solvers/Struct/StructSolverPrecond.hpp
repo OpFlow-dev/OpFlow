@@ -17,11 +17,9 @@
 
 OPFLOW_MODULE_EXPORT
 
-namespace OpFlow
-{
+namespace OpFlow {
     template <StructSolverType Type, StructSolverType PrecondType>
-    struct PrecondStructSolver
-    {
+    struct PrecondStructSolver {
         constexpr auto static type = Type;
         constexpr auto static precondType = PrecondType;
         using Param = StructSolverParams<type>;
@@ -32,19 +30,15 @@ namespace OpFlow
         PrecondStructSolver() = default;
 
         PrecondStructSolver(const Param& p, const PrecondParam& pp)
-            : params(p), precondParam(pp), solver(p), precond(pp)
-        {
-        }
+            : params(p), precondParam(pp), solver(p), precond(pp) {}
 
-        void init()
-        {
+        void init() {
             solver.init();
             precond.init();
             solver.setPrecond(precond.getSolveFunc(), precond.getSetUpFunc(), precond.getSolver());
         }
 
-        void reinit()
-        {
+        void reinit() {
             solver.reinit();
             precond.reinit();
             solver.setPrecond(precond.getSolveFunc(), precond.getSetUpFunc(), precond.getSolver());
@@ -55,20 +49,16 @@ namespace OpFlow
         auto getSolveFunc() const { return solver.getSolveFunc(); }
         auto getSetUpFunc() const { return solver.getSetUpFunc(); }
 
-        auto solve(HYPRE_StructMatrix& A, HYPRE_StructVector& b, HYPRE_StructVector& x)
-        {
+        auto solve(HYPRE_StructMatrix& A, HYPRE_StructVector& b, HYPRE_StructVector& x) {
             return solver.solve(A, b, x);
         }
 
-        auto setup(HYPRE_StructMatrix& A, HYPRE_StructVector& b, HYPRE_StructVector& x)
-        {
+        auto setup(HYPRE_StructMatrix& A, HYPRE_StructVector& b, HYPRE_StructVector& x) {
             return solver.setup(A, b, x);
         }
 
-        void dump(HYPRE_StructMatrix& A, HYPRE_StructVector& b)
-        {
-            if (params.dumpPath)
-            {
+        void dump(HYPRE_StructMatrix& A, HYPRE_StructVector& b) {
+            if (params.dumpPath) {
                 HYPRE_StructMatrixPrint((params.dumpPath.value() + "_A.mat").c_str(), A, 0);
                 HYPRE_StructVectorPrint((params.dumpPath.value() + "_b.vec").c_str(), b, 0);
             }
@@ -82,5 +72,5 @@ namespace OpFlow
         StructSolver<type> solver;
         StructSolver<precondType> precond;
     };
-} // namespace OpFlow
+}// namespace OpFlow
 #endif//OPFLOW_STRUCTSOLVERPRECOND_HPP

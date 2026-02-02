@@ -20,11 +20,9 @@
 
 OPFLOW_MODULE_EXPORT
 
-namespace OpFlow
-{
+namespace OpFlow {
     template <FieldExprType F>
-    struct NeumBCBase : virtual public BCBase<F>
-    {
+    struct NeumBCBase : virtual public BCBase<F> {
     protected:
         BCType type = BCType::Neum;
 
@@ -33,33 +31,28 @@ namespace OpFlow
         [[nodiscard]] BCType getBCType() const override { return type; }
 
         [[nodiscard]] virtual std::unique_ptr<BCBase<F>>
-        getFunctorBC(std::function<typename BCBase < F>::elem_type (const typename BCBase<F>::index_type&)> f)
-        const = 0;
+        getFunctorBC(std::function<typename BCBase<F>::elem_type(const typename BCBase<F>::index_type&)> f)
+                const = 0;
     };
 
     template <MeshBasedFieldExprType F>
     struct FunctorNeumBC;
 
     template <FieldExprType F>
-    struct ConstNeumBC : virtual public NeumBCBase<F>
-    {
+    struct ConstNeumBC : virtual public NeumBCBase<F> {
     public:
-        explicit ConstNeumBC(auto c) : _c(c)
-        {
-        }
+        explicit ConstNeumBC(auto c) : _c(c) {}
 
         using NeumBCBase<F>::operator=;
 
         typename internal::FieldExprTrait<F>::elem_type
-        evalAt(const typename internal::FieldExprTrait<F>::index_type&) const override
-        {
+        evalAt(const typename internal::FieldExprTrait<F>::index_type&) const override {
             return _c;
         }
 
         [[nodiscard]] std::string getTypeName() const override { return "ConstNeumBC"; }
 
-        [[nodiscard]] std::string toString(int level) const override
-        {
+        [[nodiscard]] std::string toString(int level) const override {
             std::string ret, prefix;
             for (auto i = 0; i < level; ++i) prefix += "\t";
             ret += prefix + "Type: ConstNeum\n";
@@ -72,46 +65,38 @@ namespace OpFlow
         std::unique_ptr<BCBase<F>> getCopy() const override { return std::make_unique<ConstNeumBC>(*this); }
 
         std::unique_ptr<BCBase<F>>
-        getFunctorBC(std::function<typename internal::FieldExprTrait < F>::elem_type (
-                         const typename internal::FieldExprTrait<F>::index_type&)>
-                     f) const override
-        {
+        getFunctorBC(std::function<typename internal::FieldExprTrait<F>::elem_type(
+                             const typename internal::FieldExprTrait<F>::index_type&)>
+                             f) const override {
             return std::make_unique<FunctorNeumBC<F>>(f);
         }
 
         [[nodiscard]] auto getValue() const { return _c; }
 
     protected:
-        void assignImpl(const BCBase<F>& other) override
-        {
-            _c = other.evalAt(typename internal::FieldExprTrait < F > ::index_type());
+        void assignImpl(const BCBase<F>& other) override {
+            _c = other.evalAt(typename internal::FieldExprTrait<F>::index_type());
         }
 
         typename internal::FieldExprTrait<F>::elem_type _c;
     };
 
     template <MeshBasedFieldExprType F>
-    struct FunctorNeumBC : virtual public NeumBCBase<F>
-    {
+    struct FunctorNeumBC : virtual public NeumBCBase<F> {
     public:
-        using Functor = std::function<typename internal::MeshBasedFieldExprTrait < F>::elem_type(
-            const typename internal::MeshBasedFieldExprTrait<F>::index_type&)
-        >;
+        using Functor = std::function<typename internal::MeshBasedFieldExprTrait<F>::elem_type(
+                const typename internal::MeshBasedFieldExprTrait<F>::index_type&)>;
 
-        explicit FunctorNeumBC(Functor f) : _f(std::move(f))
-        {
-        }
+        explicit FunctorNeumBC(Functor f) : _f(std::move(f)) {}
 
         typename internal::MeshBasedFieldExprTrait<F>::elem_type
-        evalAt(const typename internal::MeshBasedFieldExprTrait<F>::index_type& index) const override
-        {
+        evalAt(const typename internal::MeshBasedFieldExprTrait<F>::index_type& index) const override {
             return _f(index - this->offset);
         }
 
         [[nodiscard]] std::string getTypeName() const override { return "FunctorNeumBC"; }
 
-        [[nodiscard]] std::string toString(int level) const override
-        {
+        [[nodiscard]] std::string toString(int level) const override {
             std::string ret, prefix;
             for (auto i = 0; i < level; ++i) prefix += "\t";
             ret += prefix + "Type: FunctorNeum";
@@ -121,22 +106,20 @@ namespace OpFlow
         std::unique_ptr<BCBase<F>> getCopy() const override { return std::make_unique<FunctorNeumBC>(*this); }
 
         std::unique_ptr<BCBase<F>>
-        getFunctorBC(std::function<typename internal::FieldExprTrait < F>::elem_type (
-                         const typename internal::FieldExprTrait<F>::index_type&)>
-                     f) const override
-        {
+        getFunctorBC(std::function<typename internal::FieldExprTrait<F>::elem_type(
+                             const typename internal::FieldExprTrait<F>::index_type&)>
+                             f) const override {
             return std::make_unique<FunctorNeumBC<F>>(f);
         }
 
         [[nodiscard]] auto getFunctor() const { return _f; }
 
     protected:
-        void assignImpl(const BCBase<F>& other) override
-        {
+        void assignImpl(const BCBase<F>& other) override {
             _f = [&](auto&& i) { return other.evalAt(i); };
         }
 
         Functor _f;
     };
-} // namespace OpFlow
+}// namespace OpFlow
 #endif//OPFLOW_NEUMBC_HPP
