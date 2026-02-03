@@ -32,6 +32,7 @@
 OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <FieldExprType F>
     struct EvenSplitStrategy : AbstractSplitStrategy<F> {
+        ~EvenSplitStrategy() override = default;
         [[nodiscard]] std::string strategyName() const override { return "Even split"; }
         typename internal::ExprTrait<F>::range_type
         splitRange(const typename internal::ExprTrait<F>::range_type& range,
