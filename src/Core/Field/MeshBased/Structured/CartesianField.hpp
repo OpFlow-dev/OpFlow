@@ -164,8 +164,8 @@ namespace OpFlow {
             // loop over all requests
             int finished_count = 0;
             std::vector<bool> finished_bit(src_ranks.size(), false);
-            while (finished_count != (int)src_ranks.size()) {
-                for (int i = 0; i < (int)finished_bit.size(); ++i) {
+            while (finished_count != (int) src_ranks.size()) {
+                for (int i = 0; i < (int) finished_bit.size(); ++i) {
                     if (!finished_bit[i]) {
                         int flag;
                         MPI_Test(&recv_requests[i], &flag, MPI_STATUS_IGNORE);
