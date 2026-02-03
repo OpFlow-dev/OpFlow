@@ -29,11 +29,9 @@
 
 OPFLOW_MODULE_EXPORT
 
-namespace OpFlow::DS
-{
+namespace OpFlow::DS {
     template <std::size_t d>
-    struct MDIndex : public StringifiableObj
-    {
+    struct MDIndex : public StringifiableObj {
     protected:
         std::array<int, d> idx;
 
@@ -46,16 +44,9 @@ namespace OpFlow::DS
 
         template <Meta::WeakIntegral... T>
         constexpr explicit MDIndex(T&&... indexes) noexcept
-            : MDIndex(std::array < int, sizeof...(indexes) >
-        {
-            std::forward < T > (indexes)
-            ...
-        }) {
-        }
+            : MDIndex(std::array<int, sizeof...(indexes)> {std::forward<T>(indexes)...}) {}
 
-        constexpr explicit MDIndex(const std::array<int, d>& array) noexcept : idx(array)
-        {
-        }
+        constexpr explicit MDIndex(const std::array<int, d>& array) noexcept : idx(array) {}
 
         constexpr const auto& operator[](int i) const { return idx[i]; }
 
@@ -68,15 +59,12 @@ namespace OpFlow::DS
 
         constexpr void set(const std::array<int, d>& o) { this->idx = o; }
 
-        constexpr void set(const Meta::BracketIndexable auto& o)
-        {
+        constexpr void set(const Meta::BracketIndexable auto& o) {
             for (auto i = 0; i < d; ++i) this->idx[i] = o[i];
         }
 
-        constexpr bool operator<(const MDIndex& other) const
-        {
-            for (std::size_t i = d; i > 0; --i)
-            {
+        constexpr bool operator<(const MDIndex& other) const {
+            for (std::size_t i = d; i > 0; --i) {
                 if (idx[i - 1] < other.idx[i - 1]) return true;
                 else if (idx[i - 1] > other.idx[i - 1])
                     return false;
@@ -86,35 +74,30 @@ namespace OpFlow::DS
 
         constexpr bool operator>(const MDIndex& other) const { return other < *this; }
 
-        constexpr bool operator==(const Meta::BracketIndexable auto& index) const
-        {
+        constexpr bool operator==(const Meta::BracketIndexable auto& index) const {
             auto ret = true;
             for (std::size_t i = 0; i < d; ++i) ret &= this->idx[i] == index[i];
             return ret;
         }
 
-        constexpr auto operator+(const MDIndex& index) const
-        {
+        constexpr auto operator+(const MDIndex& index) const {
             MDIndex ret;
             for (std::size_t i = 0; i < d; ++i) ret[i] = this->idx[i] + index[i];
             return ret;
         }
 
-        constexpr auto operator-(const MDIndex& index) const
-        {
+        constexpr auto operator-(const MDIndex& index) const {
             MDIndex ret;
             for (std::size_t i = 0; i < d; ++i) ret[i] = this->idx[i] - index[i];
             return ret;
         }
 
-        constexpr auto& operator+=(const MDIndex& index)
-        {
+        constexpr auto& operator+=(const MDIndex& index) {
             for (std::size_t i = 0; i < d; ++i) this->idx[i] += index[i];
             return *this;
         }
 
-        constexpr auto& operator-=(const MDIndex& index)
-        {
+        constexpr auto& operator-=(const MDIndex& index) {
             for (std::size_t i = 0; i < d; ++i) this->idx[i] -= index[i];
             return *this;
         }
@@ -122,38 +105,32 @@ namespace OpFlow::DS
         constexpr auto copy() const { return *this; }
 
         template <std::size_t dim = 0>
-            requires requires
-            {
-                dim < d;
-            }
-        constexpr auto next(int steps = 1) const
-        {
+        requires requires {
+            dim < d;
+        }
+        constexpr auto next(int steps = 1) const {
             auto c = copy();
             c.idx[dim] += steps;
             return c;
         }
 
         template <std::size_t dim = 0>
-            requires requires
-            {
-                dim < d;
-            }
-        constexpr auto prev(int steps = 1) const
-        {
+        requires requires {
+            dim < d;
+        }
+        constexpr auto prev(int steps = 1) const {
             auto c = copy();
             c.idx[dim] -= steps;
             return c;
         }
 
-        constexpr auto flip() const
-        {
+        constexpr auto flip() const {
             auto c = copy();
             for (std::size_t i = 0; i < d; ++i) c[i] = this->idx[d - i - 1];
             return c;
         }
 
-        [[nodiscard]] std::string toString(int n, const std::string& prefix) const override
-        {
+        [[nodiscard]] std::string toString(int n, const std::string& prefix) const override {
             std::string ret;
             while (n-- > 0) ret += prefix;
             ret += "{";
@@ -163,18 +140,15 @@ namespace OpFlow::DS
             return ret;
         }
     };
-} // namespace OpFlow::DS
+}// namespace OpFlow::DS
 
-namespace std
-{
+namespace std {
     template <std::size_t d>
-    struct hash<OpFlow::DS::MDIndex<d>>
-    {
-        std::size_t operator()(OpFlow::DS::MDIndex<d> const& i) const noexcept
-        {
+    struct hash<OpFlow::DS::MDIndex<d>> {
+        std::size_t operator()(OpFlow::DS::MDIndex<d> const& i) const noexcept {
             auto idx = i.get();
             return XXHash64::hash(idx.data(), idx.size() * sizeof(int), 0);
         }
     };
-} // namespace std
+}// namespace std
 #endif//OPFLOW_MDINDEX_HPP

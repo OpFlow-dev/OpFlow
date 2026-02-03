@@ -13,8 +13,7 @@
 #include <OpFlow>
 #include <benchmark/benchmark.h>
 
-static void Laplace_2d(benchmark::State& state)
-{
+static void Laplace_2d(benchmark::State& state) {
     using namespace OpFlow;
 
     using Mesh = CartesianMesh<Meta::int_<2>>;
@@ -25,14 +24,14 @@ static void Laplace_2d(benchmark::State& state)
     auto m = MeshBuilder<Mesh>().newMesh(n, n).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
 
     auto u = ExprBuilder<Field>()
-             .setMesh(m)
-             .setLoc(std::array{LocOnMesh::Center, LocOnMesh::Center})
-             .setBC(0, DimPos::start, BCType::Periodic)
-             .setBC(0, DimPos::end, BCType::Periodic)
-             .setBC(1, DimPos::start, BCType::Periodic)
-             .setBC(1, DimPos::end, BCType::Periodic)
-             .setExt(1)
-             .build();
+                     .setMesh(m)
+                     .setLoc(std::array {LocOnMesh::Center, LocOnMesh::Center})
+                     .setBC(0, DimPos::start, BCType::Periodic)
+                     .setBC(0, DimPos::end, BCType::Periodic)
+                     .setBC(1, DimPos::start, BCType::Periodic)
+                     .setBC(1, DimPos::end, BCType::Periodic)
+                     .setExt(1)
+                     .build();
     u = 1.0;
     auto v = u;
 
@@ -40,15 +39,12 @@ static void Laplace_2d(benchmark::State& state)
     for (auto _ : state) { u = d2x<D2SecondOrderCentered>(v) + d2y<D2SecondOrderCentered>(v); }
 }
 
-static void Laplace_2d_Params(benchmark::internal::Benchmark* b)
-{
+static void Laplace_2d_Params(benchmark::internal::Benchmark* b) {
     for (auto i = 8; i <= 8 << 10; i *= 2)
         for (auto j = 1; j <= omp_get_max_threads(); j *= 2) b->Args({i + 1, j});
 }
 
-BENCHMARK(Laplace_2d) -> Apply(Laplace_2d_Params)
-->
-UseRealTime();
+BENCHMARK(Laplace_2d)->Apply(Laplace_2d_Params)->UseRealTime();
 
 /*
 static void Laplace_3d(benchmark::State& state) {

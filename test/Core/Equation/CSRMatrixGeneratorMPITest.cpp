@@ -102,10 +102,18 @@ protected:
         ASSERT_EQ(mat1.col.size(), mat2.col.size());
         ASSERT_EQ(mat1.val.size(), mat2.val.size());
         ASSERT_EQ(mat1.rhs.size(), mat2.rhs.size());
-        for (decltype(mat1.row.size()) i = 0; i < mat1.row.size(); ++i) { ASSERT_EQ(mat1.row[i], mat2.row[i]); }
-        for (decltype(mat1.col.size()) i = 0; i < mat1.col.size(); ++i) { ASSERT_EQ(mat1.col[i], mat2.col[i]); }
-        for (decltype(mat1.val.size()) i = 0; i < mat1.val.size(); ++i) { ASSERT_EQ(mat1.val[i], mat2.val[i]); }
-        for (decltype(mat1.rhs.size()) i = 0; i < mat1.rhs.size(); ++i) { ASSERT_EQ(mat1.rhs[i], mat2.rhs[i]); }
+        for (decltype(mat1.row.size()) i = 0; i < mat1.row.size(); ++i) {
+            ASSERT_EQ(mat1.row[i], mat2.row[i]);
+        }
+        for (decltype(mat1.col.size()) i = 0; i < mat1.col.size(); ++i) {
+            ASSERT_EQ(mat1.col[i], mat2.col[i]);
+        }
+        for (decltype(mat1.val.size()) i = 0; i < mat1.val.size(); ++i) {
+            ASSERT_EQ(mat1.val[i], mat2.val[i]);
+        }
+        for (decltype(mat1.rhs.size()) i = 0; i < mat1.rhs.size(); ++i) {
+            ASSERT_EQ(mat1.rhs[i], mat2.rhs[i]);
+        }
     }
 
     using Mesh = CartesianMesh<Meta::int_<2>>;
@@ -285,12 +293,10 @@ TEST_F(CSRMatrixGeneratorMPITest, SimplePoisson_2Eqn) {
             ASSERT_EQ(mat.col[i] - p.getLocalWritableRange().count(), mat.col[j]);
         }
     }
-    for (decltype(mat.val.size()) i = mat.val.size() / 2; i < mat.val.size(); ++i)
-    {
+    for (decltype(mat.val.size()) i = mat.val.size() / 2; i < mat.val.size(); ++i) {
         ASSERT_DOUBLE_EQ(mat.val[i], mat.val[i - mat.val.size() / 2]);
     }
-    for (decltype(mat.rhs.size()) i = mat.rhs.size() / 2; i < mat.rhs.size(); ++i)
-    {
+    for (decltype(mat.rhs.size()) i = mat.rhs.size() / 2; i < mat.rhs.size(); ++i) {
         ASSERT_DOUBLE_EQ(mat.rhs[i], mat.rhs[i - mat.rhs.size() / 2]);
     }
 }
@@ -339,8 +345,7 @@ TEST_F(CSRMatrixGeneratorMPITest, SimplePoisson_Neum_2Eqn) {
             ASSERT_EQ(mat.col[i] - p.getLocalWritableRange().count(), mat.col[j]);
         }
     }
-    for (decltype(mat.val.size()) i = mat.val.size() / 2; i < mat.val.size(); ++i)
-    {
+    for (decltype(mat.val.size()) i = mat.val.size() / 2; i < mat.val.size(); ++i) {
         ASSERT_DOUBLE_EQ(mat.val[i], mat.val[i - mat.val.size() / 2]);
     }
     for (decltype(mat.rhs.size()) i = mat.rhs.size() / 2; i < mat.rhs.size(); ++i) {

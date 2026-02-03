@@ -12,8 +12,7 @@
 
 #include <OpFlow>
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     using namespace OpFlow;
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<Real, Mesh>;
@@ -28,32 +27,32 @@ int main(int argc, char* argv[])
     auto n = 65;
     auto mesh = MeshBuilder<Mesh>().newMesh(n, n).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
     auto builder = ExprBuilder<Field>()
-                   .setMesh(mesh)
-                   .setBC(0, DimPos::start, BCType::Dirc, 0.)
-                   .setBC(0, DimPos::end, BCType::Dirc, 0.)
-                   .setBC(1, DimPos::start, BCType::Dirc, 0.)
-                   .setBC(1, DimPos::end, BCType::Dirc, 0.)
-                   .setPadding(2)
-                   .setExt(1)
-                   .setSplitStrategy(strategy);
+                           .setMesh(mesh)
+                           .setBC(0, DimPos::start, BCType::Dirc, 0.)
+                           .setBC(0, DimPos::end, BCType::Dirc, 0.)
+                           .setBC(1, DimPos::start, BCType::Dirc, 0.)
+                           .setBC(1, DimPos::end, BCType::Dirc, 0.)
+                           .setPadding(2)
+                           .setExt(1)
+                           .setSplitStrategy(strategy);
     auto u = builder.setName("u")
-                    .setBC(1, DimPos::end, BCType::Dirc, 1.)
-                    .setLoc({LocOnMesh::Corner, LocOnMesh::Center})
-                    .build();
+                     .setBC(1, DimPos::end, BCType::Dirc, 1.)
+                     .setLoc({LocOnMesh::Corner, LocOnMesh::Center})
+                     .build();
     auto du = builder.setName("du").setBC(1, DimPos::end, BCType::Dirc, 0.).build();
     auto v = builder.setName("v")
-                    .setBC(1, DimPos::end, BCType::Dirc, 0.)
-                    .setLoc({LocOnMesh::Center, LocOnMesh::Corner})
-                    .build();
+                     .setBC(1, DimPos::end, BCType::Dirc, 0.)
+                     .setLoc({LocOnMesh::Center, LocOnMesh::Corner})
+                     .build();
     auto dv = v;
     dv.name = "dv";
     auto p = builder.setName("p")
-                    .setBC(0, DimPos::start, BCType::Neum, 0.)
-                    .setBC(0, DimPos::end, BCType::Neum, 0.)
-                    .setBC(1, DimPos::start, BCType::Neum, 0.)
-                    .setBC(1, DimPos::end, BCType::Neum, 0.)
-                    .setLoc({LocOnMesh::Center, LocOnMesh::Center})
-                    .build();
+                     .setBC(0, DimPos::start, BCType::Neum, 0.)
+                     .setBC(0, DimPos::end, BCType::Neum, 0.)
+                     .setBC(1, DimPos::start, BCType::Neum, 0.)
+                     .setBC(1, DimPos::end, BCType::Neum, 0.)
+                     .setLoc({LocOnMesh::Center, LocOnMesh::Center})
+                     .build();
     auto dp = p;
     dp.name = "dp";
     u = 0;
@@ -64,21 +63,17 @@ int main(int argc, char* argv[])
     dp = 0;
 
     // composite operators
-    auto conv_xx = [&](auto&& _1, auto&& _2)
-    {
-        return dx<D1FirstOrderCentered>(d1IntpCornerToCenter < 0 > (_1) * d1IntpCornerToCenter < 0 > (_2));
+    auto conv_xx = [&](auto&& _1, auto&& _2) {
+        return dx<D1FirstOrderCentered>(d1IntpCornerToCenter<0>(_1) * d1IntpCornerToCenter<0>(_2));
     };
-    auto conv_xy = [&](auto&& _1, auto&& _2)
-    {
-        return dy<D1FirstOrderCentered>(d1IntpCenterToCorner < 1 > (_1) * d1IntpCenterToCorner < 0 > (_2));
+    auto conv_xy = [&](auto&& _1, auto&& _2) {
+        return dy<D1FirstOrderCentered>(d1IntpCenterToCorner<1>(_1) * d1IntpCenterToCorner<0>(_2));
     };
-    auto conv_yx = [&](auto&& _1, auto&& _2)
-    {
-        return dx<D1FirstOrderCentered>(d1IntpCenterToCorner < 1 > (_1) * d1IntpCenterToCorner < 0 > (_2));
+    auto conv_yx = [&](auto&& _1, auto&& _2) {
+        return dx<D1FirstOrderCentered>(d1IntpCenterToCorner<1>(_1) * d1IntpCenterToCorner<0>(_2));
     };
-    auto conv_yy = [&](auto&& _1, auto&& _2)
-    {
-        return dy<D1FirstOrderCentered>(d1IntpCornerToCenter < 1 > (_1) * d1IntpCornerToCenter < 1 > (_2));
+    auto conv_yy = [&](auto&& _1, auto&& _2) {
+        return dy<D1FirstOrderCentered>(d1IntpCornerToCenter<1>(_1) * d1IntpCornerToCenter<1>(_2));
     };
 
     // solvers
@@ -97,43 +92,39 @@ int main(int argc, char* argv[])
     p_params.tol = 1e-10;
     auto solver = PrecondStructSolver<StructSolverType::GMRES, StructSolverType::PFMG>(params, p_params);
     auto u_handler = makeEqnSolveHandler(
-        [&](auto&& e)
-        {
-            return e / dt + conv_xx(u, e) + 0.5 * conv_xy(e, v)
-                == nu * (d2x<D2SecondOrderCentered>(u) + d2y<D2SecondOrderCentered>(u))
-                + 0.5 * nu * (d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e))
-                - (conv_xx(u, u) + conv_xy(u, v)) - dx<D1FirstOrderCentered>(p);
-        },
-        du, solver);
+            [&](auto&& e) {
+                return e / dt + conv_xx(u, e) + 0.5 * conv_xy(e, v)
+                       == nu * (d2x<D2SecondOrderCentered>(u) + d2y<D2SecondOrderCentered>(u))
+                                  + 0.5 * nu * (d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e))
+                                  - (conv_xx(u, u) + conv_xy(u, v)) - dx<D1FirstOrderCentered>(p);
+            },
+            du, solver);
     auto v_handler = makeEqnSolveHandler(
-        [&](auto&& e)
-        {
-            return e / dt + conv_yy(v, e) + conv_yy(v, v) + conv_yx(u, v) + 0.5 * conv_yx(u, e)
-                + 0.5 * conv_yx(du, v)
-                == nu * (d2x<D2SecondOrderCentered>(v) + d2y<D2SecondOrderCentered>(v))
-                + 0.5 * nu * (d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e))
-                - dy<D1FirstOrderCentered>(p);
-        },
-        dv, solver);
+            [&](auto&& e) {
+                return e / dt + conv_yy(v, e) + conv_yy(v, v) + conv_yx(u, v) + 0.5 * conv_yx(u, e)
+                               + 0.5 * conv_yx(du, v)
+                       == nu * (d2x<D2SecondOrderCentered>(v) + d2y<D2SecondOrderCentered>(v))
+                                  + 0.5 * nu * (d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e))
+                                  - dy<D1FirstOrderCentered>(p);
+            },
+            dv, solver);
     poisson_params.staticMat = true;
     poisson_params.pinValue = true;
     auto p_solver
-        = PrecondStructSolver<StructSolverType::GMRES, StructSolverType::PFMG>(poisson_params, p_params);
+            = PrecondStructSolver<StructSolverType::GMRES, StructSolverType::PFMG>(poisson_params, p_params);
     auto p_handler = makeEqnSolveHandler(
-        [&](auto&& e)
-        {
-            return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e)
-                == (dx<D1FirstOrderCentered>(du) + dy<D1FirstOrderCentered>(dv)) / dt;
-        },
-        dp, p_solver);
+            [&](auto&& e) {
+                return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e)
+                       == (dx<D1FirstOrderCentered>(du) + dy<D1FirstOrderCentered>(dv)) / dt;
+            },
+            dp, p_solver);
 
     // writers
     Utils::H5Stream stream("./solution.h5");
 
     // main algorithm
     auto t0 = std::chrono::system_clock::now();
-    for (auto i = 0; i < 100; ++i)
-    {
+    for (auto i = 0; i < 100; ++i) {
         u_handler->solve();
         v_handler->solve();
         du = du - 0.5 * dt * conv_xy(u, dv);
