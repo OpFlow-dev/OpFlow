@@ -152,6 +152,8 @@ TEST_F(CartesianFieldMPITest, Serializable_PeriodicValueCheck) {
         }
 
         void deserialize(const std::byte* data, std::size_t) override { std::memcpy(&i, data, sizeof(i)); }
+
+        ~Int() override = default;
     };
     auto s = std::make_shared<EvenSplitStrategy<CartesianField<Int, Mesh>>>();
     auto u = ExprBuilder<CartesianField<Int, Mesh>>()
