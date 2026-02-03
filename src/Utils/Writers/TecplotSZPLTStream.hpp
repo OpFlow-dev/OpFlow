@@ -126,7 +126,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
             std::vector<int> passive_var(dim + 1, 0), share(dim + 1, 1);
 #ifdef OPFLOW_WITH_MPI
             std::vector<int> partition_owners(getWorkerCount());
-            for (int i = 0; i < partition_owners.size(); ++i) partition_owners[i] = i;
+            for (size_t i = 0; i < partition_owners.size(); ++i) partition_owners[i] = (int)i;
 #endif
             share.back() = 0;
             auto extended_range = range;
@@ -278,7 +278,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
 #ifdef OPFLOW_WITH_MPI
                     if (!getGlobalParallelPlan().singleNodeMode()) {
                         std::vector<int> partition_owners(getWorkerCount());
-                        for (int i = 0; i < partition_owners.size(); ++i) partition_owners[i] = i;
+                        for (size_t i = 0; i < partition_owners.size(); ++i) partition_owners[i] = (int)i;
                         tecZoneMapPartitionsToMPIRanks(file_handler, outputZone, getWorkerCount(),
                                                        partition_owners.data());
                         tecIJKPartitionCreate(file_handler, outputZone, worker_id + 1, imin, jmin, kmin, imax,
@@ -312,7 +312,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
 #ifdef OPFLOW_WITH_MPI
                     if (!getGlobalParallelPlan().singleNodeMode()) {
                         std::vector<int> partition_owners(getWorkerCount());
-                        for (int i = 0; i < partition_owners.size(); ++i) partition_owners[i] = i;
+                        for (size_t i = 0; i < partition_owners.size(); ++i) partition_owners[i] = (int)i;
                         tecZoneMapPartitionsToMPIRanks(file_handler, outputZone, getWorkerCount(),
                                                        partition_owners.data());
                         tecIJKPartitionCreate(file_handler, outputZone, worker_id + 1, imin, jmin, kmin, imax,

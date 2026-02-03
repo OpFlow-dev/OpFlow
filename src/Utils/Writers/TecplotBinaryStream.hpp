@@ -205,7 +205,7 @@ namespace OpFlow::Utils {
 #ifdef OPFLOW_WITH_MPI
                 if (!getGlobalParallelPlan().singleNodeMode()) {
                     std::vector<int> partition_ranks(getWorkerCount());
-                    for (auto i = 0; i < partition_ranks.size(); ++i) partition_ranks[i] = i;
+                    for (size_t i = 0; i < partition_ranks.size(); ++i) partition_ranks[i] = (int)i;
                     int n_partitions = getWorkerCount(), current_partition = getWorkerId() + 1;
                     int stat;
                     stat = tecznemap142(&n_partitions, partition_ranks.data());
@@ -241,7 +241,7 @@ namespace OpFlow::Utils {
 #ifdef OPFLOW_WITH_MPI
                 if (!getGlobalParallelPlan().singleNodeMode()) {
                     std::vector<int> partition_ranks(getWorkerCount());
-                    for (auto i = 0; i < partition_ranks.size(); ++i) partition_ranks[i] = i;
+                    for (size_t i = 0; i < partition_ranks.size(); ++i) partition_ranks[i] = (int)i;
                     int n_partitions = getWorkerCount(), current_partition = getWorkerId() + 1;
                     tecznemap142(&n_partitions, partition_ranks.data());
                     tecijkptn142(&current_partition, &imin, &jmin, &kmin, &imax, &jmax, &kmax);
@@ -354,7 +354,7 @@ namespace OpFlow::Utils {
 #ifdef OPFLOW_WITH_MPI
                     if (!getGlobalParallelPlan().singleNodeMode()) {
                         std::vector<int> partition_ranks(getWorkerCount());
-                        for (auto i = 0; i < partition_ranks.size(); ++i) partition_ranks[i] = i;
+                        for (size_t i = 0; i < partition_ranks.size(); ++i) partition_ranks[i] = (int)i;
                         int n_partitions = getWorkerCount(), current_partition = getWorkerId() + 1;
                         int stat;
                         stat = tecznemap142(&n_partitions, partition_ranks.data());
@@ -390,7 +390,7 @@ namespace OpFlow::Utils {
 #ifdef OPFLOW_WITH_MPI
                     if (!getGlobalParallelPlan().singleNodeMode()) {
                         std::vector<int> partition_ranks(getWorkerCount());
-                        for (auto i = 0; i < partition_ranks.size(); ++i) partition_ranks[i] = i;
+                        for (size_t i = 0; i < partition_ranks.size(); ++i) partition_ranks[i] = (int)i;
                         int n_partitions = getWorkerCount(), current_partition = getWorkerId() + 1;
                         tecznemap142(&n_partitions, partition_ranks.data());
                         tecijkptn142(&current_partition, &imin, &jmin, &kmin, &imax, &jmax, &kmax);
