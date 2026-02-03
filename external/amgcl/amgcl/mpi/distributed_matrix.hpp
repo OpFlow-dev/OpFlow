@@ -688,7 +688,7 @@ namespace amgcl {
 
                 m.set_nonzeros(m.nnz, need_values);
 
-                for (ptrdiff_t i = 0, ii = beg, head = 0; ii < end; ++i, ++ii) {
+                for (ptrdiff_t ii = beg, head = 0; ii < end; ++ii) {
                     ptrdiff_t r = C.send.col[ii];
 
                     // Contribution of the local part:
