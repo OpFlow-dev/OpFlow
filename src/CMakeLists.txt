@@ -59,6 +59,13 @@ else()
 endif()
 add_library(opflow::opflow ALIAS opflow)
 
+# Set OPFLOW_TARGET_SCOPE based on module enable status
+if(OPFLOW_ENABLE_MODULE)
+    set(OPFLOW_TARGET_SCOPE PUBLIC)
+else()
+    set(OPFLOW_TARGET_SCOPE INTERFACE)
+endif()
+
 # Create & include the version header
 configure_file(${CMAKE_CURRENT_LIST_DIR}/../cmake/Version.hpp.in ${CMAKE_BINARY_DIR}/Version.hpp @ONLY)
 
@@ -92,11 +99,6 @@ endif()
 # ----------------------------------------------------------------------------
 # Misc definitions according to tweak options
 # ----------------------------------------------------------------------------
-if(OPFLOW_ENABLE_MODULE)
-    set(OPFLOW_TARGET_SCOPE PUBLIC)
-else()
-    set(OPFLOW_TARGET_SCOPE INTERFACE)
-endif()
 foreach(
     OPFLOW_OPTION
     OPFLOW_SINGLE_PRECISION
