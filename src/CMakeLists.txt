@@ -48,10 +48,14 @@ else()
     set_property(TARGET opflow PROPERTY CXX_SCAN_FOR_MODULES OFF)
     target_compile_features(opflow INTERFACE cxx_std_20)
     target_sources(opflow
-        INTERFACE FILE_SET HEADERS ${OPFLOW_HEADERS})
+        INTERFACE FILE_SET HEADERS
+        BASE_DIRS
+        ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/src
+        FILES ${OPFLOW_HEADERS})
     install(TARGETS opflow
-        EXPORT opflow-targets)
-    install(FILES ${OPFLOW_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/opflow)
+        EXPORT opflow-targets
+        FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 add_library(opflow::opflow ALIAS opflow)
 
