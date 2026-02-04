@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2025 by the OpFlow developers
+//  Copyright (c) 2019 - 2026 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -12,8 +12,18 @@
 //
 //
 
+#include <amgcl/amg.hpp>
+#include <amgcl/backend/builtin.hpp>
+#include <amgcl/coarsening/smoothed_aggregation.hpp>
+#include <amgcl/make_solver.hpp>
+#include <amgcl/relaxation/spai0.hpp>
+#include <amgcl/solver/bicgstab.hpp>
 #include <gmock/gmock.h>
+#ifdef OPFLOW_USE_MODULE
 import opflow;
+#else
+#include <OpFlow>
+#endif
 
 using namespace OpFlow;
 using namespace testing;

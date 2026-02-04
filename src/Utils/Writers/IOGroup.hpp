@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2025 by the OpFlow developers
+// Copyright (c) 2019 - 2026 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -45,7 +45,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                 if constexpr (RStreamType<Stream> && WStreamType<Stream>)
                     streams.emplace_back(root + "AllInOne" + Stream::commonSuffix(), mode);
                 else
-                    streams.template emplace_back(root + "AllInOne" + Stream::commonSuffix());
+                    streams.emplace_back(root + "AllInOne" + Stream::commonSuffix());
             } else {
                 Meta::static_for<sizeof...(Exprs)>([&]<int k>(Meta::int_<k>) {
                     auto& e = std::get<k>(exprs);
@@ -58,7 +58,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                     if constexpr (RStreamType<Stream> && WStreamType<Stream>)
                         streams.emplace_back(root + name + Stream::commonSuffix(), mode);
                     else
-                        streams.template emplace_back(root + name + Stream::commonSuffix());
+                        streams.emplace_back(root + name + Stream::commonSuffix());
                 });
             }
             if (fixed_mesh) {

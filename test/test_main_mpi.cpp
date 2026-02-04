@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2025 by the OpFlow developers
+//  Copyright (c) 2019 - 2026 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -12,7 +12,11 @@
 
 #include "gtest-mpi-listener.hpp"
 #include <gmock/gmock.h>
+#ifdef OPFLOW_USE_MODULE
 import opflow;
+#else
+#include <OpFlow>
+#endif
 
 int main(int argc, char** argv) {
     // Filter out Google Test arguments

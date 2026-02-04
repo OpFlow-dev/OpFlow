@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2025 by the OpFlow developers
+//  Copyright (c) 2019 - 2026 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -10,9 +10,14 @@
 //
 //  ----------------------------------------------------------------------------
 
+#include <format>
 #include <gmock/gmock.h>
-#include <print>
+#include <iostream>
+#ifdef OPFLOW_USE_MODULE
 import opflow;
+#else
+#include <OpFlow>
+#endif
 
 using namespace OpFlow;
 
@@ -171,7 +176,7 @@ TEST_F(CartesianFieldTest, CenterPeriodicValueCheck) {
     rangeFor_s(u.getLocalWritableRange(), [&](auto&& i) { u[i] = i[1] * 10 + i[0]; });
     u.updatePadding();
     rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) {
-        if (u[i] != (i[1] + 10) % 10 * 10 + (i[0] + 10) % 10) std::print(std::cerr, "Not equal at {}", i);
+        if (u[i] != (i[1] + 10) % 10 * 10 + (i[0] + 10) % 10) std::cerr << std::format("Not equal at {}", i);
         ASSERT_DOUBLE_EQ(u[i], (i[1] + 10) % 10 * 10 + (i[0] + 10) % 10);
     });
 }

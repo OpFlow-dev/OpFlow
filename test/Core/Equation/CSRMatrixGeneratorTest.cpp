@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2025 by the OpFlow developers
+//  Copyright (c) 2019 - 2026 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -11,9 +11,14 @@
 //  ----------------------------------------------------------------------------
 
 //#define OPFLOW_ENABLE_STACK_TRACE 1
+#include <format>
 #include <gmock/gmock.h>
-#include <print>
+#include <iostream>
+#ifdef OPFLOW_USE_MODULE
 import opflow;
+#else
+#include <OpFlow>
+#endif
 
 using namespace OpFlow;
 using namespace testing;
@@ -151,7 +156,7 @@ TEST_F(CSRMatrixGeneratorTest, SimplePoisson_Periodic) {
                              -1, 4,  -1, -1, -1, 4,  -1, -1, -1, -1, -1, 4,  -1, -1, -1, -1, 4,  -1, 1},
             rhs {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0};
 
-    std::print("{}", mat.toString());
+    std::cout << std::format("{}", mat.toString());
 
     for (int i = 0; i < ptr.size(); ++i) { ASSERT_EQ(ptr[i], mat.row[i]); }
     for (int i = 0; i < col.size(); ++i) { ASSERT_EQ(col[i], mat.col[i]); }

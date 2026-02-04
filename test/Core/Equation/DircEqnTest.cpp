@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2025 by the OpFlow developers
+// Copyright (c) 2019 - 2026 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -10,9 +10,22 @@
 //
 // ----------------------------------------------------------------------------
 
+#include <amgcl/amg.hpp>
+#include <amgcl/backend/builtin.hpp>
+#include <amgcl/coarsening/smoothed_aggregation.hpp>
+#include <amgcl/make_solver.hpp>
+#include <amgcl/relaxation/spai0.hpp>
+#include <amgcl/solver/bicgstab.hpp>
+#include <amgcl/solver/cg.hpp>
+#include <amgcl/solver/gmres.hpp>
+#include <format>
 #include <gmock/gmock.h>
-#include <print>
+#include <iostream>
+#ifdef OPFLOW_USE_MODULE
 import opflow;
+#else
+#include <OpFlow>
+#endif
 
 using namespace OpFlow;
 using namespace testing;
@@ -83,11 +96,11 @@ protected:
             auto p_ref = p_true.evalAt(i);
             auto rel_res = std::abs(c_res) / std::abs(p_ref);
             if (std::isnan(c_res)) {
-                std::print(std::cerr, "Check fail: res = nan @ {}", i);
+                std::cerr << std::format("Check fail: res = nan @ {}", i);
                 ret = false;
             }
             if (rel_res > rel) {
-                std::print(std::cerr, "Check fail: res = {} / {} @ {}", c_res, rel_res, i);
+                std::cerr << std::format("Check fail: res = {} / {} @ {}", c_res, rel_res, i);
                 ret = false;
             }
         });

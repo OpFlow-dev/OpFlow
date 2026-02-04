@@ -46,6 +46,13 @@ THE SOFTWARE.
 // If asked explicitly, or if boost is available, enable
 // using boost::propert_tree::ptree as amgcl parameters:
 #ifndef AMGCL_NO_BOOST
+#if defined(__APPLE__) && defined(__GNUC__) && !defined(__clang__)
+namespace boost {
+    using long_long_type = long long;
+    using ulong_long_type = unsigned long long;
+}// namespace boost
+#endif
+#include <boost/cstdint.hpp>
 #include <boost/property_tree/ptree.hpp>
 #endif
 

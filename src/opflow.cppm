@@ -7,6 +7,9 @@ module;
 #include <oneapi/tbb.h>
 #include <oneapi/tbb/detail/_range_common.h>
 #include <spdlog/spdlog.h>
+#ifdef OPFLOW_WITH_OPENMP
+#include <omp.h>
+#endif
 
 #include <cstdarg>
 #include <any>

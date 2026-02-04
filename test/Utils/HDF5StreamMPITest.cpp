@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2025 by the OpFlow developers
+//  Copyright (c) 2019 - 2026 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -10,9 +10,14 @@
 //
 //  ----------------------------------------------------------------------------
 
+#include <format>
 #include <gmock/gmock.h>
-#include <print>
+#include <iostream>
+#ifdef OPFLOW_USE_MODULE
 import opflow;
+#else
+#include <OpFlow>
+#endif
 
 using namespace OpFlow;
 
@@ -80,7 +85,7 @@ TEST_F(H5RWMPITest, ReadAfterWrite) {
     Utils::H5Stream istream(filename, StreamIn);
     istream >> v;
     rangeFor_s(u.getLocalReadableRange(), [&](auto i) {
-        if (u[i] != v[i]) std::print(std::cerr, "NOT EQUAL AT {}", i);
+        if (u[i] != v[i]) std::cerr << std::format("NOT EQUAL AT {}", i);
         ASSERT_EQ(u[i], v[i]);
     });
 }
@@ -138,7 +143,7 @@ TEST_F(H5RWMPITest, GeneralSplitWite) {
     Utils::H5Stream stream("./u.general.split.h5");
     stream << Utils::TimeStamp(0) << u;
     u.resplitWithStrategy(s.get());
-    std::print("local range = {}", u.localRange.toString());
+    std::cout << std::format("local range = {}", u.localRange.toString());
     stream << Utils::TimeStamp(1.) << u;
     u.initBy([](auto&& x) { return getWorkerId(); });
     stream << Utils::TimeStamp(2) << u;

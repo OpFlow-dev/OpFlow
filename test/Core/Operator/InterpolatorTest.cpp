@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2025 by the OpFlow developers
+// Copyright (c) 2019 - 2026 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -10,9 +10,14 @@
 //
 // ----------------------------------------------------------------------------
 
+#include <format>
 #include <gmock/gmock.h>
-#include <print>
+#include <iostream>
+#ifdef OPFLOW_USE_MODULE
 import opflow;
+#else
+#include <OpFlow>
+#endif
 
 using namespace OpFlow;
 using namespace testing;
@@ -163,7 +168,7 @@ TEST_F(Intp1DFluxLimiterCornerToCenterTest, ValueCheck) {
     auto t = d1IntpCornerToCenter<0, D1QUICK>(-v, u);
     t.prepare();
     rangeFor_s(t.accessibleRange, [&](auto&& i) {
-        std::print("t = {}, v = {}, i = {}", t[i], v[i], i);
+        std::cout << std::format("t = {}, v = {}, i = {}", t[i], v[i], i);
         ASSERT_NEAR(t[i], v[i], 1e-10);
     });
 }

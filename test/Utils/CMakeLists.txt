@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 #
-# Copyright (c) 2019 - 2025 by the OpFlow developers
+# Copyright (c) 2019 - 2026 by the OpFlow developers
 #
 # This file is part of OpFlow.
 # 

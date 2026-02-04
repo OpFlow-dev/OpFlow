@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2025 by the OpFlow developers
+//  Copyright (c) 2019 - 2026 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -20,11 +20,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     struct StructSolverParams<StructSolverType::CYCRED> {
         std::optional<int> tDim;
         std::optional<std::vector<int>> baseStride;
-#ifdef OPFLOW_WITH_MPI
         MPI_Comm comm = MPI_COMM_WORLD;
-#else
-        int comm = 0;
-#endif
         bool staticMat = false;
         bool pinValue = false;
         std::optional<std::string> dumpPath;

@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2025 by the OpFlow developers
+//  Copyright (c) 2019 - 2026 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -10,10 +10,15 @@
 //
 //  ----------------------------------------------------------------------------
 
+#include <format>
 #include <gmock/gmock.h>
-#include <print>
+#include <iostream>
 #include <tuple>
+#ifdef OPFLOW_USE_MODULE
 import opflow;
+#else
+#include <OpFlow>
+#endif
 
 using namespace OpFlow;
 
@@ -129,7 +134,7 @@ TEST_F(CartesianFieldMPITest, PeriodicValueCheck) {
     u.updatePadding();
     u_local.updatePadding();
     rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) {
-        if (u[i] != u_local[i]) std::print("Not equal at {} {} != {}", i, u[i], u_local[i]);
+        if (u[i] != u_local[i]) std::cout << std::format("Not equal at {} {} != {}", i, u[i], u_local[i]);
         ASSERT_EQ(u[i], u_local[i]);
     });
 }
@@ -160,7 +165,7 @@ TEST_F(CartesianFieldMPITest, Serializable_PeriodicValueCheck) {
     rangeFor_s(u.getLocalWritableRange(), [&](auto&& i) { u[i] = Int {mapper(i)}; });
     u.updatePadding();
     rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) {
-        if (u[i].i != mapper(i)) std::print("Not equal at {} {} != {}", i, u[i].i, mapper(i));
+        if (u[i].i != mapper(i)) std::cout << std::format("Not equal at {} {} != {}", i, u[i].i, mapper(i));
         ASSERT_EQ(u[i].i, mapper(i));
     });
 }
