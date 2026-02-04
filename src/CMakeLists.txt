@@ -58,7 +58,7 @@ add_library(opflow::opflow ALIAS opflow)
 # Create & include the version header
 configure_file(${CMAKE_CURRENT_LIST_DIR}/../cmake/Version.hpp.in ${CMAKE_BINARY_DIR}/Version.hpp @ONLY)
 
-target_include_directories(opflow PUBLIC
+target_include_directories(opflow ${OPFLOW_TARGET_SCOPE}
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/../include>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/../src>"
     "$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/>"
@@ -94,11 +94,11 @@ foreach(
     OPFLOW_WITH_MPI
     OPFLOW_WITH_OPENMP)
     if(${OPFLOW_OPTION})
-        target_compile_definitions(opflow INTERFACE ${OPFLOW_OPTION})
+        target_compile_definitions(opflow ${OPFLOW_TARGET_SCOPE} ${OPFLOW_OPTION})
     endif()
 endforeach()
 if(OPFLOW_WITH_MPI)
-    target_compile_definitions(opflow INTERFACE OPFLOW_DISTRIBUTE_MODEL_MPI)
+    target_compile_definitions(opflow ${OPFLOW_TARGET_SCOPE} OPFLOW_DISTRIBUTE_MODEL_MPI)
 endif()
 
 if(OPFLOW_NO_EXCEPTIONS AND NOT MSVC)
