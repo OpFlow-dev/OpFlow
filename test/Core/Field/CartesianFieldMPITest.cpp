@@ -10,10 +10,10 @@
 //
 //  ----------------------------------------------------------------------------
 
+#include <OpFlow>
 #include <gmock/gmock.h>
 #include <print>
 #include <tuple>
-#include <OpFlow>
 
 using namespace OpFlow;
 

@@ -10,10 +10,10 @@
 //
 //  ----------------------------------------------------------------------------
 
+#include <OpFlow>
 #include <cmath>
 #include <gmock/gmock.h>
 #include <print>
-#include <OpFlow>
 
 using namespace OpFlow;
 using namespace testing;

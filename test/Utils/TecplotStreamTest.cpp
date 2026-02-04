@@ -10,8 +10,8 @@
 //
 //  ----------------------------------------------------------------------------
 
-#include <gmock/gmock.h>
 #include <OpFlow>
+#include <gmock/gmock.h>
 
 TEST(TecIOTest, BinaryTest) {
     using namespace OpFlow;

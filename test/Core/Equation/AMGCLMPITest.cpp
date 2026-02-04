@@ -10,9 +10,9 @@
 //
 //  ----------------------------------------------------------------------------
 
+#include <OpFlow>
 #include <gmock/gmock.h>
 #include <print>
-#include <OpFlow>
 
 using namespace OpFlow;
 

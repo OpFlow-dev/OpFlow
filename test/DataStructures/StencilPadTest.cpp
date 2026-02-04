@@ -10,8 +10,8 @@
 //
 // ----------------------------------------------------------------------------
 
-#include <gmock/gmock.h>
 #include <OpFlow>
+#include <gmock/gmock.h>
 
 using namespace OpFlow;
 using namespace testing;
