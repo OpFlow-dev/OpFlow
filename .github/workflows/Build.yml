@@ -51,7 +51,7 @@ jobs:
           apt update && apt install -y ninja-build libhdf5-dev libhdf5-openmpi-dev libboost-all-dev python3-pip python3-sphinx doxygen
           export PATH=$(pwd)/cmake/bin:$PATH
           cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -G Ninja -B build \
-                -DCMAKE_INSTALL_PREFIX=$(pwd)/install -DOPFLOW_BUILD_ALL=ON -DOPFLOW_ENABLE_MODULE=ON \
+                -DCMAKE_INSTALL_PREFIX=$(pwd)/install -DOPFLOW_BUILD_ALL=ON -DOPFLOW_ENABLE_MODULE=OFF \
                 -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DOPFLOW_WITH_HDF5=ON -DOPFLOW_WITH_MPI=${{ matrix.mpi }} 
           if [ "$RUNNER_OS" == "Linux" ]; then
             cmake --build build -t All_CI --parallel $(nproc) --config ${{ matrix.mode }}
