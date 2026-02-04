@@ -13,7 +13,7 @@
 //#define OPFLOW_ENABLE_STACK_TRACE 1
 #include <gmock/gmock.h>
 #include <print>
-import opflow;
+#include <OpFlow>
 
 using namespace OpFlow;
 using namespace testing;

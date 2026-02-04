@@ -11,7 +11,7 @@
 //  ----------------------------------------------------------------------------
 
 #include <gmock/gmock.h>
-import opflow;
+#include <OpFlow>
 
 class TecIOMPITest : public virtual testing::Test {
 protected:

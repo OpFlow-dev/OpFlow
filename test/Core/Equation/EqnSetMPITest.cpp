@@ -13,7 +13,7 @@
 #include <cmath>
 #include <gmock/gmock.h>
 #include <print>
-import opflow;
+#include <OpFlow>
 
 using namespace OpFlow;
 using namespace testing;

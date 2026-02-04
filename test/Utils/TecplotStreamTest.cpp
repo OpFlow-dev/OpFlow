@@ -11,7 +11,7 @@
 //  ----------------------------------------------------------------------------
 
 #include <gmock/gmock.h>
-import opflow;
+#include <OpFlow>
 
 TEST(TecIOTest, BinaryTest) {
     using namespace OpFlow;

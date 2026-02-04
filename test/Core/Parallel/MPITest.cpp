@@ -1,6 +1,6 @@
 #include <gmock/gmock.h>
 #include <print>
-import opflow;
+#include <OpFlow>
 
 TEST(MPITest, RankTest) {
     auto rank = OpFlow::getWorkerId();

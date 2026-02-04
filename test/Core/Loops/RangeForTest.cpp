@@ -12,7 +12,7 @@
 
 #include <gmock/gmock.h>
 #include <iostream>
-import opflow;
+#include <OpFlow>
 
 using namespace OpFlow;
 using namespace testing;

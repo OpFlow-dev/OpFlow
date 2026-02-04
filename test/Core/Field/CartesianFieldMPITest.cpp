@@ -13,7 +13,7 @@
 #include <gmock/gmock.h>
 #include <print>
 #include <tuple>
-import opflow;
+#include <OpFlow>
 
 using namespace OpFlow;
 

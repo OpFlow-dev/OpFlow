@@ -12,7 +12,7 @@
 
 #include <gmock/gmock.h>
 
-import opflow;
+#include <OpFlow>
 using namespace OpFlow;
 
 class DircBCTest : public testing::Test {

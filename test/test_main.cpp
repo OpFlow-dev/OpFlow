@@ -11,7 +11,7 @@
 //  ----------------------------------------------------------------------------
 
 #include <gmock/gmock.h>
-import opflow;
+#include <OpFlow>
 
 int main(int argc, char** argv) {
     // Filter out Google Test arguments
