@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 #
-# Copyright (c) 2019 - 2025 by the OpFlow developers
+# Copyright (c) 2019 - 2026 by the OpFlow developers
 #
 # This file is part of OpFlow.
 # 
@@ -63,6 +63,8 @@ if (OPFLOW_WITH_MPI)
         include(FindMPI)
         find_package(MPI REQUIRED)
     endif ()
+    # Allow running MPI tests as root in CI environments
+    list(APPEND MPIEXEC_PREFLAGS "--allow-run-as-root")
 endif ()
 
 function(add_gmock_mpi testname proccount testfile)

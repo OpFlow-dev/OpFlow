@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 //
-// Copyright (c) 2019 - 2025 by the OpFlow developers
+// Copyright (c) 2019 - 2026 by the OpFlow developers
 //
 // This file is part of OpFlow.
 //
@@ -13,7 +13,7 @@
 #include <gmock/gmock.h>
 #include <iostream>
 
-import opflow;
+#include <OpFlow>
 
 using namespace OpFlow;
 using namespace OpFlow::Meta;
