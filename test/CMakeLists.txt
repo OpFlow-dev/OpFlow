@@ -64,9 +64,7 @@ if (OPFLOW_WITH_MPI)
         find_package(MPI REQUIRED)
     endif ()
     # Allow running MPI tests as root in CI environments
-    if (NOT DEFINED MPIEXEC_PREFLAGS)
-        set(MPIEXEC_PREFLAGS "--allow-run-as-root")
-    endif ()
+    list(APPEND MPIEXEC_PREFLAGS "--allow-run-as-root")
 endif ()
 
 function(add_gmock_mpi testname proccount testfile)
