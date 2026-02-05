@@ -1,6 +1,6 @@
 //  ----------------------------------------------------------------------------
 //
-//  Copyright (c) 2019 - 2025 by the OpFlow developers
+//  Copyright (c) 2019 - 2026 by the OpFlow developers
 //
 //  This file is part of OpFlow.
 //
@@ -10,10 +10,10 @@
 //
 //  ----------------------------------------------------------------------------
 
+#include <OpFlow>
 #include <cmath>
 #include <gmock/gmock.h>
 #include <print>
-import opflow;
 
 using namespace OpFlow;
 using namespace testing;

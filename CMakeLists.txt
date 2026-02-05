@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 #
-# Copyright (c) 2019 - 2025 by the OpFlow developers
+# Copyright (c) 2019 - 2026 by the OpFlow developers
 #
 # This file is part of OpFlow.
 #
@@ -43,8 +43,6 @@ message(STATUS "Build opflow: ${OPFLOW_VERSION_STRING}")
 
 set(CMAKE_EXPERIMENTAL_EXPORT_BUILD_DATABASE 4bd552e2-b7fb-429a-ab23-c83ef53f3f13)
 set(CMAKE_EXPORT_BUILD_DATABASE 1)
-
-set(CMAKE_CXX_MODULE_STD 1)
 
 include(GNUInstallDirs)
 
@@ -129,6 +127,12 @@ option(OPFLOW_SANITIZE_UB "Enable undefined behavior sanitizer in tests" OFF)
 option(OPFLOW_BUILD_WARNINGS "Enable compiler warnings" OFF)
 option(OPFLOW_NO_EXCEPTIONS "Compile with -fno-exceptions" OFF)
 option(OPFLOW_ENABLE_MODULE "Enable C++ modules support" OFF)
+if(OPFLOW_ENABLE_MODULE)
+    set(CMAKE_CXX_MODULE_STD 1)
+    set(OPFLOW_TARGET_SCOPE PUBLIC)
+else()
+    set(OPFLOW_TARGET_SCOPE INTERFACE)
+endif()
 
 # install options
 option(OPFLOW_INSTALL "Generate the install target" ${PROJECT_IS_TOP_LEVEL})
