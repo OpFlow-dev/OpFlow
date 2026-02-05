@@ -10,8 +10,8 @@
 //
 //  ----------------------------------------------------------------------------
 
+#include <OpFlow>
 #include <gmock/gmock.h>
-import opflow;
 
 int main(int argc, char** argv) {
     // Filter out Google Test arguments

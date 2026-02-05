@@ -11,9 +11,9 @@
 //  ----------------------------------------------------------------------------
 
 //#define OPFLOW_ENABLE_STACK_TRACE 1
+#include <OpFlow>
 #include <gmock/gmock.h>
 #include <print>
-import opflow;
 
 using namespace OpFlow;
 using namespace testing;

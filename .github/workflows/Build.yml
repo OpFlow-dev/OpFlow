@@ -62,6 +62,7 @@ jobs:
       - name: Test
         working-directory: ./build
         run: |
+          export PATH=$(pwd)/cmake/bin:$PATH
           if [ "$RUNNER_OS" == "Linux" ]; then
             ctest --parallel $(nproc) -C ${{ matrix.mode }} -VV
           else

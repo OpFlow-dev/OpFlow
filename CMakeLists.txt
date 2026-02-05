@@ -44,8 +44,6 @@ message(STATUS "Build opflow: ${OPFLOW_VERSION_STRING}")
 set(CMAKE_EXPERIMENTAL_EXPORT_BUILD_DATABASE 4bd552e2-b7fb-429a-ab23-c83ef53f3f13)
 set(CMAKE_EXPORT_BUILD_DATABASE 1)
 
-set(CMAKE_CXX_MODULE_STD 1)
-
 include(GNUInstallDirs)
 
 # ----------------------------------------------------------------------------
