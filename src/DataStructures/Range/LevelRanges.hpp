@@ -74,7 +74,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         constexpr explicit operator Range<dim>() const { return Range<dim>(start, end, stride); }
         auto toRange() const { return Range<dim>(start, end, stride); }
         constexpr void reValidPace() const {
-            for (auto i = 0; i < dim; ++i) pace[i] = (end[i] - start[i]) / stride[i];
+            for (std::size_t i = 0; i < dim; ++i) pace[i] = (end[i] - start[i]) / stride[i];
         }
         constexpr auto operator==(const LevelRange& other) const {
             return start == other.start && end == other.end && stride == other.stride && level == other.level
@@ -83,7 +83,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         constexpr auto check() const {
             bool ret = true;
             ret &= (d == start.size()) && (d == end.size()) && (d == stride.size());
-            for (auto i = 0; i < d; ++i) {
+            for (std::size_t i = 0; i < d; ++i) {
                 ret &= (end[i] >= start[i]);
                 ret &= (stride[i] >= 1);
             }
@@ -93,10 +93,10 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
             // make sure the pace is valid
             reValidPace();
             // make sure the range is not empty
-            for (auto i = 0; i < d; ++i)
+            for (std::size_t i = 0; i < d; ++i)
                 if (pace[i] < 0) return 0;
             auto ret = 1;
-            for (auto i = 0; i < d; ++i) { ret *= pace[i]; }
+            for (std::size_t i = 0; i < d; ++i) { ret *= pace[i]; }
             return ret;
         }
 
@@ -106,7 +106,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         /// \param k normal dimension of the slice
         /// \param pos position of the slice
         constexpr auto slice(int k, int pos) const {
-            assert(k < d);
+            assert(k < static_cast<int>(d));
             auto ret = *this;
             ret.start[k] = pos;
             ret.end[k] = pos + 1;
@@ -137,19 +137,19 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         constexpr auto getExtends() const {
             reValidPace();
             std::array<int, d> ret;
-            for (auto i = 0; i < d; ++i) { ret[i] = pace[i]; }
+            for (std::size_t i = 0; i < d; ++i) { ret[i] = pace[i]; }
             return ret;
         }
 
         constexpr auto getOffset() const {
             std::array<int, d> ret;
-            for (auto i = 0; i < d; ++i) ret[i] = start[i];
+            for (std::size_t i = 0; i < d; ++i) ret[i] = start[i];
             return ret;
         }
 
         auto getBCRanges(int width) const {
             std::vector<LevelRange> ret;
-            for (auto i = 0; i < d; ++i) {
+            for (std::size_t i = 0; i < d; ++i) {
                 ret.push_back(*this);
                 ret.back().end[i] = ret.back().start[i] + width;
                 ret.back().pace[i] = width;
@@ -162,7 +162,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
 
         auto getInnerRange(int width) const {
             auto ret = *this;
-            for (auto i = 0; i < dim; ++i) {
+            for (std::size_t i = 0; i < dim; ++i) {
                 ret.start[i] += width;
                 ret.end[i] -= width;
                 ret.pace[i] -= 2 * width;
@@ -188,7 +188,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
             return false;
         }
 
-        LevelRange(LevelRange& r, tbb::detail::split split) : LevelRange(r) {
+        LevelRange(LevelRange& r, [[maybe_unused]] tbb::detail::split split) : LevelRange(r) {
             this->reValidPace();
             int max_iter = std::max_element(pace.begin(), pace.end()) - pace.begin();
             this->end[max_iter] = this->start[max_iter] + this->pace[max_iter] / 2;
@@ -232,7 +232,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
             constexpr auto dim = dim1;
             start.fill(std::numeric_limits<int>::min());
             end.fill(std::numeric_limits<int>::max());
-            for (auto i = 0; i < dim; ++i) {
+            for (std::size_t i = 0; i < dim; ++i) {
                 start[i] = std::max(a.start[i], b.start[i]);
                 end[i] = std::min(a.end[i], b.end[i]);
             }
@@ -249,7 +249,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         std::vector<LevelRange<dim>> ret;
         OP_ASSERT(a.size() == b.size());
         ret.reserve(a.size());
-        for (auto i = 0; i < a.size(); ++i) { ret.push_back(commonRange(a[i], b[i])); }
+        for (std::size_t i = 0; i < a.size(); ++i) { ret.push_back(commonRange(a[i], b[i])); }
         return ret;
     }
 
@@ -265,7 +265,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
             OP_ASSERT(a.level == b.level);
             constexpr auto dim = dim1;
             LevelRange<dim> ret;
-            for (auto i = 0; i < dim; ++i) {
+            for (std::size_t i = 0; i < dim; ++i) {
                 ret.start[i] = std::max(a.start[i], b.start[i]);
                 ret.end[i] = std::min(a.end[i], b.end[i]);
                 OP_ASSERT(a.stride[i] == b.stride[i]);
@@ -288,7 +288,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
             OP_ASSERT(a.level == b.level && a.part == b.part);
             constexpr auto dim = dim1;
             LevelRange<dim> ret;
-            for (auto i = 0; i < dim; ++i) {
+            for (std::size_t i = 0; i < dim; ++i) {
                 ret.start[i] = std::min(a.start[i], b.start[i]);
                 ret.end[i] = std::max(a.end[i], b.end[i]);
                 OP_ASSERT(a.stride[i] == b.stride[i]);
@@ -304,7 +304,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         if constexpr (dim == 0) return r[0];
         else {
             LevelRange<dim> ret = r[0];
-            for (auto i = 1; i < r.size(); ++i) { ret = minCoverRange(ret, r[i]); }
+            for (std::size_t i = 1; i < r.size(); ++i) { ret = minCoverRange(ret, r[i]); }
             return ret;
         }
     }
@@ -319,7 +319,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         } else {
             static_assert(dim1 == dim2, OP_ERRMSG_DIM_MISMATCH);
             std::vector<LevelRange<dim1>> ret;
-            for (auto i = 0; i < r1.size(); ++i) { ret.push_back(mergeRange(r1[i], r2[i])); }
+            for (std::size_t i = 0; i < r1.size(); ++i) { ret.push_back(mergeRange(r1[i], r2[i])); }
             return mergeRangeLists(ret, std::forward<T>(rs)...);
         }
     }
@@ -332,7 +332,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     template <std::size_t dim, Meta::BracketIndexable T>
     constexpr auto inRange(const LevelRange<dim>& r, const T& t) {
         auto ret = true;
-        for (auto i = 0; i < dim; ++i) { ret &= (r.start[i] <= t[i] && t[i] < r.end[i]); }
+        for (std::size_t i = 0; i < dim; ++i) { ret &= (r.start[i] <= t[i] && t[i] < r.end[i]); }
         return ret;
     }
     template <std::size_t dim>
@@ -340,13 +340,13 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         // check if a in b
         OP_ASSERT(a.level == b.level);
         auto ret = true;
-        for (auto i = 0; i < dim; ++i) { ret &= (a.start[i] >= b.start[i] && a.end[i] <= b.end[i]); }
+        for (std::size_t i = 0; i < dim; ++i) { ret &= (a.start[i] >= b.start[i] && a.end[i] <= b.end[i]); }
         return ret;
     }
     template <std::size_t dim>
     constexpr auto intersectRange(const LevelRange<dim>& r1, const LevelRange<dim>& r2) {
         auto ret = false;
-        for (auto i = 0; i < dim; ++i) { ret |= r1.start[i] >= r2.end[i] || r1.end[i] <= r2.start[i]; }
+        for (std::size_t i = 0; i < dim; ++i) { ret |= r1.start[i] >= r2.end[i] || r1.end[i] <= r2.start[i]; }
         return !ret;
     }
 

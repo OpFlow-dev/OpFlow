@@ -48,7 +48,7 @@
                 expr.assignableRange.setEmpty();                                                             \
                 expr.localRange = DS::commonRange(expr.arg1.localRange, expr.arg2.localRange);               \
             } else if constexpr (SemiStructuredFieldExprType<T1> && SemiStructuredFieldExprType<T2>) {       \
-                for (auto i = 0; i < expr.accessibleRanges.size(); ++i) {                                    \
+                for (std::size_t i = 0; i < expr.accessibleRanges.size(); ++i) {                                    \
                     expr.accessibleRanges[i] = DS::commonRanges(expr.arg1.accessibleRanges[i],               \
                                                                 expr.arg2.accessibleRanges[i]);              \
                     expr.localRanges[i]                                                                      \
@@ -195,8 +195,8 @@
             if constexpr (MeshBasedFieldExprType<T1> && MeshBasedFieldExprType<T2>)                                                   \
                 OP_ASSERT(expr.arg1.mesh == expr.arg2.mesh);                                                                          \
             if constexpr (                                                                                                            \
-                    StructuredFieldExprType<                                                                                          \
-                            T1> && StructuredFieldExprType<T2> || SemiStructuredFieldExprType<T1> && SemiStructuredFieldExprType<T2>) \
+                    (StructuredFieldExprType<                                                                                          \
+                            T1> && StructuredFieldExprType<T2>) || (SemiStructuredFieldExprType<T1> && SemiStructuredFieldExprType<T2>)) \
                 if (expr.arg1.loc != expr.arg2.loc) {                                                                                 \
                     OP_ERROR("Operand {} and {}'s loc not same.", expr.arg1.name, expr.arg2.name);                                    \
                     std::string loc1 = std::format(                                                                                   \
@@ -223,7 +223,7 @@
                 expr.assignableRange.setEmpty();                                                                                      \
                 expr.localRange = DS::commonRange(expr.arg1.localRange, expr.arg2.localRange);                                        \
             } else if constexpr (SemiStructuredFieldExprType<T1> && SemiStructuredFieldExprType<T2>) {                                \
-                for (auto i = 0; i < expr.accessibleRanges.size(); ++i) {                                                             \
+                for (std::size_t i = 0; i < expr.accessibleRanges.size(); ++i) {                                                             \
                     expr.accessibleRanges[i] = DS::commonRanges(expr.arg1.accessibleRanges[i],                                        \
                                                                 expr.arg2.accessibleRanges[i]);                                       \
                     expr.localRanges[i]                                                                                               \

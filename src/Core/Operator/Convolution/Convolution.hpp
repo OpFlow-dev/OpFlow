@@ -28,7 +28,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 
         template <StructuredFieldExprType E, typename T, typename I>
         OPFLOW_STRONG_INLINE static auto
-        couldSafeEval(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>& kernel, I&& i) {
+        couldSafeEval(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>&, I&& i) {
             Meta::RealType<I> off;
             for (int j = 0; j < d; ++j) off[j] = dims[j] / 2;
             // assumes corner indexes are the lowest & highest ranks of the array
@@ -37,7 +37,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 
         template <CartAMRFieldExprType E, typename T, typename I>
         OPFLOW_STRONG_INLINE static auto
-        couldSafeEval(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>& kernel, I&& i) {
+        couldSafeEval(const E& e, const ScalarExpr<DS::FixedSizeTensor<T, ns...>>&, I&& i) {
             auto off = i;
             for (int j = 0; j < d; ++j) off[j] = dims[j] / 2;
             return e.couldEvalAt(i + off) && e.couldEvalAt(i - off);

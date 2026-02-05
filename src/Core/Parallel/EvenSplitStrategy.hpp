@@ -32,6 +32,7 @@
 OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <FieldExprType F>
     struct EvenSplitStrategy : AbstractSplitStrategy<F> {
+        ~EvenSplitStrategy() override = default;
         [[nodiscard]] std::string strategyName() const override { return "Even split"; }
         typename internal::ExprTrait<F>::range_type
         splitRange(const typename internal::ExprTrait<F>::range_type& range,
@@ -139,7 +140,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                 DS::Range<d> proc_range(split_plan);
                 DS::RangedIndex<d> idx(proc_range);
                 idx += proc_rank;
-                DS::Range<d> ret;
+                DS::Range<d> ret = _range;
                 for (std::size_t i = 0; i < d; ++i) {
                     ret.start[i]
                             = _range.start[i] + (_range.end[i] - _range.start[i]) / split_plan[i] * idx[i];

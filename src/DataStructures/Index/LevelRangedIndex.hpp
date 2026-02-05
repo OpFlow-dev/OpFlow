@@ -95,7 +95,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
             return *this;
         }
 
-        constexpr const auto operator++(int) {
+        constexpr auto operator++(int) {
             auto ret = *this;
             add1<0>(*this);
             return ret;
@@ -153,7 +153,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
             return *this;
         }
 
-        constexpr const auto operator--(int) {
+        constexpr auto operator--(int) {
             auto ret = *this;
             sub1<0>(*this);
             return ret;

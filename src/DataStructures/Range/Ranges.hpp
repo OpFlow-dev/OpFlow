@@ -26,7 +26,9 @@
 #include <vector>
 #endif
 
-OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT
+
+namespace OpFlow::DS {
     template <std::size_t dim>
     struct RangedIndex;
 
@@ -180,9 +182,10 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         void setEmpty() { *this = EmptyRange(); }
 
         auto first() const { return base_index_type {start}; }
+
         auto last() const {
             auto ret = base_index_type {end};
-            for (int i = 0; i < d; ++i) ret[i]--;
+            for (std::size_t i = 0; i < d; ++i) ret[i]--;
             return ret;
         }
 
@@ -195,7 +198,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
             return false;
         }
 
-        Range(Range& r, tbb::detail::split split) : Range(r) {
+        Range(Range& r, [[maybe_unused]] tbb::detail::split split) : Range(r) {
             this->reValidPace();
             int max_iter = std::max_element(pace.begin(), pace.end()) - pace.begin();
             this->end[max_iter] = this->start[max_iter] + this->pace[max_iter] / 2;
@@ -217,9 +220,10 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         }
 
         static constexpr bool is_splittable_in_proportion = true;
+
         auto center() const {
             auto ret = base_index_type {start};
-            for (int i = 0; i < d; ++i) ret[i] = (ret[i] + end[i]) / 2;
+            for (std::size_t i = 0; i < d; ++i) ret[i] = (ret[i] + end[i]) / 2;
             return ret;
         }
     };
@@ -329,7 +333,6 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         for (std::size_t i = 0; i < dim; ++i) { ret &= (r.start[i] <= t[i] && t[i] < r.end[i]); }
         return ret;
     }
-
 }// namespace OpFlow::DS
 
 template <std::size_t dim>

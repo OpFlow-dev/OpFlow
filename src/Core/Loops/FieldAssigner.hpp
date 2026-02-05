@@ -92,7 +92,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::internal {
             for (auto i = 0; i < levels; ++i) {
                 auto parts = dst.accessibleRanges[i].size();
 #pragma omp for nowait schedule(dynamic)
-                for (auto j = 0; j < parts; ++j) {
+                for (std::size_t j = 0; j < parts; ++j) {
                     OP_EXPECT_MSG(DS::inRange(dst.assignableRanges[i][j], src.logicalRanges[i][j]),
                                   "Assign warning: dst's assignableRange not covered by src's "
                                   "logicalRanges at level {} part {}.\ndst "

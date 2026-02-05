@@ -21,7 +21,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename Derived>
     struct MeshBase {
         template <typename Other>
-        bool operator==(const MeshBase<Other>& o) const {
+        bool operator==(const MeshBase<Other>&) const {
             return false;
         }
         bool operator==(const MeshBase& o) const { return this->derived().operator==(o); }

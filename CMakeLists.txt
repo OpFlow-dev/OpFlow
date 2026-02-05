@@ -15,13 +15,18 @@
 # ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 4.0.2 FATAL_ERROR)
-# The specific value used for CMake==4.0.2
-set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD
-    # This specific value changes as experimental support evolves. See
-    # `Help/dev/experimental.rst` in the CMake source corresponding to
-    # your CMake build for the exact value to use.
-    "a9e1cf81-9932-4810-974b-6eccaf14e457")
-set(CMAKE_EXPERIMENTAL_EXPORT_BUILD_DATABASE 4bd552e2-b7fb-429a-ab23-c83ef53f3f13)
+# The specific values used for experimental CMake features.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "4.2")
+    set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444")
+    set(CMAKE_EXPERIMENTAL_EXPORT_BUILD_DATABASE "73194a1d-c0b5-41b9-9190-a4512925e192")
+else()
+    set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD
+        # This specific value changes as experimental support evolves. See
+        # `Help/dev/experimental.rst` in the CMake source corresponding to
+        # your CMake build for the exact value to use.
+        "a9e1cf81-9932-4810-974b-6eccaf14e457")
+    set(CMAKE_EXPERIMENTAL_EXPORT_BUILD_DATABASE 4bd552e2-b7fb-429a-ab23-c83ef53f3f13)
+endif()
 set(CMAKE_EXPORT_BUILD_DATABASE 1)
 
 # ----------------------------------------------------------------------------
@@ -40,9 +45,6 @@ opflow_extract_version()
 project(opflow VERSION ${OPFLOW_VERSION} LANGUAGES C CXX)
 set(OPFLOW_VERSION_STRING "${OPFLOW_VERSION} - ${SHORT_SHA1} - ${GIT_CHANGE}")
 message(STATUS "Build opflow: ${OPFLOW_VERSION_STRING}")
-
-set(CMAKE_EXPERIMENTAL_EXPORT_BUILD_DATABASE 4bd552e2-b7fb-429a-ab23-c83ef53f3f13)
-set(CMAKE_EXPORT_BUILD_DATABASE 1)
 
 include(GNUInstallDirs)
 
@@ -68,8 +70,7 @@ if(MSVC)
     string(APPEND CMAKE_CXX_FLAGS " /Zc:__cplusplus /wd4267 /wd4390 /wd4244")
 endif()
 
-# supress possible abi warning by upgrade compiler
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
+# ABI warning suppression moved to target-specific compile options
 # temporary fix for macOS 14 & CLT 15
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin"
     AND CMAKE_HOST_SYSTEM_VERSION VERSION_GREATER_EQUAL 23)
@@ -106,6 +107,9 @@ option(OPFLOW_SINGLE_PRECISION "Use float as default real type" OFF)
 option(OPFLOW_WITH_OPENMP "Build OpFlow with OpenMP support" ON)
 option(OPFLOW_WITH_MPI "Build OpFlow with MPI support" OFF)
 
+# Disable deprecated MPI C++ bindings across all targets to avoid link errors.
+add_compile_definitions(OMPI_SKIP_MPICXX MPICH_SKIP_MPICXX)
+
 # utility options
 option(OPFLOW_WITH_HDF5 "Build OpFlow with HDF5 support" OFF)
 
@@ -124,7 +128,6 @@ option(OPFLOW_SANITIZE_THREAD "Enable thread sanitizer in tests" OFF)
 option(OPFLOW_SANITIZE_UB "Enable undefined behavior sanitizer in tests" OFF)
 
 # compile options
-option(OPFLOW_BUILD_WARNINGS "Enable compiler warnings" OFF)
 option(OPFLOW_NO_EXCEPTIONS "Compile with -fno-exceptions" OFF)
 option(OPFLOW_ENABLE_MODULE "Enable C++ modules support" OFF)
 if(OPFLOW_ENABLE_MODULE)

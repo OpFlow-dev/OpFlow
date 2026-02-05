@@ -28,6 +28,8 @@
 #include "DataStructures/Index/LevelMDIndex.hpp"
 #include "DataStructures/Index/MDIndex.hpp"
 #ifndef OPFLOW_INSIDE_MODULE
+#include <format>
+#include <iostream>
 #include <memory>
 #include <numeric>
 #include <vector>
@@ -37,12 +39,14 @@
 #include <HYPRE_sstruct_mv.h>
 #endif
 
-OPFLOW_MODULE_EXPORT namespace OpFlow {
+OPFLOW_MODULE_EXPORT
+
+namespace OpFlow {
     template <typename F, typename T, typename S>
     struct HYPREEqnSolveHandler;
 
     template <typename F, typename T, typename S>
-    std::unique_ptr<EqnSolveHandler> makeEqnSolveHandler(F && f, T && t, S && s) {
+    std::unique_ptr<EqnSolveHandler> makeEqnSolveHandler(F&& f, T&& t, S&& s) {
         return std::make_unique<HYPREEqnSolveHandler<F, Meta::RealType<T>, Meta::RealType<S>>>(
                 OP_PERFECT_FOWD(f), OP_PERFECT_FOWD(t), OP_PERFECT_FOWD(s));
     }
@@ -50,6 +54,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename F, CartesianFieldType T, typename Solver>
     struct HYPREEqnSolveHandler<F, T, Solver> : virtual public EqnSolveHandler {
         HYPREEqnSolveHandler() = default;
+
         HYPREEqnSolveHandler(const F& getter, T& target, const Solver& s)
             : eqn_getter {getter}, target {&target}, solver(s) {
             this->init();
@@ -83,7 +88,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             uniEqn = std::make_unique<EqExpr>(std::move(t));
             auto local_assignable_range = DS::commonRange(target->localRange, target->assignableRange);
             auto r = local_assignable_range.end;
-            for (auto j = 0; j < r.size(); ++j) r[j] -= 1;
+            for (std::size_t j = 0; j < r.size(); ++j) r[j] -= 1;
             HYPRE_StructGridSetExtents(grid, local_assignable_range.start.data(), r.data());
             int periodic[dim];
             for (auto j = 0; j < dim; ++j)
@@ -102,7 +107,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             commStencil = getOffsetStencil(uniEqn->evalAt(middle), middle);
             HYPRE_StructStencilCreate(dim, commStencil.pad.size(), &stencil);
             auto iter = commStencil.pad.begin();
-            for (auto i = 0; i < commStencil.pad.size(); ++i, ++iter) {
+            for (int i = 0; i < commStencil.pad.size(); ++i, ++iter) {
                 HYPRE_StructStencilSetElement(stencil, i, const_cast<int*>(iter->first.get().data()));
             }
         }
@@ -124,13 +129,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 
         void generateAb() override {
             std::vector<int> entries(commStencil.pad.size());
-            for (auto i = 0; i < entries.size(); ++i) entries[i] = i;
-            int periodic[dim];
-            for (auto j = 0; j < dim; ++j)
-                if (target->bc[j].start && target->bc[j].start->getBCType() == BCType::Periodic)
-                    periodic[j] = target->assignableRange.end[j] - target->assignableRange.start[j];
-                else
-                    periodic[j] = 0;
+            for (std::size_t i = 0; i < entries.size(); ++i) entries[i] = i;
 
             rangeFor(DS::commonRange(target->assignableRange, target->localRange), [&](auto&& k) {
                 auto currentStencil = getOffsetStencil(uniEqn->evalAt(k), k);
@@ -233,10 +232,12 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename F, CartAMRFieldType T, typename Solver>
     struct HYPREEqnSolveHandler<F, T, Solver> : virtual public EqnSolveHandler {
         HYPREEqnSolveHandler() = default;
+
         HYPREEqnSolveHandler(const F& getter, T& target, const Solver& s)
             : getter(getter), target(&target), solver(s) {
             this->init();
         }
+
         ~HYPREEqnSolveHandler() override { deallocHYPRE(); }
 
         void init() override {
@@ -253,10 +254,10 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             int ndim = dim, nparts = target->getLevels(), nvars = 1;
             int vartypes[] = {HYPRE_SSTRUCT_VARIABLE_CELL};
             HYPRE_SStructGridCreate(solver.params.comm, ndim, nparts, &grid);
-            for (auto l = 0; l < target->localRanges.size(); ++l) {
-                for (auto p = 0; p < target->localRanges[l].size(); ++p) {
+            for (std::size_t l = 0; l < target->localRanges.size(); ++l) {
+                for (std::size_t p = 0; p < target->localRanges[l].size(); ++p) {
                     auto _local_range = target->localRanges[l][p];
-                    for (auto i = 0; i < dim; ++i) _local_range.end[i]--;
+                    for (std::size_t i = 0; i < static_cast<std::size_t>(dim); ++i) _local_range.end[i]--;
                     HYPRE_SStructGridSetExtents(grid, l, _local_range.start.data(), _local_range.end.data());
                 }
                 HYPRE_SStructGridSetVariables(grid, l, nvars, vartypes);
@@ -264,7 +265,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             HYPRE_SStructGridAssemble(grid);
             // stencil & graph
             DS::ColoredIndex<DS::LevelMDIndex<dim>> middle;
-            for (auto i = 0; i < dim; ++i)
+            for (std::size_t i = 0; i < static_cast<std::size_t>(dim); ++i)
                 middle[i] = (target->assignableRanges[0][0].start[i] + target->assignableRanges[0][0].end[i])
                             / 2;
             //commStencil = getOffsetStencil(uniEqn->evalAt(middle), middle);
@@ -278,16 +279,16 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             HYPRE_SStructStencilCreate(ndim, commStencil.pad.size(), &stencil);
             auto iter = commStencil.pad.begin();
             int c_var = 0;
-            for (auto i = 0; i < commStencil.pad.size(); ++i, ++iter) {
+            for (int i = 0; i < commStencil.pad.size(); ++i, ++iter) {
                 HYPRE_SStructStencilSetEntry(stencil, i, const_cast<int*>(iter->first.get().data()), c_var);
             }
             HYPRE_SStructGraphCreate(solver.params.comm, grid, &graph);
-            for (auto l = 0; l < target->localRanges.size(); ++l) {
+            for (std::size_t l = 0; l < target->localRanges.size(); ++l) {
                 HYPRE_SStructGraphSetStencil(graph, l, c_var, stencil);
             }
             // inter-level graph entries
-            for (auto l = 0; l < target->getLevels(); ++l) {
-                for (auto p = 0; p < target->localRanges[l].size(); ++p) {
+            for (int l = 0; l < target->getLevels(); ++l) {
+                for (std::size_t p = 0; p < target->localRanges[l].size(); ++p) {
                     rangeFor_s(target->localRanges[l][p], [&](auto&& i) {
                         if (stencilField->blocked(i)) return;
                         auto st = uniEqn->evalAt(i);
@@ -295,7 +296,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                             if (k.l != l) {
                                 HYPRE_SStructGraphAddEntries(graph, l, i.c_arr(), c_var, k.l, k.c_arr(),
                                                              c_var);
-                                std::print("GraphAddEntry: {} -> {}\n", i, k);
+                                std::cout << std::format("GraphAddEntry: {} -> {}\n", i, k);
                             }
                         }
                     });
@@ -311,6 +312,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             HYPRE_SStructVectorInitialize(x);
             allocated = true;
         }
+
         void deallocHYPRE() {
             if (!allocated) return;
             HYPRE_SStructMatrixDestroy(A);
@@ -323,8 +325,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         }
 
         void generateAb() override {
-            for (auto l = 0; l < target->getLevels(); ++l) {
-                for (auto p = 0; p < target->localRanges[l].size(); ++p) {
+            for (int l = 0; l < target->getLevels(); ++l) {
+                for (std::size_t p = 0; p < target->localRanges[l].size(); ++p) {
                     rangeFor_s(target->localRanges[l][p], [&](auto&& i) {
                         if (stencilField->blocked(i)) return;
                         // stencil part
@@ -333,8 +335,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                         for (auto& [k, v] : offsetStencil.pad) {
                             if (k.l == l) { k -= i; }
                         }
-                        std::print("index = {}\n", i);
-                        std::print("current stencil:{}\noffset stencil:{}\n", currentStencil, offsetStencil);
+                        std::cout << std::format("index = {}\n", i);
+                        std::cout << std::format("current stencil:{}\noffset stencil:{}\n", currentStencil,
+                                                 offsetStencil);
                         auto extendedStencil = offsetStencil;
                         for (auto& [k, v] : commStencil.pad) {
                             auto _target_k = k;
@@ -346,7 +349,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                                 extendedStencil.pad[_target_k] = 0;
                             }
                         }
-                        std::print("extended stencil:{}\n", extendedStencil);
+                        std::cout << std::format("extended stencil:{}\n", extendedStencil);
                         std::vector<Real> vals;
                         std::vector<int> entries(commStencil.pad.size());
                         std::iota(entries.begin(), entries.end(), 0);
@@ -366,7 +369,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                                 int entry[] = {count++};
                                 Real val[] = {v};
                                 HYPRE_SStructMatrixSetValues(A, l, i.c_arr(), 0, 1, entry, val);
-                                std::print("A[{}, {}] = {}\n", i, k, v);
+                                std::cout << std::format("A[{}, {}] = {}\n", i, k, v);
                             }
                         }
                         auto bias = -extendedStencil.bias;
@@ -376,12 +379,12 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             }
             int(*rfactors)[HYPRE_MAXDIM];
             rfactors = new int[target->getLevels()][HYPRE_MAXDIM];
-            for (auto l = 0; l < target->getLevels(); ++l)
-                for (auto d = 0; d < HYPRE_MAXDIM; ++d) rfactors[l][d] = 1;
-            for (auto l = 1; l < target->getLevels(); ++l) {
-                for (auto d = 0; d < dim; ++d) rfactors[l][d] = target->mesh.refinementRatio;
+            for (int l = 0; l < target->getLevels(); ++l)
+                for (int d = 0; d < HYPRE_MAXDIM; ++d) rfactors[l][d] = 1;
+            for (int l = 1; l < target->getLevels(); ++l) {
+                for (int d = 0; d < dim; ++d) rfactors[l][d] = target->mesh.refinementRatio;
             }
-            for (auto l = target->getLevels() - 1; l > 0; --l) {
+            for (int l = target->getLevels() - 1; l > 0; --l) {
                 HYPRE_SStructFACZeroCFSten(A, grid, l, rfactors[l]);
                 HYPRE_SStructFACZeroFCSten(A, grid, l);
                 HYPRE_SStructFACZeroAMRMatrixData(A, l - 1, rfactors[l]);
@@ -393,9 +396,10 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             HYPRE_SStructVectorAssemble(b);
             delete[] rfactors;
         }
+
         void initx() {
             for (auto l = 0; l < target->getLevels(); ++l) {
-                for (auto p = 0; p < target->localRanges[l].size(); ++p) {
+                for (std::size_t p = 0; p < target->localRanges[l].size(); ++p) {
                     rangeFor(target->localRanges[l][p], [&](auto&& i) {
                         auto val = target->evalAt(i);
                         HYPRE_SStructVectorSetValues(x, l, i.c_arr(), 0, &val);
@@ -404,10 +408,10 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             }
             int(*rfactors)[HYPRE_MAXDIM];
             rfactors = new int[target->getLevels()][HYPRE_MAXDIM];
-            for (auto l = 0; l < target->getLevels(); ++l)
-                for (auto d = 0; d < HYPRE_MAXDIM; ++d) rfactors[l][d] = 1;
-            for (auto l = 1; l < target->getLevels(); ++l) {
-                for (auto d = 0; d < dim; ++d) rfactors[l][d] = target->mesh.refinementRatio;
+            for (int l = 0; l < target->getLevels(); ++l)
+                for (int d = 0; d < HYPRE_MAXDIM; ++d) rfactors[l][d] = 1;
+            for (int l = 1; l < target->getLevels(); ++l) {
+                for (int d = 0; d < dim; ++d) rfactors[l][d] = target->mesh.refinementRatio;
             }
             std::vector<int> plevels(target->getLevels());
             std::iota(plevels.begin(), plevels.end(), 0);
@@ -415,9 +419,10 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             HYPRE_SStructVectorAssemble(x);
             delete[] rfactors;
         }
+
         void returnValues() {
             for (auto l = 0; l < target->getLevels(); ++l) {
-                for (auto p = 0; p < target->localRanges[l].size(); ++p) {
+                for (std::size_t p = 0; p < target->localRanges[l].size(); ++p) {
                     rangeFor(target->localRanges[l][p], [&](auto&& i) {
                         Real val;
                         HYPRE_SStructVectorGetValues(x, l, i.c_arr(), 0, &val);
@@ -436,9 +441,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             int(*rfactors)[HYPRE_MAXDIM];
             std::iota(plevels.begin(), plevels.end(), 0);
             rfactors = new int[plevels.size()][HYPRE_MAXDIM];
-            for (auto i = 0; i < HYPRE_MAXDIM; ++i) rfactors[0][i] = 1;
-            for (auto l = 1; l < target->localRanges.size(); ++l) {
-                for (auto i = 0; i < HYPRE_MAXDIM; ++i)
+            for (int i = 0; i < HYPRE_MAXDIM; ++i) rfactors[0][i] = 1;
+            for (std::size_t l = 1; l < target->localRanges.size(); ++l) {
+                for (int i = 0; i < HYPRE_MAXDIM; ++i)
                     rfactors[l][i] = i < dim ? target->mesh.refinementRatio : 1;
             }
             HYPRE_SStructFACSetPLevels(solver.getSolver(), plevels.size(), plevels.data());

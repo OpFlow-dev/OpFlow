@@ -1,6 +1,9 @@
 #include "Poisson.hpp"
 #include "pch.hpp"
+#include <chrono>
+#include <ctime>
 #include <filesystem>
+#include <string>
 
 using namespace OpFlow;
 
@@ -8,8 +11,9 @@ void Poisson() {
     using Mesh = CartesianAMRMesh<Meta::int_<2>>;
     using Field = CartAMRField<Real, Mesh>;
 
-    int n = 9, maxlevel = 2, ratio = 2, buffWidth = 1;
-    auto h = 2. / (n - 1);
+    int n = 9;
+    [[maybe_unused]] int maxlevel = 2, ratio = 2, buffWidth = 1;
+    [[maybe_unused]] auto h = 2. / (n - 1);
     /*
     auto m = MeshBuilder<Mesh>()
                      .setBaseMesh(MeshBuilder<CartesianMesh<Meta::int_<2>>>()
@@ -83,8 +87,17 @@ void Poisson() {
                      .build();
     //p.initBy([](auto&& x) { return std::sqrt(Math::pow2(x[0] - 0.5) + Math::pow2(x[1] - 0.75)) - 0.15; });
     p = 0;
-    auto root = std::format("Result_{:%m-%d_%H-%M-%S}/",
-                            std::chrono::current_zone()->to_local(std::chrono::system_clock::now()));
+    auto now = std::chrono::system_clock::now();
+    auto now_time = std::chrono::system_clock::to_time_t(now);
+    std::tm local_tm {};
+#if defined(_WIN32)
+    localtime_s(&local_tm, &now_time);
+#else
+    localtime_r(&now_time, &local_tm);
+#endif
+    char time_buf[32];
+    std::strftime(time_buf, sizeof(time_buf), "%m-%d_%H-%M-%S", &local_tm);
+    auto root = std::string("Result_") + time_buf + "/";
     std::filesystem::create_directory(root);
 
     SemiStructSolverParams<SemiStructSolverType::FAC> params;

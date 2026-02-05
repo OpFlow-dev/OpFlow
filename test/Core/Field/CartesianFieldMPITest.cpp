@@ -10,10 +10,15 @@
 //
 //  ----------------------------------------------------------------------------
 
-#include <OpFlow>
+#include <format>
 #include <gmock/gmock.h>
-#include <print>
+#include <iostream>
 #include <tuple>
+#ifdef OPFLOW_USE_MODULE
+import opflow;
+#else
+#include <OpFlow>
+#endif
 
 using namespace OpFlow;
 
@@ -129,7 +134,7 @@ TEST_F(CartesianFieldMPITest, PeriodicValueCheck) {
     u.updatePadding();
     u_local.updatePadding();
     rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) {
-        if (u[i] != u_local[i]) std::print("Not equal at {} {} != {}", i, u[i], u_local[i]);
+        if (u[i] != u_local[i]) std::cout << std::format("Not equal at {} {} != {}", i, u[i], u_local[i]);
         ASSERT_EQ(u[i], u_local[i]);
     });
 }
@@ -139,13 +144,16 @@ TEST_F(CartesianFieldMPITest, Serializable_PeriodicValueCheck) {
     public:
         int i = 0;
         Int() = default;
+
         explicit Int(int i) : i(i) {}
+
         [[nodiscard]] std::vector<std::byte> serialize() const override {
             return {reinterpret_cast<const std::byte*>(&i), reinterpret_cast<const std::byte*>(&i + 1)};
         }
-        void deserialize(const std::byte* data, std::size_t size) override {
-            std::memcpy(&i, data, sizeof(i));
-        }
+
+        void deserialize(const std::byte* data, std::size_t) override { std::memcpy(&i, data, sizeof(i)); }
+
+        ~Int() override = default;
     };
     auto s = std::make_shared<EvenSplitStrategy<CartesianField<Int, Mesh>>>();
     auto u = ExprBuilder<CartesianField<Int, Mesh>>()
@@ -160,7 +168,7 @@ TEST_F(CartesianFieldMPITest, Serializable_PeriodicValueCheck) {
     rangeFor_s(u.getLocalWritableRange(), [&](auto&& i) { u[i] = Int {mapper(i)}; });
     u.updatePadding();
     rangeFor_s(u.getLocalReadableRange(), [&](auto&& i) {
-        if (u[i].i != mapper(i)) std::print("Not equal at {} {} != {}", i, u[i].i, mapper(i));
+        if (u[i].i != mapper(i)) std::cout << std::format("Not equal at {} {} != {}", i, u[i].i, mapper(i));
         ASSERT_EQ(u[i].i, mapper(i));
     });
 }
@@ -170,14 +178,14 @@ INSTANTIATE_TEST_SUITE_P(
         testing::Values(std::make_tuple(std::array {BCType::Dirc, BCType::Dirc, BCType::Dirc, BCType::Dirc},
                                         std::array {LocOnMesh::Center, LocOnMesh::Center}),
                         std::make_tuple(std::array {BCType::Neum, BCType::Neum, BCType::Neum, BCType::Neum},
-                                        std::array {LocOnMesh ::Center, LocOnMesh::Center}),
+                                        std::array {LocOnMesh::Center, LocOnMesh::Center}),
                         std::make_tuple(std::array {BCType::Periodic, BCType::Periodic, BCType::Periodic,
                                                     BCType::Periodic},
-                                        std::array {LocOnMesh ::Center, LocOnMesh::Center}),
+                                        std::array {LocOnMesh::Center, LocOnMesh::Center}),
                         std::make_tuple(std::array {BCType::Dirc, BCType::Dirc, BCType::Dirc, BCType::Dirc},
-                                        std::array {LocOnMesh ::Corner, LocOnMesh::Corner}),
+                                        std::array {LocOnMesh::Corner, LocOnMesh::Corner}),
                         std::make_tuple(std::array {BCType::Neum, BCType::Neum, BCType::Neum, BCType::Neum},
-                                        std::array {LocOnMesh ::Corner, LocOnMesh::Corner}),
+                                        std::array {LocOnMesh::Corner, LocOnMesh::Corner}),
                         std::make_tuple(std::array {BCType::Periodic, BCType::Periodic, BCType::Periodic,
                                                     BCType::Periodic},
-                                        std::array {LocOnMesh ::Corner, LocOnMesh::Corner})));
+                                        std::array {LocOnMesh::Corner, LocOnMesh::Corner})));

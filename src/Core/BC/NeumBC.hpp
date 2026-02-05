@@ -18,7 +18,9 @@
 #include "Core/Field/MeshBased/MeshBasedFieldExprTrait.hpp"
 #include "Core/Field/MeshBased/Structured/StructuredFieldExprTrait.hpp"
 
-OPFLOW_MODULE_EXPORT namespace OpFlow {
+OPFLOW_MODULE_EXPORT
+
+namespace OpFlow {
     template <FieldExprType F>
     struct NeumBCBase : virtual public BCBase<F> {
     protected:
@@ -40,9 +42,11 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     struct ConstNeumBC : virtual public NeumBCBase<F> {
     public:
         explicit ConstNeumBC(auto c) : _c(c) {}
+
         using NeumBCBase<F>::operator=;
+
         typename internal::FieldExprTrait<F>::elem_type
-        evalAt(const typename internal::FieldExprTrait<F>::index_type& index) const override {
+        evalAt(const typename internal::FieldExprTrait<F>::index_type&) const override {
             return _c;
         }
 
@@ -82,6 +86,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     public:
         using Functor = std::function<typename internal::MeshBasedFieldExprTrait<F>::elem_type(
                 const typename internal::MeshBasedFieldExprTrait<F>::index_type&)>;
+
         explicit FunctorNeumBC(Functor f) : _f(std::move(f)) {}
 
         typename internal::MeshBasedFieldExprTrait<F>::elem_type
@@ -90,6 +95,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         }
 
         [[nodiscard]] std::string getTypeName() const override { return "FunctorNeumBC"; }
+
         [[nodiscard]] std::string toString(int level) const override {
             std::string ret, prefix;
             for (auto i = 0; i < level; ++i) prefix += "\t";
@@ -112,6 +118,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         void assignImpl(const BCBase<F>& other) override {
             _f = [&](auto&& i) { return other.evalAt(i); };
         }
+
         Functor _f;
     };
 }// namespace OpFlow

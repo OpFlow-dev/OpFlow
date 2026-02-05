@@ -67,7 +67,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
         }
 
         template <CartAMRFieldExprType T>
-        auto& operator<<(const T& f) {
+        auto& operator<<([[maybe_unused]] const T& f) {
 #ifdef OPFLOW_WITH_VTK
             constexpr auto dim = OpFlow::internal::CartAMRFieldExprTrait<T>::dim;
             vtkNew<vtkOverlappingAMR> data;

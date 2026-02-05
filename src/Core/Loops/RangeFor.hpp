@@ -29,7 +29,9 @@
 #include <oneapi/tbb/detail/_range_common.h>
 #endif
 
-OPFLOW_MODULE_EXPORT namespace OpFlow {
+OPFLOW_MODULE_EXPORT
+
+namespace OpFlow {
     /// \brief Serial version of range for
     /// \tparam dim Range dim
     /// \tparam F Functor type
@@ -67,8 +69,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     /// \return The input functor
     template <typename R, typename F>
     F rangeFor(const R& range, F&& func) {
-        constexpr static auto dim = R::dim;
-        auto total_count = range.count();
+        [[maybe_unused]] constexpr static auto dim = R::dim;
+        [[maybe_unused]] auto total_count = range.count();
         auto line_size = range.end[0] - range.start[0];
         if (line_size <= 0) return std::forward<F>(func);
         if (range.stride[0] == 1) {
@@ -86,14 +88,13 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <typename R, typename ReOp, typename F>
     auto rangeReduce(const R& range, ReOp&& op, F&& func) {
         using resultType = Meta::RealType<decltype(func(std::declval<typename R::base_index_type&>()))>;
-        constexpr static auto dim = R::dim;
         auto line_size = range.end[0] - range.start[0];
         if (line_size <= 0) return resultType();
 
         struct Reducer {
-            resultType result {};
             const ReOp& _op;
             const F& _func;
+            resultType result {};
             void operator()(const R& _range) { result = _op(result, rangeReduce_s(_range, _op, _func)); }
 
             Reducer(Reducer& _reducer, tbb::detail::split)
@@ -112,7 +113,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 
         if (range.stride[0] == 1) {
             tbb::task_arena arena(getGlobalParallelPlan().shared_memory_workers_count);
-            arena.template execute([&]() { tbb::parallel_reduce(range, reducer); });
+            arena.execute([&]() { tbb::parallel_reduce(range, reducer); });
             return reducer.result;
         } else {
             OP_NOT_IMPLEMENTED;
@@ -126,9 +127,10 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         auto local_result = rangeReduce(range, op, func);
         std::vector<decltype(local_result)> results(getWorkerCount());
         results[getWorkerId()] = local_result;
-        static_assert(std::is_standard_layout_v<decltype(
-                                      local_result)> && std::is_trivial_v<decltype(local_result)>,
-                      "local_result must be pod type");
+        static_assert(
+                std::is_standard_layout_v<decltype(
+                                local_result)> && std::is_trivially_default_constructible_v<decltype(local_result)> && std::is_trivially_copyable_v<decltype(local_result)>,
+                "local_result must be pod type");
         MPI_Allgather(MPI_IN_PLACE, sizeof(decltype(local_result)), MPI_BYTE, results.data(),
                       sizeof(decltype(local_result)), MPI_BYTE, MPI_COMM_WORLD);
         return std::reduce(results.begin(), results.end(), decltype(local_result) {}, op);

@@ -20,7 +20,7 @@ public:
     using Mesh = CartesianAMRMesh<Meta::int_<2>>;
     using Field = CartAMRField<Real, Mesh>;
 
-    void SetUp(const ::benchmark::State& state) {
+    void SetUp(const ::benchmark::State&) {
         constexpr int n = 65, maxlevel = 4, ratio = 2, buffWidth = 5;
         constexpr auto h = 1. / (n - 1);
         auto m = MeshBuilder<Mesh>()
@@ -64,7 +64,7 @@ public:
         u = std::make_shared<Field>(ExprBuilder<Field>()
                                             .setMesh(m)
                                             .setName("u")
-                                            .setLoc({LocOnMesh::Center, LocOnMesh ::Center})
+                                            .setLoc({LocOnMesh::Center, LocOnMesh::Center})
                                             .setBC(0, DimPos::start, BCType::Dirc, 0.)
                                             .setBC(0, DimPos::end, BCType::Dirc, 0.)
                                             .setBC(1, DimPos::start, BCType::Dirc, 0.)
@@ -74,7 +74,7 @@ public:
         v->name = "v";
     }
 
-    void TearDown(const ::benchmark::State& state) {}
+    void TearDown(const ::benchmark::State&) {}
 
     std::shared_ptr<Field> u, v;
 };
@@ -111,6 +111,7 @@ BENCHMARK_DEFINE_F(AMRFixture2D, UpdatePadding)(benchmark::State& state) {
     omp_set_num_threads(state.range(0));
     for (auto _ : state) { u->updatePadding(); }
 }
+
 BENCHMARK_REGISTER_F(AMRFixture2D, UpdatePadding)
         ->RangeMultiplier(2)
         ->Range(1, omp_get_max_threads())
@@ -120,6 +121,7 @@ BENCHMARK_DEFINE_F(AMRFixture2D, UpdateCovering)(benchmark::State& state) {
     omp_set_num_threads(state.range(0));
     for (auto _ : state) { u->updateCovering(); }
 }
+
 BENCHMARK_REGISTER_F(AMRFixture2D, UpdateCovering)
         ->RangeMultiplier(2)
         ->Range(1, omp_get_max_threads())
@@ -130,7 +132,7 @@ public:
     using Mesh = CartesianAMRMesh<Meta::int_<3>>;
     using Field = CartAMRField<Real, Mesh>;
 
-    void SetUp(const ::benchmark::State& state) {
+    void SetUp(const ::benchmark::State&) {
         constexpr int n = 65, maxlevel = 4, ratio = 2, buffWidth = 5;
         constexpr auto h = 1. / (n - 1);
         auto m = MeshBuilder<Mesh>()
@@ -187,23 +189,22 @@ public:
                                  return false;
                          })
                          .build();
-        u = std::make_shared<Field>(
-                ExprBuilder<Field>()
-                        .setMesh(m)
-                        .setName("u")
-                        .setLoc({LocOnMesh::Center, LocOnMesh ::Center, LocOnMesh ::Center})
-                        .setBC(0, DimPos::start, BCType::Dirc, 0.)
-                        .setBC(0, DimPos::end, BCType::Dirc, 0.)
-                        .setBC(1, DimPos::start, BCType::Dirc, 0.)
-                        .setBC(1, DimPos::end, BCType::Dirc, 0.)
-                        .setBC(2, DimPos::start, BCType::Dirc, 0.)
-                        .setBC(2, DimPos::end, BCType::Dirc, 0.)
-                        .build());
+        u = std::make_shared<Field>(ExprBuilder<Field>()
+                                            .setMesh(m)
+                                            .setName("u")
+                                            .setLoc({LocOnMesh::Center, LocOnMesh::Center, LocOnMesh::Center})
+                                            .setBC(0, DimPos::start, BCType::Dirc, 0.)
+                                            .setBC(0, DimPos::end, BCType::Dirc, 0.)
+                                            .setBC(1, DimPos::start, BCType::Dirc, 0.)
+                                            .setBC(1, DimPos::end, BCType::Dirc, 0.)
+                                            .setBC(2, DimPos::start, BCType::Dirc, 0.)
+                                            .setBC(2, DimPos::end, BCType::Dirc, 0.)
+                                            .build());
         v = std::make_shared<Field>(*u);
         v->name = "v";
     }
 
-    void TearDown(const ::benchmark::State& state) {}
+    void TearDown(const ::benchmark::State&) {}
 
     std::shared_ptr<Field> u, v;
 };
@@ -240,6 +241,7 @@ BENCHMARK_DEFINE_F(AMRFixture3D, UpdatePadding)(benchmark::State& state) {
     omp_set_num_threads(state.range(0));
     for (auto _ : state) { u->updatePadding(); }
 }
+
 BENCHMARK_REGISTER_F(AMRFixture3D, UpdatePadding)
         ->RangeMultiplier(2)
         ->Range(1, omp_get_max_threads())
@@ -249,6 +251,7 @@ BENCHMARK_DEFINE_F(AMRFixture3D, UpdateCovering)(benchmark::State& state) {
     omp_set_num_threads(state.range(0));
     for (auto _ : state) { u->updateCovering(); }
 }
+
 BENCHMARK_REGISTER_F(AMRFixture3D, UpdateCovering)
         ->RangeMultiplier(2)
         ->Range(1, omp_get_max_threads())

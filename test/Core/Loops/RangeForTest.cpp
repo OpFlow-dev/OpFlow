@@ -10,9 +10,14 @@
 //
 // ----------------------------------------------------------------------------
 
-#include <OpFlow>
+#include <format>
 #include <gmock/gmock.h>
 #include <iostream>
+#ifdef OPFLOW_USE_MODULE
+import opflow;
+#else
+#include <OpFlow>
+#endif
 
 using namespace OpFlow;
 using namespace testing;
@@ -28,7 +33,7 @@ protected:
         DS::MDIndex<decltype(index)::dim> ret;
         ret.set(index.range.start);
         assert(linear >= 0);
-        for (auto i = 0; i < index.dim; ++i) {
+        for (std::size_t i = 0; i < index.dim; ++i) {
             ret[i] += linear % ((index.range.end[i] - 1 - index.range.start[i]) / index.range.stride[i] + 1)
                       * index.range.stride[i];
             linear /= ((index.range.end[i] - 1 - index.range.start[i]) / index.range.stride[i] + 1);
@@ -42,7 +47,7 @@ protected:
     }
     [[nodiscard]] auto serialize(const T& idx) const {
         auto ret = std::format("({}", idx[0]);
-        for (auto i = 1; i < idx.dim; ++i) { ret += std::format(", {}", idx[i]); }
+        for (std::size_t i = 1; i < idx.dim; ++i) { ret += std::format(", {}", idx[i]); }
         ret += ")";
         return ret;
     }
@@ -53,7 +58,7 @@ protected:
 
 TEST_F(RangedIndexTest, GetTotalCount) {
     auto total = 1;
-    for (auto i = 0; i < index.dim; ++i) {
+    for (std::size_t i = 0; i < index.dim; ++i) {
         total *= (index.range.end[i] - index.range.start[i] - 1) / index.range.stride[i] + 1;
     }
     ASSERT_EQ(index.count(), total);
@@ -67,7 +72,7 @@ TEST_F(RangedIndexTest, MoveToNext) {
             std::cout << std::format("Lin. = {:>3d}, Target = {}, Current = {}", linear, serialize(target),
                                      serialize(index))
                       << std::endl;
-        for (auto i = 0; i < index.dim; ++i) { ASSERT_EQ(target[i], index[i]); }
+        for (std::size_t i = 0; i < index.dim; ++i) { ASSERT_EQ(target[i], index[i]); }
     }
 }
 
@@ -79,7 +84,7 @@ TEST_F(RangedIndexTest, GetLast) {
         std::cout << std::format("Lin. = {:>3d}, Target = {}, Current = {}", total - 1, serialize(target),
                                  serialize(last))
                   << std::endl;
-    for (auto i = 0; i < index.dim; ++i) { ASSERT_EQ(target[i], last[i]); }
+    for (std::size_t i = 0; i < index.dim; ++i) { ASSERT_EQ(target[i], last[i]); }
 }
 
 TEST_F(RangedIndexTest, MoveToPre) {
@@ -91,20 +96,20 @@ TEST_F(RangedIndexTest, MoveToPre) {
             std::cout << std::format("Lin. = {:>3d}, Target = {}, Current = {}", linear, serialize(target),
                                      serialize(index))
                       << std::endl;
-        for (auto i = 0; i < index.dim; ++i) { ASSERT_EQ(target[i], index[i]); }
+        for (std::size_t i = 0; i < index.dim; ++i) { ASSERT_EQ(target[i], index[i]); }
     }
 }
 
 TEST_F(RangedIndexTest, OneAfterLastReturnEnd) {
     auto last = index.last();
     ++last;
-    for (auto i = 0; i < index.dim; ++i) { ASSERT_EQ(last[i], index.range.end[i]); }
+    for (std::size_t i = 0; i < index.dim; ++i) { ASSERT_EQ(last[i], index.range.end[i]); }
 }
 
 TEST_F(RangedIndexTest, OneBeforeFirstReturnFirst) {
     auto first = index.first();
     --first;
-    for (auto i = 0; i < index.dim; ++i) { ASSERT_EQ(first[i], index.range.start[i]); }
+    for (std::size_t i = 0; i < index.dim; ++i) { ASSERT_EQ(first[i], index.range.start[i]); }
 }
 
 class RangeForTest : public Test {

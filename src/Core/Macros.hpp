@@ -60,9 +60,15 @@
 
 #ifdef OPFLOW_WITH_MPI
 #ifndef OPFLOW_INSIDE_MODULE
+#ifndef OMPI_SKIP_MPICXX
+#define OMPI_SKIP_MPICXX 1
+#endif
+#ifndef MPICH_SKIP_MPICXX
+#define MPICH_SKIP_MPICXX 1
+#endif
 #include <mpi.h>
 #endif
-OPFLOW_MODULE_EXPORT namespace OpFlow { inline static int getWorkerId(MPI_Comm comm); }
+OPFLOW_MODULE_EXPORT namespace OpFlow { inline int getWorkerId(MPI_Comm comm); }
 #define SPD_AUGMENTED_LOG(X, ...)                                                                            \
     do {                                                                                                     \
         if                                                                                                   \
@@ -73,6 +79,18 @@ OPFLOW_MODULE_EXPORT namespace OpFlow { inline static int getWorkerId(MPI_Comm c
             }                                                                                                \
     } while (0)
 #else
+#if __has_include(<mpi.h>)
+#ifndef OMPI_SKIP_MPICXX
+#define OMPI_SKIP_MPICXX 1
+#endif
+#ifndef MPICH_SKIP_MPICXX
+#define MPICH_SKIP_MPICXX 1
+#endif
+#include <mpi.h>
+#else
+using MPI_Comm = int;
+constexpr MPI_Comm MPI_COMM_WORLD = 0;
+#endif
 #define SPD_AUGMENTED_LOG(X, ...)                                                                            \
     do {                                                                                                     \
         if                                                                                                   \
@@ -118,7 +136,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow { inline static int getWorkerId(MPI_Comm c
 #if !defined(NDEBUG) && defined(OPFLOW_ENABLE_STACK_TRACE)
 #include "Utils/StackTracer.hpp"
 // global stack tracer
-OPFLOW_MODULE_EXPORT namespace OpFlow { inline static Utils::StackTracer stackTracer; }
+OPFLOW_MODULE_EXPORT namespace OpFlow { inline Utils::StackTracer stackTracer; }
 
 #define OP_STACK_PUSH(...)                                                                                   \
     do {                                                                                                     \
@@ -178,10 +196,18 @@ OPFLOW_MODULE_EXPORT namespace OpFlow { inline static Utils::StackTracer stackTr
         }                                                                                                    \
     } while (0)
 #else
-#define OP_ASSERT(X)
-#define OP_EXPECT(X)
-#define OP_ASSERT_MSG(X, ...)
-#define OP_EXPECT_MSG(X, ...)
+#define OP_ASSERT(X)                                                                                         \
+    do {                                                                                                     \
+    } while (0)
+#define OP_EXPECT(X)                                                                                         \
+    do {                                                                                                     \
+    } while (0)
+#define OP_ASSERT_MSG(X, ...)                                                                                \
+    do {                                                                                                     \
+    } while (0)
+#define OP_EXPECT_MSG(X, ...)                                                                                \
+    do {                                                                                                     \
+    } while (0)
 #endif
 
 #if defined(OPFLOW_WITH_MPI) && defined(OPFLOW_DISTRIBUTE_MODEL_MPI)
@@ -239,7 +265,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow { inline static Utils::StackTracer stackTr
     do {                                                                                                     \
         int _rank;                                                                                           \
         MPI_Comm_rank(MPI_COMM_WORLD, &_rank);                                                               \
-        if (_rank == 0) OP_WARN(__VA_ARGS__);                                                                \
+        if (_rank == 0) { OP_WARN(__VA_ARGS__); }                                                            \
     } while (0)
 #define OP_MPI_MASTER_DEBUG(...)                                                                             \
     do {                                                                                                     \

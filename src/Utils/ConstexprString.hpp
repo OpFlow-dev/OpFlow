@@ -34,7 +34,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
         constexpr bool operator==(const CXprString& other) const { return _str == other._str; }
 
         template <std::size_t NN>
-        requires(NN != N) constexpr bool operator==(const CXprString<NN>& other) const {
+        requires(NN != N) constexpr bool operator==(const CXprString<NN>&) const {
             return false;
         }
 

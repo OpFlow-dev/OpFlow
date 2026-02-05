@@ -69,6 +69,7 @@ BENCHMARK(UniFieldAssignRaw_2d)->Apply(UniFieldAssign_2d_Params)->UseRealTime();
 
 BENCHMARK(UniFieldAssign_2d)->Apply(UniFieldAssign_2d_Params)->UseRealTime();
 
+/*
 static void UniFieldAssign_3d(benchmark::State& state) {
     using namespace OpFlow;
 
@@ -100,5 +101,6 @@ static void UniFieldAssign_3d_Params(benchmark::internal::Benchmark* b) {
 }
 
 //BENCHMARK(UniFieldAssign_3d)->Apply(UniFieldAssign_3d_Params)->UseRealTime();
+*/
 
 BENCHMARK_MAIN();

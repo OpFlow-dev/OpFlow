@@ -90,7 +90,6 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         auto state = AMGCLBackend<S, Real>::solve(mat, x, params[0].p, params[0].bp, params[0].verbose);
         Meta::static_for<decltype(st_holder)::size>([&]<int i>(Meta::int_<i>) {
             auto target = eqn_holder.template getTargetPtr<i>();
-            auto local_mapper = DS::MDRangeMapper {target->getLocalWritableRange()};
             rangeFor(target->getLocalWritableRange(), [&](auto&& k) {
                 (*target)[k] = x[mapper.getLocalRank(DS::ColoredIndex<Meta::RealType<decltype(k)>> {k, i})];
             });

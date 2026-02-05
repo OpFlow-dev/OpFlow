@@ -10,9 +10,20 @@
 //
 //  ----------------------------------------------------------------------------
 
-#include <OpFlow>
+#include <amgcl/amg.hpp>
+#include <amgcl/backend/builtin.hpp>
+#include <amgcl/coarsening/smoothed_aggregation.hpp>
+#include <amgcl/make_solver.hpp>
+#include <amgcl/relaxation/spai0.hpp>
+#include <amgcl/solver/bicgstab.hpp>
+#include <format>
 #include <gmock/gmock.h>
-#include <print>
+#include <iostream>
+#ifdef OPFLOW_USE_MODULE
+import opflow;
+#else
+#include <OpFlow>
+#endif
 
 using namespace OpFlow;
 using namespace testing;
@@ -100,7 +111,8 @@ TEST_F(EqnSetTest, SimplePoisson_2Eqn) {
 
     rangeFor_s(p.assignableRange, [&](auto&& k) {
         if (std::isnan(p[k]) || std::isnan(p_true[k])) {
-            std::print("p[{}] = {}, p2[{}] = {}, p_true[{}] = {}", k, p[k], k, p2[k], k, p_true[k]);
+            std::cout << std::format("p[{}] = {}, p2[{}] = {}, p_true[{}] = {}", k, p[k], k, p2[k], k,
+                                     p_true[k]);
         }
         ASSERT_NEAR(p[k], p_true[k], std::abs(1e-10 * p_true[k]));
         ASSERT_NEAR(p2[k], p[k], std::abs(1e-10 * p[k]));
@@ -156,7 +168,8 @@ TEST_F(EqnSetTest, SimplePoisson_Neum_2Eqn) {
 
     rangeFor_s(p.assignableRange, [&](auto&& k) {
         if (std::isnan(p[k]) || std::isnan(p_true[k])) {
-            std::print("p[{}] = {}, p2[{}] = {}, p_true[{}] = {}", k, p[k], k, p2[k], k, p_true[k]);
+            std::cout << std::format("p[{}] = {}, p2[{}] = {}, p_true[{}] = {}", k, p[k], k, p2[k], k,
+                                     p_true[k]);
         }
 
         ASSERT_NEAR(p[k], p_true[k], std::abs(1e-10 * p_true[k]));
@@ -245,7 +258,8 @@ TEST_F(EqnSetTest, SimplePoisson_10Eqn) {
 
     rangeFor_s(p.assignableRange, [&](auto&& k) {
         if (std::isnan(p[k]) || std::isnan(p_true[k])) {
-            std::print("p[{}] = {}, p2[{}] = {}, p_true[{}] = {}", k, p[k], k, p2[k], k, p_true[k]);
+            std::cout << std::format("p[{}] = {}, p2[{}] = {}, p_true[{}] = {}", k, p[k], k, p2[k], k,
+                                     p_true[k]);
         }
         ASSERT_NEAR(p[k], p_true[k], std::abs(1e-10 * p_true[k]));
         ASSERT_NEAR(p2[k], p[k], std::abs(1e-10 * p[k]));

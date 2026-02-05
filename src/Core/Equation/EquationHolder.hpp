@@ -84,8 +84,6 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 
         template <int i>
         auto getEqnExpr() {
-            auto k = i;
-            auto s = this->st_fields.size();
             auto eqn = Meta::custom_apply_container<size>(
                     getGetter<i>(),
                     [&]<int k>(std::any & st_ptr, Meta::int_<k>) -> decltype(auto) {

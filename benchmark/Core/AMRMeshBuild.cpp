@@ -18,7 +18,7 @@ static void AMRMeshBuild2D(benchmark::State& state) {
     omp_set_num_threads(state.range(0));
     for (auto _ : state) {
         using Mesh = CartesianAMRMesh<Meta::int_<2>>;
-        using Field = CartAMRField<Real, Mesh>;
+        //using Field = CartAMRField<Real, Mesh>;
         constexpr int n = 65, maxlevel = 4, ratio = 2, buffWidth = 5;
         constexpr auto h = 1. / (n - 1);
         benchmark::DoNotOptimize(MeshBuilder<Mesh>()
@@ -69,7 +69,7 @@ static void AMRMeshBuild3D(benchmark::State& state) {
     omp_set_num_threads(state.range(0));
     for (auto _ : state) {
         using Mesh = CartesianAMRMesh<Meta::int_<3>>;
-        using Field = CartAMRField<Real, Mesh>;
+        //using Field = CartAMRField<Real, Mesh>;
         constexpr int n = 17, maxlevel = 4, ratio = 4, buffWidth = 5;
         constexpr auto h = 1. / (n - 1);
         benchmark::DoNotOptimize(MeshBuilder<Mesh>()

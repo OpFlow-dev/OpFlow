@@ -44,8 +44,16 @@ int main(int argc, char* argv[]) {
     const Real dt = 0.5e-2, nu = 1.0e-2;
     StructSolverParams<StructSolverType::GMRES> params; params.tol = 1e-10; params.maxIter = 100;
     StructSolverParams<StructSolverType::GMRES> poisson_params = params;
-    StructSolverParams<StructSolverType::PFMG> p_params {.useZeroGuess = true, .relaxType = 1, .rapType = 0,
-             .numPreRelax = 1, .numPostRelax = 1, .skipRelax = 0}; p_params.tol = 1e-10;
+    StructSolverParams<StructSolverType::PFMG> p_params;
+    p_params.useZeroGuess = true;
+    p_params.relaxType = 1;
+    p_params.rapType = 0;
+    p_params.numPreRelax = 1;
+    p_params.numPostRelax = 1;
+    p_params.skipRelax = 0;
+    p_params.tol = 1e-10;
+    p_params.printLevel = 0;
+    p_params.logging = false;
     auto solver = PrecondStructSolver<StructSolverType::GMRES, StructSolverType::PFMG>(params, p_params);
     auto u_handler = makeEqnSolveHandler(
             [&](auto&& e) {

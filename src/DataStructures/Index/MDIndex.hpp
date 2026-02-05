@@ -27,8 +27,9 @@
 #include <vector>
 #endif
 
-OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT
 
+namespace OpFlow::DS {
     template <std::size_t d>
     struct MDIndex : public StringifiableObj {
     protected:
@@ -39,6 +40,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         constexpr MDIndex() { idx.fill(0); };
         constexpr explicit MDIndex(int i) { idx.fill(i); }
         constexpr MDIndex(const MDIndex<d>&) noexcept = default;
+        constexpr MDIndex& operator=(const MDIndex<d>&) noexcept = default;
 
         template <Meta::WeakIntegral... T>
         constexpr explicit MDIndex(T&&... indexes) noexcept
@@ -62,9 +64,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         }
 
         constexpr bool operator<(const MDIndex& other) const {
-            for (auto i = d - 1; i >= 0; --i) {
-                if (idx[i] < other.idx[i]) return true;
-                else if (idx[i] > other.idx[i])
+            for (std::size_t i = d; i > 0; --i) {
+                if (idx[i - 1] < other.idx[i - 1]) return true;
+                else if (idx[i - 1] > other.idx[i - 1])
                     return false;
             }
             return false;
@@ -74,29 +76,29 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
 
         constexpr bool operator==(const Meta::BracketIndexable auto& index) const {
             auto ret = true;
-            for (auto i = 0; i < d; ++i) ret &= this->idx[i] == index[i];
+            for (std::size_t i = 0; i < d; ++i) ret &= this->idx[i] == index[i];
             return ret;
         }
 
         constexpr auto operator+(const MDIndex& index) const {
             MDIndex ret;
-            for (auto i = 0; i < d; ++i) ret[i] = this->idx[i] + index[i];
+            for (std::size_t i = 0; i < d; ++i) ret[i] = this->idx[i] + index[i];
             return ret;
         }
 
         constexpr auto operator-(const MDIndex& index) const {
             MDIndex ret;
-            for (auto i = 0; i < d; ++i) ret[i] = this->idx[i] - index[i];
+            for (std::size_t i = 0; i < d; ++i) ret[i] = this->idx[i] - index[i];
             return ret;
         }
 
         constexpr auto& operator+=(const MDIndex& index) {
-            for (auto i = 0; i < d; ++i) this->idx[i] += index[i];
+            for (std::size_t i = 0; i < d; ++i) this->idx[i] += index[i];
             return *this;
         }
 
         constexpr auto& operator-=(const MDIndex& index) {
-            for (auto i = 0; i < d; ++i) this->idx[i] -= index[i];
+            for (std::size_t i = 0; i < d; ++i) this->idx[i] -= index[i];
             return *this;
         }
 
@@ -124,7 +126,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
 
         constexpr auto flip() const {
             auto c = copy();
-            for (auto i = 0; i < d; ++i) c[i] = this->idx[d - i - 1];
+            for (std::size_t i = 0; i < d; ++i) c[i] = this->idx[d - i - 1];
             return c;
         }
 
@@ -133,7 +135,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
             while (n-- > 0) ret += prefix;
             ret += "{";
             if constexpr (d > 0) ret += std::format("{}", idx[0]);
-            for (auto i = 1; i < d; ++i) ret += std::format(", {}", idx[i]);
+            for (std::size_t i = 1; i < d; ++i) ret += std::format(", {}", idx[i]);
             ret += "}";
             return ret;
         }

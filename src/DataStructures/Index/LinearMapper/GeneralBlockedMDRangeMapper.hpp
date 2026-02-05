@@ -20,7 +20,9 @@
 #include <vector>
 #endif
 
-OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT
+
+namespace OpFlow::DS {
     /**
      * \brief Axis aligned split multi-dimensional range mapper
      * @tparam d Dimension
@@ -71,7 +73,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         int getBlockRank(const MDIndex<d>& idx) const {
             if (!checkIndexInBlock(idx, last_block_rank)) {
                 // loop over all ranges
-                for (int i = 0; i < _ranges.size(); ++i) {
+                for (std::size_t i = 0; i < _ranges.size(); ++i) {
                     if (inRange(_ranges[i], idx)) {
                         last_block_rank = i;
                         return i;
@@ -108,7 +110,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
                           "GeneralBlockedMDRangeMapper Error: index {} not in blocked range {}", idx,
                           _r.toString());
             int ret = _offset[block_rank];
-            for (auto i = 0; i < d; ++i) ret += _fac[block_rank][i] * (idx[i] - _r.start[i]);
+            for (std::size_t i = 0; i < d; ++i) ret += _fac[block_rank][i] * (idx[i] - _r.start[i]);
             return ret;
         }
 
@@ -127,16 +129,16 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         void calculateOffsets() {
             _offset.resize(_ranges.size() + 1);
             _offset[0] = 0;
-            for (auto i = 1; i < _offset.size(); ++i) {
+            for (std::size_t i = 1; i < _offset.size(); ++i) {
                 _offset[i] = _offset[i - 1] + _ranges[i - 1].count();
             }
         }
 
         void calculateMultiplier() {
             _fac.resize(_ranges.size());
-            for (auto i = 0; i < _fac.size(); ++i) {
+            for (std::size_t i = 0; i < _fac.size(); ++i) {
                 _fac[i][0] = 1;
-                for (auto j = 1; j < d; ++j) {
+                for (std::size_t j = 1; j < d; ++j) {
                     _fac[i][j] = (_ranges[i].end[j - 1] - _ranges[i].start[j - 1]) * _fac[i][j - 1];
                 }
             }

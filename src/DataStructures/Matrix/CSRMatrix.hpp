@@ -22,7 +22,7 @@
 
 OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
     struct CSRMatrix {
-        CSRMatrix() : row(1), col(0), rhs(0), val(0) { row[0] = 0; }
+        CSRMatrix() : row(1), col(0), val(0), rhs(0) { row[0] = 0; }
         CSRMatrix(int n_row, int nnz_per_row) { resize(n_row, nnz_per_row); }
 
         void resize(int n_row, int nnz_per_row) {
@@ -78,13 +78,17 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
             int base_row = row.size(), base_rhs = rhs.size(), offset = row.back();
             row.resize(row.size() + mat.row.size() - 1);
             rhs.resize(rhs.size() + mat.rhs.size());
-            for (int i = 0; i < mat.row.size() - 1; ++i) row[base_row + i] = mat.row[i + 1] + offset;
-            for (int i = 0; i < mat.rhs.size(); ++i) rhs[base_rhs + i] = mat.rhs[i];
+            std::size_t row_limit = mat.row.size() > 0 ? mat.row.size() - 1 : 0;
+            for (std::size_t i = 0; i < row_limit; ++i) row[base_row + i] = mat.row[i + 1] + offset;
+            std::size_t rhs_limit = mat.rhs.size();
+            for (std::size_t i = 0; i < rhs_limit; ++i) rhs[base_rhs + i] = mat.rhs[i];
             int base_col = col.size();
             col.resize(col.size() + mat.col.size());
             val.resize(val.size() + mat.val.size());
-            for (int i = 0; i < mat.col.size(); ++i) col[base_col + i] = mat.col[i];
-            for (int i = 0; i < mat.val.size(); ++i) val[base_col + i] = mat.val[i];
+            std::size_t col_limit = mat.col.size();
+            for (std::size_t i = 0; i < col_limit; ++i) col[base_col + i] = mat.col[i];
+            std::size_t val_limit = mat.val.size();
+            for (std::size_t i = 0; i < val_limit; ++i) val[base_col + i] = mat.val[i];
         }
 
         void update_rhs(int from, const std::vector<Real>& r) {

@@ -91,10 +91,10 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         auto& assignImpl_final(const D& c) {
             auto levels = data.size();
 #pragma omp parallel
-            for (auto l = 0; l < levels; ++l) {
+            for (std::size_t l = 0; l < levels; ++l) {
                 auto parts = data[l].size();
 #pragma omp for schedule(dynamic) nowait
-                for (auto p = 0; p < parts; ++p) {
+                for (std::size_t p = 0; p < parts; ++p) {
                     if constexpr (Op == BasicArithOp::Eq)
                         rangeFor_s(this->assignableRanges[l][p], [&](auto&& i) { this->operator[](i) = c; });
                     else if constexpr (Op == BasicArithOp::Add)
@@ -136,10 +136,10 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         auto& initBy(F&& f) {
             auto levels = data.size();
 #pragma omp parallel
-            for (auto l = 0; l < levels; ++l) {
+            for (std::size_t l = 0; l < levels; ++l) {
                 auto parts = data[l].size();
 #pragma omp for schedule(dynamic) nowait
-                for (auto p = 0; p < parts; ++p) {
+                for (std::size_t p = 0; p < parts; ++p) {
                     rangeFor_s(this->assignableRanges[l][p], [&](auto&& i) {
                         std::array<Real, internal::CartesianAMRMeshTrait<M>::dim> cords;
                         for (auto k = 0; k < internal::CartesianAMRMeshTrait<M>::dim; ++k)
@@ -206,9 +206,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         void updatePadding() {
             // step 1: fill all halo regions covered by parents
 #pragma omp parallel
-            for (auto l = 1; l < this->accessibleRanges.size(); ++l) {
+            for (std::size_t l = 1; l < this->accessibleRanges.size(); ++l) {
 #pragma omp for schedule(dynamic)
-                for (auto p = 0; p < this->accessibleRanges[l].size(); ++p) {
+                for (std::size_t p = 0; p < this->accessibleRanges[l].size(); ++p) {
                     // here to avoid the accessibleRanges[l][p] is already been trimmed by the maxLogicalRange[l]
                     auto bc_ranges = this->localRanges[l][p]
                                              .getInnerRange(-this->mesh.buffWidth)
@@ -234,16 +234,16 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             }
             // step 2: fill all halo regions covered by neighbors
 #pragma omp parallel
-            for (auto l = 1; l < this->accessibleRanges.size(); ++l) {
+            for (std::size_t l = 1; l < this->accessibleRanges.size(); ++l) {
 #pragma omp for nowait schedule(dynamic)
-                for (auto p = 0; p < this->accessibleRanges[l].size(); ++p) {
+                for (std::size_t p = 0; p < this->accessibleRanges[l].size(); ++p) {
                     auto bc_ranges = this->localRanges[l][p]
                                              .getInnerRange(-this->mesh.buffWidth)
                                              .getBCRanges(this->mesh.buffWidth);
                     for (auto r_n : this->mesh.neighbors[l][p]) {
                         // for each potential intersections
                         for (auto& bc_r : bc_ranges) {
-                            auto _r = DS::commonRange(bc_r, this->localRanges[l][r_n]);
+                            [[maybe_unused]] auto _r = DS::commonRange(bc_r, this->localRanges[l][r_n]);
                             rangeFor_s(DS::commonRange(bc_r, this->localRanges[l][r_n]), [&](auto&& i) {
                                 // copy from other fine cells
                                 auto other_i = i;
@@ -258,9 +258,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         void updateCovering() {
             auto ratio = this->mesh.refinementRatio;
 #pragma omp parallel
-            for (auto l = this->localRanges.size() - 1; l > 0; --l) {
+            for (std::size_t l = this->localRanges.size() - 1; l > 0; --l) {
 #pragma omp for schedule(dynamic)
-                for (auto p = 0; p < this->localRanges[l].size(); ++p) {
+                for (std::size_t p = 0; p < this->localRanges[l].size(); ++p) {
                     for (auto& i_p : this->mesh.parents[l][p]) {
                         auto rp = this->localRanges[l - 1][i_p];
                         auto rc = this->localRanges[l][p];
@@ -294,12 +294,12 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             }
             auto f = builder.build();
 #pragma omp parallel
-            for (auto l = 0; l < this->accessibleRanges.size(); ++l) {
+            for (std::size_t l = 0; l < this->accessibleRanges.size(); ++l) {
                 if (l > 0) {
                     // copy all coarser data from new to new
 #pragma omp for schedule(dynamic)
-                    for (auto p_new = 0; p_new < f.accessibleRanges[l].size(); ++p_new) {
-                        for (auto p = 0; p < f.accessibleRanges[l - 1].size(); ++p) {
+                    for (std::size_t p_new = 0; p_new < f.accessibleRanges[l].size(); ++p_new) {
+                        for (std::size_t p = 0; p < f.accessibleRanges[l - 1].size(); ++p) {
                             auto r_upcast = f.localRanges[l - 1][p];
                             for (auto i = 0; i < dim; ++i) {
                                 r_upcast.start[i] *= this->mesh.refinementRatio;
@@ -316,8 +316,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                     }
                 }
 #pragma omp for schedule(dynamic)
-                for (auto p_new = 0; p_new < f.accessibleRanges[l].size(); ++p_new) {
-                    for (auto p = 0; p < this->accessibleRanges[l].size(); ++p) {
+                for (std::size_t p_new = 0; p_new < f.accessibleRanges[l].size(); ++p_new) {
+                    for (std::size_t p = 0; p < this->accessibleRanges[l].size(); ++p) {
                         // copy each overlapping region of (p, p_new)
                         rangeFor_s(DS::commonRange(this->localRanges[l][p], f.localRanges[l][p_new]),
                                    [&](auto&& i) {
@@ -356,7 +356,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         auto& evalSafeAtImpl_final(const index_type& i) { return data[i.l][i.p][i - offset[i.l][i.p]]; }
 
         template <typename Other>
-        requires(!std::same_as<Other, CartAMRField>) bool containsImpl_final(const Other& o) const {
+        requires(!std::same_as<Other, CartAMRField>) bool containsImpl_final(const Other&) const {
             return false;
         }
 
@@ -442,16 +442,16 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         auto& build() {
             calculateRanges();
             f.data.resize(f.localRanges.size());
-            for (auto i = 0; i < f.data.size(); ++i) {
+            for (std::size_t i = 0; i < f.data.size(); ++i) {
                 f.data[i].resize(f.localRanges[i].size());
-                for (auto j = 0; j < f.data[i].size(); ++j) {
+                for (std::size_t j = 0; j < f.data[i].size(); ++j) {
                     f.data[i][j].reShape(f.accessibleRanges[i][j].getExtends());
                 }
             }
             f.offset.resize(f.accessibleRanges.size());
-            for (auto i = 0; i < f.accessibleRanges.size(); ++i) {
+            for (std::size_t i = 0; i < f.accessibleRanges.size(); ++i) {
                 f.offset[i].resize(f.accessibleRanges[i].size());
-                for (auto j = 0; j < f.accessibleRanges[i].size(); ++j) {
+                for (std::size_t j = 0; j < f.accessibleRanges[i].size(); ++j) {
                     f.offset[i][j] = typename internal::CartAMRFieldExprTrait<Field>::index_type(
                             i, j, f.accessibleRanges[i][j].getOffset());
                 }
@@ -464,12 +464,12 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         void calculateRanges() {
             // init ranges to mesh range
             f.assignableRanges = f.localRanges = f.accessibleRanges = f.mesh.getRanges();
-            for (auto i = 0; i < f.mesh.meshes.size(); ++i) {
+            for (std::size_t i = 0; i < f.mesh.meshes.size(); ++i) {
                 f.maxLogicalRanges.emplace_back(i, 0, f.mesh.meshes[i].getRange());
             }
             // extend accessibleRange according to localRange + buffWidth
-            for (auto l = 1; l < f.localRanges.size(); ++l) {
-                for (auto p = 0; p < f.localRanges[l].size(); ++p) {
+            for (std::size_t l = 1; l < f.localRanges.size(); ++l) {
+                for (std::size_t p = 0; p < f.localRanges[l].size(); ++p) {
                     auto& r = f.accessibleRanges[l][p];
                     for (auto i = 0; i < dim; ++i) {
                         r.start[i] -= f.mesh.buffWidth;

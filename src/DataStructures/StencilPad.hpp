@@ -22,7 +22,9 @@
 #include <unordered_map>
 #endif
 
-OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
+OPFLOW_MODULE_EXPORT
+
+namespace OpFlow::DS {
     template <std::size_t max_size, typename K, typename V>
     struct fake_map {
     private:
@@ -71,7 +73,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
             }
             if (pos == -1) {
 #ifndef NDEBUG
-                OP_ASSERT_MSG(_size < max_size, "fake map error: Map is full");
+                OP_ASSERT_MSG(static_cast<std::size_t>(_size) < max_size, "fake map error: Map is full");
 #endif
                 val[_size].first = key;
                 _size++;
@@ -139,6 +141,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         Real bias = 0.;
 
         StencilPad() = default;
+
         [[nodiscard]] std::vector<std::byte> serialize() const override {
             std::vector<std::byte> ret;
             ret.resize(sizeof(int) + pad.size() * (sizeof(Idx) + sizeof(Real)) + sizeof(Real));
@@ -154,7 +157,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
             return ret;
         }
 
-        void deserialize(const std::byte* data, std::size_t size) override {
+        void deserialize(const std::byte* data, std::size_t) override {
             const std::byte* ptr = data;
             int size_ = *(int*) ptr;
             ptr += sizeof(int);
@@ -236,6 +239,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         }
 
         void sort() { pad.sort(); }
+
         void reset() {
             pad.clear();
             bias = 0.;

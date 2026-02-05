@@ -107,7 +107,7 @@ public:
         return t;
     }
 
-    void TearDown(const benchmark::State& state) override {
+    void TearDown(const benchmark::State&) override {
         // explicit destruct is needed here to avoid MPI_Comm_free double-called
         handler = nullptr;
     }
@@ -213,7 +213,7 @@ BENCHMARK_DEFINE_F(AMGCLEqnSolveBench, solve)(benchmark::State& state) {
     handler = makeEqnSolveHandler<Solver>(
             [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; },
             *p, DS::BlockedMDRangeMapper<2> {p->getLocalWritableRange()}, params);
-    auto [iter, err, abserr] = handler->solve();
+    [[maybe_unused]] auto [iter, err, abserr] = handler->solve();
 
     while (state.KeepRunning()) {
         *p = 0.;
@@ -233,7 +233,7 @@ BENCHMARK_DEFINE_F(AMGCLEqnSolveBench, dy_solve)(benchmark::State& state) {
     handler = makeEqnSolveHandler<Solver>(
             [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; },
             *p, DS::BlockedMDRangeMapper<2> {p->getLocalWritableRange()}, params);
-    auto [iter, err, abserr] = handler->solve();
+    [[maybe_unused]] auto [iter, err, abserr] = handler->solve();
 
     while (state.KeepRunning()) {
         *p = 0.;
@@ -279,7 +279,9 @@ class NullReporter : public ::benchmark::BenchmarkReporter {
 public:
     NullReporter() = default;
     bool ReportContext(const Context&) override { return true; }
+
     void ReportRuns(const std::vector<Run>&) override {}
+
     void Finalize() override {}
 };
 

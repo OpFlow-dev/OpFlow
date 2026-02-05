@@ -30,6 +30,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         [[nodiscard]] virtual std::string toString(int n, const std::string& prefix) const = 0;
 
         std::ostream& operator<<(std::ostream& os) const { return os << this->toString(); }
+
+        virtual ~StringifiableObj() = default;
     };
 
     template <typename T>

@@ -27,7 +27,9 @@
 #include <vector>
 #endif
 
-OPFLOW_MODULE_EXPORT namespace OpFlow {
+OPFLOW_MODULE_EXPORT
+
+namespace OpFlow {
     template <int d>
     struct Particle {
         std::array<double, d> x;
@@ -39,6 +41,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         static constexpr int dim = internal::ExprTrait<F>::dim;
 
         ParticleGuidedSplitStrategy() = default;
+
         ParticleGuidedSplitStrategy(std::vector<Particle<dim>> parts, double part_load, double mesh_laod,
                                     int max_levels,
                                     const typename internal::ExprTrait<F>::mesh_type& ref_mesh)
@@ -46,6 +49,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
               max_levels(max_levels), ref_mesh(ref_mesh) {}
 
         [[nodiscard]] std::string strategyName() const override { return "Particle guided split"; }
+
         typename internal::ExprTrait<F>::range_type
         splitRange(const typename internal::ExprTrait<F>::range_type& range,
                    const ParallelPlan& plan) override {
@@ -89,6 +93,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             int split_axis = -1;// -1 for leaf node
 
             Node() = default;
+
             void traverse(auto&& func) const {
                 if (!is_leaf()) {
                     lc->traverse(OP_PERFECT_FOWD(func));
@@ -108,6 +113,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                     rc->print_tree(prefix);
                 }
             }
+
             void splitAt(int d, int pos, const typename internal::ExprTrait<F>::mesh_type& mesh) {
                 auto new_lc = std::make_unique<Node>();
                 auto new_rc = std::make_unique<Node>();
@@ -121,7 +127,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                 new_lc->parent = this;
                 new_rc->parent = this;
                 split_axis = d;
-                for (int i = 0; i < particles.size(); ++i) {
+                for (std::size_t i = 0; i < particles.size(); ++i) {
                     if (particles[i].x[d] < mesh.x(d, pos + range.start[d])) {
                         new_lc->particles.push_back(particles[i]);
                         new_lc->particle_weight.push_back(particle_weight[i]);
@@ -184,26 +190,26 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                         // merge results from children by add
                         auto left = lc->get_per_slice_load_along_dim(d, pload, mload, mesh);
                         auto right = rc->get_per_slice_load_along_dim(d, pload, mload, mesh);
-                        for (int i = 0; i < ret.size(); ++i) ret[i] = left[i] + right[i];
+                        for (std::size_t i = 0; i < ret.size(); ++i) ret[i] = left[i] + right[i];
                         return ret;
                     }
                 } else {
                     // do the real work
                     // sort particles along axis d
                     std::vector<std::pair<Particle<dim>, double>> buffer;
-                    for (int i = 0; i < particles.size(); ++i) {
+                    for (std::size_t i = 0; i < particles.size(); ++i) {
                         buffer.emplace_back(particles[i], particle_weight[i]);
                     }
                     std::sort(buffer.begin(), buffer.end(),
                               [d](auto&& a, auto&& b) { return a.first.x[d] < b.first.x[d]; });
-                    for (int i = 0; i < particles.size(); ++i) {
+                    for (std::size_t i = 0; i < particles.size(); ++i) {
                         particles[i] = buffer[i].first;
                         particle_weight[i] = buffer[i].second;
                     }
                     buffer.clear();
                     // add particle work load first
                     auto part_iter = particles.begin();
-                    for (int i = 0; i < ret.size(); ++i) {
+                    for (std::size_t i = 0; i < ret.size(); ++i) {
                         double xleft = mesh.x(d, i), xright = mesh.x(d, i + 1);
                         while (part_iter != particles.end() && xleft <= part_iter->x[d]
                                && part_iter->x[d] < xright) {
@@ -221,7 +227,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 
         std::unique_ptr<Node> kdtree = nullptr;
 
-        void check_state(const ParallelPlan& plan) const {
+        void check_state([[maybe_unused]] const ParallelPlan& plan) const {
             OP_ASSERT_MSG(1 << max_levels == plan.distributed_workers_count,
                           "ParticleGuidedSplitStrategy: total number of ranks must be power of 2");
         }
@@ -238,7 +244,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             MPI_Allgather(&local_particle_weight, 1, MPI_DOUBLE, weights_buffer.data(), 1, MPI_DOUBLE,
                           MPI_COMM_WORLD);
             global_weights.reserve(total_part_size);
-            for (int i = 0; i < counts.size(); ++i) {
+            for (std::size_t i = 0; i < counts.size(); ++i) {
                 for (int j = 0; j < counts[i]; ++j) global_weights.push_back(weights_buffer[i]);
             }
             particle_weight = std::move(global_weights);
@@ -258,7 +264,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         }
 
         // build a kd-tree of max_levels according to given particles and background mesh
-        auto gen_split_tree(const DS::Range<dim>& range, const ParallelPlan& plan) {
+        auto gen_split_tree(const DS::Range<dim>& range, const ParallelPlan&) {
             gather_all_particles();
             Node root;
             root.range = range;

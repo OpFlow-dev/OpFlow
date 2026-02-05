@@ -1,9 +1,14 @@
-#include <OpFlow>
+#include <format>
 #include <gmock/gmock.h>
-#include <print>
+#include <iostream>
+#ifdef OPFLOW_USE_MODULE
+import opflow;
+#else
+#include <OpFlow>
+#endif
 
 TEST(MPITest, RankTest) {
     auto rank = OpFlow::getWorkerId();
-    std::print("My ID = {}", rank);
+    std::cout << std::format("My ID = {}", rank);
     ASSERT_TRUE(true);
 }

@@ -27,7 +27,9 @@
 #endif
 #include "EqnSolveHandler.hpp"
 
-OPFLOW_MODULE_EXPORT namespace OpFlow {
+OPFLOW_MODULE_EXPORT
+
+namespace OpFlow {
     template <typename Solver, typename D>
     struct AMGCLBackend {
         constexpr static bool _enable_mpi = !requires { typename Solver::col_type; };
@@ -76,7 +78,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
     private:
         void rebuild_solver(const DS::CSRMatrix& mat, typename Solver::params& p,
                             typename Solver::backend_params& bp) {
-            if (!solver || rebuilt_period.has_value() && solve_counter % rebuilt_period.value() == 0) {
+            if (!solver || (rebuilt_period.has_value() && solve_counter % rebuilt_period.value() == 0)) {
                 int rows = mat.row.size() - 1;
 #if defined(OPFLOW_WITH_MPI)
                 if constexpr (_enable_mpi) {
@@ -96,6 +98,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 #endif
             }
         }
+
         std::unique_ptr<Solver> solver;
         unsigned long long solve_counter = 0;
         std::optional<int> rebuilt_period {};

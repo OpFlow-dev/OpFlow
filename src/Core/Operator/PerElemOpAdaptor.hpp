@@ -68,7 +68,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         constexpr static auto bc_width = 0;
 
         template <StructuredFieldExprType E>
-        OPFLOW_STRONG_INLINE static auto couldSafeEval(const E& expr1, const auto&& expr2, auto&& i) {
+        OPFLOW_STRONG_INLINE static auto couldSafeEval(const E& expr1, const auto&&, auto&& i) {
             return DS::inRange(expr1.accessibleRange, i);
         }
 

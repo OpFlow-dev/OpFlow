@@ -10,9 +10,14 @@
 //
 //  ----------------------------------------------------------------------------
 
-#include <OpFlow>
+#include <format>
 #include <gmock/gmock.h>
-#include <print>
+#include <iostream>
+#ifdef OPFLOW_USE_MODULE
+import opflow;
+#else
+#include <OpFlow>
+#endif
 
 using namespace OpFlow;
 using namespace testing;
@@ -66,7 +71,7 @@ TEST_F(ParticleGuidedSplitStrategyTest, DivisibleDimWithParticle) {
     strategy.setParticleLoad(100);
     // input nodal range, return centered range
     auto map = strategy.getSplitMap(range, plan);
-    for (auto& m : map) std::print("{}", m.toString());
+    for (auto& m : map) std::cout << std::format("{}", m.toString());
     ASSERT_TRUE((map[0] == DS::Range<2> {std::array {15, 13}}));
     ASSERT_TRUE((map[2] == DS::Range<2> {std::array {15, 0}, std::array {32, 16}}));
     ASSERT_TRUE((map[1] == DS::Range<2> {std::array {0, 13}, std::array {15, 32}}));
@@ -106,7 +111,7 @@ TEST_F(ParticleGuidedSplitStrategyTest, UnDivisibleDim) {
     strategy.setRefMesh(mesh);
     // input nodal range, return centered range
     auto map = strategy.getSplitMap(range, plan);
-    for (auto& m : map) std::print("{}", m.toString());
+    for (auto& m : map) std::cout << std::format("{}", m.toString());
     ASSERT_TRUE((map[0] == DS::Range<2> {std::array {17, 17}}));
     ASSERT_TRUE((map[2] == DS::Range<2> {std::array {17, 0}, std::array {33, 17}}));
     ASSERT_TRUE((map[1] == DS::Range<2> {std::array {0, 17}, std::array {17, 33}}));
@@ -166,7 +171,7 @@ TEST_F(ParticleGuidedSplitStrategyTest, WithOffset) {
     strategy.setRefMesh(mesh);
     // input nodal range, return centered range
     auto map = strategy.getSplitMap(range, plan);
-    for (auto& m : map) std::print("{}", m.toString());
+    for (auto& m : map) std::cout << std::format("{}", m.toString());
     ASSERT_TRUE((map[0] == DS::Range<2> {std::array {3, 3}, std::array {19, 19}}));
     ASSERT_TRUE((map[2] == DS::Range<2> {std::array {19, 3}, std::array {35, 19}}));
     ASSERT_TRUE((map[1] == DS::Range<2> {std::array {3, 19}, std::array {19, 35}}));

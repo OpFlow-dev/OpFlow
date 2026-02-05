@@ -15,7 +15,9 @@
 
 #include "StructSolver.hpp"
 
-OPFLOW_MODULE_EXPORT namespace OpFlow {
+OPFLOW_MODULE_EXPORT
+
+namespace OpFlow {
     template <StructSolverType Type, StructSolverType PrecondType>
     struct PrecondStructSolver {
         constexpr auto static type = Type;
@@ -26,8 +28,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         PrecondParam precondParam;
 
         PrecondStructSolver() = default;
+
         PrecondStructSolver(const Param& p, const PrecondParam& pp)
-            : solver(p), precond(pp), params(p), precondParam(pp) {}
+            : params(p), precondParam(pp), solver(p), precond(pp) {}
 
         void init() {
             solver.init();
@@ -69,6 +72,5 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         StructSolver<type> solver;
         StructSolver<precondType> precond;
     };
-
 }// namespace OpFlow
 #endif//OPFLOW_STRUCTSOLVERPRECOND_HPP

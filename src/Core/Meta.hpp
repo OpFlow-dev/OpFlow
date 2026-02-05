@@ -25,9 +25,9 @@
 OPFLOW_MODULE_EXPORT namespace OpFlow::Meta {
 
     template <int k>
-    struct int_ : std::integral_constant<int, k> {};
+    struct int_ final : std::integral_constant<int, k> {};
     template <bool b>
-    struct bool_ : std::integral_constant<bool, b> {};
+    struct bool_ final : std::integral_constant<bool, b> {};
     /*    template <float f>
     struct float_ : std::integral_constant<float, f> {};
     template <double d>

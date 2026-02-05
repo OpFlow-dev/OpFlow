@@ -68,7 +68,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 
         explicit CartesianAMRMesh(const CartesianMesh<Dim> &baseMesh) {
             meshes.push_back(baseMesh);
-            ranges.template emplace_back(baseMesh.getRange());
+            ranges.emplace_back(baseMesh.getRange());
         }
         auto getPtr() const { return this; }
 
@@ -117,7 +117,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         auto &setBaseMesh(CartesianMesh<Dim> &&baseMesh) {
             ret = CartesianAMRMesh<Dim>();// clean up
             ret.ranges.emplace_back();
-            ret.ranges.back().template emplace_back(baseMesh.getRange());
+            ret.ranges.back().emplace_back(baseMesh.getRange());
             ret.meshes.push_back(std::move(baseMesh));
             return *this;
         }
@@ -177,25 +177,25 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                 auto currentDims = baseMesh.getDims();
                 auto currentOffsets = baseMesh.getStart();
                 // we fix the (0, 0, ...) index and scale the existing range
-                for (auto i = 0; i < dim; ++i) {
+                for (std::size_t i = 0; i < dim; ++i) {
                     currentOffsets[i] *= Math::int_pow(ratio, _level - 1);
                     currentDims[i] = (currentDims[i] - 1) * Math::int_pow(ratio, _level - 1);
                 }
                 using Point = DS::PointWithLabel<int, int, dim>;
                 std::vector<Point> points;
                 DS::LevelRange<dim> range;// cell centered range
-                for (auto i = 0; i < dim; ++i) {
+                for (std::size_t i = 0; i < dim; ++i) {
                     range.start[i] = currentOffsets[i];
                     range.end[i] = currentOffsets[i] + currentDims[i];
                 }
                 range.level = _level - 1;
                 // label all the necessary cells on the current _level
                 rangeFor_s(range, [&](auto &&i) {
-                    if (func(i)) points.template emplace_back(i.get());
+                    if (func(i)) points.emplace_back(i.get());
                 });
 #ifndef NDEBUG
                 OP_DEBUG("Points at _level {}:", _level - 1);
-                for (const auto &p : points) { OP_DEBUG("{}", p.toString()); }
+                for ([[maybe_unused]] const auto &p : points) { OP_DEBUG("{}", p.toString()); }
 #endif
 
 #ifndef NDEBUG
@@ -206,7 +206,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                     for (auto &r : ret.ranges[_level + 1]) {
                         auto _range = r;
                         // convert _level l + 1 's range to _level l - 1 's range
-                        for (auto i = 0; i < dim; ++i) {
+                        for (std::size_t i = 0; i < dim; ++i) {
                             _range.start[i] = (_range.start[i] - ret.buffWidth * ratio) / (ratio * ratio);
                             _range.start[i]
                                     = std::max(_range.start[i],
@@ -219,9 +219,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                         }
                         // label all points in _range
                         rangeFor_s(_range, [&](auto &&i) {
-                            points.template emplace_back(i.get());
+                            points.emplace_back(i.get());
 #ifndef NDEBUG
-                            p_add.template emplace_back(i.get());
+                            p_add.emplace_back(i.get());
 #endif
                         });
                     }
@@ -232,7 +232,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                 points.erase(last, points.end());
 #ifndef NDEBUG
                 OP_DEBUG("Points at _level {}:", _level);
-                for (const auto &p : points) { OP_DEBUG("{}", p.toString()); }
+                for ([[maybe_unused]] const auto &p : points) { OP_DEBUG("{}", p.toString()); }
                 dump_points(points, 1. / Math::int_pow(ratio, _level - 1),
                             std::format("p_level{}.vtp", _level));
                 dump_points(p_add, 1. / Math::int_pow(ratio, _level - 1),
@@ -242,7 +242,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                 auto boxes = domainPartition(tree, ret.fillRateThreshold, ret.slimThreshold);
 #ifndef NDEBUG
                 OP_DEBUG("Boxes at _level {}:", _level);
-                for (auto &b : boxes) { OP_DEBUG("{}", b.toString()); }
+                for ([[maybe_unused]] auto &b : boxes) { OP_DEBUG("{}", b.toString()); }
 #endif
 
                 auto newMesh = MeshBuilder<CartesianMesh<Meta::int_<dim>>>()
@@ -255,7 +255,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                 for (auto &box : boxes) {
                     // convert box to next _level's range
                     DS::LevelRange<dim> r;
-                    for (auto i = 0; i < dim; ++i) {
+                    for (std::size_t i = 0; i < dim; ++i) {
                         r.start[i] = box.lo[i] * ratio;
                         r.end[i] = (box.hi[i] + 1) * ratio + 1;
                     }
@@ -273,18 +273,18 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                 using Point = DS::PointWithLabel<int, int, dim>;
                 std::vector<Point> points;
 
-                for (auto p = 0; p < ref->ranges[_level - 1].size(); ++p) {
+                for (std::size_t p = 0; p < ref->ranges[_level - 1].size(); ++p) {
                     // for each accessible patch p
                     auto range = ref->ranges[_level - 1][p];
                     // convert range to cell centered range
-                    for (auto i = 0; i < dim; ++i) range.end[i]--;
+                    for (std::size_t i = 0; i < dim; ++i) range.end[i]--;
                     rangeFor_s(range, [&](auto &&i) {
-                        if (func(i)) points.template emplace_back(i.get());
+                        if (func(i)) points.emplace_back(i.get());
                     });
                 }
 #ifndef NDEBUG
                 OP_DEBUG("Points at _level {}:", _level - 1);
-                for (const auto &p : points) { OP_DEBUG("{}", p.toString()); }
+                for ([[maybe_unused]] const auto &p : points) { OP_DEBUG("{}", p.toString()); }
 #endif
 
 #ifndef NDEBUG
@@ -295,7 +295,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                     for (auto &r : ret.ranges[_level + 1]) {
                         auto _range = r;
                         // convert _level l + 1 's range to _level l - 1 's range
-                        for (auto i = 0; i < dim; ++i) {
+                        for (std::size_t i = 0; i < dim; ++i) {
                             _range.start[i] = (_range.start[i] - ret.buffWidth * ratio) / (ratio * ratio);
                             _range.start[i]
                                     = std::max(_range.start[i],
@@ -308,9 +308,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                         }
                         // label all points in _range
                         rangeFor_s(_range, [&](auto &&i) {
-                            points.template emplace_back(i.get());
+                            points.emplace_back(i.get());
 #ifndef NDEBUG
-                            p_add.template emplace_back(i.get());
+                            p_add.emplace_back(i.get());
 #endif
                         });
                     }
@@ -321,7 +321,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                 points.erase(last, points.end());
 #ifndef NDEBUG
                 OP_DEBUG("Points at _level {}:", _level);
-                for (const auto &p : points) { OP_DEBUG("{}", p.toString()); }
+                for ([[maybe_unused]] const auto &p : points) { OP_DEBUG("{}", p.toString()); }
                 dump_points(points, 1. / Math::int_pow(ratio, _level - 1),
                             std::format("p_level{}.vtp", _level));
                 dump_points(p_add, 1. / Math::int_pow(ratio, _level - 1),
@@ -331,7 +331,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                 auto boxes = domainPartition(tree, ret.fillRateThreshold, ret.slimThreshold);
 #ifndef NDEBUG
                 OP_DEBUG("Boxes at _level {}:", _level);
-                for (auto &b : boxes) { OP_DEBUG("{}", b.toString()); }
+                for ([[maybe_unused]] auto &b : boxes) { OP_DEBUG("{}", b.toString()); }
 #endif
 
                 auto newMesh = MeshBuilder<CartesianMesh<Meta::int_<dim>>>()
@@ -344,7 +344,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                 for (auto &box : boxes) {
                     // convert box to next _level's range
                     DS::LevelRange<dim> r;
-                    for (auto i = 0; i < dim; ++i) {
+                    for (std::size_t i = 0; i < dim; ++i) {
                         r.start[i] = box.lo[i] * ratio;
                         r.end[i] = (box.hi[i] + 1) * ratio + 1;
                     }
@@ -363,7 +363,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                 // neighbors
                 ret.neighbors[l].resize(ret.ranges[l].size());
                 for (auto &p : ret.neighbors[l]) p.clear();
-                for (auto p = 0; p < ret.ranges[l].size(); ++p) {
+                for (std::size_t p = 0; p < ret.ranges[l].size(); ++p) {
                     for (auto pp = p + 1; pp < ret.ranges[l].size(); ++pp) {
                         auto ext = ret.ranges[l][p].getInnerRange(-ret.buffWidth);
                         if (DS::intersectRange(ext, ret.ranges[l][pp])) {
@@ -376,11 +376,11 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                 ret.parents[l].resize(ret.ranges[l].size());
                 for (auto &p : ret.parents[l]) p.clear();
                 if (l - 1 >= 0) {
-                    for (auto p = 0; p < ret.ranges[l].size(); ++p) {
-                        for (auto pp = 0; pp < ret.ranges[l - 1].size(); ++pp) {
+                    for (std::size_t p = 0; p < ret.ranges[l].size(); ++p) {
+                        for (std::size_t pp = 0; pp < ret.ranges[l - 1].size(); ++pp) {
                             auto ext = ret.ranges[l][p].getInnerRange(-ret.buffWidth);
                             auto p_upcast = ret.ranges[l - 1][pp];
-                            for (auto i = 0; i < dim; ++i) {
+                            for (std::size_t i = 0; i < dim; ++i) {
                                 p_upcast.start[i] *= ret.refinementRatio;
                                 p_upcast.end[i] *= ret.refinementRatio;
                             }
@@ -397,12 +397,13 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 
         static auto getFillRate(const MarkerTree &tree, const Box &box) {
             auto total = 1;
-            for (auto i = 0; i < dim; ++i) { total *= (box.hi[i] - box.lo[i] + 1); }
+            for (std::size_t i = 0; i < dim; ++i) { total *= (box.hi[i] - box.lo[i] + 1); }
             auto count = tree.countInBox(box);
             return (double) count / total;
         }
 
-        static void dump_points(auto &points, double h, const std::string &fname) {
+        static void dump_points([[maybe_unused]] auto &points, [[maybe_unused]] double h,
+                                [[maybe_unused]] const std::string &fname) {
 #ifdef OPFLOW_WITH_VTK
             vtkNew<vtkPoints> vtkp;
             for (auto &p : points) { vtkp->InsertNextPoint((p[0] + 0.5) * h, (p[1] + 0.5) * h, 0); }
@@ -439,18 +440,18 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                     // calculate the signature
                     // init arrays
                     std::array<DS::OffsetVector<int>, dim> sigs;
-                    for (auto i = 0; i < dim; ++i) {
+                    for (std::size_t i = 0; i < dim; ++i) {
                         sigs[i].resize(box.hi[i] - box.lo[i] + 1);
                         sigs[i].setConstant(0);
                         sigs[i].setOffset(box.lo[i]);
                     }
                     // traverse all the points & accumulate sigs
                     marker.traverseInBox(box, [&](auto &&p) {
-                        for (auto i = 0; i < dim; ++i) { sigs[i][p[i]]++; }
+                        for (std::size_t i = 0; i < dim; ++i) { sigs[i][p[i]]++; }
                     });
                     // find all continues non-zero intervals in sigs
                     std::array<std::vector<int>, dim> split_points;
-                    for (auto i = 0; i < dim; ++i) {
+                    for (std::size_t i = 0; i < dim; ++i) {
                         const auto begin = sigs[i].begin();
                         const auto end = sigs[i].end();
                         auto p1 = begin;
@@ -470,16 +471,17 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                     }
                     // check if the current box needs to be split or shrink
                     bool split_or_shrink = false;
-                    for (auto i = 0; i < dim; ++i) {
+                    for (std::size_t i = 0; i < dim; ++i) {
                         if (split_points[i].size() > 2
                             || (split_points[i][0] > sigs[i].getOffset()
-                                || split_points[i][1] < sigs[i].getOffset() + sigs[i].size() - 1))
+                                || split_points[i][1]
+                                           < static_cast<int>(sigs[i].getOffset() + sigs[i].size() - 1)))
                             split_or_shrink = true;
                     }
                     if (split_or_shrink) {
                         // construct all the possible compact boxes
                         DS::LevelRange<dim> range;
-                        for (auto i = 0; i < dim; ++i) {
+                        for (std::size_t i = 0; i < dim; ++i) {
                             range.start[i] = 0;
                             range.end[i] = split_points[i].size() / 2;
                         }
@@ -487,7 +489,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                         rangeFor_s(range, [&](auto &&idx) {
                             // construct box
                             DS::Box<int, dim> t;
-                            for (auto i = 0; i < dim; ++i) {
+                            for (std::size_t i = 0; i < dim; ++i) {
                                 t.lo[i] = split_points[i][idx[i] * 2];
                                 t.hi[i] = split_points[i][idx[i] * 2 + 1];
                             }
@@ -500,7 +502,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                         // case 1: the box is sufficient slim in one dim
                         std::array<bool, dim> slim_in_dim;
                         bool all_slim = true;
-                        for (auto i = 0; i < dim; ++i) {
+                        for (std::size_t i = 0; i < dim; ++i) {
                             // 1, 2, 3 points thick are considered slim
                             slim_in_dim[i] = box.hi[i] - box.lo[i] < slim_threshold;
                             all_slim &= slim_in_dim[i];
@@ -513,10 +515,10 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                         // find the edge to split
                         // calculate the lap of sig
                         std::array<DS::OffsetVector<int>, dim> laps = sigs;
-                        for (auto i = 0; i < dim; ++i) {
+                        for (std::size_t i = 0; i < dim; ++i) {
                             // for slim dims, we won't split
                             if (slim_in_dim[i]) continue;
-                            for (auto j = laps[i].getOffset() + 1;
+                            for (std::size_t j = laps[i].getOffset() + 1;
                                  j < laps[i].getOffset() + laps[i].size() - 1; ++j) {
                                 laps[i][j] = (sigs[i][j - 1] - 2 * sigs[i][j] + sigs[i][j + 1]);
                             }
@@ -525,8 +527,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                         std::array<std::vector<int>, dim> zero_points;
                         std::array<int, dim> max_jumps;
                         max_jumps.fill(0);
-                        for (auto i = 0; i < dim; ++i) {
-                            for (auto j = box.lo[i] + 1; j <= box.hi[i] - 2; ++j) {
+                        for (std::size_t i = 0; i < dim; ++i) {
+                            for (int j = box.lo[i] + 1; j <= box.hi[i] - 2; ++j) {
                                 if ((laps[i][j] <= 0 && laps[i][j + 1] >= 0)
                                     || (laps[i][j] >= 0 && laps[i][j + 1] <= 0)) {
                                     // always take the max jump
@@ -543,7 +545,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                             }
                         }
                         std::array<int, dim> final_splits;
-                        for (auto i = 0; i < dim; ++i) {
+                        for (std::size_t i = 0; i < dim; ++i) {
                             final_splits[i] = box.lo[i] - 1;
                             // take the most center split point
                             if (zero_points[i].size() == 0) continue;
@@ -561,7 +563,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                         // sort the dims according to the max jumps. the dim with the max jumps
                         // is preferred for split
                         std::array<int, dim> split_priority;
-                        for (auto i = 0; i < dim; ++i) split_priority[i] = i;
+                        for (std::size_t i = 0; i < dim; ++i) split_priority[i] = i;
                         std::sort(split_priority.begin(), split_priority.end(),
                                   [&](auto a, auto b) { return max_jumps[a] > max_jumps[b]; });
                         // try split the box according to the priority dims
@@ -587,7 +589,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                         // if could reach here, any of the split plan will make slim boxes
                         // or they can't make slice at all. we then bisect along the longest dim
                         auto longest_dim = 0, length = 0;
-                        for (auto i = 0; i < dim; ++i) {
+                        for (std::size_t i = 0; i < dim; ++i) {
                             if (box.hi[i] - box.lo[i] + 1 > length) {
                                 length = box.hi[i] - box.lo[i] + 1;
                                 longest_dim = i;
@@ -626,7 +628,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         auto &setBaseMesh(CartesianMesh<Dim> &&baseMesh) {
             ret = CartesianAMRMesh<Dim>();// clean up
             ret.ranges.emplace_back();
-            ret.ranges.back().template emplace_back(baseMesh.getRange());
+            ret.ranges.back().emplace_back(baseMesh.getRange());
             ret.meshes.push_back(std::move(baseMesh));
             return *this;
         }
@@ -645,7 +647,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             if (range.level + 1 > ret.maxLevel) {
                 ret.ranges.resize(range.level + 1);
                 auto origin_size = ret.meshes.size();
-                for (auto i = origin_size; i < range.level + 1; ++i) {
+                for (auto i = origin_size; i < static_cast<std::size_t>(range.level + 1); ++i) {
                     ret.meshes.push_back(MeshBuilder<CartesianMesh<Dim>>()
                                                  .newMesh(ret.meshes[0])
                                                  .refine(Math::int_pow(ret.refinementRatio, i))
@@ -672,7 +674,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                 // neighbors
                 ret.neighbors[l].resize(ret.ranges[l].size());
                 for (auto &p : ret.neighbors[l]) p.clear();
-                for (auto p = 0; p < ret.ranges[l].size(); ++p) {
+                for (std::size_t p = 0; p < ret.ranges[l].size(); ++p) {
                     for (auto pp = p + 1; pp < ret.ranges[l].size(); ++pp) {
                         auto ext = ret.ranges[l][p].getInnerRange(-ret.buffWidth);
                         if (DS::intersectRange(ext, ret.ranges[l][pp])) {
@@ -685,11 +687,11 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                 ret.parents[l].resize(ret.ranges[l].size());
                 for (auto &p : ret.parents[l]) p.clear();
                 if (l - 1 >= 0) {
-                    for (auto p = 0; p < ret.ranges[l].size(); ++p) {
-                        for (auto pp = 0; pp < ret.ranges[l - 1].size(); ++pp) {
+                    for (std::size_t p = 0; p < ret.ranges[l].size(); ++p) {
+                        for (std::size_t pp = 0; pp < ret.ranges[l - 1].size(); ++pp) {
                             auto ext = ret.ranges[l][p].getInnerRange(-ret.buffWidth);
                             auto p_upcast = ret.ranges[l - 1][pp];
-                            for (auto i = 0; i < dim; ++i) {
+                            for (std::size_t i = 0; i < dim; ++i) {
                                 p_upcast.start[i] *= ret.refinementRatio;
                                 p_upcast.end[i] *= ret.refinementRatio;
                             }

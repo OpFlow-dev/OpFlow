@@ -33,7 +33,9 @@
 #include <memory>
 #endif
 
-OPFLOW_MODULE_EXPORT namespace OpFlow {
+OPFLOW_MODULE_EXPORT
+
+namespace OpFlow {
     template <typename D, typename M, typename C = DS::PlainTensor<D, internal::MeshTrait<M>::dim>>
     struct CartesianField : CartesianFieldExpr<CartesianField<D, M, C>> {
         using index_type = typename internal::CartesianFieldExprTrait<CartesianField>::index_type;
@@ -54,6 +56,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         std::array<DS::Pair<std::unique_ptr<BCBase<CartesianField>>>, internal::MeshTrait<M>::dim> bc;
 
         CartesianField() = default;
+
         CartesianField(const CartesianField& other)
             : CartesianFieldExpr<CartesianField<D, M, C>>(other), data(other.data),
               ext_width(other.ext_width), initialized(true) {
@@ -66,6 +69,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                     dynamic_cast<LogicalBCBase<CartesianField>*>(bc[i].end.get())->rebindField(*this);
             }
         }
+
         CartesianField(CartesianField&& other) noexcept
             : CartesianFieldExpr<CartesianField<D, M, C>>(std::move(other)), data(std::move(other.data)),
               initialized(true), bc(std::move(other.bc)), ext_width(std::move(other.ext_width)) {}
@@ -115,7 +119,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                     buff.reserve(intersections[i].count());
                     rangeFor_s(intersections[i], [&](auto&& k) { buff.push_back(this->evalAt(k)); });
                     send_buff.push_back(std::move(buff));
-                    if constexpr (std::is_trivial_v<D> && std::is_standard_layout_v<D>) {
+                    if constexpr ((std::is_trivially_default_constructible_v<
+                                           D> && std::is_trivially_copyable_v<D>) &&std::
+                                          is_standard_layout_v<D>) {
                         MPI_Request request;
                         MPI_Isend(send_buff.back().data(), send_buff.back().size() * sizeof(D), MPI_BYTE,
                                   dest_ranks.back(), getWorkerId(), MPI_COMM_WORLD, &request);
@@ -140,7 +146,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                     recv_buff.emplace_back();
                     recv_buff.back().resize(intersections[i].count());
                     recv_requests.emplace_back();
-                    if constexpr (std::is_trivial_v<D> && std::is_standard_layout_v<D>) {
+                    if constexpr ((std::is_trivially_default_constructible_v<
+                                           D> && std::is_trivially_copyable_v<D>) &&std::
+                                          is_standard_layout_v<D>) {
                         MPI_Irecv(recv_buff.back().data(), intersections[i].count() * sizeof(D), MPI_BYTE, i,
                                   i, MPI_COMM_WORLD, &recv_requests.back());
                     }
@@ -156,8 +164,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             // loop over all requests
             int finished_count = 0;
             std::vector<bool> finished_bit(src_ranks.size(), false);
-            while (finished_count != src_ranks.size()) {
-                for (int i = 0; i < finished_bit.size(); ++i) {
+            while (finished_count != (int) src_ranks.size()) {
+                for (int i = 0; i < (int) finished_bit.size(); ++i) {
                     if (!finished_bit[i]) {
                         int flag;
                         MPI_Test(&recv_requests[i], &flag, MPI_STATUS_IGNORE);
@@ -173,6 +181,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             }
             this->updateNeighbors();
             updatePaddingImpl_final();
+#else
+            (void) strategy;// intentionally unused when MPI is disabled
 #endif
         }
 
@@ -193,8 +203,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         }
 
         template <BasicArithOp Op = BasicArithOp::Eq, CartesianFieldExprType T>
-        auto&
-        assignImpl_final(T&& other) {// T is not const here for that we need to call other.prepare() later
+        auto& assignImpl_final(T&& other) {
+            // T is not const here for that we need to call other.prepare() later
             other.prepare();
             if (!initialized) {
                 OP_ASSERT_MSG(Op == BasicArithOp::Eq,
@@ -308,7 +318,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                     is_periodic[d] = this->bc[d].start && this->bc[d].start->getBCType() == BCType::Periodic;
                 }
                 int range_count = Math::int_pow(3, std::count(is_periodic.begin(), is_periodic.end(), true));
-                for (auto i = 0; i < this->splitMap.size(); ++i) {
+                for (std::size_t i = 0; i < this->splitMap.size(); ++i) {
                     auto mesh_range_extends = this->mesh.getRange().getExtends();
                     for (int k = 0; k < range_count; ++k) {
                         auto r = this->splitMap[i];
@@ -329,7 +339,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                                     break;
                             }
                         }
-                        if (!(i == rank && r == this->localRange)) {
+                        if (!(static_cast<int>(i) == rank && r == this->localRange)) {
                             auto send_range
                                     = DS::commonRange(this->localRange, r.getInnerRange(-this->padding));
                             auto recv_range
@@ -365,7 +375,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             // step 1: update paddings by bc extension
             // start/end record the start/end index of last padding operation
             // the latter padding op pads the outer range of the former padding zone
-            std::array<int, dim> start, end;
+            std::array<int, dim> start {}, end {};
             if constexpr (requires(D v) {
                               { v + v }
                               ->std::same_as<D>;
@@ -606,7 +616,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             }
 
             // step 2: update paddings by MPI communication
-            if (this->splitMap.size() == 1) {// no MPI or local field
+            if (this->splitMap.size() == 1) {
+                // no MPI or local field
                 // update along periodic dims
                 for (int i = 0; i < dim; ++i) {
                     if (this->bc[i].start && this->bc[i].start->getBCType() == BCType::Periodic) {
@@ -635,12 +646,13 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                 std::vector<std::vector<std::byte>> send_buff_byte, recv_buff_byte;
                 std::vector<std::vector<int>> send_buff_offsets, recv_buff_offsets;
                 std::vector<MPI_Request> requests;
-                auto padded_my_range = this->localRange.getInnerRange(-this->padding);
                 auto mesh_range_extends = this->mesh.getRange().getExtends();
 
                 for (const auto& [other_rank, send_range, recv_range, code] : this->neighbors) {
                     // calculate the intersect range to be send
-                    if constexpr (std::is_trivial_v<D> && std::is_standard_layout_v<D>) {
+                    if constexpr ((std::is_trivially_default_constructible_v<
+                                           D> && std::is_trivially_copyable_v<D>) &&std::
+                                          is_standard_layout_v<D>) {
                         // pack data into send buffer
                         send_buff.emplace_back();
                         requests.emplace_back();
@@ -685,7 +697,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                                 break;
                         }
                     }
-                    if constexpr (std::is_trivial_v<D> && std::is_standard_layout_v<D>)
+                    if constexpr ((std::is_trivially_default_constructible_v<
+                                           D> && std::is_trivially_copyable_v<D>) &&std::
+                                          is_standard_layout_v<D>)
                         MPI_Isend(send_buff.back().data(), send_buff.back().size() * sizeof(D) / sizeof(char),
                                   MPI_CHAR, other_rank,
                                   std::hash<Meta::RealType<decltype(o_recv_range)>> {}(o_recv_range)
@@ -694,7 +708,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                     else if constexpr (Serializable<D>) {
                         MPI_Isend(send_buff_offsets.back().data(), send_buff_offsets.back().size(), MPI_INT,
                                   other_rank, rank, MPI_COMM_WORLD, &requests.back());
-                        requests.template emplace_back();
+                        requests.emplace_back();
                         MPI_Isend(send_buff_byte.back().data(), send_buff_byte.back().size(), MPI_BYTE,
                                   other_rank,
                                   std::hash<Meta::RealType<decltype(o_recv_range)>> {}(o_recv_range)
@@ -707,7 +721,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                     // issue receive request
                     OP_DEBUG("Recv range {} from rank {} to rank {}", recv_range.toString(), other_rank,
                              rank);
-                    if constexpr (std::is_trivial_v<D> && std::is_standard_layout_v<D>) {
+                    if constexpr ((std::is_trivially_default_constructible_v<
+                                           D> && std::is_trivially_copyable_v<D>) &&std::
+                                          is_standard_layout_v<D>) {
                         recv_buff.emplace_back();
                         recv_buff.back().resize(recv_range.count());
                         MPI_Irecv(recv_buff.back().data(), recv_buff.back().size() * sizeof(D) / sizeof(char),
@@ -734,7 +750,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                         OP_CRITICAL("Field {}'s updatePadding failed.", this->getName());
                 }
                 // unpack receive buffer
-                if constexpr (std::is_trivial_v<D> && std::is_standard_layout_v<D>) {
+                if constexpr ((std::is_trivially_default_constructible_v<
+                                       D> && std::is_trivially_copyable_v<D>) &&std::
+                                      is_standard_layout_v<D>) {
                     auto recv_iter = recv_buff.begin();
                     for (const auto& [other_rank, send_range, recv_range, code] : this->neighbors) {
                         auto _iter = recv_iter->begin();
@@ -772,12 +790,14 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             OP_NOT_IMPLEMENTED;
             return 0;
         }
+
         const auto& evalAtImpl_final(const index_type& i) const {
             OP_ASSERT_MSG(DS::inRange(this->getLocalReadableRange(), i),
                           "Cannot eval {} at {}: out of range {}", this->getName(), i,
                           this->getLocalReadableRange().toString());
             return data[i - this->offset];
         }
+
         auto& evalAtImpl_final(const index_type& i) {
             OP_ASSERT_MSG(DS::inRange(this->getLocalReadableRange(), i),
                           "Cannot eval {} at {}: out of range {}", this->getName(), i,
@@ -786,7 +806,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         }
 
         template <typename Other>
-        requires(!std::same_as<Other, CartesianField>) bool containsImpl_final(const Other& o) const {
+        requires(!std::same_as<Other, CartesianField>) bool containsImpl_final(const Other&) const {
             return false;
         }
 
@@ -1031,7 +1051,6 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         CartesianField<D, M, C> f;
         std::shared_ptr<AbstractSplitStrategy<CartesianField<D, M, C>>> strategy;
     };
-
 }// namespace OpFlow
 
 namespace std {

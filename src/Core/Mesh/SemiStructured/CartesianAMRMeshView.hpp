@@ -35,6 +35,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         explicit CartesianAMRMeshView(const T& mesh)
             : base(mesh.getPtr()), refinementRatio(mesh.refinementRatio) {}
 
+        CartesianAMRMeshView(const CartesianAMRMeshView&) = default;
         CartesianAMRMeshView& operator=(const CartesianAMRMeshView&) = default;
         auto& operator=(const T& mesh) {
             base = mesh.getPtr();

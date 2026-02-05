@@ -46,6 +46,7 @@ static void Laplace_2d_Params(benchmark::internal::Benchmark* b) {
 
 BENCHMARK(Laplace_2d)->Apply(Laplace_2d_Params)->UseRealTime();
 
+/*
 static void Laplace_3d(benchmark::State& state) {
     using namespace OpFlow;
 
@@ -87,5 +88,6 @@ static void Laplace_3d_Params(benchmark::internal::Benchmark* b) {
 }
 
 //BENCHMARK(Laplace_3d)->Apply(Laplace_3d_Params)->UseRealTime();
+*/
 
 BENCHMARK_MAIN();

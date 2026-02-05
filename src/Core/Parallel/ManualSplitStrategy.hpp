@@ -42,14 +42,12 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         [[nodiscard]] std::string strategyName() const override { return "Manual split strategy"; }
 
         typename internal::ExprTrait<F>::range_type
-        splitRange(const typename internal::ExprTrait<F>::range_type& range,
-                   const ParallelPlan& plan) override {
+        splitRange(const typename internal::ExprTrait<F>::range_type&, const ParallelPlan&) override {
             return splitMap[getWorkerId()];
         }
 
         std::vector<typename internal::ExprTrait<F>::range_type>
-        getSplitMap(const typename internal::ExprTrait<F>::range_type& range,
-                    const ParallelPlan& plan) override {
+        getSplitMap(const typename internal::ExprTrait<F>::range_type&, const ParallelPlan&) override {
             return splitMap;
         }
 

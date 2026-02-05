@@ -27,7 +27,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         auto idx(int d, int l, int i) const { return this->derived().idx(d, l, i); }
 
         auto getView() const { return this->derived().getView(); }
-        auto toString(int level = 0) const {
+        auto toString(int /* level */ = 0) const {
             OP_NOT_IMPLEMENTED;
             return std::string();
         }

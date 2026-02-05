@@ -17,7 +17,7 @@ using namespace OpFlow;
 
 class StencilPadBench : public benchmark::Fixture {
 public:
-    void SetUp(const ::benchmark::State& state) override {
+    void SetUp(const ::benchmark::State&) override {
         auto m = MeshBuilder<Mesh>().newMesh(n, n).setMeshOfDim(0, 0., 1.).setMeshOfDim(1, 0., 1.).build();
 
         u = ExprBuilder<Field>()
@@ -39,7 +39,7 @@ public:
 
         u3 = ExprBuilder<Field3>()
                      .setMesh(m3)
-                     .setLoc(std::array {LocOnMesh::Center, LocOnMesh::Center, LocOnMesh ::Center})
+                     .setLoc(std::array {LocOnMesh::Center, LocOnMesh::Center, LocOnMesh::Center})
                      .setBC(0, DimPos::start, BCType::Dirc, 0.)
                      .setBC(0, DimPos::end, BCType::Dirc, 0.)
                      .setBC(1, DimPos::start, BCType::Dirc, 0.)
@@ -52,7 +52,7 @@ public:
         omp_set_num_threads(1);
     }
 
-    void TearDown(const ::benchmark::State& state) override {}
+    void TearDown(const ::benchmark::State&) override {}
 
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<Real, Mesh>;

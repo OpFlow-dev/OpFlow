@@ -50,7 +50,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
 #endif
               time(other.time), first_run(other.first_run), file_inited(other.file_inited),
               group_inited(other.group_inited), fixed_mesh(other.fixed_mesh), write_mesh(other.write_mesh),
-              mode(other.mode), separate_file(other.separate_file)
+              separate_file(other.separate_file), mode(other.mode)
 #ifdef OPFLOW_WITH_MPI
               ,
               mpi_comm(other.mpi_comm)
@@ -188,7 +188,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
         bool first_run = true, file_inited = false, group_inited = false, fixed_mesh = false,
              write_mesh = true, separate_file = false;
         NumberingType numberingType = NumberingType::ByTime;
-        int dump_count = 0;
+        [[maybe_unused]] int dump_count = 0;
         unsigned int mode;
 #ifdef OPFLOW_WITH_MPI
         MPI_Comm mpi_comm = MPI_COMM_WORLD;
@@ -196,7 +196,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     };
 
     template <CartesianFieldExprType T>
-    H5Stream& H5Stream::operator<<(const T& f) {
+    H5Stream& H5Stream::operator<<([[maybe_unused]] const T& f) {
 #ifdef OPFLOW_WITH_HDF5
         constexpr auto dim = OpFlow::internal::ExprTrait<T>::dim;
         using elem_type = typename OpFlow::internal::ExprTrait<T>::elem_type;
@@ -298,7 +298,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
     }
 
     template <CartesianFieldType T>
-    H5Stream& H5Stream::operator>>(T& f) {
+    H5Stream& H5Stream::operator>>(T& /* f */) {
 #ifdef OPFLOW_WITH_HDF5
         constexpr auto dim = OpFlow::internal::ExprTrait<T>::dim;
         using elem_type = typename OpFlow::internal::ExprTrait<T>::elem_type;

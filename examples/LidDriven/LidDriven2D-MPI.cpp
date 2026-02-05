@@ -11,6 +11,7 @@
 //  ----------------------------------------------------------------------------
 
 #include <OpFlow>
+
 int main(int argc, char* argv[]) {
     using namespace OpFlow;
     using Mesh = CartesianMesh<Meta::int_<2>>;
@@ -36,12 +37,12 @@ int main(int argc, char* argv[]) {
                            .setSplitStrategy(strategy);
     auto u = builder.setName("u")
                      .setBC(1, DimPos::end, BCType::Dirc, 1.)
-                     .setLoc({LocOnMesh ::Corner, LocOnMesh ::Center})
+                     .setLoc({LocOnMesh::Corner, LocOnMesh::Center})
                      .build();
     auto du = builder.setName("du").setBC(1, DimPos::end, BCType::Dirc, 0.).build();
     auto v = builder.setName("v")
                      .setBC(1, DimPos::end, BCType::Dirc, 0.)
-                     .setLoc({LocOnMesh ::Center, LocOnMesh ::Corner})
+                     .setLoc({LocOnMesh::Center, LocOnMesh::Corner})
                      .build();
     auto dv = v;
     dv.name = "dv";
@@ -50,7 +51,7 @@ int main(int argc, char* argv[]) {
                      .setBC(0, DimPos::end, BCType::Neum, 0.)
                      .setBC(1, DimPos::start, BCType::Neum, 0.)
                      .setBC(1, DimPos::end, BCType::Neum, 0.)
-                     .setLoc({LocOnMesh ::Center, LocOnMesh ::Center})
+                     .setLoc({LocOnMesh::Center, LocOnMesh::Center})
                      .build();
     auto dp = p;
     dp.name = "dp";
@@ -81,12 +82,13 @@ int main(int argc, char* argv[]) {
     params.tol = 1e-10;
     params.maxIter = 100;
     StructSolverParams<StructSolverType::GMRES> poisson_params = params;
-    StructSolverParams<StructSolverType::PFMG> p_params {.useZeroGuess = true,
-                                                         .relaxType = 1,
-                                                         .rapType = 0,
-                                                         .numPreRelax = 1,
-                                                         .numPostRelax = 1,
-                                                         .skipRelax = 0};
+    StructSolverParams<StructSolverType::PFMG> p_params;
+    p_params.useZeroGuess = true;
+    p_params.relaxType = 1;
+    p_params.rapType = 0;
+    p_params.numPreRelax = 1;
+    p_params.numPostRelax = 1;
+    p_params.skipRelax = 0;
     p_params.tol = 1e-10;
     auto solver = PrecondStructSolver<StructSolverType::GMRES, StructSolverType::PFMG>(params, p_params);
     auto u_handler = makeEqnSolveHandler(

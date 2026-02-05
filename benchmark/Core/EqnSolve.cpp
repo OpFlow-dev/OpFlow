@@ -94,7 +94,7 @@ static void AMGCLEqnSolve_2d_solve(benchmark::State& state) {
     auto handler = makeEqnSolveHandler<Solver>(
             [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; }, u,
             DS::MDRangeMapper<2> {u.assignableRange}, params);
-    auto [iter, err, abserr] = handler->solve();
+    [[maybe_unused]] auto [iter, err, abserr] = handler->solve();
 
     for (auto _ : state) {
         state.PauseTiming();
@@ -141,7 +141,7 @@ static void AMGCLEqnSolve_2d_solve_dymat(benchmark::State& state) {
     auto handler = makeEqnSolveHandler<Solver>(
             [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; }, u,
             DS::MDRangeMapper<2> {u.assignableRange}, params);
-    auto [iter, err, abserr] = handler->solve();
+    [[maybe_unused]] auto [iter, err, abserr] = handler->solve();
 
     for (auto _ : state) {
         state.PauseTiming();
@@ -179,7 +179,7 @@ static void HYPREEqnSolve_2d_solve_dymat(benchmark::State& state) {
     auto handler = makeEqnSolveHandler(
             [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; }, u,
             solver);
-    auto [iter, err, abserr] = handler->solve();
+    [[maybe_unused]] auto [iter, err, abserr] = handler->solve();
 
     for (auto _ : state) {
         state.PauseTiming();
@@ -217,7 +217,7 @@ static void HYPREEqnSolve_2d_solve(benchmark::State& state) {
     auto handler = makeEqnSolveHandler(
             [&](auto&& e) { return d2x<D2SecondOrderCentered>(e) + d2y<D2SecondOrderCentered>(e) == 1.0; }, u,
             solver);
-    auto [iter, err, abserr] = handler->solve();
+    [[maybe_unused]] auto [iter, err, abserr] = handler->solve();
 
     for (auto _ : state) {
         state.PauseTiming();

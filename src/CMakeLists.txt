@@ -23,7 +23,7 @@ if(OPFLOW_ENABLE_MODULE)
     # ----------------------------------------------------------------------------
     add_library(opflow)
 
-    target_compile_definitions(opflow PUBLIC OPFLOW_USE_MODULE)
+    target_compile_definitions(opflow PRIVATE OPFLOW_USE_MODULE)
     set_property(TARGET opflow PROPERTY CXX_SCAN_FOR_MODULES ON)
     target_sources(opflow
         PUBLIC FILE_SET CXX_MODULES
@@ -42,7 +42,7 @@ if(OPFLOW_ENABLE_MODULE)
         FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 else()
     # ----------------------------------------------------------------------------
-    # C++20 header only version
+    # C++26 header only version
     # ----------------------------------------------------------------------------
     add_library(opflow INTERFACE)
     set_property(TARGET opflow PROPERTY CXX_SCAN_FOR_MODULES OFF)
@@ -92,6 +92,11 @@ endif()
 # ----------------------------------------------------------------------------
 # Misc definitions according to tweak options
 # ----------------------------------------------------------------------------
+if(OPFLOW_ENABLE_MODULE)
+    set(OPFLOW_TARGET_SCOPE PUBLIC)
+else()
+    set(OPFLOW_TARGET_SCOPE INTERFACE)
+endif()
 foreach(
     OPFLOW_OPTION
     OPFLOW_SINGLE_PRECISION
@@ -120,3 +125,25 @@ target_link_options(opflow
     INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_LEAK}>: -fsanitize=leak>
     INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_THREAD}>: -fsanitize=thread>
     INTERFACE $<$<BOOL:${OPFLOW_SANITIZE_UB}>: -fsanitize=undefined>)
+
+# ----------------------------------------------------------------------------
+# Compiler warnings
+# ----------------------------------------------------------------------------
+# Enable strict warnings and treat warnings as errors by default
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(opflow ${OPFLOW_TARGET_SCOPE}
+        -Wall
+        -Wextra
+        -Werror
+        # Suppress possible ABI warning from compiler upgrades
+        -Wno-psabi
+    )
+endif()
+# MSVC-specific warnings
+if(MSVC)
+    target_compile_options(opflow ${OPFLOW_TARGET_SCOPE}
+        /W4
+        /WX
+    )
+endif()

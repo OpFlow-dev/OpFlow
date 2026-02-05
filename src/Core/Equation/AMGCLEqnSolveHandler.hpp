@@ -76,7 +76,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         AMGCLEqnSolveHandler() = default;
         AMGCLEqnSolveHandler(eqn_holder_type&& eqn_holder, const M& mapper,
                              const std::vector<IJSolverParams<S>>& params)
-            : mapper(mapper), params(params) {
+            : params(params), mapper(mapper) {
             this->eqn_holder = std::make_unique<eqn_holder_type>(std::move(eqn_holder));
             this->st_holder = std::make_unique<st_holder_type>(*this->eqn_holder);
             AMGCLEqnSolveHandler::init();

@@ -35,6 +35,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         explicit CartesianMeshView(const T& mesh)
             : base(mesh.getPtr()), range(mesh.getRange()), dims(mesh.getDims()) {}
 
+        CartesianMeshView(const CartesianMeshView&) = default;
         CartesianMeshView& operator=(const CartesianMeshView&) = default;
         auto& operator=(const T& mesh) {
             base = mesh.getPtr();

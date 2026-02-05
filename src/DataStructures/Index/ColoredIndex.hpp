@@ -49,7 +49,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         constexpr void set(const std::array<int, d>& o) { this->idx = o; }
 
         constexpr void set(const Meta::BracketIndexable auto& o) {
-            for (auto i = 0; i < d; ++i) this->idx[i] = o[i];
+            for (std::size_t i = 0; i < d; ++i) this->idx[i] = o[i];
         }
 
         constexpr bool operator<(const MDIndex<d>& other) const {
@@ -82,18 +82,18 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
         }
 
         constexpr auto& operator+=(const MDIndex<d>& index) {
-            for (auto i = 0; i < d; ++i) this->idx[i] += index[i];
+            for (std::size_t i = 0; i < d; ++i) this->idx[i] += index[i];
             return *this;
         }
 
         constexpr auto& operator+=(const ColoredIndex& index) {
             OP_ASSERT_MSG(color == index.color, "Indexes' colors mismatch: {} != {}", color, index.color);
-            for (auto i = 0; i < d; ++i) this->idx[i] += index[i];
+            for (std::size_t i = 0; i < d; ++i) this->idx[i] += index[i];
             return *this;
         }
 
         constexpr auto& operator-=(const MDIndex<d>& index) {
-            for (auto i = 0; i < d; ++i) this->idx[i] -= index[i];
+            for (std::size_t i = 0; i < d; ++i) this->idx[i] -= index[i];
             return *this;
         }
 
@@ -127,16 +127,16 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
 
         constexpr auto flip() const {
             auto c = copy();
-            for (auto i = 0; i < d; ++i) c[i] = this->idx[d - i - 1];
+            for (std::size_t i = 0; i < d; ++i) c[i] = this->idx[d - i - 1];
             return c;
         }
 
         [[nodiscard]] std::string toString(int n, const std::string& prefix) const override {
             std::string ret;
-            for (auto i = 0; i < n; ++i) ret += prefix;
+            for (int i = 0; i < n; ++i) ret += prefix;
             ret += "{";
             if constexpr (d > 0) ret += std::format("{}", idx[0]);
-            for (auto i = 1; i < d; ++i) ret += std::format(", {}", idx[i]);
+            for (std::size_t i = 1; i < d; ++i) ret += std::format(", {}", idx[i]);
             ret += std::format(", c = {}", color);
             ret += "}";
             return ret;
@@ -150,6 +150,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
 
         constexpr ColoredIndex() = default;
         constexpr ColoredIndex(const ColoredIndex&) = default;
+        constexpr ColoredIndex& operator=(const ColoredIndex&) = default;
 
         constexpr explicit ColoredIndex(const LevelMDIndex<d>& index, int color = 0)
             : idx(index.get()), l(index.l), p(index.p), color(color) {}
@@ -189,22 +190,22 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
 
         constexpr auto& operator+=(const LevelMDIndex<d>& index) {
             // note: we don't check l & p here because +=/-= is usually append to offset whose l&p is not used
-            for (auto i = 0; i < d; ++i) idx[i] += index[i];
+            for (std::size_t i = 0; i < d; ++i) idx[i] += index[i];
             return *this;
         }
         constexpr auto& operator-=(const LevelMDIndex<d>& index) {
-            for (auto i = 0; i < d; ++i) idx[i] -= index[i];
+            for (std::size_t i = 0; i < d; ++i) idx[i] -= index[i];
             return *this;
         }
         constexpr auto& operator+=(const ColoredIndex& index) {
             OP_ASSERT_MSG(color == index.color, "Indexes' colors mismatch: {} != {}", color, index.color);
             // note: we don't check l & p here because +=/-= is usually append to offset whose l&p is not used
-            for (auto i = 0; i < d; ++i) idx[i] += index[i];
+            for (std::size_t i = 0; i < d; ++i) idx[i] += index[i];
             return *this;
         }
         constexpr auto& operator-=(const ColoredIndex& index) {
             OP_ASSERT_MSG(color == index.color, "Indexes' colors mismatch: {} != {}", color, index.color);
-            for (auto i = 0; i < d; ++i) idx[i] -= index[i];
+            for (std::size_t i = 0; i < d; ++i) idx[i] -= index[i];
             return *this;
         }
 
@@ -223,7 +224,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
 
         auto toLevel(int k, int r) const {
             auto ret = *this;
-            for (auto i = 0; i < d; ++i) {
+            for (std::size_t i = 0; i < d; ++i) {
                 if (l > k) ret.idx[i] /= Math::int_pow(r, l - k);
                 else
                     ret.idx[i] *= Math::int_pow(r, k - l);
@@ -234,10 +235,10 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
 
         [[nodiscard]] std::string toString(int n, const std::string& prefix) const override {
             std::string ret;
-            for (auto i = 0; i < n; ++i) ret += prefix;
+            for (int i = 0; i < n; ++i) ret += prefix;
             ret += "{" + std::format("{}, {}", l, p);
             if constexpr (d > 0) ret += std::format(", {}", this->idx[0]);
-            for (auto i = 1; i < d; ++i) ret += std::format(", {}", this->idx[i]);
+            for (std::size_t i = 1; i < d; ++i) ret += std::format(", {}", this->idx[i]);
             ret += "}";
             return ret;
         }

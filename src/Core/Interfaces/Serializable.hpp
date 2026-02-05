@@ -26,6 +26,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             deserialize(data.data(), data.size());
         }
         virtual void deserialize(const std::byte* data, std::size_t size) = 0;
+        virtual ~SerializableObj() = default;
     };
 
     template <typename T>

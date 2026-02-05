@@ -23,15 +23,20 @@ on:
       - '.github/workflows/Build.yml'
 jobs:
   generate:
-    name: MPI${{ matrix.mpi }}/${{ matrix.mode }}
-    runs-on: ubuntu-24.04
-    container: 
-      image: luohaothu/gcc-trunk:latest
+    name: ${{ matrix.os }}/${{ matrix.compiler }}/MPI${{ matrix.mpi }}/${{ matrix.mode }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-24.04, macos-15]
+        compiler: [clang, gcc]
         mpi: [ON, OFF]
         mode: [Debug, Release]
+        # exclude :
+        #   - os: macos-12
+        #     compiler: clang
+        #     mpi: ON
+        #     mode: Release # clang tends to emit illegal inst for macOS with MPI on release mode (-O3)
     if: "!contains(github.event.head_commit.message, 'skip build')"
     steps:
       - name: Checkout
@@ -39,32 +44,240 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+      - name: Install dependence
+        run: |
+          export INPUT_MPI=${{ matrix.mpi }}
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt update
+            sudo apt install -y python3-pip python3-sphinx lcov libboost-all-dev doxygen libtbb-dev libopenmpi-dev ninja-build
+            if [ "$INPUT_MPI" == "ON" ]; then
+              sudo apt install -y libhdf5-mpi-dev
+            else
+              sudo apt install -y libhdf5-dev
+            fi
+            echo "DOXYGEN_DIR=/usr/bin" >> "$GITHUB_ENV"
+            echo "TBB_DIR=/usr/lib/x86_64-linux-gnu/cmake/TBB" >> "$GITHUB_ENV"
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            # Ensure Homebrew is available (macOS: /opt/homebrew or in PATH).
+            if command -v brew >/dev/null 2>&1; then
+              eval "$(brew shellenv)"
+            elif [ -x "/opt/homebrew/bin/brew" ]; then
+              eval "$(/opt/homebrew/bin/brew shellenv)"
+            else
+              echo "Homebrew not found"
+              exit 1
+            fi
+            echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
+            brew install doxygen tbb lcov boost open-mpi ninja sphinx-doc
+            echo "$(brew --prefix sphinx-doc)/bin" >> "$GITHUB_PATH"
+            if [ "$INPUT_MPI" == "ON" ]; then
+              brew install hdf5-mpi
+            else
+              brew install hdf5
+            fi
+            echo "DOXYGEN_DIR=$(brew --prefix doxygen)/bin" >> "$GITHUB_ENV"
+            echo "TBB_DIR=$(brew --prefix tbb)/lib/cmake/TBB" >> "$GITHUB_ENV"
+          else
+            echo "$RUNNER_OS not supported"
+            exit 1
+          fi
+
+      - name: Install CMake
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            USER_BASE=$(python3 -m site --user-base)
+            echo "$USER_BASE/bin" >> "$GITHUB_PATH"
+            python3 -m pip install --user --upgrade "cmake==4.0.2"
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            brew install cmake
+          else
+            echo "$RUNNER_OS not supported"
+            exit 1
+          fi
+
+      - name: Install toolchain
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            if [ "${{ matrix.compiler }}" == "gcc" ]; then
+              sudo apt update
+              sudo apt install -y software-properties-common
+              sudo add-apt-repository -y ppa:ubuntu-toolchain-r/ppa
+              sudo apt update
+              if sudo apt install -y gcc-15 g++-15; then
+                echo "CC=gcc-15" >> "$GITHUB_ENV"
+                echo "CXX=g++-15" >> "$GITHUB_ENV"
+              else
+                if ! command -v brew >/dev/null 2>&1; then
+                  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+                fi
+                eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+                brew install gcc@15 binutils
+                GCC_HOME=$(brew --prefix gcc@15)
+                echo "CC=$GCC_HOME/bin/gcc-15" >> "$GITHUB_ENV"
+                echo "CXX=$GCC_HOME/bin/g++-15" >> "$GITHUB_ENV"
+                echo "$GCC_HOME/bin" >> "$GITHUB_PATH"
+                echo "$(brew --prefix binutils)/bin" >> "$GITHUB_PATH"
+              fi
+            else
+              wget -q https://apt.llvm.org/llvm.sh
+              chmod +x llvm.sh
+              sudo ./llvm.sh 21
+              sudo apt install -y clang-21 llvm-21 lld-21 lldb-21 libomp-21-dev libc++-21-dev libc++abi-21-dev
+              libcxx_module_path=$(dpkg -L libc++-21-dev | grep -m1 '/std.cppm$' || true)
+              if [ -n "$libcxx_module_path" ]; then
+                libcxx_module_dir=$(dirname "$libcxx_module_path")
+                sudo mkdir -p /lib/share/libc++
+                sudo ln -sfn "$libcxx_module_dir" /lib/share/libc++/v1
+              fi
+              libcxx_inc_path=$(dpkg -L libc++-21-dev | grep -m1 'std/algorithm.inc$' || true)
+              if [ -n "$libcxx_inc_path" ]; then
+                libcxx_inc_root=$(dirname "$(dirname "$libcxx_inc_path")")
+                CXXFLAGS="-stdlib=libc++ -isystem $libcxx_inc_root -Wno-thread-safety -Wno-error=thread-safety-analysis"
+              else
+                CXXFLAGS="-stdlib=libc++ -isystem /usr/include/c++/v1 -isystem /usr/lib/llvm-21/include/c++/v1 -Wno-thread-safety -Wno-error=thread-safety-analysis"
+              fi
+              echo "CC=clang-21" >> "$GITHUB_ENV"
+              echo "CXX=clang++-21" >> "$GITHUB_ENV"
+              echo "CXXFLAGS=$CXXFLAGS" >> "$GITHUB_ENV"
+              echo "LDFLAGS=-stdlib=libc++" >> "$GITHUB_ENV"
+            fi
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            if [ "${{ matrix.compiler }}" == "gcc" ]; then
+              brew install gcc@15
+              GCC_HOME=$(brew --prefix gcc@15)
+              echo "CC=$GCC_HOME/bin/gcc-15" >> "$GITHUB_ENV"
+              echo "CXX=$GCC_HOME/bin/g++-15" >> "$GITHUB_ENV"
+              echo "$GCC_HOME/bin" >> "$GITHUB_PATH"
+            else
+              brew install llvm@21
+              LLVM_HOME=$(brew --prefix llvm@21)
+              SDKROOT=$(xcrun --show-sdk-path || true)
+              echo "CC=$LLVM_HOME/bin/clang" >> "$GITHUB_ENV"
+              echo "CXX=$LLVM_HOME/bin/clang++" >> "$GITHUB_ENV"
+              echo "$LLVM_HOME/bin" >> "$GITHUB_PATH"
+              if [ -n "$SDKROOT" ]; then
+                echo "SDKROOT=$SDKROOT" >> "$GITHUB_ENV"
+                echo "CFLAGS=-isysroot $SDKROOT" >> "$GITHUB_ENV"
+                echo "CXXFLAGS=-stdlib=libc++ -isystem $LLVM_HOME/include/c++/v1 -isysroot $SDKROOT -Wno-thread-safety -Wno-error=thread-safety-analysis" >> "$GITHUB_ENV"
+                echo "LDFLAGS=-stdlib=libc++ -L$LLVM_HOME/lib -Wl,-rpath,$LLVM_HOME/lib -Wl,-syslibroot,$SDKROOT" >> "$GITHUB_ENV"
+              else
+                echo "CXXFLAGS=-stdlib=libc++ -isystem $LLVM_HOME/include/c++/v1 -Wno-thread-safety -Wno-error=thread-safety-analysis" >> "$GITHUB_ENV"
+                echo "LDFLAGS=-stdlib=libc++ -L$LLVM_HOME/lib -Wl,-rpath,$LLVM_HOME/lib" >> "$GITHUB_ENV"
+              fi
+              modules_json="$LLVM_HOME/share/libc++/v1/libc++.modules.json"
+              if [ ! -f "$modules_json" ]; then
+                modules_json=$(find "$LLVM_HOME" -name libc++.modules.json -print -quit || true)
+              fi
+              if [ -z "$modules_json" ]; then
+                SDKROOT=$(xcrun --show-sdk-path || true)
+                if [ -n "$SDKROOT" ]; then
+                  sdk_modules_json="$SDKROOT/usr/share/libc++/v1/libc++.modules.json"
+                  if [ -f "$sdk_modules_json" ]; then
+                    modules_json="$sdk_modules_json"
+                  else
+                    modules_json=$(find "$SDKROOT" -name libc++.modules.json -print -quit || true)
+                  fi
+                fi
+              fi
+              if [ -z "$modules_json" ]; then
+                clt_modules_json="/Library/Developer/CommandLineTools/usr/share/libc++/v1/libc++.modules.json"
+                if [ -f "$clt_modules_json" ]; then
+                  modules_json="$clt_modules_json"
+                fi
+              fi
+              if [ -z "$modules_json" ]; then
+                CLANG_RESOURCE_DIR="$("$LLVM_HOME/bin/clang" -print-resource-dir 2>/dev/null || true)"
+                if [ -n "$CLANG_RESOURCE_DIR" ]; then
+                  clang_modules_json="$CLANG_RESOURCE_DIR/share/libc++/v1/libc++.modules.json"
+                  if [ -f "$clang_modules_json" ]; then
+                    modules_json="$clang_modules_json"
+                  else
+                    modules_json=$(find "$CLANG_RESOURCE_DIR" -name libc++.modules.json -print -quit || true)
+                  fi
+                fi
+              fi
+              if [ -z "$modules_json" ]; then
+                LLVM_SRC_DIR="$RUNNER_TEMP/llvm-project"
+                LLVM_BUILD_DIR="$RUNNER_TEMP/llvm-project-build"
+                git clone --depth 1 --branch release/21.x https://github.com/llvm/llvm-project.git "$LLVM_SRC_DIR"
+                cmake -G Ninja -S "$LLVM_SRC_DIR/runtimes" -B "$LLVM_BUILD_DIR" \
+                  -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
+                  -DLIBCXX_INSTALL_MODULES=ON \
+                  -DLIBCXX_INSTALL_MODULE_DIR="share/libc++/v1" \
+                  -DCMAKE_INSTALL_PREFIX="$LLVM_HOME" \
+                  -DCMAKE_C_COMPILER="$LLVM_HOME/bin/clang" \
+                  -DCMAKE_CXX_COMPILER="$LLVM_HOME/bin/clang++" \
+                  -DCMAKE_BUILD_TYPE=Release
+                cmake --build "$LLVM_BUILD_DIR" --target install --parallel 2
+                modules_json=$(find "$LLVM_HOME" -name libc++.modules.json -print -quit || true)
+              fi
+              if [ -n "$modules_json" ] && [ ! -f "$modules_json" ]; then
+                modules_json=""
+              fi
+              if [ -n "$modules_json" ]; then
+                echo "CMAKE_CXX_STDLIB_MODULES_JSON=$modules_json" >> "$GITHUB_ENV"
+              fi
+            fi
+          else
+            echo "$RUNNER_OS not supported"
+            exit 1
+          fi
+      - name: Set parallelism
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            echo "NPROC=$(nproc)" >> "$GITHUB_ENV"
+          else
+            echo "NPROC=$(sysctl -n hw.ncpu)" >> "$GITHUB_ENV"
+          fi
       - name: Make directory
         run: mkdir -p build
       - name: Generate
         working-directory: ./build
         run: |
-          wget https://github.com/Kitware/CMake/releases/download/v4.0.2/cmake-4.0.2-linux-x86_64.sh
-          chmod +x cmake-4.0.2-linux-x86_64.sh
-          mkdir -p cmake
-          ./cmake-4.0.2-linux-x86_64.sh --skip-license --prefix=$(pwd)/cmake
-          apt update && apt install -y ninja-build libhdf5-dev libhdf5-openmpi-dev libboost-all-dev python3-pip python3-sphinx doxygen
-          export PATH=$(pwd)/cmake/bin:$PATH
-          cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -G Ninja \
-                -DCMAKE_INSTALL_PREFIX=$(pwd)/install -DOPFLOW_BUILD_ALL=ON -DOPFLOW_ENABLE_MODULE=OFF \
-                -DCMAKE_BUILD_TYPE=${{ matrix.mode }} -DOPFLOW_WITH_HDF5=ON -DOPFLOW_WITH_MPI=${{ matrix.mpi }} \
-                ..
+          CMAKE_STDLIB_JSON_ARG=""
+          if [ -n "$CMAKE_CXX_STDLIB_MODULES_JSON" ]; then
+            CMAKE_STDLIB_JSON_ARG="-DCMAKE_CXX_STDLIB_MODULES_JSON=$CMAKE_CXX_STDLIB_MODULES_JSON"
+          fi
+          OPFLOW_ENABLE_MODULE=ON
+          if [ "${{ matrix.compiler }}" = "gcc" ]; then
+            OPFLOW_ENABLE_MODULE=OFF
+          fi
+          cmake \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE="${{ matrix.mode }}" \
+            -DCMAKE_C_COMPILER="${CC}" \
+            -DCMAKE_CXX_COMPILER="${CXX}" \
+            -DCMAKE_CXX_FLAGS="${CXXFLAGS}" \
+            -DCMAKE_EXE_LINKER_FLAGS="${LDFLAGS}" \
+            ${CMAKE_STDLIB_JSON_ARG} \
+            -DOPFLOW_WITH_HDF5=ON \
+            -DBENCHMARK_ENABLE_TESTING=OFF \
+            -DBENCHMARK_ENABLE_WERROR=OFF \
+            -DOPFLOW_BUILD_ALL=ON \
+            -DOPFLOW_INSTALL=OFF \
+            -DOPFLOW_WITH_VTK=OFF \
+            -DOPFLOW_TBB_EXTERNAL=ON \
+            -DDOXYGEN_DIR="${DOXYGEN_DIR}" \
+            -DTBB_DIR="${TBB_DIR}" \
+            -DOPFLOW_ENABLE_MODULE="${OPFLOW_ENABLE_MODULE}" \
+            -DOPFLOW_WITH_MPI=${{ matrix.mpi }} \
+            .. || {
+              echo "==== CMakeFiles/CMakeError.log ===="
+              cat CMakeFiles/CMakeError.log || true
+              echo "==== CMakeFiles/CMakeOutput.log ===="
+              cat CMakeFiles/CMakeOutput.log || true
+              exit 1
+            }
           if [ "$RUNNER_OS" == "Linux" ]; then
-            cmake --build . -t All_CI --parallel $(nproc) --config ${{ matrix.mode }}
+            cmake --build . -t All_CI --parallel "${NPROC}" --config ${{ matrix.mode }}
           else
-            cmake --build . -t All_CI --parallel $(nproc) --config ${{ matrix.mode }}
+            cmake --build . -t All_CI --parallel "${NPROC}" --config ${{ matrix.mode }}
           fi
       - name: Test
         working-directory: ./build
         run: |
-          export PATH=$(pwd)/cmake/bin:$PATH
           if [ "$RUNNER_OS" == "Linux" ]; then
-            ctest --parallel $(nproc) -C ${{ matrix.mode }} -VV
+            ctest --parallel "${NPROC}" -C ${{ matrix.mode }} -VV
           else
-            ctest --parallel $(nproc) -C ${{ matrix.mode }} -VV
+            ctest --parallel "${NPROC}" -C ${{ matrix.mode }} -VV
           fi

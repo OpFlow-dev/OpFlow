@@ -24,12 +24,12 @@
 OPFLOW_MODULE_EXPORT namespace OpFlow::Math {
 
     template <typename T>
-    inline constexpr int signum(T x, std::false_type is_signed) {
+    inline constexpr int signum(T x, std::false_type) {
         return T(0) < x;
     }
 
     template <typename T>
-    inline constexpr int signum(T x, std::true_type is_signed) {
+    inline constexpr int signum(T x, std::true_type) {
         return (T(0) < x) - (x < T(0));
     }
 
