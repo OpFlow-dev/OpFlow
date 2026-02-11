@@ -15,14 +15,6 @@
 # ----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 4.0.2 FATAL_ERROR)
-# The specific value used for CMake==4.0.2
-set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD
-    # This specific value changes as experimental support evolves. See
-    # `Help/dev/experimental.rst` in the CMake source corresponding to
-    # your CMake build for the exact value to use.
-    "a9e1cf81-9932-4810-974b-6eccaf14e457")
-set(CMAKE_EXPERIMENTAL_EXPORT_BUILD_DATABASE 4bd552e2-b7fb-429a-ab23-c83ef53f3f13)
-set(CMAKE_EXPORT_BUILD_DATABASE 1)
 
 # ----------------------------------------------------------------------------
 # Start opflow project
@@ -40,9 +32,6 @@ opflow_extract_version()
 project(opflow VERSION ${OPFLOW_VERSION} LANGUAGES C CXX)
 set(OPFLOW_VERSION_STRING "${OPFLOW_VERSION} - ${SHORT_SHA1} - ${GIT_CHANGE}")
 message(STATUS "Build opflow: ${OPFLOW_VERSION_STRING}")
-
-set(CMAKE_EXPERIMENTAL_EXPORT_BUILD_DATABASE 4bd552e2-b7fb-429a-ab23-c83ef53f3f13)
-set(CMAKE_EXPORT_BUILD_DATABASE 1)
 
 include(GNUInstallDirs)
 
@@ -107,11 +96,11 @@ option(OPFLOW_WITH_OPENMP "Build OpFlow with OpenMP support" ON)
 option(OPFLOW_WITH_MPI "Build OpFlow with MPI support" OFF)
 
 # utility options
-option(OPFLOW_WITH_HDF5 "Build OpFlow with HDF5 support" OFF)
+# IO is always enabled (no variant dimension).
+set(OPFLOW_WITH_HDF5 ON CACHE BOOL "Build OpFlow with HDF5 support (always ON)" FORCE)
 
 # testing options
 option(OPFLOW_BUILD_TESTS "Build tests" OFF)
-option(OPFLOW_USE_BUNDLED_GTEST "Use bundled googletest" ON)
 option(OPFLOW_ENABLE_COVERAGE "Enable coverage" OFF)
 
 # benchmark options
@@ -136,11 +125,8 @@ endif()
 
 # install options
 option(OPFLOW_INSTALL "Generate the install target" ${PROJECT_IS_TOP_LEVEL})
-# the default behavior is to use bundled HYPRE, VTK & TBB
-option(OPFLOW_WITH_VTK "Build OpFlow with VTK" OFF)
-option(OPFLOW_HYPRE_EXTERNAL "Use external HYPRE library instead of bundled" OFF)
-option(OPFLOW_VTK_EXTERNAL "Use external VTK library instead of bundled" OFF)
-option(OPFLOW_TBB_EXTERNAL "Use external Intel TBB library instead of bundled" OFF)
+# VTK is always enabled (no variant dimension).
+set(OPFLOW_WITH_VTK ON CACHE BOOL "Build OpFlow with VTK support (always ON)" FORCE)
 
 # clang-tidy
 if(${CMAKE_VERSION} VERSION_GREATER "3.5")
@@ -157,9 +143,75 @@ message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
 add_subdirectory(src)
 
 # ----------------------------------------------------------------------------
-# External dependencies
+# Dependencies (Conda-only)
 # ----------------------------------------------------------------------------
-add_subdirectory(external)
+# OpFlow no longer vendors third-party dependencies. All dependencies must be
+# provided by the toolchain environment (e.g. conda).
+target_compile_definitions(opflow ${OPFLOW_TARGET_SCOPE} OPFLOW_WITH_HDF5 OPFLOW_WITH_VTK)
+find_package(spdlog CONFIG REQUIRED)
+target_link_libraries(opflow ${OPFLOW_TARGET_SCOPE} spdlog::spdlog)
+
+find_package(amgcl CONFIG REQUIRED)
+target_compile_definitions(opflow ${OPFLOW_TARGET_SCOPE} AMGCL_NO_BOOST)
+target_link_libraries(opflow ${OPFLOW_TARGET_SCOPE} amgcl::amgcl)
+
+find_package(TBB CONFIG REQUIRED)
+target_link_libraries(opflow ${OPFLOW_TARGET_SCOPE} TBB::tbb)
+
+find_package(HYPRE CONFIG REQUIRED)
+target_link_libraries(opflow ${OPFLOW_TARGET_SCOPE} HYPRE::HYPRE)
+include(CheckCSourceCompiles)
+set(_opflow_saved_required_includes "${CMAKE_REQUIRED_INCLUDES}")
+set(_opflow_saved_required_libraries "${CMAKE_REQUIRED_LIBRARIES}")
+get_target_property(_opflow_hypre_includes HYPRE::HYPRE INTERFACE_INCLUDE_DIRECTORIES)
+if(_opflow_hypre_includes AND NOT _opflow_hypre_includes STREQUAL "_opflow_hypre_includes-NOTFOUND")
+    set(CMAKE_REQUIRED_INCLUDES "${_opflow_hypre_includes}")
+endif()
+set(CMAKE_REQUIRED_LIBRARIES HYPRE::HYPRE)
+check_c_source_compiles(
+    "#include <HYPRE_sstruct_ls.h>
+int main(void) {
+    (void)(&HYPRE_SStructFACCreate);
+    return 0;
+}
+"
+    OPFLOW_HYPRE_HAS_SSTRUCT_FAC)
+set(CMAKE_REQUIRED_INCLUDES "${_opflow_saved_required_includes}")
+set(CMAKE_REQUIRED_LIBRARIES "${_opflow_saved_required_libraries}")
+if(OPFLOW_HYPRE_HAS_SSTRUCT_FAC)
+    target_compile_definitions(opflow ${OPFLOW_TARGET_SCOPE} OPFLOW_HYPRE_HAS_SSTRUCT_FAC)
+endif()
+
+# TecIO (serial or MPI)
+if(OPFLOW_WITH_MPI)
+    find_package(teciompi CONFIG REQUIRED)
+    target_compile_definitions(opflow ${OPFLOW_TARGET_SCOPE} TECIOMPI)
+    target_link_libraries(opflow ${OPFLOW_TARGET_SCOPE} tecio::teciompi)
+else()
+    find_package(tecio CONFIG REQUIRED)
+    target_link_libraries(opflow ${OPFLOW_TARGET_SCOPE} tecio::tecio)
+endif()
+
+# VTK is required (IO always on).
+find_package(VTK CONFIG REQUIRED COMPONENTS CommonCore CommonDataModel IOXML)
+target_link_libraries(opflow ${OPFLOW_TARGET_SCOPE} ${VTK_LIBRARIES})
+
+# HDF5 is required (IO always on).
+if(OPFLOW_WITH_MPI)
+    set(HDF5_PREFER_PARALLEL TRUE)
+endif()
+# Prefer HDF5 in the active conda prefix to avoid mixing with host Homebrew installs.
+if(DEFINED ENV{PREFIX})
+    set(HDF5_ROOT "$ENV{PREFIX}")
+elseif(DEFINED ENV{CONDA_PREFIX})
+    set(HDF5_ROOT "$ENV{CONDA_PREFIX}")
+endif()
+if(HDF5_ROOT AND EXISTS "${HDF5_ROOT}/bin/h5cc")
+    set(HDF5_C_COMPILER_EXECUTABLE "${HDF5_ROOT}/bin/h5cc")
+endif()
+find_package(HDF5 REQUIRED COMPONENTS C)
+target_include_directories(opflow ${OPFLOW_TARGET_SCOPE} ${HDF5_INCLUDE_DIRS})
+target_link_libraries(opflow ${OPFLOW_TARGET_SCOPE} ${HDF5_C_LIBRARIES})
 
 # ----------------------------------------------------------------------------
 # Find MPI
@@ -175,31 +227,8 @@ endif()
 # Find OpenMP
 # ----------------------------------------------------------------------------
 if(OPFLOW_WITH_OPENMP)
-    # workarounds for CI to find the correct libomp
-    if(APPLE)
-        if(EXISTS /usr/local/opt/llvm/lib)
-            link_directories("/usr/local/opt/llvm/lib")
-        elseif(EXISTS /opt/homebrew/lib)
-            link_directories("/opt/homebrew/lib")
-        endif()
-    endif()
-    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-        set(OpenMP_C "${CMAKE_C_COMPILER}")
-        set(OpenMP_C_FLAGS "-fopenmp=libomp -Wno-unused-command-line-argument -Wno-deprecated-pragma")
-        set(OpenMP_C_LIB_NAMES "omp")
-        set(OpenMP_omp_LIBRARY ${OpenMP_C_LIB_NAMES})
-    endif()
-    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        set(OpenMP_CXX "${CMAKE_CXX_COMPILER}")
-        set(OpenMP_CXX_FLAGS "-fopenmp=libomp -Wno-unused-command-line-argument")
-        set(OpenMP_CXX_LIB_NAMES "omp")
-        set(OpenMP_omp_LIBRARY ${OpenMP_CXX_LIB_NAMES})
-    endif()
     find_package(OpenMP REQUIRED)
     target_link_libraries(opflow INTERFACE OpenMP::OpenMP_C OpenMP::OpenMP_CXX)
-    target_compile_options(opflow INTERFACE ${OpenMP_CXX_FLAGS})
-
-    list(APPEND PKG_CONFIG_REQUIRES OpenMP)
 endif()
 
 # ----------------------------------------------------------------------------
@@ -281,11 +310,7 @@ endif()
 # ----------------------------------------------------------------------------
 if(OPFLOW_BUILD_BENCHMARKS OR OPFLOW_BUILD_ALL)
     message(STATUS "Generating benchmarks")
-    # config google benchmark as part of the project
-    set(BENCHMARK_ENABLE_INSTALL OFF)
-    set(BENCHMARK_ENABLE_TESTING OFF)
-    set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
-    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/external/benchmark EXCLUDE_FROM_ALL)
+    find_package(benchmark CONFIG REQUIRED)
     add_subdirectory(benchmark)
 endif()
 
@@ -349,16 +374,16 @@ if(OPFLOW_INSTALL)
     set(pkgconfig_install_dir "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
     set(pkg_config "${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc")
 
-    if(OPFLOW_WITH_VTK AND NOT OPFLOW_VTK_EXTERNAL)
-        install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/vtk/
-            DESTINATION "${CMAKE_INSTALL_PREFIX}")
-    endif()
-
     include(CMakePackageConfigHelpers)
     configure_file("${project_config_in}" "${project_config_out}" @ONLY)
 
     write_basic_package_version_file("${version_config_file}" COMPATIBILITY SameMajorVersion)
     install(FILES "${project_config_out}" "${version_config_file}" DESTINATION "${export_dest_dir}")
+    install(EXPORT opflow-targets
+        FILE opflowTargets.cmake
+        NAMESPACE opflow::
+        DESTINATION "${export_dest_dir}")
+    install(FILES "${CMAKE_BINARY_DIR}/Version.hpp" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
     # ----------------------------------------------------------------------------
     # Support creation of installable packages

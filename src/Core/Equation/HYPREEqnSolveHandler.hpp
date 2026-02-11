@@ -28,6 +28,7 @@
 #include "DataStructures/Index/LevelMDIndex.hpp"
 #include "DataStructures/Index/MDIndex.hpp"
 #ifndef OPFLOW_INSIDE_MODULE
+#include <iostream>
 #include <memory>
 #include <numeric>
 #include <vector>
@@ -173,7 +174,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             if (solver.params.pinValue) {
                 auto first = DS::MDIndex<dim>(
                         DS::commonRange(target->assignableRange, target->localRange).start);
-                HYPRE_StructVectorSetValues(b, const_cast<int*>(first.get().data()), 0.);
+                Real zero = 0.;
+                HYPRE_StructVectorSetValues(b, const_cast<int*>(first.get().data()), &zero);
             }
             HYPRE_StructVectorAssemble(b);
         }
@@ -230,6 +232,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         constexpr static auto dim = internal::CartesianFieldExprTrait<T>::dim;
     };
 
+    #ifdef OPFLOW_HYPRE_HAS_SSTRUCT_FAC
     template <typename F, CartAMRFieldType T, typename Solver>
     struct HYPREEqnSolveHandler<F, T, Solver> : virtual public EqnSolveHandler {
         HYPREEqnSolveHandler() = default;
@@ -295,7 +298,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                             if (k.l != l) {
                                 HYPRE_SStructGraphAddEntries(graph, l, i.c_arr(), c_var, k.l, k.c_arr(),
                                                              c_var);
-                                std::print("GraphAddEntry: {} -> {}\n", i, k);
+                                std::cout << "GraphAddEntry: " << i << " -> " << k << '\n';
                             }
                         }
                     });
@@ -333,8 +336,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                         for (auto& [k, v] : offsetStencil.pad) {
                             if (k.l == l) { k -= i; }
                         }
-                        std::print("index = {}\n", i);
-                        std::print("current stencil:{}\noffset stencil:{}\n", currentStencil, offsetStencil);
+                        std::cout << "index = " << i << '\n';
+                        std::cout << "current stencil:" << currentStencil
+                                  << "\noffset stencil:" << offsetStencil << '\n';
                         auto extendedStencil = offsetStencil;
                         for (auto& [k, v] : commStencil.pad) {
                             auto _target_k = k;
@@ -346,7 +350,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                                 extendedStencil.pad[_target_k] = 0;
                             }
                         }
-                        std::print("extended stencil:{}\n", extendedStencil);
+                        std::cout << "extended stencil:" << extendedStencil << '\n';
                         std::vector<Real> vals;
                         std::vector<int> entries(commStencil.pad.size());
                         std::iota(entries.begin(), entries.end(), 0);
@@ -366,7 +370,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                                 int entry[] = {count++};
                                 Real val[] = {v};
                                 HYPRE_SStructMatrixSetValues(A, l, i.c_arr(), 0, 1, entry, val);
-                                std::print("A[{}, {}] = {}\n", i, k, v);
+                                std::cout << "A[" << i << ", " << k << "] = " << v << '\n';
                             }
                         }
                         auto bias = -extendedStencil.bias;
@@ -485,5 +489,12 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         constexpr static auto dim = internal::CartAMRFieldExprTrait<T>::dim;
         using index_type = typename internal::CartAMRFieldExprTrait<T>::index_type;
     };
+    #else
+    template <typename F, CartAMRFieldType T, typename Solver>
+    struct HYPREEqnSolveHandler<F, T, Solver> : virtual public EqnSolveHandler {
+        static_assert(sizeof(T) == 0,
+                      "CartAMR HYPRE FAC solver is unavailable with this HYPRE build.");
+    };
+    #endif
 }// namespace OpFlow
 #endif//OPFLOW_HYPREEQNSOLVEHANDLER_HPP

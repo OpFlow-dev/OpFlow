@@ -3,9 +3,12 @@
 # ----------------------------------------------------------------------------
 cmake_minimum_required(VERSION 4.0.2 FATAL_ERROR)
 
-file(GLOB_RECURSE OPFLOW_HEADERS
+file(GLOB_RECURSE OPFLOW_SRC_HEADERS
     ${CMAKE_SOURCE_DIR}/src/*.hpp)
-list(APPEND OPFLOW_HEADERS
+file(GLOB_RECURSE OPFLOW_SRC_TEMPLATE_HEADERS
+    ${CMAKE_SOURCE_DIR}/src/*.hpp.in)
+list(APPEND OPFLOW_SRC_HEADERS ${OPFLOW_SRC_TEMPLATE_HEADERS})
+set(OPFLOW_PUBLIC_HEADERS
     ${CMAKE_SOURCE_DIR}/include/Core
     ${CMAKE_SOURCE_DIR}/include/Math
     ${CMAKE_SOURCE_DIR}/include/DS
@@ -30,16 +33,19 @@ if(OPFLOW_ENABLE_MODULE)
         FILES ${CMAKE_SOURCE_DIR}/src/opflow.cppm
         ${CMAKE_SOURCE_DIR}/src/amgcl.cppm)
     target_sources(opflow
-        PUBLIC FILE_SET HEADERS
-        BASE_DIRS
-        ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/src
-        FILES ${OPFLOW_HEADERS})
+        PUBLIC FILE_SET opflow_public_headers TYPE HEADERS
+        BASE_DIRS ${CMAKE_SOURCE_DIR}/include
+        FILES ${OPFLOW_PUBLIC_HEADERS})
+    target_sources(opflow
+        PUBLIC FILE_SET opflow_src_headers TYPE HEADERS
+        BASE_DIRS ${CMAKE_SOURCE_DIR}/src
+        FILES ${OPFLOW_SRC_HEADERS})
     target_compile_features(opflow PUBLIC cxx_std_26)
     install(TARGETS opflow
         EXPORT opflow-targets
         FILE_SET CXX_MODULES DESTINATION ${CMAKE_INSTALL_LIBDIR}/cxx/opflow
-        FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+        FILE_SET opflow_public_headers DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        FILE_SET opflow_src_headers DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/src)
 else()
     # ----------------------------------------------------------------------------
     # C++20 header only version
@@ -48,14 +54,17 @@ else()
     set_property(TARGET opflow PROPERTY CXX_SCAN_FOR_MODULES OFF)
     target_compile_features(opflow INTERFACE cxx_std_26)
     target_sources(opflow
-        INTERFACE FILE_SET HEADERS
-        BASE_DIRS
-        ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/src
-        FILES ${OPFLOW_HEADERS})
+        INTERFACE FILE_SET opflow_public_headers TYPE HEADERS
+        BASE_DIRS ${CMAKE_SOURCE_DIR}/include
+        FILES ${OPFLOW_PUBLIC_HEADERS})
+    target_sources(opflow
+        INTERFACE FILE_SET opflow_src_headers TYPE HEADERS
+        BASE_DIRS ${CMAKE_SOURCE_DIR}/src
+        FILES ${OPFLOW_SRC_HEADERS})
     install(TARGETS opflow
         EXPORT opflow-targets
-        FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+        FILE_SET opflow_public_headers DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        FILE_SET opflow_src_headers DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/src)
 endif()
 add_library(opflow::opflow ALIAS opflow)
 

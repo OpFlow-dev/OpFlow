@@ -15,6 +15,7 @@
 
 #include "SemiStructSolver.hpp"
 
+#ifdef OPFLOW_HYPRE_HAS_SSTRUCT_FAC
 OPFLOW_MODULE_EXPORT namespace OpFlow {
     template <>
     struct SemiStructSolverParams<SemiStructSolverType::FAC> : SemiStructSolverParamsBase {
@@ -84,4 +85,5 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         bool initialized = false;
     };
 }// namespace OpFlow
+#endif
 #endif//OPFLOW_SEMISTRUCTSOLVERFAC_HPP
