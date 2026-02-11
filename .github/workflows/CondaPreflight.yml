@@ -1,42 +1,24 @@
-name: BuildAndTest
+name: CondaPreflight
 
 on:
   push:
     paths:
-      - '**.c'
-      - '**.cpp'
-      - '**.cppm'
-      - '**.h'
-      - '**.hpp'
-      - '**.cmake'
-      - '**/CMakeLists.txt'
       - 'conda/**'
-      - '.github/workflows/Build.yml'
       - '.github/workflows/CondaPreflight.yml'
-      - '.github/workflows/CondaPackage.yml'
       - '.github/scripts/ci/**'
   pull_request:
     paths:
-      - '**.c'
-      - '**.cpp'
-      - '**.cppm'
-      - '**.h'
-      - '**.hpp'
-      - '**.cmake'
-      - '**/CMakeLists.txt'
       - 'conda/**'
-      - '.github/workflows/Build.yml'
       - '.github/workflows/CondaPreflight.yml'
-      - '.github/workflows/CondaPackage.yml'
       - '.github/scripts/ci/**'
   workflow_dispatch:
 
 jobs:
   matrix:
-    name: Generate Source Matrix
+    name: Generate Package Matrix
     runs-on: macos-14
     outputs:
-      source_matrix: ${{ steps.generate.outputs.source_matrix }}
+      package_matrix: ${{ steps.generate.outputs.package_matrix }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,15 +26,15 @@ jobs:
       - name: Generate matrix
         id: generate
         run: |
-          python3 .github/scripts/ci/generate_matrix.py --mode source --github-output "$GITHUB_OUTPUT"
+          python3 .github/scripts/ci/generate_matrix.py --mode package --github-output "$GITHUB_OUTPUT"
 
-  build_and_test:
-    name: MPI${{ matrix.mpi }} / OMP${{ matrix.openmp }} / ${{ matrix.build_type }}
+  preflight:
+    name: Preflight / MPI${{ matrix.mpi }} / OMP${{ matrix.openmp }}
     runs-on: macos-14
     needs: matrix
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.matrix.outputs.source_matrix) }}
+      matrix: ${{ fromJSON(needs.matrix.outputs.package_matrix) }}
 
     steps:
       - name: Checkout
@@ -69,12 +51,11 @@ jobs:
           auto-activate-base: true
           use-mamba: true
 
-      - name: Build and test source tree
+      - name: Verify dependency availability
         shell: bash -l {0}
         run: |
-          bash .github/scripts/ci/run_source_job.sh \
+          bash .github/scripts/ci/ensure_deps.sh \
             --mpi "${{ matrix.mpi }}" \
             --openmp "${{ matrix.openmp }}" \
-            --build-type "${{ matrix.build_type }}" \
             --owner opflow-dev \
             --platform osx-arm64

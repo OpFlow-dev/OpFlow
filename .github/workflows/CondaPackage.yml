@@ -1,0 +1,86 @@
+name: CondaPackage
+
+on:
+  push:
+    paths:
+      - 'conda/**'
+      - '.github/workflows/CondaPackage.yml'
+      - '.github/scripts/ci/**'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'src/**'
+      - 'include/**'
+  pull_request:
+    paths:
+      - 'conda/**'
+      - '.github/workflows/CondaPackage.yml'
+      - '.github/scripts/ci/**'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'src/**'
+      - 'include/**'
+  workflow_dispatch:
+
+jobs:
+  matrix:
+    name: Generate Package Matrix
+    runs-on: macos-14
+    outputs:
+      package_matrix: ${{ steps.generate.outputs.package_matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate matrix
+        id: generate
+        run: |
+          python3 .github/scripts/ci/generate_matrix.py --mode package --github-output "$GITHUB_OUTPUT"
+
+  package:
+    name: Package / MPI${{ matrix.mpi }} / OMP${{ matrix.openmp }}
+    runs-on: macos-14
+    needs: matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.matrix.outputs.package_matrix) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-variant: Miniforge3
+          miniforge-version: latest
+          channels: opflow-dev,conda-forge
+          channel-priority: strict
+          activate-environment: base
+          auto-activate-base: true
+          use-mamba: true
+
+      - name: Build conda package
+        shell: bash -l {0}
+        run: |
+          bash .github/scripts/ci/run_package_job.sh \
+            --mpi "${{ matrix.mpi }}" \
+            --openmp "${{ matrix.openmp }}" \
+            --owner opflow-dev \
+            --platform osx-arm64 \
+            --output-file package_paths.txt
+
+      - name: Resolve croot
+        id: croot
+        shell: bash -l {0}
+        run: |
+          croot="$(conda config --show croot | awk '{print $2}')"
+          echo "croot=$croot" >> "$GITHUB_OUTPUT"
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: opflow-conda-${{ matrix.mpi }}-${{ matrix.openmp }}
+          path: |
+            package_paths.txt
+            ${{ steps.croot.outputs.croot }}/osx-arm64/opflow-*.conda
+          if-no-files-found: error
