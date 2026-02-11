@@ -36,12 +36,8 @@ if [[ -z "$mpi" || -z "$openmp" ]]; then
   exit 2
 fi
 
-croot="$(conda config --show croot | awk '{print $2}')"
-local_channel="file://${croot}"
-
 bash .github/scripts/ci/ensure_deps.sh \
   --platform "$platform" \
   --owner "$owner" \
   --mpi "$mpi" \
-  --openmp "$openmp" \
-  --channel "$local_channel"
+  --openmp "$openmp"

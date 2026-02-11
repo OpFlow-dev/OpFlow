@@ -43,22 +43,17 @@ fi
 
 bash .github/scripts/ci/bootstrap_conda_tools.sh
 
-croot="$(conda config --show croot | awk '{print $2}')"
-local_channel="file://${croot}"
-
 bash .github/scripts/ci/ensure_deps.sh \
   --platform "$platform" \
   --owner "$owner" \
   --mpi "$mpi" \
-  --openmp "$openmp" \
-  --channel "$local_channel"
+  --openmp "$openmp"
 
 variants="{mpi: ${mpi}, openmp: ${openmp}}"
 
 echo "Building conda package with variants: $variants"
 conda build conda/recipe \
   --override-channels \
-  -c "$local_channel" \
   -c "$owner" \
   -c conda-forge \
   --variants "$variants" \

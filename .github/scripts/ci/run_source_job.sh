@@ -43,15 +43,11 @@ fi
 
 bash .github/scripts/ci/bootstrap_conda_tools.sh
 
-croot="$(conda config --show croot | awk '{print $2}')"
-local_channel="file://${croot}"
-
 bash .github/scripts/ci/ensure_deps.sh \
   --platform "$platform" \
   --owner "$owner" \
   --mpi "$mpi" \
-  --openmp "$openmp" \
-  --channel "$local_channel"
+  --openmp "$openmp"
 
 source "$(conda info --base)/etc/profile.d/conda.sh"
 
@@ -102,7 +98,6 @@ fi
 echo "Creating build env: $env_prefix"
 conda create -y -p "$env_prefix" \
   --override-channels \
-  -c "$local_channel" \
   -c "$owner" \
   -c conda-forge \
   "${install_specs[@]}"
