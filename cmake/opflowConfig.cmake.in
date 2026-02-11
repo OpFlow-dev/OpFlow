@@ -17,6 +17,8 @@
 #
 # ----------------------------------------------------------------------------
 
+@PACKAGE_INIT@
+
 include(CMakeFindDependencyMacro)
 
 set(OPFLOW_WITH_OPENMP @OPFLOW_WITH_OPENMP@)

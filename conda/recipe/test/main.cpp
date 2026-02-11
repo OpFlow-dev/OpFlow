@@ -1,4 +1,4 @@
-#include <Version>
+#include <Version.hpp>
 
 int main() {
     static_assert(OPFLOW_VERSION > 0);
