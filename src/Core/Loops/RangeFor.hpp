@@ -20,7 +20,6 @@
 #include "DataStructures/Index/RangedIndex.hpp"
 #include "DataStructures/Range/Ranges.hpp"
 #ifndef OPFLOW_INSIDE_MODULE
-#include <omp.h>
 #include <tbb/tbb.h>
 #endif
 #define TBB_PREVIEW_BLOCKED_RANGE_ND 1

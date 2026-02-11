@@ -19,7 +19,6 @@
 #include "Core/Meta.hpp"
 #include "RangeFor.hpp"
 #ifndef OPFLOW_INSIDE_MODULE
-#include <omp.h>
 #endif
 
 OPFLOW_MODULE_EXPORT namespace OpFlow {
