@@ -24,14 +24,14 @@ on:
       platforms:
         description: 'Comma-separated conda platforms (e.g. osx-arm64,linux-64)'
         required: false
-        default: osx-arm64
+        default: linux-64
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 env:
-  CI_CONDA_PLATFORMS: osx-arm64
+  CI_CONDA_PLATFORMS: linux-64
   OPFLOW_TECIO_REPO_URL: https://github.com/Luohaothu/tecio.git
   OPFLOW_TECIO_REPO_REF: master
   OPFLOW_TECIO_RECIPE_PATH: conda/meta.yaml

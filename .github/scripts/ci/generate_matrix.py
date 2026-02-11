@@ -121,7 +121,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--platforms",
-        default="osx-arm64",
+        default="linux-64",
         help="Comma-separated conda platform subdirs, e.g. osx-arm64,linux-64",
     )
     parser.add_argument(
