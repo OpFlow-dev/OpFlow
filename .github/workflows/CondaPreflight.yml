@@ -14,16 +14,20 @@ on:
   workflow_dispatch:
     inputs:
       platforms:
+        # Manual override for matrix platforms, e.g. "linux-64,osx-arm64".
         description: 'Comma-separated conda platforms (e.g. osx-arm64,linux-64)'
         required: false
         default: linux-64
 
 concurrency:
+  # Include event name so push and pull_request runs do not cancel each other.
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 env:
+  # Default platforms for automatic triggers (push/pull_request).
   CI_CONDA_PLATFORMS: linux-64
+  # Inputs for on-demand dependency bootstrap from source repos.
   OPFLOW_TECIO_REPO_URL: https://github.com/Luohaothu/tecio.git
   OPFLOW_TECIO_REPO_REF: master
   OPFLOW_TECIO_RECIPE_PATH: conda/meta.yaml
@@ -44,6 +48,7 @@ jobs:
       - name: Generate matrix
         id: generate
         run: |
+          # Keep variant logic in one place: .github/scripts/ci/generate_matrix.py
           platforms="${{ github.event.inputs.platforms || env.CI_CONDA_PLATFORMS }}"
           python3 .github/scripts/ci/generate_matrix.py \
             --mode package \
@@ -76,6 +81,7 @@ jobs:
       - name: Verify dependency availability
         shell: bash -l {0}
         run: |
+          # Gate build/test jobs by confirming dependency solvability per variant.
           bash .github/scripts/ci/run_preflight_job.sh \
             --mpi "${{ matrix.mpi }}" \
             --openmp "${{ matrix.openmp }}" \
