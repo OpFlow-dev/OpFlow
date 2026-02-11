@@ -10,6 +10,11 @@ import re
 import sys
 from typing import Dict, List
 
+RUNNER_BY_PLATFORM = {
+    "osx-arm64": "macos-14",
+    "linux-64": "ubuntu-24.04",
+}
+
 
 def parse_conda_build_config(path: pathlib.Path) -> Dict[str, List[str]]:
     data: Dict[str, List[str]] = {}
@@ -39,24 +44,60 @@ def parse_conda_build_config(path: pathlib.Path) -> Dict[str, List[str]]:
     return data
 
 
-def package_matrix(variants: Dict[str, List[str]]) -> Dict[str, List[Dict[str, str]]]:
+def parse_platforms(raw: str) -> List[str]:
+    platforms = [x.strip() for x in raw.split(",") if x.strip()]
+    if not platforms:
+        raise ValueError("No platform selected")
+
+    unknown = [p for p in platforms if p not in RUNNER_BY_PLATFORM]
+    if unknown:
+        raise ValueError(
+            "Unsupported platform(s): "
+            + ", ".join(unknown)
+            + ". Supported: "
+            + ", ".join(sorted(RUNNER_BY_PLATFORM))
+        )
+
+    return platforms
+
+
+def package_matrix(
+    variants: Dict[str, List[str]], platforms: List[str]
+) -> Dict[str, List[Dict[str, str]]]:
     include: List[Dict[str, str]] = []
-    for mpi in variants["mpi"]:
-        for openmp in variants["openmp"]:
-            include.append({"mpi": mpi, "openmp": openmp})
+    for platform in platforms:
+        runner = RUNNER_BY_PLATFORM[platform]
+        for mpi in variants["mpi"]:
+            for openmp in variants["openmp"]:
+                include.append(
+                    {
+                        "platform": platform,
+                        "runner": runner,
+                        "mpi": mpi,
+                        "openmp": openmp,
+                    }
+                )
     return {"include": include}
 
 
 def source_matrix(
-    variants: Dict[str, List[str]], build_types: List[str]
+    variants: Dict[str, List[str]], build_types: List[str], platforms: List[str]
 ) -> Dict[str, List[Dict[str, str]]]:
     include: List[Dict[str, str]] = []
-    for mpi in variants["mpi"]:
-        for openmp in variants["openmp"]:
-            for build_type in build_types:
-                include.append(
-                    {"mpi": mpi, "openmp": openmp, "build_type": build_type}
-                )
+    for platform in platforms:
+        runner = RUNNER_BY_PLATFORM[platform]
+        for mpi in variants["mpi"]:
+            for openmp in variants["openmp"]:
+                for build_type in build_types:
+                    include.append(
+                        {
+                            "platform": platform,
+                            "runner": runner,
+                            "mpi": mpi,
+                            "openmp": openmp,
+                            "build_type": build_type,
+                        }
+                    )
     return {"include": include}
 
 
@@ -79,6 +120,11 @@ def parse_args() -> argparse.Namespace:
         help="Comma-separated build types for source matrix",
     )
     parser.add_argument(
+        "--platforms",
+        default="osx-arm64",
+        help="Comma-separated conda platform subdirs, e.g. osx-arm64,linux-64",
+    )
+    parser.add_argument(
         "--github-output",
         default="",
         help="If set, write output key=value pairs for GitHub Actions",
@@ -98,13 +144,19 @@ def main() -> int:
         print("error: --build-types resolved to empty list", file=sys.stderr)
         return 1
 
+    try:
+        platforms = parse_platforms(args.platforms)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
     variants = parse_conda_build_config(config_path)
 
     payloads: Dict[str, Dict[str, List[Dict[str, str]]]] = {}
     if args.mode in {"all", "package"}:
-        payloads["package_matrix"] = package_matrix(variants)
+        payloads["package_matrix"] = package_matrix(variants, platforms)
     if args.mode in {"all", "source"}:
-        payloads["source_matrix"] = source_matrix(variants, build_types)
+        payloads["source_matrix"] = source_matrix(variants, build_types, platforms)
 
     if args.github_output:
         out_path = pathlib.Path(args.github_output)

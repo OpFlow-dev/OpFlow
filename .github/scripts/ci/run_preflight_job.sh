@@ -5,7 +5,6 @@ mpi=""
 openmp=""
 owner="opflow-dev"
 platform="osx-arm64"
-output_file=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -25,10 +24,6 @@ while [[ $# -gt 0 ]]; do
       platform="$2"
       shift 2
       ;;
-    --output-file)
-      output_file="$2"
-      shift 2
-      ;;
     *)
       echo "Unknown argument: $1" >&2
       exit 2
@@ -37,11 +32,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$mpi" || -z "$openmp" ]]; then
-  echo "Usage: run_package_job.sh --mpi <nompi|openmpi> --openmp <on|off> [--owner <org>]" >&2
+  echo "Usage: run_preflight_job.sh --mpi <nompi|openmpi> --openmp <on|off> [--owner <org>] [--platform <subdir>]" >&2
   exit 2
 fi
-
-bash .github/scripts/ci/bootstrap_conda_tools.sh
 
 missing_file="$(mktemp -t opflow-missing-deps-XXXXXX)"
 trap 'rm -f "$missing_file"' EXIT
@@ -71,39 +64,4 @@ if ! bash .github/scripts/ci/ensure_deps.sh \
     --openmp "$openmp" \
     --channel "$local_channel" \
     --missing-file "$missing_file"
-fi
-
-variants="{mpi: ${mpi}, openmp: ${openmp}}"
-
-echo "Building conda package with variants: $variants"
-conda build conda/recipe \
-  --override-channels \
-  -c "$local_channel" \
-  -c "$owner" \
-  -c conda-forge \
-  --variants "$variants" \
-  --no-anaconda-upload
-
-outputs=()
-while IFS= read -r line; do
-  [[ -n "$line" ]] && outputs+=("$line")
-done < <(conda build conda/recipe --output --variants "$variants")
-
-resolved=()
-for pkg in "${outputs[@]}"; do
-  if [[ -f "$pkg" ]]; then
-    resolved+=("$pkg")
-  fi
-done
-
-if [[ ${#resolved[@]} -eq 0 ]]; then
-  echo "No built package output was found for variants: $variants" >&2
-  exit 1
-fi
-
-echo "Built package files:"
-printf '  %s\n' "${resolved[@]}"
-
-if [[ -n "$output_file" ]]; then
-  printf '%s\n' "${resolved[@]}" > "$output_file"
 fi

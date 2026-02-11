@@ -12,15 +12,29 @@ on:
       - '.github/workflows/CondaPreflight.yml'
       - '.github/scripts/ci/**'
   workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Comma-separated conda platforms (e.g. osx-arm64,linux-64)'
+        required: false
+        default: osx-arm64
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
+env:
+  CI_CONDA_PLATFORMS: osx-arm64
+  OPFLOW_TECIO_REPO_URL: https://github.com/Luohaothu/tecio.git
+  OPFLOW_TECIO_REPO_REF: master
+  OPFLOW_TECIO_RECIPE_PATH: conda/meta.yaml
+  OPFLOW_HYPRE_REPO_URL: ${{ vars.OPFLOW_HYPRE_REPO_URL }}
+  OPFLOW_HYPRE_REPO_REF: ${{ vars.OPFLOW_HYPRE_REPO_REF }}
+  OPFLOW_HYPRE_RECIPE_PATH: ${{ vars.OPFLOW_HYPRE_RECIPE_PATH }}
+
 jobs:
   matrix:
     name: Generate Package Matrix
-    runs-on: macos-14
+    runs-on: ubuntu-24.04
     outputs:
       package_matrix: ${{ steps.generate.outputs.package_matrix }}
     steps:
@@ -30,11 +44,15 @@ jobs:
       - name: Generate matrix
         id: generate
         run: |
-          python3 .github/scripts/ci/generate_matrix.py --mode package --github-output "$GITHUB_OUTPUT"
+          platforms="${{ github.event.inputs.platforms || env.CI_CONDA_PLATFORMS }}"
+          python3 .github/scripts/ci/generate_matrix.py \
+            --mode package \
+            --platforms "$platforms" \
+            --github-output "$GITHUB_OUTPUT"
 
   preflight:
-    name: Preflight / MPI${{ matrix.mpi }} / OMP${{ matrix.openmp }}
-    runs-on: macos-14
+    name: Preflight / ${{ matrix.platform }} / MPI${{ matrix.mpi }} / OMP${{ matrix.openmp }}
+    runs-on: ${{ matrix.runner }}
     needs: matrix
     strategy:
       fail-fast: false
@@ -58,8 +76,8 @@ jobs:
       - name: Verify dependency availability
         shell: bash -l {0}
         run: |
-          bash .github/scripts/ci/ensure_deps.sh \
+          bash .github/scripts/ci/run_preflight_job.sh \
             --mpi "${{ matrix.mpi }}" \
             --openmp "${{ matrix.openmp }}" \
             --owner opflow-dev \
-            --platform osx-arm64
+            --platform "${{ matrix.platform }}"

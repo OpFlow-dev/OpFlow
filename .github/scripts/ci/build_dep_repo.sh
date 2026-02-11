@@ -51,6 +51,8 @@ if [[ -z "$repo_url" || -z "$recipe_path" || -z "$variants" ]]; then
   exit 2
 fi
 
+bash .github/scripts/ci/bootstrap_conda_tools.sh
+
 workdir="$(mktemp -d -t opflow-dep-build-XXXXXX)"
 trap 'rm -rf "$workdir"' EXIT
 
@@ -76,7 +78,10 @@ conda build "$recipe_abs" \
   --variants "$variants" \
   --no-anaconda-upload
 
-mapfile -t outputs < <(conda build "$recipe_abs" --output --variants "$variants")
+outputs=()
+while IFS= read -r line; do
+  [[ -n "$line" ]] && outputs+=("$line")
+done < <(conda build "$recipe_abs" --output --variants "$variants")
 
 echo "Built outputs:"
 printf '  %s\n' "${outputs[@]}"

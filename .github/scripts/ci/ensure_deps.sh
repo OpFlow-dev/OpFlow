@@ -5,6 +5,7 @@ platform="osx-arm64"
 mpi=""
 openmp=""
 owner="opflow-dev"
+missing_file=""
 channels=()
 
 while [[ $# -gt 0 ]]; do
@@ -25,6 +26,10 @@ while [[ $# -gt 0 ]]; do
       owner="$2"
       shift 2
       ;;
+    --missing-file)
+      missing_file="$2"
+      shift 2
+      ;;
     --channel)
       channels+=("$2")
       shift 2
@@ -43,6 +48,15 @@ fi
 
 if [[ ${#channels[@]} -eq 0 ]]; then
   channels=("$owner" "conda-forge")
+else
+  has_owner=0
+  has_conda_forge=0
+  for c in "${channels[@]}"; do
+    [[ "$c" == "$owner" ]] && has_owner=1
+    [[ "$c" == "conda-forge" ]] && has_conda_forge=1
+  done
+  [[ $has_owner -eq 0 ]] && channels+=("$owner")
+  [[ $has_conda_forge -eq 0 ]] && channels+=("conda-forge")
 fi
 
 channel_args=()
@@ -89,10 +103,17 @@ if [[ "$openmp" == "on" && "$(uname -s)" == "Darwin" ]]; then
 fi
 
 if [[ ${#missing[@]} -gt 0 ]]; then
+  if [[ -n "$missing_file" ]]; then
+    printf '%s\n' "${missing[@]}" > "$missing_file"
+  fi
   echo "Dependency check failed for platform=${platform}, mpi=${mpi}, openmp=${openmp}" >&2
   printf 'Missing specs:\n' >&2
   printf '  - %s\n' "${missing[@]}" >&2
   exit 1
+fi
+
+if [[ -n "$missing_file" ]]; then
+  : > "$missing_file"
 fi
 
 echo "All dependencies available for platform=${platform}, mpi=${mpi}, openmp=${openmp}."
