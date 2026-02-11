@@ -232,7 +232,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         constexpr static auto dim = internal::CartesianFieldExprTrait<T>::dim;
     };
 
-    #ifdef OPFLOW_HYPRE_HAS_SSTRUCT_FAC
+#ifdef OPFLOW_HYPRE_HAS_SSTRUCT_FAC
     template <typename F, CartAMRFieldType T, typename Solver>
     struct HYPREEqnSolveHandler<F, T, Solver> : virtual public EqnSolveHandler {
         HYPREEqnSolveHandler() = default;
@@ -489,12 +489,11 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         constexpr static auto dim = internal::CartAMRFieldExprTrait<T>::dim;
         using index_type = typename internal::CartAMRFieldExprTrait<T>::index_type;
     };
-    #else
+#else
     template <typename F, CartAMRFieldType T, typename Solver>
     struct HYPREEqnSolveHandler<F, T, Solver> : virtual public EqnSolveHandler {
-        static_assert(sizeof(T) == 0,
-                      "CartAMR HYPRE FAC solver is unavailable with this HYPRE build.");
+        static_assert(sizeof(T) == 0, "CartAMR HYPRE FAC solver is unavailable with this HYPRE build.");
     };
-    #endif
+#endif
 }// namespace OpFlow
 #endif//OPFLOW_HYPREEQNSOLVEHANDLER_HPP

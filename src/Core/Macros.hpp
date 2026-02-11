@@ -68,7 +68,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow { inline static int getWorkerId(MPI_Comm c
     do {                                                                                                     \
         if                                                                                                   \
             consteval {                                                                                      \
-                spdlog::X(fmt::format("[{}:{}@{}][Rank{}] ", __FILENAME__, __FUNCTION__, __LINE__,          \
+                spdlog::X(fmt::format("[{}:{}@{}][Rank{}] ", __FILENAME__, __FUNCTION__, __LINE__,           \
                                       OpFlow::getWorkerId(MPI_COMM_WORLD))                                   \
                           + fmt::format(__VA_ARGS__));                                                       \
             }                                                                                                \
@@ -78,7 +78,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow { inline static int getWorkerId(MPI_Comm c
     do {                                                                                                     \
         if                                                                                                   \
             consteval {                                                                                      \
-                spdlog::X(fmt::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__)                  \
+                spdlog::X(fmt::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__)                   \
                           + fmt::format(__VA_ARGS__));                                                       \
             }                                                                                                \
     } while (0)
@@ -123,7 +123,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow { inline static Utils::StackTracer stackTr
 
 #define OP_STACK_PUSH(...)                                                                                   \
     do {                                                                                                     \
-        OpFlow::stackTracer.push(fmt::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__)           \
+        OpFlow::stackTracer.push(fmt::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__)            \
                                  + fmt::format(__VA_ARGS__));                                                \
     } while (0)
 #define OP_STACK_APPEND(...)                                                                                 \
