@@ -43,35 +43,15 @@ fi
 
 bash .github/scripts/ci/bootstrap_conda_tools.sh
 
-missing_file="$(mktemp -t opflow-missing-deps-XXXXXX)"
-trap 'rm -f "$missing_file"' EXIT
-
 croot="$(conda config --show croot | awk '{print $2}')"
 local_channel="file://${croot}"
 
-if ! bash .github/scripts/ci/ensure_deps.sh \
+bash .github/scripts/ci/ensure_deps.sh \
   --platform "$platform" \
   --owner "$owner" \
   --mpi "$mpi" \
   --openmp "$openmp" \
-  --channel "$local_channel" \
-  --missing-file "$missing_file"; then
-  echo "Dependency check failed. Trying to bootstrap missing dependencies..."
-  bash .github/scripts/ci/bootstrap_missing_deps.sh \
-    --missing-file "$missing_file" \
-    --platform "$platform" \
-    --owner "$owner" \
-    --mpi "$mpi" \
-    --openmp "$openmp"
-
-  bash .github/scripts/ci/ensure_deps.sh \
-    --platform "$platform" \
-    --owner "$owner" \
-    --mpi "$mpi" \
-    --openmp "$openmp" \
-    --channel "$local_channel" \
-    --missing-file "$missing_file"
-fi
+  --channel "$local_channel"
 
 variants="{mpi: ${mpi}, openmp: ${openmp}}"
 

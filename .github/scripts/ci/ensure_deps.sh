@@ -5,7 +5,6 @@ platform="osx-arm64"
 mpi=""
 openmp=""
 owner="opflow-dev"
-missing_file=""
 channels=()
 
 while [[ $# -gt 0 ]]; do
@@ -24,10 +23,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --owner)
       owner="$2"
-      shift 2
-      ;;
-    --missing-file)
-      missing_file="$2"
       shift 2
       ;;
     --channel)
@@ -103,17 +98,10 @@ if [[ "$openmp" == "on" && "$(uname -s)" == "Darwin" ]]; then
 fi
 
 if [[ ${#missing[@]} -gt 0 ]]; then
-  if [[ -n "$missing_file" ]]; then
-    printf '%s\n' "${missing[@]}" > "$missing_file"
-  fi
   echo "Dependency check failed for platform=${platform}, mpi=${mpi}, openmp=${openmp}" >&2
   printf 'Missing specs:\n' >&2
   printf '  - %s\n' "${missing[@]}" >&2
   exit 1
-fi
-
-if [[ -n "$missing_file" ]]; then
-  : > "$missing_file"
 fi
 
 echo "All dependencies available for platform=${platform}, mpi=${mpi}, openmp=${openmp}."

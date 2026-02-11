@@ -35,13 +35,6 @@ concurrency:
 env:
   # Default platforms for automatic triggers (push/pull_request).
   CI_CONDA_PLATFORMS: linux-64
-  # Inputs for on-demand dependency bootstrap from source repos.
-  OPFLOW_TECIO_REPO_URL: https://github.com/Luohaothu/tecio.git
-  OPFLOW_TECIO_REPO_REF: master
-  OPFLOW_TECIO_RECIPE_PATH: conda/meta.yaml
-  OPFLOW_HYPRE_REPO_URL: ${{ vars.OPFLOW_HYPRE_REPO_URL }}
-  OPFLOW_HYPRE_REPO_REF: ${{ vars.OPFLOW_HYPRE_REPO_REF }}
-  OPFLOW_HYPRE_RECIPE_PATH: ${{ vars.OPFLOW_HYPRE_RECIPE_PATH }}
 
 jobs:
   matrix:
@@ -89,7 +82,7 @@ jobs:
       - name: Build conda package
         shell: bash -l {0}
         run: |
-          # Includes dependency preflight/bootstrap and conda build execution.
+          # Enforces fail-fast dependency check, then executes conda build.
           bash .github/scripts/ci/run_package_job.sh \
             --mpi "${{ matrix.mpi }}" \
             --openmp "${{ matrix.openmp }}" \
