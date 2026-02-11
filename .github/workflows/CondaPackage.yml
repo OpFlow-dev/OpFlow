@@ -21,6 +21,10 @@ on:
       - 'include/**'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   matrix:
     name: Generate Package Matrix
