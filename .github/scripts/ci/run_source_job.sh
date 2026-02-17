@@ -62,17 +62,17 @@ install_specs=(
   "cxx-compiler"
   "spdlog"
   "tbb"
-  "amgcl"
+  "${owner}::amgcl"
   "vtk"
   "benchmark"
   "gtest"
-  "opflow-hypre * mpi_${mpi}_openmp_${openmp}_*"
+  "${owner}::hypre * mpi_${mpi}_openmp_${openmp}_*"
 )
 
 if [[ "$mpi" == "nompi" ]]; then
   install_specs+=(
     "mpi * mpi_serial"
-    "tecio * mpi_nompi_*"
+    "${owner}::tecio * mpi_nompi_*"
     "hdf5 * nompi*"
   )
   opflow_with_mpi="OFF"
@@ -80,7 +80,7 @@ else
   install_specs+=(
     "mpi * openmpi"
     "openmpi"
-    "teciompi * mpi_openmpi_*"
+    "${owner}::teciompi * mpi_openmpi_*"
     "hdf5 * mpi_openmpi*"
   )
   opflow_with_mpi="ON"
@@ -102,7 +102,18 @@ conda create -y -p "$env_prefix" \
   -c conda-forge \
   "${install_specs[@]}"
 
+# Some conda activation scripts assume unset toolchain vars are allowed.
+set +u
 conda activate "$env_prefix"
+set -u
+hash -r
+
+cmake_bin="$(command -v cmake || true)"
+ctest_bin="$(command -v ctest || true)"
+if [[ -z "$cmake_bin" || -z "$ctest_bin" ]]; then
+  echo "cmake/ctest not found after activating $env_prefix" >&2
+  exit 1
+fi
 
 if command -v nproc >/dev/null 2>&1; then
   jobs="$(nproc)"
@@ -136,10 +147,10 @@ if [[ "$mpi" != "nompi" ]]; then
 fi
 
 echo "Configuring source tree"
-cmake "${cmake_args[@]}"
+"$cmake_bin" "${cmake_args[@]}"
 
 echo "Building All_CI"
-cmake --build build-ci -t All_CI --parallel "$jobs"
+"$cmake_bin" --build build-ci -t All_CI --parallel "$jobs"
 
 echo "Running tests"
-ctest --test-dir build-ci --output-on-failure -VV --parallel "$jobs" -C "$build_type"
+"$ctest_bin" --test-dir build-ci --output-on-failure -VV --parallel "$jobs" -C "$build_type"

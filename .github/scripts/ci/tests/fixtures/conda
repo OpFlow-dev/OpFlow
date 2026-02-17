@@ -18,7 +18,7 @@ fi
 
 if [[ $# -ge 1 && "$1" == "search" ]]; then
   spec="${*: -1}"
-  if [[ "$spec" == "opflow-hypre * mpi_openmpi_openmp_on_*" ]]; then
+  if [[ "$spec" == "opflow-dev::hypre * mpi_openmpi_openmp_on_*" ]]; then
     exit 1
   fi
   exit 0

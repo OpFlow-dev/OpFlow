@@ -119,7 +119,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 
         void initx() {
             rangeFor(DS::commonRange(target->assignableRange, target->localRange), [&](auto&& k) {
-                HYPRE_StructVectorSetValues(x, const_cast<int*>(k.get().data()), target->evalAt(k));
+                HYPRE_Complex value = target->evalAt(k);
+                HYPRE_StructVectorSetValues(x, const_cast<int*>(k.get().data()), &value);
             });
         }
 
@@ -140,7 +141,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                 for (const auto& [key, val] : commStencil.pad) { vals.push_back(extendedStencil.pad[key]); }
                 HYPRE_StructMatrixSetValues(A, const_cast<int*>(k.get().data()), commStencil.pad.size(),
                                             entries.data(), vals.data());
-                HYPRE_StructVectorSetValues(b, const_cast<int*>(k.get().data()), -extendedStencil.bias);
+                HYPRE_Complex rhs = -extendedStencil.bias;
+                HYPRE_StructVectorSetValues(b, const_cast<int*>(k.get().data()), &rhs);
             });
 
             if (solver.params.pinValue) {
@@ -158,8 +160,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                     }
                     HYPRE_StructMatrixSetValues(A, const_cast<int*>(first.get().data()),
                                                 commStencil.pad.size(), entries.data(), vals.data());
-                    HYPRE_StructVectorSetValues(b, const_cast<int*>(first.get().data()),
-                                                -extendedStencil.bias);
+                    HYPRE_Complex rhs = -extendedStencil.bias;
+                    HYPRE_StructVectorSetValues(b, const_cast<int*>(first.get().data()), &rhs);
                 }
             }
             HYPRE_StructMatrixAssemble(A);
@@ -169,7 +171,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         void generateb() {
             rangeFor(DS::commonRange(target->assignableRange, target->localRange), [&](auto&& k) {
                 auto currentStencil = uniEqn->evalAt(k);
-                HYPRE_StructVectorSetValues(b, const_cast<int*>(k.get().data()), -currentStencil.bias);
+                HYPRE_Complex rhs = -currentStencil.bias;
+                HYPRE_StructVectorSetValues(b, const_cast<int*>(k.get().data()), &rhs);
             });
             if (solver.params.pinValue) {
                 auto first = DS::MDIndex<dim>(

@@ -40,7 +40,7 @@ ensure_rc=$?
 set -e
 [[ $ensure_rc -ne 0 ]] || fail "ensure_deps should fail when dependency is missing"
 assert_contains "$ensure_out" "Dependency check failed"
-assert_contains "$ensure_out" "opflow-hypre * mpi_openmpi_openmp_on_*"
+assert_contains "$ensure_out" "opflow-dev::hypre * mpi_openmpi_openmp_on_*"
 
 echo "[CASE] preflight should fail-fast without bootstrap"
 set +e

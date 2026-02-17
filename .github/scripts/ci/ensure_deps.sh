@@ -75,23 +75,23 @@ check_spec "cmake >=4.0.2"
 check_spec "ninja"
 check_spec "spdlog"
 check_spec "tbb"
-check_spec "amgcl"
+check_spec "${owner}::amgcl"
 check_spec "vtk"
 check_spec "benchmark"
 check_spec "gtest"
 
 if [[ "$mpi" == "nompi" ]]; then
   check_spec "mpi * mpi_serial"
-  check_spec "tecio * mpi_nompi_*"
+  check_spec "${owner}::tecio * mpi_nompi_*"
   check_spec "hdf5 * nompi*"
 else
   check_spec "mpi * openmpi"
   check_spec "openmpi"
-  check_spec "teciompi * mpi_openmpi_*"
+  check_spec "${owner}::teciompi * mpi_openmpi_*"
   check_spec "hdf5 * mpi_openmpi*"
 fi
 
-check_spec "opflow-hypre * mpi_${mpi}_openmp_${openmp}_*"
+check_spec "${owner}::hypre * mpi_${mpi}_openmp_${openmp}_*"
 
 if [[ "$openmp" == "on" && "$(uname -s)" == "Darwin" ]]; then
   check_spec "llvm-openmp"

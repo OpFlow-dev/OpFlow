@@ -267,7 +267,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
             }
             // label all the necessary cells on the current level
             rangeFor_s(range, [&](auto &&i) {
-                if (func(level, i)) points.template emplace_back(i.get());
+                if (func(level, i)) points.emplace_back(i.get());
             });
 #ifndef NDEBUG
             OP_DEBUG("Points at level {}:", level);
@@ -294,9 +294,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                     }
                     // label all points in _range
                     rangeFor_s(_range, [&](auto &&i) {
-                        points.template emplace_back(i.get());
+                        points.emplace_back(i.get());
 #ifndef NDEBUG
-                        p_add.template emplace_back(i.get());
+                        p_add.emplace_back(i.get());
 #endif
                     });
                 }

@@ -120,6 +120,8 @@ if(OPFLOW_ENABLE_MODULE)
     set(CMAKE_CXX_MODULE_STD 1)
     set(OPFLOW_TARGET_SCOPE PUBLIC)
 else()
+    # Disable global module dependency scanning for non-module builds.
+    set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
     set(OPFLOW_TARGET_SCOPE INTERFACE)
 endif()
 
@@ -145,8 +147,25 @@ add_subdirectory(src)
 # ----------------------------------------------------------------------------
 # Dependencies (Conda-only)
 # ----------------------------------------------------------------------------
-# OpFlow no longer vendors third-party dependencies. All dependencies must be
-# provided by the toolchain environment (e.g. conda).
+
+# ----------------------------------------------------------------------------
+# Find MPI
+# ----------------------------------------------------------------------------
+if(OPFLOW_WITH_MPI)
+    find_package(MPI REQUIRED)
+    target_link_libraries(opflow INTERFACE MPI::MPI_C MPI::MPI_CXX)
+
+    list(APPEND PKG_CONFIG_REQUIRES MPI)
+endif()
+
+# ----------------------------------------------------------------------------
+# Find OpenMP
+# ----------------------------------------------------------------------------
+if(OPFLOW_WITH_OPENMP)
+    find_package(OpenMP REQUIRED)
+    target_link_libraries(opflow INTERFACE OpenMP::OpenMP_C OpenMP::OpenMP_CXX)
+endif()
+
 target_compile_definitions(opflow ${OPFLOW_TARGET_SCOPE} OPFLOW_WITH_HDF5 OPFLOW_WITH_VTK)
 find_package(spdlog CONFIG REQUIRED)
 target_link_libraries(opflow ${OPFLOW_TARGET_SCOPE} spdlog::spdlog)
@@ -212,24 +231,6 @@ endif()
 find_package(HDF5 REQUIRED COMPONENTS C)
 target_include_directories(opflow ${OPFLOW_TARGET_SCOPE} ${HDF5_INCLUDE_DIRS})
 target_link_libraries(opflow ${OPFLOW_TARGET_SCOPE} ${HDF5_C_LIBRARIES})
-
-# ----------------------------------------------------------------------------
-# Find MPI
-# ----------------------------------------------------------------------------
-if(OPFLOW_WITH_MPI)
-    find_package(MPI REQUIRED)
-    target_link_libraries(opflow INTERFACE MPI::MPI_C MPI::MPI_CXX)
-
-    list(APPEND PKG_CONFIG_REQUIRES MPI)
-endif()
-
-# ----------------------------------------------------------------------------
-# Find OpenMP
-# ----------------------------------------------------------------------------
-if(OPFLOW_WITH_OPENMP)
-    find_package(OpenMP REQUIRED)
-    target_link_libraries(opflow INTERFACE OpenMP::OpenMP_C OpenMP::OpenMP_CXX)
-endif()
 
 # ----------------------------------------------------------------------------
 # Platform detection
@@ -405,3 +406,301 @@ if(NOT TARGET uninstall)
     add_custom_target(uninstall
         COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 endif()
+
+message(STATUS "")
+set(_opflow_col_type_width 11)
+set(_opflow_col_name_width 40)
+set(_opflow_col_value_width 31)
+set(_opflow_sep_line "+-------------+------------------------------------------+---------------------------------+")
+
+function(_opflow_abbrev_token out token)
+    set(_token "${token}")
+    if(_token MATCHES "[/\\\\]")
+        get_filename_component(_token "${_token}" NAME)
+        if(_token STREQUAL "")
+            set(_token "N/A")
+        endif()
+    endif()
+
+    string(LENGTH "${_token}" _token_len)
+    if(_token_len GREATER 24)
+        string(SUBSTRING "${_token}" 0 21 _token_prefix)
+        set(_token "${_token_prefix}...")
+    endif()
+
+    set(${out} "${_token}" PARENT_SCOPE)
+endfunction()
+
+function(_opflow_pad_or_truncate out value width)
+    set(_value "${value}")
+    string(REPLACE "\n" " " _value "${_value}")
+    string(REPLACE "\r" " " _value "${_value}")
+    string(REPLACE "\t" " " _value "${_value}")
+    string(REPLACE "|" "/" _value "${_value}")
+    string(REGEX REPLACE "  +" " " _value "${_value}")
+    string(STRIP "${_value}" _value)
+
+    string(LENGTH "${_value}" _len)
+    if(_len GREATER width)
+        math(EXPR _truncate_len "${width} - 3")
+        if(_truncate_len GREATER 0)
+            string(SUBSTRING "${_value}" 0 ${_truncate_len} _prefix)
+            set(_value "${_prefix}...")
+        else()
+            set(_value "...")
+        endif()
+    else()
+        set(_pad_count 0)
+        math(EXPR _pad_count "${width} - ${_len}")
+        set(_pad "")
+        while(_pad_count GREATER 0)
+            set(_pad "${_pad} ")
+            math(EXPR _pad_count "${_pad_count} - 1")
+        endwhile()
+        set(_value "${_value}${_pad}")
+    endif()
+    set(${out} "${_value}" PARENT_SCOPE)
+endfunction()
+
+function(_opflow_render_row section name value)
+    _opflow_pad_or_truncate(_section "${section}" "${_opflow_col_type_width}")
+    _opflow_pad_or_truncate(_name "${name}" "${_opflow_col_name_width}")
+    _opflow_pad_or_truncate(_value "${value}" "${_opflow_col_value_width}")
+    message(STATUS "| ${_section} | ${_name} | ${_value} |")
+endfunction()
+
+function(_opflow_normalize_value out value)
+    if("${value}" STREQUAL "" OR "${value}" STREQUAL "N/A")
+        set(${out} "<UNSET>" PARENT_SCOPE)
+        return()
+    endif()
+
+    if("${value}" MATCHES ";")
+        set(_items "${value}")
+        list(LENGTH _items _item_count)
+        if(_item_count GREATER 5)
+            list(GET _items 0 _first)
+            list(GET _items 1 _second)
+            math(EXPR _tail_index "${_item_count} - 1")
+            list(GET _items ${_tail_index} _last)
+            math(EXPR _remaining "${_item_count} - 3")
+            _opflow_abbrev_token(_first_short "${_first}")
+            _opflow_abbrev_token(_second_short "${_second}")
+            _opflow_abbrev_token(_last_short "${_last}")
+            set(${out} "${_first_short}, ${_second_short}, ... (+${_remaining} more), ${_last_short}" PARENT_SCOPE)
+        else()
+            set(_normalized "")
+            foreach(_item IN LISTS _items)
+                _opflow_abbrev_token(_short_item "${_item}")
+                if(_normalized STREQUAL "")
+                    set(_normalized "${_short_item}")
+                else()
+                    set(_normalized "${_normalized}, ${_short_item}")
+                endif()
+            endforeach()
+            set(${out} "${_normalized}" PARENT_SCOPE)
+        endif()
+    else()
+        _opflow_abbrev_token(_token_value "${value}")
+        set(${out} "${_token_value}" PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(_opflow_dependency_root out value)
+    set(_path "${value}")
+    string(STRIP "${_path}" _path)
+    if(_path STREQUAL "" OR _path STREQUAL "N/A")
+        set(${out} "N/A" PARENT_SCOPE)
+        return()
+    endif()
+
+    if(_path MATCHES "^INCLUDE:[[:space:]]*(.*)")
+        set(_path "${CMAKE_MATCH_1}")
+    endif()
+    if(_path MATCHES "^-I(.*)")
+        set(_path "${CMAKE_MATCH_1}")
+    endif()
+
+    if(IS_DIRECTORY "${_path}")
+        set(_candidate "${_path}")
+    else()
+        if(NOT _path MATCHES "[/\\\\]")
+            set(${out} "N/A" PARENT_SCOPE)
+            return()
+        endif()
+        get_filename_component(_candidate "${_path}" DIRECTORY)
+    endif()
+
+    if(_candidate STREQUAL "" OR NOT EXISTS "${_candidate}")
+        set(${out} "N/A" PARENT_SCOPE)
+        return()
+    endif()
+
+    foreach(_segment IN ITEMS bin lib64 lib include cmake share)
+        if(_candidate MATCHES "^(.+)[/\\\\]${_segment}([/\\\\].*)?$")
+            set(_candidate "${CMAKE_MATCH_1}")
+            break()
+        endif()
+    endforeach()
+
+    set(${out} "${_candidate}" PARENT_SCOPE)
+endfunction()
+
+function(_opflow_normalize_dependency_location out value)
+    if("${value}" STREQUAL "N/A" OR "${value}" MATCHES "-NOTFOUND$")
+        set(${out} "N/A" PARENT_SCOPE)
+        return()
+    endif()
+
+    if("${value}" MATCHES ";")
+        set(_items "${value}")
+        set(_result "")
+        foreach(_item IN LISTS _items)
+            _opflow_dependency_root(_candidate "${_item}")
+            if(NOT _candidate STREQUAL "N/A")
+                set(_result "${_candidate}")
+                break()
+            endif()
+        endforeach()
+    else()
+        _opflow_dependency_root(_result "${value}")
+    endif()
+
+    if(_result STREQUAL "" OR _result STREQUAL "N/A")
+        set(_result "N/A")
+    endif()
+
+    set(${out} "${_result}" PARENT_SCOPE)
+endfunction()
+
+function(_opflow_target_location out target)
+    set(_result "N/A")
+    if(TARGET "${target}")
+        foreach(_prop IN ITEMS
+                IMPORTED_LOCATION
+                IMPORTED_LOCATION_RELEASE
+                IMPORTED_LOCATION_DEBUG
+                IMPORTED_IMPLIB
+                IMPORTED_LOCATION_MINSIZEREL
+                IMPORTED_LOCATION_RELWITHDEBINFO
+                LOCATION)
+            get_target_property(_loc "${target}" ${_prop})
+            if(_loc AND NOT _loc MATCHES "NOTFOUND$")
+                set(_result "${_loc}")
+                break()
+            endif()
+        endforeach()
+        if(_result STREQUAL "N/A")
+            get_target_property(_inc "${target}" INTERFACE_INCLUDE_DIRECTORIES)
+            if(_inc AND NOT _inc MATCHES "NOTFOUND$")
+                set(_result "INCLUDE: ${_inc}")
+            endif()
+        endif()
+    endif()
+    set(${out} "${_result}" PARENT_SCOPE)
+endfunction()
+
+function(_opflow_print_row section name value)
+    _opflow_normalize_value(_value "${value}")
+    _opflow_render_row("${section}" "${name}" "${_value}")
+endfunction()
+
+function(_opflow_print_option name)
+    if(DEFINED ${name})
+        _opflow_print_row("Option" "${name}" "${${name}}")
+    else()
+        _opflow_print_row("Option" "${name}" "<UNSET>")
+    endif()
+endfunction()
+
+function(_opflow_print_dependency name found location)
+    if(found)
+        set(_found "YES")
+    else()
+        set(_found "NO")
+    endif()
+    _opflow_normalize_dependency_location(_loc "${location}")
+    _opflow_render_row("Dependency" "${name} [${_found}]" "${_loc}")
+endfunction()
+
+message(STATUS "${_opflow_sep_line}")
+_opflow_render_row("Type" "Name" "Value/Location")
+message(STATUS "${_opflow_sep_line}")
+
+get_cmake_property(_opflow_option_vars VARIABLES)
+list(FILTER _opflow_option_vars INCLUDE REGEX "^OPFLOW_")
+list(SORT _opflow_option_vars)
+foreach(_opflow_option_var IN LISTS _opflow_option_vars)
+    _opflow_print_option("${_opflow_option_var}")
+endforeach()
+
+message(STATUS "${_opflow_sep_line}")
+_opflow_render_row("Dependency" "Status" "Location")
+message(STATUS "${_opflow_sep_line}")
+
+if(OPFLOW_WITH_MPI)
+    _opflow_target_location(_opflow_dep_mpi_path MPI::MPI_C)
+    if(_opflow_dep_mpi_path STREQUAL "N/A")
+        if(DEFINED MPI_C_COMPILER)
+            _opflow_normalize_dependency_location(_opflow_dep_mpi_path "${MPI_C_COMPILER};${MPI_CXX_COMPILER};${MPI_C_LIBRARIES};${MPI_CXX_LIBRARIES};${MPI_C_INCLUDE_DIRS};${MPI_CXX_INCLUDE_DIRS}")
+        elseif(DEFINED MPI_CXX_INCLUDE_DIRS)
+            _opflow_normalize_dependency_location(_opflow_dep_mpi_path "${MPI_CXX_INCLUDE_DIRS}")
+        endif()
+    endif()
+    _opflow_print_dependency("MPI (OPFLOW_WITH_MPI)" TRUE "${_opflow_dep_mpi_path}")
+else()
+    _opflow_print_dependency("MPI (OPFLOW_WITH_MPI)" FALSE "disabled")
+endif()
+
+if(OPFLOW_WITH_OPENMP)
+    if(TARGET OpenMP::OpenMP_CXX)
+        _opflow_target_location(_opflow_dep_openmp_path OpenMP::OpenMP_CXX)
+    else()
+        if(DEFINED OpenMP_CXX_FLAGS)
+            _opflow_normalize_dependency_location(_opflow_dep_openmp_path "${OpenMP_CXX_FLAGS};${OpenMP_CXX_LIB_NAMES};${OpenMP_CXX_LIBRARIES};${OpenMP_CXX_INCLUDE_DIRS}")
+        else()
+            set(_opflow_dep_openmp_path "N/A")
+        endif()
+    endif()
+    _opflow_print_dependency("OpenMP (OPFLOW_WITH_OPENMP)" TRUE "${_opflow_dep_openmp_path}")
+else()
+    _opflow_print_dependency("OpenMP (OPFLOW_WITH_OPENMP)" FALSE "disabled")
+endif()
+
+_opflow_target_location(_opflow_dep_spdlog_path spdlog::spdlog)
+_opflow_print_dependency("spdlog" TRUE "${_opflow_dep_spdlog_path}")
+
+_opflow_target_location(_opflow_dep_amgcl_path amgcl::amgcl)
+_opflow_print_dependency("amgcl" TRUE "${_opflow_dep_amgcl_path}")
+
+_opflow_target_location(_opflow_dep_tbb_path TBB::tbb)
+_opflow_print_dependency("TBB" TRUE "${_opflow_dep_tbb_path}")
+
+_opflow_target_location(_opflow_dep_hypre_path HYPRE::HYPRE)
+_opflow_print_dependency("HYPRE" TRUE "${_opflow_dep_hypre_path}")
+
+if(OPFLOW_WITH_MPI)
+    _opflow_target_location(_opflow_dep_tecio_path tecio::teciompi)
+    _opflow_print_dependency("tecio (MPI)" TRUE "${_opflow_dep_tecio_path}")
+else()
+    _opflow_target_location(_opflow_dep_tecio_path tecio::tecio)
+    _opflow_print_dependency("tecio" TRUE "${_opflow_dep_tecio_path}")
+endif()
+
+_opflow_normalize_dependency_location(_opflow_dep_vtk_path "${VTK_LIBRARIES};${VTK_INCLUDE_DIRS};${VTK_CMAKE_DIR};${VTK_DIR}")
+_opflow_print_dependency("VTK" TRUE "${_opflow_dep_vtk_path}")
+
+_opflow_normalize_dependency_location(_opflow_dep_hdf5_path "${HDF5_C_LIBRARIES};${HDF5_INCLUDE_DIRS};${HDF5_C_INCLUDE_DIR};${HDF5_DIR}")
+_opflow_print_dependency("HDF5" TRUE "${_opflow_dep_hdf5_path}")
+
+if(OPFLOW_BUILD_BENCHMARKS OR OPFLOW_BUILD_ALL)
+    _opflow_target_location(_opflow_dep_bench_path benchmark::benchmark)
+    _opflow_print_dependency("benchmark" TRUE "${_opflow_dep_bench_path}")
+endif()
+
+if(OPFLOW_BUILD_DOCS OR OPFLOW_BUILD_ALL)
+    _opflow_print_dependency("sphinx-build" TRUE "${SPHINX_PATH}")
+    _opflow_print_dependency("doxygen" TRUE "${DOXYGEN_PATH}")
+endif()
+
+message(STATUS "${_opflow_sep_line}")
