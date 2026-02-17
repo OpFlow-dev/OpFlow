@@ -43,16 +43,23 @@ fi
 
 bash .github/scripts/ci/bootstrap_conda_tools.sh
 
-bash .github/scripts/ci/ensure_deps.sh \
-  --platform "$platform" \
-  --owner "$owner" \
-  --mpi "$mpi" \
-  --openmp "$openmp"
+if [[ "${OPFLOW_SKIP_DEP_CHECK:-0}" != "1" ]]; then
+  bash .github/scripts/ci/ensure_deps.sh \
+    --platform "$platform" \
+    --owner "$owner" \
+    --mpi "$mpi" \
+    --openmp "$openmp"
+else
+  echo "Skipping ensure_deps pre-check because OPFLOW_SKIP_DEP_CHECK=1."
+fi
 
 source "$(conda info --base)/etc/profile.d/conda.sh"
 
 env_prefix="/tmp/opflow-src-${mpi}-${openmp}-${build_type}"
 conda remove -y -p "$env_prefix" --all >/dev/null 2>&1 || true
+
+build_dir="build-ci"
+rm -rf "$build_dir"
 
 install_specs=(
   "cmake >=4.0.2"
@@ -108,12 +115,21 @@ conda activate "$env_prefix"
 set -u
 hash -r
 
-cmake_bin="$(command -v cmake || true)"
-ctest_bin="$(command -v ctest || true)"
-if [[ -z "$cmake_bin" || -z "$ctest_bin" ]]; then
+cmake_bin="$env_prefix/bin/cmake"
+ctest_bin="$env_prefix/bin/ctest"
+
+if [[ ! -x "$cmake_bin" ]]; then
+  cmake_bin="$(command -v cmake || true)"
+fi
+if [[ ! -x "$ctest_bin" ]]; then
+  ctest_bin="$(command -v ctest || true)"
+fi
+if [[ -z "$cmake_bin" || -z "$ctest_bin" || ! -x "$cmake_bin" || ! -x "$ctest_bin" ]]; then
   echo "cmake/ctest not found after activating $env_prefix" >&2
   exit 1
 fi
+echo "Using cmake: $cmake_bin"
+echo "Using ctest: $ctest_bin"
 
 if command -v nproc >/dev/null 2>&1; then
   jobs="$(nproc)"
@@ -121,9 +137,32 @@ else
   jobs="$(sysctl -n hw.ncpu)"
 fi
 
+test_jobs="$jobs"
+if [[ "$mpi" != "nompi" ]]; then
+  # Avoid concurrent mpiexec/prterun launches from ctest, which can hang on local OpenMPI runs.
+  test_jobs=1
+fi
+
+mpiexec_executable=""
+if [[ "$mpi" != "nompi" ]]; then
+  if ! python - <<'PY'
+import socket
+import sys
+host = socket.gethostname()
+try:
+    socket.gethostbyname(host)
+except Exception:
+    sys.exit(1)
+PY
+  then
+    mpiexec_executable="$PWD/.github/scripts/ci/mpiexec-singleton.sh"
+    echo "Hostname $(hostname) is not resolvable; using singleton MPI test launcher: $mpiexec_executable"
+  fi
+fi
+
 cmake_args=(
   -S .
-  -B build-ci
+  -B "$build_dir"
   -G Ninja
   -DCMAKE_BUILD_TYPE="$build_type"
   -DOPFLOW_BUILD_ALL=OFF
@@ -144,13 +183,16 @@ if [[ "$mpi" != "nompi" ]]; then
     -DMPI_C_COMPILER=mpicc
     -DMPI_CXX_COMPILER=mpicxx
   )
+  if [[ -n "$mpiexec_executable" ]]; then
+    cmake_args+=("-DMPIEXEC_EXECUTABLE=$mpiexec_executable")
+  fi
 fi
 
 echo "Configuring source tree"
 "$cmake_bin" "${cmake_args[@]}"
 
 echo "Building All_CI"
-"$cmake_bin" --build build-ci -t All_CI --parallel "$jobs"
+"$cmake_bin" --build "$build_dir" -t All_CI --parallel "$jobs"
 
 echo "Running tests"
-"$ctest_bin" --test-dir build-ci --output-on-failure -VV --parallel "$jobs" -C "$build_type"
+"$ctest_bin" --test-dir "$build_dir" --output-on-failure -VV --parallel "$test_jobs" -C "$build_type"
