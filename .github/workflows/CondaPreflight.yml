@@ -1,33 +1,15 @@
-name: BuildAndTest
+name: CondaPreflight
 
 on:
   push:
     paths:
-      - '**.c'
-      - '**.cpp'
-      - '**.cppm'
-      - '**.h'
-      - '**.hpp'
-      - '**.cmake'
-      - '**/CMakeLists.txt'
       - 'conda/**'
-      - '.github/workflows/Build.yml'
       - '.github/workflows/CondaPreflight.yml'
-      - '.github/workflows/CondaPackage.yml'
       - '.github/scripts/ci/**'
   pull_request:
     paths:
-      - '**.c'
-      - '**.cpp'
-      - '**.cppm'
-      - '**.h'
-      - '**.hpp'
-      - '**.cmake'
-      - '**/CMakeLists.txt'
       - 'conda/**'
-      - '.github/workflows/Build.yml'
       - '.github/workflows/CondaPreflight.yml'
-      - '.github/workflows/CondaPackage.yml'
       - '.github/scripts/ci/**'
   workflow_dispatch:
     inputs:
@@ -48,10 +30,10 @@ env:
 
 jobs:
   matrix:
-    name: Generate Source Matrix
+    name: Generate Package Matrix
     runs-on: ubuntu-24.04
     outputs:
-      source_matrix: ${{ steps.generate.outputs.source_matrix }}
+      package_matrix: ${{ steps.generate.outputs.package_matrix }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -62,17 +44,17 @@ jobs:
           # Keep variant logic in one place: .github/scripts/ci/generate_matrix.py
           platforms="${{ github.event.inputs.platforms || env.CI_CONDA_PLATFORMS }}"
           python3 .github/scripts/ci/generate_matrix.py \
-            --mode source \
+            --mode package \
             --platforms "$platforms" \
             --github-output "$GITHUB_OUTPUT"
 
-  build_and_test:
-    name: ${{ matrix.platform }} / MPI${{ matrix.mpi }} / OMP${{ matrix.openmp }} / ${{ matrix.build_type }}
+  preflight:
+    name: Preflight / ${{ matrix.platform }} / MPI${{ matrix.mpi }} / OMP${{ matrix.openmp }}
     runs-on: ${{ matrix.runner }}
     needs: matrix
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.matrix.outputs.source_matrix) }}
+      matrix: ${{ fromJSON(needs.matrix.outputs.package_matrix) }}
 
     steps:
       - name: Checkout
@@ -89,14 +71,13 @@ jobs:
           auto-activate-base: true
           use-mamba: true
 
-      - name: Build and test source tree
+      - name: Verify dependency availability
         shell: bash -l {0}
         run: |
-          # Enforces fail-fast dependency check, then builds source and runs ctest.
-          bash .github/scripts/ci/run_source_job.sh \
+          # Gate build/test jobs by confirming dependency solvability per variant.
+          bash .github/scripts/ci/run_preflight_job.sh \
             --mpi "${{ matrix.mpi }}" \
             --openmp "${{ matrix.openmp }}" \
-            --build-type "${{ matrix.build_type }}" \
             --tecio off \
             --owner opflow-dev \
             --platform "${{ matrix.platform }}"

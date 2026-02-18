@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 #
-# Copyright (c) 2019 - 2021 by the OpFlow developers
+# Copyright (c) 2019 - 2026 by the OpFlow developers
 #
 # This file is part of OpFlow.
 #
@@ -10,72 +10,61 @@
 #
 # ----------------------------------------------------------------------------
 #
-# Find OpFlow by config
+# Find OpFlow by config.
+#
+# OpFlow no longer vendors third-party dependencies. All dependencies are
+# expected to be provided by the toolchain environment (e.g. conda).
 #
 # ----------------------------------------------------------------------------
 
-set(OPFLOW_HYPRE_EXTERNAL @OPFLOW_HYPRE_EXTERNAL@)
-set(OPFLOW_WITH_VTK @OPFLOW_WITH_VTK@)
-set(OPFLOW_VTK_EXTERNAL @OPFLOW_VTK_EXTERNAL@)
-set(OPFLOW_CONFIG_TARGETS_FILE @config_targets_file@)
+@PACKAGE_INIT@
+
 include(CMakeFindDependencyMacro)
 
-# Find fmt & spdlog
-find_dependency(fmt PATHS @CMAKE_INSTALL_PREFIX@ NO_DEFAULT_PATH)
-find_dependency(spdlog PATHS @CMAKE_INSTALL_PREFIX@ NO_DEFAULT_PATH)
-
-# Find HYPRE
-if (OPFLOW_HYPRE_EXTERNAL)
-    find_dependency(HYPRE CONFIG PATHS @HYPRE_DIR@)
-else ()
-    find_dependency(HYPRE CONFIG
-            PATHS @CMAKE_INSTALL_PREFIX@ NO_DEFAULT_PATH)
-endif ()
-
-# Find VTK
-if (OPFLOW_WITH_VTK)
-    if (OPFLOW_VTK_EXTERNAL)
-        find_dependency(VTK CONFIG PATHS @VTK_DIR@)
-    else ()
-        find_dependency(VTK CONFIG
-                PATHS @CMAKE_INSTALL_PREFIX@ NO_DEFAULT_PATH)
-    endif ()
-    target_include_directories(opflow INTERFACE ${VTK_INCLUDE_DIRS})
-    target_link_directories(opflow INTERFACE ${VTK_LIBRARY_DIRS})
-    target_link_libraries(opflow INTERFACE ${VTK_LIBRARIES})
-endif ()
-
-# Find MPI & OpenMP
 set(OPFLOW_WITH_OPENMP @OPFLOW_WITH_OPENMP@)
-if (${OPFLOW_WITH_OPENMP})
-    find_dependency(OpenMP)
-endif ()
 set(OPFLOW_WITH_MPI @OPFLOW_WITH_MPI@)
-if (${OPFLOW_WITH_MPI})
-    find_dependency(MPI)
-endif ()
+set(OPFLOW_WITH_TECIO @OPFLOW_WITH_TECIO@)
+set(OPFLOW_USE_TECIOMPI @OPFLOW_USE_TECIOMPI@)
 
-# Find HDF5
-set(OPFLOW_WITH_HDF5 @OPFLOW_WITH_HDF5@)
-if (${OPFLOW_WITH_HDF5})
-    if (OPFLOW_WITH_MPI)
-        set(HDF5_PREFER_PARALLEL TRUE)
-    endif ()
-    set(HDF5_USE_STATIC_LIBRARIES ON)
-    find_dependency(HDF5 COMPONENTS C REQUIRED QUIET)
-    if (HDF5_PREFER_PARALLEL AND NOT HDF5_IS_PARALLEL)
-        message(FATAL_ERROR "Cannot find parallel HDF5 library")
-    endif ()
-endif ()
+# Core dependencies
+find_dependency(spdlog CONFIG REQUIRED)
+find_dependency(TBB CONFIG REQUIRED)
+find_dependency(amgcl CONFIG REQUIRED)
+find_dependency(HYPRE CONFIG REQUIRED)
 
-# Find AMGCL
-find_dependency(amgcl PATHS @CMAKE_INSTALL_PREFIX@ NO_DEFAULT_PATH)
-
-# Find TBB
-if (OPFLOW_TBB_EXTERNAL)
-    find_dependency(TBB CONFIG REQUIRED PATHS @TBB_DIR@)
-else()
-    find_dependency(TBB CONFIG PATHS @CMAKE_INSTALL_PREFIX@ NO_DEFAULT_PATH)
+# Threading / MPI
+if(OPFLOW_WITH_OPENMP)
+    find_dependency(OpenMP REQUIRED)
+endif()
+if(OPFLOW_WITH_MPI)
+    find_dependency(MPI REQUIRED)
 endif()
 
-include("${CMAKE_CURRENT_LIST_DIR}/${OPFLOW_CONFIG_TARGETS_FILE}")
+# TecIO (optional serial or MPI extension)
+if(OPFLOW_WITH_TECIO)
+    if(OPFLOW_USE_TECIOMPI)
+        find_dependency(teciompi CONFIG REQUIRED)
+    else()
+        find_dependency(tecio CONFIG REQUIRED)
+    endif()
+endif()
+
+# VTK is always required.
+find_dependency(VTK CONFIG REQUIRED COMPONENTS CommonCore CommonDataModel IOXML)
+
+# HDF5 is always required.
+if(OPFLOW_WITH_MPI)
+    set(HDF5_PREFER_PARALLEL TRUE)
+endif()
+# Prefer HDF5 from the same prefix as this package.
+set(HDF5_ROOT "${PACKAGE_PREFIX_DIR}")
+if(EXISTS "${PACKAGE_PREFIX_DIR}/bin/h5cc")
+    set(HDF5_C_COMPILER_EXECUTABLE "${PACKAGE_PREFIX_DIR}/bin/h5cc")
+endif()
+find_dependency(HDF5 COMPONENTS C REQUIRED)
+# NOTE:
+# HDF5 CMake package metadata from conda-forge may report HDF5_IS_PARALLEL=FALSE
+# even for mpi_* builds. We therefore enforce MPI HDF5 at package-resolution time
+# (conda recipe variant constraints) rather than hard-failing here.
+
+include("${CMAKE_CURRENT_LIST_DIR}/opflowTargets.cmake")

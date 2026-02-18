@@ -1,0 +1,68 @@
+{% set name = "opflow" %}
+{% set version = "0.4.0" %}
+{% set mpi = mpi or "nompi" %}
+{% set mpi_pkg = "mpi_serial" if mpi == "nompi" else mpi %}
+{% set openmp = openmp or "off" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  path: ../..
+
+build:
+  number: 0
+  skip: true  # [win]
+  string: "mpi_{{ mpi }}_openmp_{{ openmp }}_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - cmake >=4.0.2
+    - ninja
+  host:
+    - mpi * {{ mpi_pkg }}
+    - {{ mpi }}  # [mpi != 'nompi']
+    - llvm-openmp  # [osx and openmp == 'on']
+    - spdlog
+    - tbb
+    - opflow-dev::amgcl
+    - opflow-dev::hypre * mpi_{{ mpi }}_openmp_{{ openmp }}_*
+    - vtk
+    - hdf5 * nompi*  # [mpi == 'nompi']
+    - hdf5 * mpi_{{ mpi }}*  # [mpi != 'nompi']
+  run:
+    - mpi * {{ mpi_pkg }}
+    - {{ mpi }}  # [mpi != 'nompi']
+    - llvm-openmp  # [osx and openmp == 'on']
+    - spdlog
+    - tbb
+    - opflow-dev::amgcl
+    - opflow-dev::hypre * mpi_{{ mpi }}_openmp_{{ openmp }}_*
+    - vtk
+    - hdf5 * nompi*  # [mpi == 'nompi']
+    - hdf5 * mpi_{{ mpi }}*  # [mpi != 'nompi']
+
+test:
+  requires:
+    - {{ compiler('cxx') }}
+    - cmake >=4.0.2
+    - ninja
+  files:
+    - test/CMakeLists.txt
+    - test/main.cpp
+  commands:
+      - DYLD_FALLBACK_LIBRARY_PATH="${PREFIX}/lib:${DYLD_FALLBACK_LIBRARY_PATH}" ${PREFIX}/bin/cmake -S test -B build_test -G Ninja  # [unix]
+      - DYLD_FALLBACK_LIBRARY_PATH="${PREFIX}/lib:${DYLD_FALLBACK_LIBRARY_PATH}" ${PREFIX}/bin/cmake --build build_test  # [unix]
+
+about:
+  home: https://github.com/OpFlow-dev/OpFlow
+  license: MPL-2.0
+  license_file: LICENSE
+  summary: "OpFlow: C++26 CFD / PDE framework (conda-packaged, MPI/OpenMP variants)"
+
+extra:
+  recipe-maintainers:
+    - luohaothu

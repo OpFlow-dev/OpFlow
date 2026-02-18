@@ -41,7 +41,7 @@ endif ()
 
 function(add_gmock testname testfile)
     add_executable(${testname} EXCLUDE_FROM_ALL ${testfile} ${ARGN} ${TEST_MAIN_CPP})
-    target_link_libraries(${testname} gmock opflow::opflow)
+    target_link_libraries(${testname} GTest::gmock opflow::opflow)
     target_compile_definitions(${testname} PUBLIC OPFLOW_TEST_ENVIRONMENT)
     set_property(GLOBAL APPEND PROPERTY all_test_srcs ${testfile} ${ARGN})
     add_dependencies(AllTests ${testname})
@@ -63,14 +63,12 @@ if (OPFLOW_WITH_MPI)
         include(FindMPI)
         find_package(MPI REQUIRED)
     endif ()
-    # Allow running MPI tests as root in CI environments
-    list(APPEND MPIEXEC_PREFLAGS "--allow-run-as-root")
 endif ()
 
 function(add_gmock_mpi testname proccount testfile)
     if (OPFLOW_WITH_MPI)
         add_executable(${testname} EXCLUDE_FROM_ALL ${testfile} ${ARGN} ${TEST_MAIN_CPP})
-        target_link_libraries(${testname} gmock opflow::opflow)
+        target_link_libraries(${testname} GTest::gmock opflow::opflow)
         target_compile_definitions(${testname} PUBLIC OPFLOW_DISTRIBUTE_MODEL_MPI OPFLOW_TEST_ENVIRONMENT)
         set_property(GLOBAL APPEND PROPERTY all_test_srcs ${testfile} ${ARGN})
         add_dependencies(AllTests ${testname})
@@ -99,50 +97,13 @@ function(add_gmock_mpi testname proccount testfile)
     endif ()
 endfunction()
 
-if (OPFLOW_USE_BUNDLED_GTEST)
-    # Use bundled googletest framework (v1.11.0)
-    set(OPFLOW_GTEST_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/../external/googletest)
-    configure_file(${CMAKE_CURRENT_LIST_DIR}/../cmake/UseBundledGTest.cmake.in
-            ${CMAKE_CURRENT_BINARY_DIR}/googletest-download/CMakeLists.txt)
-else ()
-    # Download and unpack googletest at configure time
-    configure_file(../cmake/DownloadGTest.cmake.in googletest-download/CMakeLists.txt)
-endif ()
-execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download)
-if (result)
-    message(FATAL_ERROR "CMake step for googletest failed: ${result}")
-endif ()
-execute_process(COMMAND ${CMAKE_COMMAND} --build .
-        RESULT_VARIABLE result
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download)
-if (result)
-    message(FATAL_ERROR "Build step for googletest failed: ${result}")
-endif ()
-
-# Prevent overriding the parent project's compiler/linker
-# settings on Windows
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
-# Add googletest directly to our build. This defines
-# the gtest and gtest_main targets.
-if (OPFLOW_USE_BUNDLED_GTEST)
-    add_subdirectory(${OPFLOW_GTEST_SOURCE_DIR}
-            ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
-            EXCLUDE_FROM_ALL)
-else ()
-    add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
-            ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
-            EXCLUDE_FROM_ALL)
-endif ()
-
-# The gtest/gtest_main targets carry header search path
-# dependencies automatically when using CMake 2.8.11 or
-# later. Otherwise we have to add them here ourselves.
-if (CMAKE_VERSION VERSION_LESS 2.8.11)
-    include_directories("${gtest_SOURCE_DIR}/include" "${gmock_SOURCE_DIR}/include")
-endif ()
+find_package(GTest CONFIG REQUIRED)
+if(NOT TARGET GTest::gtest)
+    message(FATAL_ERROR "GTest::gtest target not found. Please install gtest via conda.")
+endif()
+if(NOT TARGET GTest::gmock)
+    message(FATAL_ERROR "GTest::gmock target not found. Please install gtest (with gmock) via conda.")
+endif()
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 if (NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")

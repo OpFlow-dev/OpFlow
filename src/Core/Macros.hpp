@@ -16,6 +16,7 @@
 #ifndef OPFLOW_INSIDE_MODULE
 #include <cassert>
 #include <cstring>
+#include <fmt/format.h>
 #include <spdlog/spdlog.h>
 #include <utility>
 #endif
@@ -67,9 +68,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow { inline static int getWorkerId(MPI_Comm c
     do {                                                                                                     \
         if                                                                                                   \
             consteval {                                                                                      \
-                spdlog::X(std::format("[{}:{}@{}][Rank{}] ", __FILENAME__, __FUNCTION__, __LINE__,           \
+                spdlog::X(fmt::format("[{}:{}@{}][Rank{}] ", __FILENAME__, __FUNCTION__, __LINE__,           \
                                       OpFlow::getWorkerId(MPI_COMM_WORLD))                                   \
-                          + std::format(__VA_ARGS__));                                                       \
+                          + fmt::format(__VA_ARGS__));                                                       \
             }                                                                                                \
     } while (0)
 #else
@@ -77,8 +78,8 @@ OPFLOW_MODULE_EXPORT namespace OpFlow { inline static int getWorkerId(MPI_Comm c
     do {                                                                                                     \
         if                                                                                                   \
             consteval {                                                                                      \
-                spdlog::X(std::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__)                   \
-                          + std::format(__VA_ARGS__));                                                       \
+                spdlog::X(fmt::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__)                   \
+                          + fmt::format(__VA_ARGS__));                                                       \
             }                                                                                                \
     } while (0)
 #endif
@@ -122,11 +123,11 @@ OPFLOW_MODULE_EXPORT namespace OpFlow { inline static Utils::StackTracer stackTr
 
 #define OP_STACK_PUSH(...)                                                                                   \
     do {                                                                                                     \
-        OpFlow::stackTracer.push(std::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__)            \
-                                 + std::format(__VA_ARGS__));                                                \
+        OpFlow::stackTracer.push(fmt::format("[{}:{}@{}] ", __FILENAME__, __FUNCTION__, __LINE__)            \
+                                 + fmt::format(__VA_ARGS__));                                                \
     } while (0)
 #define OP_STACK_APPEND(...)                                                                                 \
-    do { OpFlow::stackTracer.append(std::format(__VA_ARGS__)); } while (0)
+    do { OpFlow::stackTracer.append(fmt::format(__VA_ARGS__)); } while (0)
 #define OP_STACK_POP                                                                                         \
     do { OpFlow::stackTracer.pop(); } while (0)
 #define OP_DUMPSTACK                                                                                         \

@@ -150,7 +150,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                 std::string parent_dir = dir.parent_path().string();
                 stat = tecini142(title.c_str(), var_list.c_str(), filename.c_str(), parent_dir.c_str(),
                                  &file_format, &file_type, &debug, &is_double);
-#ifdef OPFLOW_WITH_MPI
+#if defined(OPFLOW_WITH_MPI) && defined(TECIOMPI)
                 if (!getGlobalParallelPlan().singleNodeMode()) {
                     OP_ASSERT_MSG(dim == 3, "TecIO library only support partitioned IO for 3D data. Use "
                                             "other format or run in single node instead.");
@@ -197,7 +197,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                           &icellmax, &jcellmax, &kcellmax, &time.time, &strandID, &parentZone, &isBlock,
                           &nfconns, &fnmode, &total_num_face_nodes, &total_num_boundary_faces,
                           &total_num_boundary_connections, nullptr, nullptr, nullptr, &dummy);
-#ifdef OPFLOW_WITH_MPI
+#if defined(OPFLOW_WITH_MPI) && defined(TECIOMPI)
                 if (!getGlobalParallelPlan().singleNodeMode()) {
                     std::vector<int> partition_ranks(getWorkerCount());
                     for (auto i = 0; i < partition_ranks.size(); ++i) partition_ranks[i] = i;
@@ -231,7 +231,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                           &icellmax, &jcellmax, &kcellmax, &time.time, &strandID, &parentZone, &isBlock,
                           &dummy, &dummy, &dummy, &dummy, &dummy, passive_var.data(), nullptr, share.data(),
                           &dummy);
-#ifdef OPFLOW_WITH_MPI
+#if defined(OPFLOW_WITH_MPI) && defined(TECIOMPI)
                 if (!getGlobalParallelPlan().singleNodeMode()) {
                     std::vector<int> partition_ranks(getWorkerCount());
                     for (auto i = 0; i < partition_ranks.size(); ++i) partition_ranks[i] = i;
@@ -295,7 +295,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                     std::string parent_dir = dir.parent_path().string();
                     stat = tecini142(title.c_str(), var_list.c_str(), filename.c_str(), parent_dir.c_str(),
                                      &file_format, &file_type, &debug, &is_double);
-#ifdef OPFLOW_WITH_MPI
+#if defined(OPFLOW_WITH_MPI) && defined(TECIOMPI)
                     if (!getGlobalParallelPlan().singleNodeMode()) {
                         OP_ASSERT_MSG(dim == 3, "TecIO library only support partitioned IO for 3D data. Use "
                                                 "other format or run in single node instead.");
@@ -343,7 +343,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                               &icellmax, &jcellmax, &kcellmax, &time.time, &strandID, &parentZone, &isBlock,
                               &nfconns, &fnmode, &total_num_face_nodes, &total_num_boundary_faces,
                               &total_num_boundary_connections, nullptr, nullptr, nullptr, &dummy);
-#ifdef OPFLOW_WITH_MPI
+#if defined(OPFLOW_WITH_MPI) && defined(TECIOMPI)
                     if (!getGlobalParallelPlan().singleNodeMode()) {
                         std::vector<int> partition_ranks(getWorkerCount());
                         for (auto i = 0; i < partition_ranks.size(); ++i) partition_ranks[i] = i;
@@ -377,7 +377,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                               &icellmax, &jcellmax, &kcellmax, &time.time, &strandID, &parentZone, &isBlock,
                               &dummy, &dummy, &dummy, &dummy, &dummy, passive_var.data(), nullptr,
                               share.data(), &dummy);
-#ifdef OPFLOW_WITH_MPI
+#if defined(OPFLOW_WITH_MPI) && defined(TECIOMPI)
                     if (!getGlobalParallelPlan().singleNodeMode()) {
                         std::vector<int> partition_ranks(getWorkerCount());
                         for (auto i = 0; i < partition_ranks.size(); ++i) partition_ranks[i] = i;

@@ -1,34 +1,24 @@
-name: BuildAndTest
+name: CondaPackage
 
 on:
   push:
     paths:
-      - '**.c'
-      - '**.cpp'
-      - '**.cppm'
-      - '**.h'
-      - '**.hpp'
-      - '**.cmake'
-      - '**/CMakeLists.txt'
       - 'conda/**'
-      - '.github/workflows/Build.yml'
-      - '.github/workflows/CondaPreflight.yml'
       - '.github/workflows/CondaPackage.yml'
       - '.github/scripts/ci/**'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'src/**'
+      - 'include/**'
   pull_request:
     paths:
-      - '**.c'
-      - '**.cpp'
-      - '**.cppm'
-      - '**.h'
-      - '**.hpp'
-      - '**.cmake'
-      - '**/CMakeLists.txt'
       - 'conda/**'
-      - '.github/workflows/Build.yml'
-      - '.github/workflows/CondaPreflight.yml'
       - '.github/workflows/CondaPackage.yml'
       - '.github/scripts/ci/**'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'src/**'
+      - 'include/**'
   workflow_dispatch:
     inputs:
       platforms:
@@ -48,10 +38,10 @@ env:
 
 jobs:
   matrix:
-    name: Generate Source Matrix
+    name: Generate Package Matrix
     runs-on: ubuntu-24.04
     outputs:
-      source_matrix: ${{ steps.generate.outputs.source_matrix }}
+      package_matrix: ${{ steps.generate.outputs.package_matrix }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -62,17 +52,17 @@ jobs:
           # Keep variant logic in one place: .github/scripts/ci/generate_matrix.py
           platforms="${{ github.event.inputs.platforms || env.CI_CONDA_PLATFORMS }}"
           python3 .github/scripts/ci/generate_matrix.py \
-            --mode source \
+            --mode package \
             --platforms "$platforms" \
             --github-output "$GITHUB_OUTPUT"
 
-  build_and_test:
-    name: ${{ matrix.platform }} / MPI${{ matrix.mpi }} / OMP${{ matrix.openmp }} / ${{ matrix.build_type }}
+  package:
+    name: Package / ${{ matrix.platform }} / MPI${{ matrix.mpi }} / OMP${{ matrix.openmp }}
     runs-on: ${{ matrix.runner }}
     needs: matrix
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.matrix.outputs.source_matrix) }}
+      matrix: ${{ fromJSON(needs.matrix.outputs.package_matrix) }}
 
     steps:
       - name: Checkout
@@ -89,14 +79,31 @@ jobs:
           auto-activate-base: true
           use-mamba: true
 
-      - name: Build and test source tree
+      - name: Build conda package
         shell: bash -l {0}
         run: |
-          # Enforces fail-fast dependency check, then builds source and runs ctest.
-          bash .github/scripts/ci/run_source_job.sh \
+          # Enforces fail-fast dependency check, then executes conda build.
+          bash .github/scripts/ci/run_package_job.sh \
             --mpi "${{ matrix.mpi }}" \
             --openmp "${{ matrix.openmp }}" \
-            --build-type "${{ matrix.build_type }}" \
             --tecio off \
             --owner opflow-dev \
-            --platform "${{ matrix.platform }}"
+            --platform "${{ matrix.platform }}" \
+            --output-file package_paths.txt
+
+      - name: Resolve croot
+        id: croot
+        shell: bash -l {0}
+        run: |
+          # croot is dynamic across runners; resolve it before artifact upload.
+          croot="$(conda config --show croot | awk '{print $2}')"
+          echo "croot=$croot" >> "$GITHUB_OUTPUT"
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: opflow-conda-${{ matrix.platform }}-${{ matrix.mpi }}-${{ matrix.openmp }}
+          path: |
+            package_paths.txt
+            ${{ steps.croot.outputs.croot }}/${{ matrix.platform }}/opflow-*.conda
+          if-no-files-found: error

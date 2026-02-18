@@ -11,6 +11,8 @@
 //  ----------------------------------------------------------------------------
 
 #include <OpFlow>
+#include <chrono>
+#include <ctime>
 
 using namespace OpFlow;
 
@@ -18,6 +20,22 @@ template <std::size_t d>
 using DU = D1WENO53Upwind<d>;
 template <std::size_t d>
 using DD = D1WENO53Downwind<d>;
+
+namespace {
+    std::string make_result_root() {
+        const auto now = std::chrono::system_clock::now();
+        const auto tt = std::chrono::system_clock::to_time_t(now);
+        std::tm local_tm {};
+#if defined(_WIN32)
+        localtime_s(&local_tm, &tt);
+#else
+        localtime_r(&tt, &local_tm);
+#endif
+        char ts[32] = {};
+        std::strftime(ts, sizeof(ts), "%m-%d_%H-%M-%S", &local_tm);
+        return std::string("Result_") + ts + "/";
+    }
+}// namespace
 
 void ls() {
     using Mesh = CartesianMesh<Meta::int_<2>>;
@@ -181,8 +199,7 @@ void ls_3d() {
         return -std::sin(2 * PI * x[0]) * std::sin(2 * PI * x[1]) * Math::pow2(std::sin(PI * x[2]));
     });
 
-    auto root = std::format("Result_{:%m-%d_%H-%M-%S}/",
-                            std::chrono::current_zone()->to_local(std::chrono::system_clock::now()));
+    auto root = make_result_root();
     Utils::TecplotASCIIStream uf("u.tec"), vf("v.tec"), wf("w.tec"), pf("p.tec");
     uf << Utils::TimeStamp(0) << u;
     vf << Utils::TimeStamp(0) << v;
