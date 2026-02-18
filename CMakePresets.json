@@ -1,0 +1,48 @@
+{
+    "version": 8,
+    "configurePresets": [
+        {
+            "name": "opflow-conda-base",
+            "displayName": "opflow-conda 基础工具链配置",
+            "description": "设置 Ninja 生成器和工具链",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "toolchainFile": "${sourceDir}/.vscode/conda-toolchain.cmake",
+            "cacheVariables": {
+                "OPFLOW_WITH_OPENMP": "OFF"
+            }
+        },
+        {
+            "name": "opflow-conda-debug",
+            "displayName": "opflow-conda Debug 配置",
+            "description": "OpFlow conda debug configure",
+            "inherits": "opflow-conda-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}"
+            }
+        },
+        {
+            "name": "opflow-conda-release",
+            "displayName": "opflow-conda Release 配置",
+            "description": "OpFlow conda release configure",
+            "inherits": "opflow-conda-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "opflow-conda-debug",
+            "configurePreset": "opflow-conda-debug",
+            "description": "OpFlow conda debug build"
+        },
+        {
+            "name": "opflow-conda-release",
+            "configurePreset": "opflow-conda-release",
+            "description": "OpFlow conda release build"
+        }
+    ]
+}
