@@ -3,6 +3,7 @@ set -euo pipefail
 
 mpi=""
 openmp=""
+tecio="off"
 owner="opflow-dev"
 platform="osx-arm64"
 output_file=""
@@ -15,6 +16,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --openmp)
       openmp="$2"
+      shift 2
+      ;;
+    --tecio)
+      tecio="$2"
       shift 2
       ;;
     --owner)
@@ -37,7 +42,11 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$mpi" || -z "$openmp" ]]; then
-  echo "Usage: run_package_job.sh --mpi <nompi|openmpi> --openmp <on|off> [--owner <org>]" >&2
+  echo "Usage: run_package_job.sh --mpi <nompi|openmpi> --openmp <on|off> [--tecio <on|off>] [--owner <org>]" >&2
+  exit 2
+fi
+if [[ "$tecio" != "on" && "$tecio" != "off" ]]; then
+  echo "Invalid --tecio value: $tecio (expected on|off)" >&2
   exit 2
 fi
 
@@ -47,7 +56,8 @@ bash .github/scripts/ci/ensure_deps.sh \
   --platform "$platform" \
   --owner "$owner" \
   --mpi "$mpi" \
-  --openmp "$openmp"
+  --openmp "$openmp" \
+  --tecio "$tecio"
 
 variants="{mpi: ${mpi}, openmp: ${openmp}}"
 

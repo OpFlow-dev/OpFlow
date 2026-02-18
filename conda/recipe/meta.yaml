@@ -30,8 +30,6 @@ requirements:
     - tbb
     - opflow-dev::amgcl
     - opflow-dev::hypre * mpi_{{ mpi }}_openmp_{{ openmp }}_*
-    - opflow-dev::tecio * mpi_nompi_*  # [mpi == 'nompi']
-    - opflow-dev::teciompi * mpi_{{ mpi }}_*  # [mpi != 'nompi']
     - vtk
     - hdf5 * nompi*  # [mpi == 'nompi']
     - hdf5 * mpi_{{ mpi }}*  # [mpi != 'nompi']
@@ -43,8 +41,6 @@ requirements:
     - tbb
     - opflow-dev::amgcl
     - opflow-dev::hypre * mpi_{{ mpi }}_openmp_{{ openmp }}_*
-    - opflow-dev::tecio * mpi_nompi_*  # [mpi == 'nompi']
-    - opflow-dev::teciompi * mpi_{{ mpi }}_*  # [mpi != 'nompi']
     - vtk
     - hdf5 * nompi*  # [mpi == 'nompi']
     - hdf5 * mpi_{{ mpi }}*  # [mpi != 'nompi']

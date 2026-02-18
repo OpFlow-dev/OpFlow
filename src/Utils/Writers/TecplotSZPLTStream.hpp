@@ -98,7 +98,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                 std::string parent_dir = dir.parent_path().string();
                 stat = tecFileWriterOpen(filename.c_str(), title.c_str(), var_list.c_str(), file_format,
                                          file_type, 2, nullptr, &file_handler);
-#ifdef OPFLOW_WITH_MPI
+#if defined(OPFLOW_WITH_MPI) && defined(TECIOMPI)
                 tecMPIInitialize(file_handler, MPI_COMM_WORLD, 0);
 #endif
                 tecFileSetDiagnosticsLevel(file_handler, debug);
@@ -122,7 +122,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                 dummy = 0, total_num_face_nodes = 1, nfconns = 0, fnmode = 0, total_num_boundary_faces = 1,
                 total_num_boundary_connections = 1;
             std::vector<int> passive_var(dim + 1, 0), share(dim + 1, 1);
-#ifdef OPFLOW_WITH_MPI
+#if defined(OPFLOW_WITH_MPI) && defined(TECIOMPI)
             std::vector<int> partition_owners(getWorkerCount());
             for (int i = 0; i < partition_owners.size(); ++i) partition_owners[i] = i;
 #endif
@@ -142,7 +142,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
             if (writeMesh) {
                 tecZoneCreateIJK(file_handler, zone_title.c_str(), glob_i_count, glob_j_count, glob_k_count,
                                  nullptr, nullptr, nullptr, passive_var.data(), 0, 0, 0, &outputZone);
-#ifdef OPFLOW_WITH_MPI
+#if defined(OPFLOW_WITH_MPI) && defined(TECIOMPI)
                 tecZoneMapPartitionsToMPIRanks(file_handler, outputZone, getWorkerCount(),
                                                partition_owners.data());
                 tecIJKPartitionCreate(file_handler, outputZone, worker_id + 1, imin, jmin, kmin, imax, jmax,
@@ -225,7 +225,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                     std::string parent_dir = dir.parent_path().string();
                     stat = tecFileWriterOpen(filename.c_str(), title.c_str(), var_list.c_str(), file_format,
                                              file_type, 2, nullptr, &file_handler);
-#ifdef OPFLOW_WITH_MPI
+#if defined(OPFLOW_WITH_MPI) && defined(TECIOMPI)
                     if (!getGlobalParallelPlan().singleNodeMode()) {
                         OP_ASSERT_MSG(dim == 3, "TecIO library only support partitioned IO for 3D data. Use "
                                                 "other format or run in single node instead.");
@@ -271,7 +271,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                     tecZoneCreateIJK(file_handler, zone_title.c_str(), glob_i_count, glob_j_count,
                                      glob_k_count, nullptr, nullptr, nullptr, passive_var.data(), 0, 0, 0,
                                      &outputZone);
-#ifdef OPFLOW_WITH_MPI
+#if defined(OPFLOW_WITH_MPI) && defined(TECIOMPI)
                     if (!getGlobalParallelPlan().singleNodeMode()) {
                         std::vector<int> partition_owners(getWorkerCount());
                         for (int i = 0; i < partition_owners.size(); ++i) partition_owners[i] = i;
@@ -305,7 +305,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
                     tecZoneCreateIJK(file_handler, zone_title.c_str(), glob_i_count, glob_j_count,
                                      glob_k_count, nullptr, share.data(), nullptr, passive_var.data(), 0, 0,
                                      0, &outputZone);
-#ifdef OPFLOW_WITH_MPI
+#if defined(OPFLOW_WITH_MPI) && defined(TECIOMPI)
                     if (!getGlobalParallelPlan().singleNodeMode()) {
                         std::vector<int> partition_owners(getWorkerCount());
                         for (int i = 0; i < partition_owners.size(); ++i) partition_owners[i] = i;

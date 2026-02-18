@@ -221,6 +221,7 @@ TEST(IOGroupTest, AllInOne) {
 }
 
 TEST(IOGroupTest, Expression) {
+#ifdef OPFLOW_WITH_TECIO
     using Mesh = CartesianMesh<Meta::int_<2>>;
     using Field = CartesianField<double, Mesh>;
 
@@ -242,4 +243,7 @@ TEST(IOGroupTest, Expression) {
     group.dump(Utils::TimeStamp(0.));
 
     ASSERT_TRUE(true);
+#else
+    GTEST_SKIP() << "TecIO support is disabled.";
+#endif
 }

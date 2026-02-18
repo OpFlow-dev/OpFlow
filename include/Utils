@@ -24,8 +24,10 @@
 #include "Utils/Writers/Streams.hpp"
 #include "Utils/Writers/FieldStream.hpp"
 #include "Utils/Writers/TecplotASCIIStream.hpp"
+#ifdef OPFLOW_WITH_TECIO
 #include "Utils/Writers/TecplotBinaryStream.hpp"
 #include "Utils/Writers/TecplotSZPLTStream.hpp"
+#endif
 #include "Utils/Writers/RawBinaryStream.hpp"
 #include "Utils/Writers/HDF5Stream.hpp"
 #include "Utils/Writers/VTKAMRStream.hpp"

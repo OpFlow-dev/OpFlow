@@ -4,6 +4,7 @@ set -euo pipefail
 platform="osx-arm64"
 mpi=""
 openmp=""
+tecio="off"
 owner="opflow-dev"
 channels=()
 
@@ -19,6 +20,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --openmp)
       openmp="$2"
+      shift 2
+      ;;
+    --tecio)
+      tecio="$2"
       shift 2
       ;;
     --owner)
@@ -37,7 +42,11 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$mpi" || -z "$openmp" ]]; then
-  echo "Usage: ensure_deps.sh --mpi <nompi|openmpi> --openmp <on|off> [--platform <subdir>] [--owner <org>]" >&2
+  echo "Usage: ensure_deps.sh --mpi <nompi|openmpi> --openmp <on|off> [--tecio <on|off>] [--platform <subdir>] [--owner <org>]" >&2
+  exit 2
+fi
+if [[ "$tecio" != "on" && "$tecio" != "off" ]]; then
+  echo "Invalid --tecio value: $tecio (expected on|off)" >&2
   exit 2
 fi
 
@@ -82,13 +91,19 @@ check_spec "gtest"
 
 if [[ "$mpi" == "nompi" ]]; then
   check_spec "mpi * mpi_serial"
-  check_spec "${owner}::tecio * mpi_nompi_*"
   check_spec "hdf5 * nompi*"
 else
   check_spec "mpi * openmpi"
   check_spec "openmpi"
-  check_spec "${owner}::teciompi * mpi_openmpi_*"
   check_spec "hdf5 * mpi_openmpi*"
+fi
+
+if [[ "$tecio" == "on" ]]; then
+  if [[ "$mpi" == "nompi" ]]; then
+    check_spec "${owner}::tecio * mpi_nompi_*"
+  else
+    check_spec "${owner}::teciompi * mpi_openmpi_*"
+  fi
 fi
 
 check_spec "${owner}::hypre * mpi_${mpi}_openmp_${openmp}_*"

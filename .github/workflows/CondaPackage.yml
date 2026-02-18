@@ -86,6 +86,7 @@ jobs:
           bash .github/scripts/ci/run_package_job.sh \
             --mpi "${{ matrix.mpi }}" \
             --openmp "${{ matrix.openmp }}" \
+            --tecio off \
             --owner opflow-dev \
             --platform "${{ matrix.platform }}" \
             --output-file package_paths.txt
