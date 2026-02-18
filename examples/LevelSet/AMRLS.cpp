@@ -22,19 +22,19 @@ template <std::size_t d>
 using DD = D1WENO53Downwind<d>;
 
 namespace {
-std::string make_result_root() {
-    const auto now = std::chrono::system_clock::now();
-    const auto tt = std::chrono::system_clock::to_time_t(now);
-    std::tm local_tm {};
+    std::string make_result_root() {
+        const auto now = std::chrono::system_clock::now();
+        const auto tt = std::chrono::system_clock::to_time_t(now);
+        std::tm local_tm {};
 #if defined(_WIN32)
-    localtime_s(&local_tm, &tt);
+        localtime_s(&local_tm, &tt);
 #else
-    localtime_r(&tt, &local_tm);
+        localtime_r(&tt, &local_tm);
 #endif
-    char ts[32] = {};
-    std::strftime(ts, sizeof(ts), "%m-%d_%H-%M-%S", &local_tm);
-    return std::string("Result_") + ts + "/";
-}
+        char ts[32] = {};
+        std::strftime(ts, sizeof(ts), "%m-%d_%H-%M-%S", &local_tm);
+        return std::string("Result_") + ts + "/";
+    }
 }// namespace
 
 void amrls() {
