@@ -82,12 +82,12 @@ check_spec "gtest"
 
 if [[ "$mpi" == "nompi" ]]; then
   check_spec "mpi * mpi_serial"
-  check_spec "${owner}::tecio * mpi_nompi_*"
+  check_spec "${owner}::tecio"
   check_spec "hdf5 * nompi*"
 else
   check_spec "mpi * openmpi"
   check_spec "openmpi"
-  check_spec "${owner}::teciompi * mpi_openmpi_*"
+  check_spec "${owner}::tecio-mpi * mpi_${mpi}_*"
   check_spec "hdf5 * mpi_openmpi*"
 fi
 

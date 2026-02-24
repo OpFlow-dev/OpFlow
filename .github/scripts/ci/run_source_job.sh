@@ -79,7 +79,7 @@ install_specs=(
 if [[ "$mpi" == "nompi" ]]; then
   install_specs+=(
     "mpi * mpi_serial"
-    "${owner}::tecio * mpi_nompi_*"
+    "${owner}::tecio"
     "hdf5 * nompi*"
   )
   opflow_with_mpi="OFF"
@@ -87,7 +87,7 @@ else
   install_specs+=(
     "mpi * openmpi"
     "openmpi"
-    "${owner}::teciompi * mpi_openmpi_*"
+    "${owner}::tecio-mpi * mpi_${mpi}_*"
     "hdf5 * mpi_openmpi*"
   )
   opflow_with_mpi="ON"
