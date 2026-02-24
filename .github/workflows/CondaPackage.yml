@@ -98,6 +98,16 @@ jobs:
           croot="$(conda config --show croot | awk '{print $2}')"
           echo "croot=$croot" >> "$GITHUB_OUTPUT"
 
+      - name: Validate package artifacts
+        shell: bash -l {0}
+        run: |
+          shopt -s nullglob
+          packages=( "${{ steps.croot.outputs.croot }}/${{ matrix.platform }}/opflow-"*.conda )
+          if [[ ${#packages[@]} -eq 0 ]]; then
+            echo "No conda package artifact found under croot." >&2
+            exit 1
+          fi
+
       - name: Upload package artifacts
         uses: actions/upload-artifact@v4
         with:
