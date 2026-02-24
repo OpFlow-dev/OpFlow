@@ -23,8 +23,6 @@ include(CMakeFindDependencyMacro)
 
 set(OPFLOW_WITH_OPENMP @OPFLOW_WITH_OPENMP@)
 set(OPFLOW_WITH_MPI @OPFLOW_WITH_MPI@)
-set(OPFLOW_WITH_TECIO @OPFLOW_WITH_TECIO@)
-set(OPFLOW_USE_TECIOMPI @OPFLOW_USE_TECIOMPI@)
 
 # Core dependencies
 find_dependency(spdlog CONFIG REQUIRED)
@@ -40,13 +38,11 @@ if(OPFLOW_WITH_MPI)
     find_dependency(MPI REQUIRED)
 endif()
 
-# TecIO (optional serial or MPI extension)
-if(OPFLOW_WITH_TECIO)
-    if(OPFLOW_USE_TECIOMPI)
-        find_dependency(teciompi CONFIG REQUIRED)
-    else()
-        find_dependency(tecio CONFIG REQUIRED)
-    endif()
+# TecIO (serial or MPI)
+if(OPFLOW_WITH_MPI)
+    find_dependency(teciompi CONFIG REQUIRED)
+else()
+    find_dependency(tecio CONFIG REQUIRED)
 endif()
 
 # VTK is always required.

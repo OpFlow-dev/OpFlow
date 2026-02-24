@@ -12,7 +12,6 @@ cmake_args=(
   -DOPFLOW_BUILD_TESTS=OFF
   -DOPFLOW_BUILD_BENCHMARKS=OFF
   -DOPFLOW_BUILD_DOCS=OFF
-  -DOPFLOW_WITH_TECIO=OFF
   -DOPFLOW_INSTALL=ON
 )
 
@@ -40,3 +39,4 @@ fi
 cmake "${cmake_args[@]}" ${CMAKE_ARGS}
 cmake --build build -- -j"${CPU_COUNT:-2}"
 cmake --install build
+

@@ -4,7 +4,6 @@ set -euo pipefail
 mpi=""
 openmp=""
 build_type=""
-tecio="off"
 owner="opflow-dev"
 platform="osx-arm64"
 
@@ -20,10 +19,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --build-type)
       build_type="$2"
-      shift 2
-      ;;
-    --tecio)
-      tecio="$2"
       shift 2
       ;;
     --owner)
@@ -42,11 +37,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$mpi" || -z "$openmp" || -z "$build_type" ]]; then
-  echo "Usage: run_source_job.sh --mpi <nompi|openmpi> --openmp <on|off> --build-type <Debug|Release> [--tecio <on|off>] [--owner <org>]" >&2
-  exit 2
-fi
-if [[ "$tecio" != "on" && "$tecio" != "off" ]]; then
-  echo "Invalid --tecio value: $tecio (expected on|off)" >&2
+  echo "Usage: run_source_job.sh --mpi <nompi|openmpi> --openmp <on|off> --build-type <Debug|Release> [--owner <org>]" >&2
   exit 2
 fi
 
@@ -57,8 +48,7 @@ if [[ "${OPFLOW_SKIP_DEP_CHECK:-0}" != "1" ]]; then
     --platform "$platform" \
     --owner "$owner" \
     --mpi "$mpi" \
-    --openmp "$openmp" \
-    --tecio "$tecio"
+    --openmp "$openmp"
 else
   echo "Skipping ensure_deps pre-check because OPFLOW_SKIP_DEP_CHECK=1."
 fi
@@ -89,6 +79,7 @@ install_specs=(
 if [[ "$mpi" == "nompi" ]]; then
   install_specs+=(
     "mpi * mpi_serial"
+    "${owner}::tecio * mpi_nompi_*"
     "hdf5 * nompi*"
   )
   opflow_with_mpi="OFF"
@@ -96,20 +87,10 @@ else
   install_specs+=(
     "mpi * openmpi"
     "openmpi"
+    "${owner}::teciompi * mpi_openmpi_*"
     "hdf5 * mpi_openmpi*"
   )
   opflow_with_mpi="ON"
-fi
-
-if [[ "$tecio" == "on" ]]; then
-  if [[ "$mpi" == "nompi" ]]; then
-    install_specs+=("${owner}::tecio * mpi_nompi_*")
-  else
-    install_specs+=("${owner}::teciompi * mpi_openmpi_*")
-  fi
-  opflow_with_tecio="ON"
-else
-  opflow_with_tecio="OFF"
 fi
 
 if [[ "$openmp" == "on" ]]; then
@@ -192,7 +173,6 @@ cmake_args=(
   -DOPFLOW_ENABLE_MODULE=OFF
   -DOPFLOW_WITH_MPI="$opflow_with_mpi"
   -DOPFLOW_WITH_OPENMP="$opflow_with_openmp"
-  -DOPFLOW_WITH_TECIO="$opflow_with_tecio"
   -DOPFLOW_WITH_HDF5=ON
 )
 

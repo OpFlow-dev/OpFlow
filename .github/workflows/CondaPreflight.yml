@@ -78,6 +78,5 @@ jobs:
           bash .github/scripts/ci/run_preflight_job.sh \
             --mpi "${{ matrix.mpi }}" \
             --openmp "${{ matrix.openmp }}" \
-            --tecio off \
             --owner opflow-dev \
             --platform "${{ matrix.platform }}"

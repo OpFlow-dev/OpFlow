@@ -97,6 +97,5 @@ jobs:
             --mpi "${{ matrix.mpi }}" \
             --openmp "${{ matrix.openmp }}" \
             --build-type "${{ matrix.build_type }}" \
-            --tecio off \
             --owner opflow-dev \
             --platform "${{ matrix.platform }}"
