@@ -183,9 +183,8 @@ void ls_3d() {
         return -std::sin(2 * PI * x[0]) * std::sin(2 * PI * x[1]) * Math::pow2(std::sin(PI * x[2]));
     });
 
-    auto root = std::format(
-            "Result_{:%m-%d_%H-%M-%S}/",
-            std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
+    auto root = std::format("Result_{:%m-%d_%H-%M-%S}/",
+                            std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
     Utils::TecplotASCIIStream uf("u.tec"), vf("v.tec"), wf("w.tec"), pf("p.tec");
     uf << Utils::TimeStamp(0) << u;
     vf << Utils::TimeStamp(0) << v;

@@ -95,9 +95,8 @@ void amrls() {
         return -2 * std::sin(PI * x[0]) * std::cos(PI * x[0]) * Math::pow2(std::sin(PI * x[1]));
     });
 
-    auto root = std::format(
-            "Result_{:%m-%d_%H-%M-%S}/",
-            std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
+    auto root = std::format("Result_{:%m-%d_%H-%M-%S}/",
+                            std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
     Utils::VTKAMRStream uf(root + "u"), vf(root + "v"), pf(root + "p"), p1f(root + "p1"), p2f(root + "p2"),
             p3f(root + "p3");
     uf << Utils::TimeStamp(0) << u;
@@ -291,9 +290,8 @@ void amrls_3d() {
         return -std::sin(2 * PI * x[0]) * std::sin(2 * PI * x[1]) * Math::pow2(std::sin(PI * x[2]));
     });
 
-    auto root = std::format(
-            "Result_{:%m-%d_%H-%M-%S}/",
-            std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
+    auto root = std::format("Result_{:%m-%d_%H-%M-%S}/",
+                            std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
     Utils::VTKAMRStream uf(root + "u"), vf(root + "v"), wf(root + "w"), pf(root + "p"), p1f(root + "p1"),
             p2f(root + "p2"), p3f(root + "p3");
     uf << Utils::TimeStamp(0) << u;
