@@ -229,8 +229,18 @@ if(HDF5_ROOT AND EXISTS "${HDF5_ROOT}/bin/h5cc")
     set(HDF5_C_COMPILER_EXECUTABLE "${HDF5_ROOT}/bin/h5cc")
 endif()
 find_package(HDF5 REQUIRED COMPONENTS C)
-target_include_directories(opflow ${OPFLOW_TARGET_SCOPE} ${HDF5_INCLUDE_DIRS})
-target_link_libraries(opflow ${OPFLOW_TARGET_SCOPE} ${HDF5_C_LIBRARIES})
+set(_opflow_hdf5_link_libraries "")
+foreach(_opflow_hdf5_lib IN LISTS HDF5_C_LIBRARIES)
+    # Avoid exporting sysroot static archives from conda-build host env.
+    if(_opflow_hdf5_lib MATCHES "/sysroot/.+\\.a$")
+        continue()
+    endif()
+    list(APPEND _opflow_hdf5_link_libraries "${_opflow_hdf5_lib}")
+endforeach()
+target_include_directories(opflow ${OPFLOW_TARGET_SCOPE}
+    "$<BUILD_INTERFACE:${HDF5_INCLUDE_DIRS}>")
+target_link_libraries(opflow ${OPFLOW_TARGET_SCOPE}
+    "$<BUILD_INTERFACE:${_opflow_hdf5_link_libraries}>")
 
 # ----------------------------------------------------------------------------
 # Platform detection
