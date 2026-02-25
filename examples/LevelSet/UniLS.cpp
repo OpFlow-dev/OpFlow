@@ -11,6 +11,8 @@
 //  ----------------------------------------------------------------------------
 
 #include <OpFlow>
+#include <chrono>
+#include <format>
 
 using namespace OpFlow;
 
@@ -182,7 +184,7 @@ void ls_3d() {
     });
 
     auto root = std::format("Result_{:%m-%d_%H-%M-%S}/",
-                            std::chrono::current_zone()->to_local(std::chrono::system_clock::now()));
+                            std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
     Utils::TecplotASCIIStream uf("u.tec"), vf("v.tec"), wf("w.tec"), pf("p.tec");
     uf << Utils::TimeStamp(0) << u;
     vf << Utils::TimeStamp(0) << v;

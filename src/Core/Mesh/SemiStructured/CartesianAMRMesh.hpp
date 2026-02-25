@@ -68,7 +68,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
 
         explicit CartesianAMRMesh(const CartesianMesh<Dim> &baseMesh) {
             meshes.push_back(baseMesh);
-            ranges.template emplace_back(baseMesh.getRange());
+            ranges.emplace_back(baseMesh.getRange());
         }
         auto getPtr() const { return this; }
 
@@ -117,7 +117,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         auto &setBaseMesh(CartesianMesh<Dim> &&baseMesh) {
             ret = CartesianAMRMesh<Dim>();// clean up
             ret.ranges.emplace_back();
-            ret.ranges.back().template emplace_back(baseMesh.getRange());
+            ret.ranges.back().emplace_back(baseMesh.getRange());
             ret.meshes.push_back(std::move(baseMesh));
             return *this;
         }
@@ -191,7 +191,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                 range.level = _level - 1;
                 // label all the necessary cells on the current _level
                 rangeFor_s(range, [&](auto &&i) {
-                    if (func(i)) points.template emplace_back(i.get());
+                    if (func(i)) points.emplace_back(i.get());
                 });
 #ifndef NDEBUG
                 OP_DEBUG("Points at _level {}:", _level - 1);
@@ -219,9 +219,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                         }
                         // label all points in _range
                         rangeFor_s(_range, [&](auto &&i) {
-                            points.template emplace_back(i.get());
+                            points.emplace_back(i.get());
 #ifndef NDEBUG
-                            p_add.template emplace_back(i.get());
+                            p_add.emplace_back(i.get());
 #endif
                         });
                     }
@@ -279,7 +279,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                     // convert range to cell centered range
                     for (auto i = 0; i < dim; ++i) range.end[i]--;
                     rangeFor_s(range, [&](auto &&i) {
-                        if (func(i)) points.template emplace_back(i.get());
+                        if (func(i)) points.emplace_back(i.get());
                     });
                 }
 #ifndef NDEBUG
@@ -308,9 +308,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
                         }
                         // label all points in _range
                         rangeFor_s(_range, [&](auto &&i) {
-                            points.template emplace_back(i.get());
+                            points.emplace_back(i.get());
 #ifndef NDEBUG
-                            p_add.template emplace_back(i.get());
+                            p_add.emplace_back(i.get());
 #endif
                         });
                     }
@@ -626,7 +626,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         auto &setBaseMesh(CartesianMesh<Dim> &&baseMesh) {
             ret = CartesianAMRMesh<Dim>();// clean up
             ret.ranges.emplace_back();
-            ret.ranges.back().template emplace_back(baseMesh.getRange());
+            ret.ranges.back().emplace_back(baseMesh.getRange());
             ret.meshes.push_back(std::move(baseMesh));
             return *this;
         }

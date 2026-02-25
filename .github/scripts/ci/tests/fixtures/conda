@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -ge 3 && "$1" == "config" && "$2" == "--show" && "$3" == "croot" ]]; then
+  echo "croot: /tmp/opflow-mock-croot"
+  exit 0
+fi
+
+if [[ $# -ge 2 && "$1" == "build" && "$2" == "--help" ]]; then
+  echo "mock conda build help"
+  exit 0
+fi
+
+if [[ $# -ge 1 && "$1" == "install" ]]; then
+  # bootstrap_conda_tools.sh may call this when conda build is unavailable.
+  exit 0
+fi
+
+if [[ $# -ge 1 && "$1" == "search" ]]; then
+  spec="${*: -1}"
+  if [[ "$spec" == "opflow-dev::hypre * mpi_openmpi_openmp_on_*" ]]; then
+    exit 1
+  fi
+  exit 0
+fi
+
+echo "mock conda: unsupported arguments: $*" >&2
+exit 2

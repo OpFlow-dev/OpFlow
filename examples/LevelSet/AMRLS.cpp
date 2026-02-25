@@ -96,7 +96,7 @@ void amrls() {
     });
 
     auto root = std::format("Result_{:%m-%d_%H-%M-%S}/",
-                            std::chrono::current_zone()->to_local(std::chrono::system_clock::now()));
+                            std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
     Utils::VTKAMRStream uf(root + "u"), vf(root + "v"), pf(root + "p"), p1f(root + "p1"), p2f(root + "p2"),
             p3f(root + "p3");
     uf << Utils::TimeStamp(0) << u;
@@ -291,7 +291,7 @@ void amrls_3d() {
     });
 
     auto root = std::format("Result_{:%m-%d_%H-%M-%S}/",
-                            std::chrono::current_zone()->to_local(std::chrono::system_clock::now()));
+                            std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
     Utils::VTKAMRStream uf(root + "u"), vf(root + "v"), wf(root + "w"), pf(root + "p"), p1f(root + "p1"),
             p2f(root + "p2"), p3f(root + "p3");
     uf << Utils::TimeStamp(0) << u;

@@ -1,4 +1,0 @@
-TEST_sstruct/[^n]*.sh
-TEST_sstruct/neighborpart.sh
-TEST_sstruct/neumann.sh
-

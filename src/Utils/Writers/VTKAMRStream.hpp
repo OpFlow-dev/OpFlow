@@ -20,6 +20,7 @@
 #include <fstream>
 #include <string>
 #include <utility>
+#include <vector>
 #endif
 
 #ifdef OPFLOW_WITH_VTK
@@ -72,11 +73,11 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils {
             constexpr auto dim = OpFlow::internal::CartAMRFieldExprTrait<T>::dim;
             vtkNew<vtkOverlappingAMR> data;
             int numLevels = f.getLevels();
-            int blocksPerLevel[numLevels];
+            std::vector<int> blocksPerLevel(numLevels);
             for (auto i = 0; i < numLevels; ++i) { blocksPerLevel[i] = f.getPartsOnLevel(i); }
             double origin[3] = {0., 0., 0.};
 
-            data->Initialize(numLevels, blocksPerLevel);
+            data->Initialize(numLevels, blocksPerLevel.data());
             for (auto k = 0; k < dim; ++k) { origin[k] = f.mesh.x(k, 0, f.localRanges[0][0].start[k]); }
             data->SetOrigin(origin);
             if constexpr (dim == 2) {

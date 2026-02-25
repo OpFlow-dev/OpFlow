@@ -24,34 +24,61 @@ function(opflow_extract_version)
             COMMAND git -C ${CMAKE_CURRENT_SOURCE_DIR} rev-parse
             RESULT_VARIABLE _result
             OUTPUT_VARIABLE _output
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
     )
     if (_result EQUAL "0")
         execute_process(
                 COMMAND git describe --tags --abbrev=0
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                RESULT_VARIABLE _result
-                OUTPUT_VARIABLE _output
+                RESULT_VARIABLE _tag_result
+                OUTPUT_VARIABLE _tag_output
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ERROR_QUIET
         )
-        string(REGEX MATCH "v([0-9]+)\.([0-9]+)\.([0-9]+)" _ ${_output})
-        set(OPFLOW_VERSION_STRING ${_output} PARENT_SCOPE)
+        if (_tag_result EQUAL 0 AND NOT "${_tag_output}" STREQUAL "")
+            string(REGEX MATCH "v([0-9]+)\.([0-9]+)\.([0-9]+)" _ "${_tag_output}")
+            set(OPFLOW_VERSION_STRING "${_tag_output}" PARENT_SCOPE)
+            if (NOT CMAKE_MATCH_COUNT EQUAL 3)
+                message(FATAL_ERROR "Could not extract version number from ${_tag_output}")
+            endif ()
+            set(ver_major ${CMAKE_MATCH_1})
+            set(ver_minor ${CMAKE_MATCH_2})
+            set(ver_patch ${CMAKE_MATCH_3})
+
+            set(OPFLOW_VERSION_MAJOR ${ver_major} CACHE STRING "OPFLOW_VERSION_MAJOR" FORCE)
+            set(OPFLOW_VERSION_MINOR ${ver_minor} CACHE STRING "OPFLOW_VERSION_MINOR" FORCE)
+            set(OPFLOW_VERSION_PATCH ${ver_patch} CACHE STRING "OPFLOW_VERSION_PATCH" FORCE)
+            set(OPFLOW_VERSION "${ver_major}.${ver_minor}.${ver_patch}" CACHE STRING "OPFLOW_VERSION" FORCE)
+        else ()
+            message(STATUS "Git tags unavailable. Use include/Version instead")
+            opflow_extract_version_from_file()
+            set(OPFLOW_VERSION_STRING "${OPFLOW_VERSION}" PARENT_SCOPE)
+        endif ()
+
         execute_process(
                 COMMAND git describe --tags
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                RESULT_VARIABLE _result
-                OUTPUT_VARIABLE _output
+                RESULT_VARIABLE _describe_result
+                OUTPUT_VARIABLE _describe_output
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ERROR_QUIET
         )
-        set(OPFLOW_COMMIT_STRING ${_output} PARENT_SCOPE)
-        if (NOT CMAKE_MATCH_COUNT EQUAL 3)
-            message(FATAL_ERROR "Could not extract version number from ${OPFLOW_VERSION_STRING}")
+        if (_describe_result EQUAL 0 AND NOT "${_describe_output}" STREQUAL "")
+            set(OPFLOW_COMMIT_STRING "${_describe_output}" PARENT_SCOPE)
+        else ()
+            execute_process(
+                    COMMAND git rev-parse --short HEAD
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                    RESULT_VARIABLE _head_result
+                    OUTPUT_VARIABLE _head_output
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+                    ERROR_QUIET
+            )
+            if (_head_result EQUAL 0 AND NOT "${_head_output}" STREQUAL "")
+                set(OPFLOW_COMMIT_STRING "${_head_output}" PARENT_SCOPE)
+            endif ()
         endif ()
-        set(ver_major ${CMAKE_MATCH_1})
-        set(ver_minor ${CMAKE_MATCH_2})
-        set(ver_patch ${CMAKE_MATCH_3})
-
-        set(OPFLOW_VERSION_MAJOR ${ver_major} CACHE STRING "OPFLOW_VERSION_MAJOR" FORCE)
-        set(OPFLOW_VERSION_MINOR ${ver_minor} CACHE STRING "OPFLOW_VERSION_MINOR" FORCE)
-        set(OPFLOW_VERSION_PATCH ${ver_patch} CACHE STRING "OPFLOW_VERSION_PATCH" FORCE)
-        set(OPFLOW_VERSION "${ver_major}.${ver_minor}.${ver_patch}" CACHE STRING "OPFLOW_VERSION" FORCE)
     else ()
         message(STATUS "Code not organized by git. Use default version file instead")
         opflow_extract_version_from_file()
@@ -118,4 +145,3 @@ function(opflow_enable_sanitizer target_name)
     target_compile_options(${target_name} PRIVATE -fno-omit-frame-pointer)
     target_link_libraries(${target_name} PRIVATE -fsanitize=address,undefined -fuse-ld=gold)
 endfunction()
-

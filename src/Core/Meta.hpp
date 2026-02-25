@@ -50,19 +50,24 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Meta {
         using type = P1;
     };
 
-    template <typename... T>
+    template <typename Head, typename... Tail>
     struct firstOf {
-        using type = T...[0];
+        using type = Head;
     };
 
     template <typename... Ts>
     using firstOf_t = typename firstOf<Ts...>::type;
 
     template <typename... T>
-    struct lastOf {
-        // last type in the type list
-        using type = T...[sizeof...(T) - 1];
+    struct lastOf;
+
+    template <typename T>
+    struct lastOf<T> {
+        using type = T;
     };
+
+    template <typename Head, typename... Tail>
+    struct lastOf<Head, Tail...> : lastOf<Tail...> {};
 
     template <typename... T>
     using lastOf_t = typename lastOf<T...>::type;

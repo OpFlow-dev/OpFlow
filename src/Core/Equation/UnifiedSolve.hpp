@@ -42,7 +42,12 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         return handler->solve();
     }
 
-    template <SemiStructSolverType type = SemiStructSolverType::FAC,
+    template <SemiStructSolverType type =
+#ifdef OPFLOW_HYPRE_HAS_SSTRUCT_FAC
+                      SemiStructSolverType::FAC,
+#else
+                      SemiStructSolverType::PCG,
+#endif
               SemiStructSolverType pType = SemiStructSolverType::None, typename F,
               SemiStructuredFieldExprType T>
     auto Solve(const F& func, T&& target,

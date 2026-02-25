@@ -134,6 +134,12 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         auto& evalAt(auto&&... i) {
             return this->derived().evalAtImpl_final(std::forward<decltype(i)>(i)...);
         }
+        const auto& evalSafeAt(auto&&... i) const {
+            return this->derived().evalSafeAtImpl_final(std::forward<decltype(i)>(i)...);
+        }
+        auto& evalSafeAt(auto&&... i) {
+            return this->derived().evalSafeAtImpl_final(std::forward<decltype(i)>(i)...);
+        }
 
     private:
         DEFINE_CRTP_HELPERS(Derived)
@@ -239,6 +245,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         auto operator()(auto&&... i) const { return evalAt(OP_PERFECT_FOWD(i)...); }
         auto operator[](auto&& i) const { return evalAt(OP_PERFECT_FOWD(i)); }
         auto evalAt(auto&&... i) const { return this->derived().evalAtImpl_final(OP_PERFECT_FOWD(i)...); }
+        auto evalSafeAt(auto&&... i) const {
+            return this->derived().evalSafeAtImpl_final(OP_PERFECT_FOWD(i)...);
+        }
 
     private:
         DEFINE_CRTP_HELPERS(Derived)
@@ -276,6 +285,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         const auto& evalAt(auto&&... i) const {
             return this->derived().evalAtImpl_final(OP_PERFECT_FOWD(i)...);
         }
+        const auto& evalSafeAt(auto&&... i) const {
+            return this->derived().evalSafeAtImpl_final(OP_PERFECT_FOWD(i)...);
+        }
 
     private:
         DEFINE_CRTP_HELPERS(Derived)
@@ -311,6 +323,9 @@ OPFLOW_MODULE_EXPORT namespace OpFlow {
         auto operator()(auto&&... i) const { return evalAt(OP_PERFECT_FOWD(i)...); }
         auto operator[](auto&& i) const { return evalAt(OP_PERFECT_FOWD(i)); }
         auto evalAt(auto&&... i) const { return this->derived().evalAtImpl_final(OP_PERFECT_FOWD(i)...); }
+        auto evalSafeAt(auto&&... i) const {
+            return this->derived().evalSafeAtImpl_final(OP_PERFECT_FOWD(i)...);
+        }
 
     private:
         DEFINE_CRTP_HELPERS(Derived)

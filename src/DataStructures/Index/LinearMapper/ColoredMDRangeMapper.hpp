@@ -28,7 +28,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::DS {
             offset.resize(ranges.size() + 1);
             offset[0] = offset[1] = 0;
             for (int i = 2; i < offset.size(); ++i) { offset[i] = offset[i - 1] + ranges[i - 2].count(); }
-            for (const auto& r : ranges) { mappers.template emplace_back(r); }
+            for (const auto& r : ranges) { mappers.emplace_back(r); }
         }
 
         auto operator()(const ColoredIndex<MDIndex<dim>>& idx) const {

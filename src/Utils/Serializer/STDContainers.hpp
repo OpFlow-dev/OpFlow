@@ -15,7 +15,7 @@
 
 #include "Core/Meta.hpp"
 #ifndef OPFLOW_INSIDE_MODULE
-#include <format>
+#include <fmt/format.h>
 #include <string>
 #endif
 
@@ -32,7 +32,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils::Serializer {
         std::string ret = prefix;
         if (arr.empty()) return ret + postfix;
         ret += std::to_string(arr[0]);
-        for (std::size_t i = 1; i < arr.size(); ++i) { ret += std::format("{}{}", splitter, arr[i]); }
+        for (std::size_t i = 1; i < arr.size(); ++i) { ret += fmt::format("{}{}", splitter, arr[i]); }
         ret += postfix;
         return ret;
     }
@@ -43,7 +43,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Utils::Serializer {
         std::string ret = prefix;
         if (N == 0) return ret + postfix;
         ret += std::to_string(arr[0]);
-        for (std::size_t i = 1; i < N; ++i) { ret += std::format("{}{}", splitter, arr[i]); }
+        for (std::size_t i = 1; i < N; ++i) { ret += fmt::format("{}{}", splitter, arr[i]); }
         ret += postfix;
         return ret;
     }

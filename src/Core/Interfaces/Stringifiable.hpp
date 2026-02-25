@@ -44,4 +44,13 @@ requires std::derived_from<T, OpFlow::StringifiableObj> struct std::formatter<T>
         return std::formatter<std::string>::format(a.toString(), ctx);
     }
 };
+
+OPFLOW_MODULE_EXPORT
+template <typename T>
+requires std::derived_from<T, OpFlow::StringifiableObj> struct fmt::formatter<T, char>
+    : fmt::formatter<std::string, char> {
+    auto format(const OpFlow::StringifiableObj& a, fmt::format_context& ctx) const {
+        return fmt::formatter<std::string, char>::format(a.toString(), ctx);
+    }
+};
 #endif//OPFLOW_STRINGIFIABLE_HPP

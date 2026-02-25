@@ -16,7 +16,11 @@
 #include "Core/BC/BCBase.hpp"
 #ifndef OPFLOW_INSIDE_MODULE
 #include <map>
+#endif
+#ifdef OPFLOW_WITH_MPI
+#ifndef OPFLOW_INSIDE_MODULE
 #include <mpi.h>
+#endif
 #endif
 
 OPFLOW_MODULE_EXPORT namespace OpFlow::Core::BC {
@@ -36,6 +40,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Core::BC {
             field.setOffset(offsets);
         }
 
+#ifdef OPFLOW_WITH_MPI
         void makeValid(const std::map<int, int>& fieldDistMap, MPI_Request* sendReq, MPI_Request* recvReq) {
             auto holderRank = fieldDistMap.at(rank);
             int myRank;
@@ -46,6 +51,7 @@ OPFLOW_MODULE_EXPORT namespace OpFlow::Core::BC {
                 //MPI_Isend()
             }
         }
+#endif
     };
 }// namespace OpFlow::Core::BC
 #endif//OPFLOW_INTERNALBC_HPP
