@@ -36,6 +36,48 @@
 - **可回退**：任何 GPU 路径应允许切回 CPU 参考实现。
 - **先算子后求解器**：先打通表达式与 stencil 核心路径，再扩展至完整求解流程。
 
+### 2.3 逻辑架构图（执行与数据流）
+
+```mermaid
+flowchart TD
+  DSL["Expression/Equation DSL"] --> IR["IR Builder<br/>Lower + Type/Shape Check"]
+  IR --> PLAN["Execution Planner<br/>Fusion + Dependency + Sync Insert"]
+  PLAN --> DISPATCH["Backend Dispatcher<br/>CPU / CUDA / MPI-CUDA"]
+  DISPATCH --> RT["Runtime Services<br/>Stream/Event/Allocator/KernelCache"]
+  RT --> KERNEL["Kernel Layer<br/>Pointwise / Stencil / Reduction / SpMV"]
+  RT --> COMM["Comm Layer<br/>Halo / P2P / CUDA-aware MPI"]
+  KERNEL --> DATA["Data Objects<br/>Field / Vector / Matrix"]
+  COMM --> DATA
+  DATA --> OBS["Profiler & Audit<br/>Timing / Bytes / Stall"]
+```
+
+设计要点：
+- 执行规划与后端实现解耦，保证 DSL 层不携带 CUDA 专有分支。
+- 同步点由 Planner 注入，Runtime 只负责严格执行，不做隐式迁移兜底。
+- 观测数据（性能、迁移、同步）作为一等产物进入回归体系。
+
+### 2.4 部署拓扑图（单机与多机）
+
+```mermaid
+flowchart LR
+  subgraph Node0["Node A"]
+    R0["MPI Rank 0"] --> G0["GPU 0"]
+    R1["MPI Rank 1"] --> G1["GPU 1"]
+    G0 <--> |"NVLink/P2P"| G1
+  end
+  subgraph Node1["Node B"]
+    R2["MPI Rank 2"] --> G2["GPU 0"]
+    R3["MPI Rank 3"] --> G3["GPU 1"]
+    G2 <--> |"NVLink/P2P"| G3
+  end
+  G1 <--> |"CUDA-aware MPI / GPUDirect RDMA"| G2
+```
+
+部署约束：
+- 首期采用 1 rank : 1 GPU 绑定模型，避免抢占与 NUMA 抖动。
+- 同节点优先 P2P，跨节点优先 CUDA-aware MPI，必要时回退 staging buffer。
+- 拓扑感知分解器优先减少跨节点表面积与高频 halo 路径长度。
+
 ---
 
 ## 3. 数据结构组织方案
@@ -65,6 +107,61 @@
   - kernel 融合决策。
   - stream 调度与依赖图构建。
   - 自动插入 halo exchange/同步点。
+
+### 3.4 核心接口设计（C++ 草案）
+
+接口分层约定：
+- 描述类对象（shape、dtype、layout、halo）保持不可变，运行态状态单独维护。
+- 运行时所有可能失败的操作返回 `Expected<T, Error>`，禁止吞错。
+- 任何 host/device 数据可见性切换都必须通过显式接口触发。
+
+```cpp
+enum class MemoryDomain { HostResident, DeviceResident, UnifiedManaged };
+enum class AccessMode { ReadOnly, ReadWrite };
+
+struct FieldDesc final {
+  DataType dtype;
+  Int3 shape;
+  Int3 halo;
+  Layout layout;  // SoA / AoS
+};
+
+struct BufferState final {
+  uint64_t version;
+  bool host_dirty;
+  bool device_dirty;
+  EventHandle last_write_event;
+};
+
+class ExecutionContext final {
+ public:
+  StreamHandle compute_stream() const;
+  StreamHandle comm_stream() const;
+  Allocator& allocator(MemoryDomain domain);
+  Expected<void, Error> fence(StreamHandle stream) const;
+};
+
+class LinearOperator {
+ public:
+  virtual ~LinearOperator() = default;
+  virtual Expected<void, Error> apply(const VectorView& x, VectorView& y,
+                                      ExecutionContext& ctx) const = 0;
+};
+
+template <class T>
+class FieldHandle final {
+ public:
+  const FieldDesc& desc() const;
+  const BufferState& state() const;
+  Expected<FieldView<T>, Error> view(MemoryDomain domain, AccessMode mode) const;
+  Expected<void, Error> schedule_sync(MemoryDomain target, SyncReason reason);
+};
+```
+
+关键接口职责：
+- `ExecutionContext`：统一持有 stream、事件、库 handle、allocator。
+- `FieldHandle`：封装数据句柄和状态机，不暴露裸指针生命周期管理。
+- `LinearOperator`：屏蔽 CSR/matrix-free 差异，为 Krylov 外层提供统一入口。
 
 ---
 
@@ -106,6 +203,42 @@
   - 单机多卡优先 `cudaMemcpyPeerAsync`/NVLink。
   - 跨节点优先 CUDA-aware MPI + GPUDirect。
 
+### 4.5 内存状态机图与同步伪代码
+
+```mermaid
+stateDiagram-v2
+  [*] --> HostClean
+  HostClean --> DeviceDirty: launch_kernel_write
+  DeviceDirty --> Synced: schedule_sync_to_host
+  Synced --> HostDirty: host_write
+  HostDirty --> Synced: schedule_sync_to_device
+  Synced --> DeviceDirty: launch_kernel_write
+  Synced --> HostDirty: host_write
+  DeviceDirty --> Error: implicit_host_access
+  HostDirty --> Error: implicit_device_access
+```
+
+同步伪代码（禁止隐式迁移）：
+
+```cpp
+Expected<void, Error> ensure_host_readable(FieldHandleBase& f, ExecutionContext& ctx) {
+  if (!f.state().device_dirty) return {};
+  OPFLOW_TRY(f.schedule_sync(MemoryDomain::HostResident, SyncReason::HostRead));
+  OPFLOW_TRY(ctx.fence(ctx.compute_stream()));
+  return {};
+}
+
+Expected<void, Error> ensure_device_readable(FieldHandleBase& f, ExecutionContext& ctx) {
+  if (!f.state().host_dirty) return {};
+  OPFLOW_TRY(f.schedule_sync(MemoryDomain::DeviceResident, SyncReason::KernelRead));
+  return {};
+}
+```
+
+错误处理规则：
+- 任何隐式 host/device 访问直接返回结构化错误，并附带对象 ID、调用栈、最后写入事件。
+- debug 模式触发断言，release 模式返回错误码并将对象降级为只读保护态。
+
 ---
 
 ## 5. 表达式组装、Kernel 粒度与调用策略
@@ -140,6 +273,41 @@
 - 稀疏组装：
   - 优先 matrix-free apply。
   - 必须显式矩阵时，使用并行 prefix-sum + scatter 构建 CSR。
+
+### 5.5 执行计划构建与执行伪代码
+
+```cpp
+ExecutionPlan build_execution_plan(const Expr& expr, const RuntimeSnapshot& snap) {
+  IR ir = lower_to_ir(expr);
+  annotate_rw_sets(ir);
+  annotate_access_pattern(ir);
+
+  FusionGroups groups = fuse_with_cost_model(
+      ir,
+      /*max_register=*/64,
+      /*max_shared_mem_bytes=*/48 * 1024);
+
+  DAG dag = build_dependency_dag(groups);
+  insert_halo_exchange_nodes(dag, snap.partition);
+  insert_explicit_sync_nodes(dag, snap.buffer_states);  // no implicit migration
+
+  return topological_pack(dag);
+}
+
+Expected<void, Error> execute_plan(const ExecutionPlan& plan, ExecutionContext& ctx) {
+  for (const PlanNode& node : plan.nodes()) {
+    OPFLOW_TRY(prepare_inputs(node, ctx));  // schedule_sync if required
+    OPFLOW_TRY(launch_node(node, ctx));
+    OPFLOW_TRY(record_outputs(node, ctx));
+  }
+  return {};
+}
+```
+
+实现约束：
+- `prepare_inputs` 仅通过计划中声明的同步节点迁移数据。
+- kernel launch 参数由 `shape + dtype + op signature` 驱动并进入缓存键。
+- 任意节点失败都应携带 `node_id/op_signature/stream_id` 上报。
 
 ---
 
@@ -187,6 +355,54 @@
   - 可选混合精度（FP32 compute + FP64 accumulate）并以收敛准则守护。
 - 定义对齐指标：残差范数、迭代步、关键物理量守恒误差。
 
+### 7.4 求解器接口与主循环伪代码
+
+```cpp
+struct SolveConfig final {
+  int max_iter;
+  double rtol;
+  bool enable_mixed_precision;
+  int refine_interval;
+};
+
+struct SolveResult final {
+  int iters;
+  double final_residual;
+  ConvergenceStatus status;
+};
+
+Expected<SolveResult, Error> solve_linear(
+    const LinearOperator& A,
+    const Preconditioner& M,
+    const VectorView& b,
+    VectorView& x,
+    const SolveConfig& cfg,
+    ExecutionContext& ctx);
+```
+
+```cpp
+Expected<SolveResult, Error> solve_linear(...) {
+  Vector r = b - A * x;
+  double r0 = norm2(r);
+
+  for (int k = 0; k < cfg.max_iter; ++k) {
+    Vector z = M.apply(r, ctx);
+    KrylovStep step = update_krylov_basis(z, r, ctx);
+    OPFLOW_TRY(apply_step(step, x, r, A, ctx));
+
+    double rk = norm2(r);
+    if (rk / r0 < cfg.rtol) return SolveResult{k + 1, rk, ConvergenceStatus::Converged};
+
+    if (cfg.enable_mixed_precision && (k % cfg.refine_interval == 0)) {
+      if (!passes_accuracy_guard(step, rk)) {
+        OPFLOW_TRY(recompute_residual_fp64(A, b, x, r, ctx));  // iterative refinement
+      }
+    }
+  }
+  return SolveResult{cfg.max_iter, norm2(r), ConvergenceStatus::MaxIterExceeded};
+}
+```
+
 ---
 
 ## 8. 多 GPU 与多机 MPI 自动并行策略
@@ -219,6 +435,43 @@
 - 动态均衡：AMR 场景按 block 迁移（重分区周期可配置）。
 - 收敛目标：最大 rank 时间 / 平均 rank 时间 < 阈值（如 1.1）。
 
+### 8.5 Halo Overlap 时序图与伪代码
+
+```mermaid
+sequenceDiagram
+  participant C as Compute Stream
+  participant M as Comm Stream
+  participant N as Neighbor Rank
+  C->>C: Launch interior kernel
+  C->>M: Record boundary-ready event
+  M->>M: Pack boundary buffer (device)
+  M->>N: MPI_Isend / MPI_Irecv
+  C->>C: Continue local reduction
+  M->>M: MPI_Waitall + unpack halo
+  M->>C: Signal halo-ready event
+  C->>C: Launch boundary kernel
+```
+
+```cpp
+Expected<void, Error> step_with_overlap(SubDomain& sub, ExecutionContext& ctx) {
+  OPFLOW_TRY(launch_interior_kernel(sub, ctx.compute_stream()));
+  EventHandle ev = record_event(ctx.compute_stream());
+
+  OPFLOW_TRY(wait_event(ctx.comm_stream(), ev));
+  OPFLOW_TRY(pack_halo(sub, ctx.comm_stream()));
+  OPFLOW_TRY(post_nonblocking_halo_exchange(sub, ctx.comm_stream()));
+
+  OPFLOW_TRY(launch_local_reduction(sub, ctx.compute_stream()));
+  OPFLOW_TRY(wait_halo_exchange(sub, ctx.comm_stream()));
+  OPFLOW_TRY(unpack_halo(sub, ctx.comm_stream()));
+
+  EventHandle halo_ready = record_event(ctx.comm_stream());
+  OPFLOW_TRY(wait_event(ctx.compute_stream(), halo_ready));
+  OPFLOW_TRY(launch_boundary_kernel(sub, ctx.compute_stream()));
+  return {};
+}
+```
+
 ---
 
 ## 9. 功能回归与性能回归测试方案
@@ -248,6 +501,24 @@
   - H2D/D2H bytes。
   - MPI 通信时间占比。
 
+### 9.4 测试矩阵与门禁规则
+
+最小覆盖矩阵：
+
+| 维度 | 档位 |
+| --- | --- |
+| 后端 | CPU / CUDA 单卡 / CUDA 多卡(MPI) |
+| 精度 | FP64 / 混合精度 |
+| 网格 | 规则网格 / AMR 分块 |
+| 规模 | 小 / 中 / 大 |
+| 场景 | Pointwise / Stencil / Poisson / 对流扩散 |
+
+门禁策略：
+- 功能门禁：所有 P0/P1 用例通过，关键算例误差不超过定义容差。
+- 收敛门禁：迭代步数相对 CPU 基线偏差在可解释区间（默认 <= 10%）。
+- 性能门禁：关键路径相对最近稳定基线退化不得超过 10%。
+- 稳定性门禁：连续 3 次 nightly 无崩溃、无数据竞争、无显存泄漏。
+
 ---
 
 ## 10. 性能评测方法学
@@ -271,6 +542,23 @@
 - 预热 + 多次重复（报告均值/方差/95% CI）。
 - 将 profile 产物（Nsight Systems/Compute）归档，支持版本对比。
 
+### 10.4 基线更新流程（伪代码）
+
+```cpp
+Expected<void, Error> update_baseline_if_stable(const BenchReport& report) {
+  if (!report.functional_passed) return Error::FunctionalRegression;
+  if (report.perf_regression_pct > 10.0) return Error::PerformanceRegression;
+  if (report.run_flakiness_pct > 2.0) return Error::TooFlaky;
+
+  Baseline current = load_baseline(report.key);
+  if (is_statistically_better(report, current, /*confidence=*/0.95)) {
+    save_baseline(report.key, report.summary());
+  }
+  archive_profiler_artifacts(report);
+  return {};
+}
+```
+
 ---
 
 ## 11. 工程落地计划（里程碑）
@@ -284,26 +572,31 @@
 ### M0：准备期（1~2 周）
 - 增加 CUDA backend 骨架、ExecutionContext、基础 allocator。
 - 建立 CPU/GPU 对比测试模板。
+- 退出准则：最小样例可在 CPU/CUDA 双后端编译运行，且具备统一日志与错误上报。
 
 ### M1：表达式与基础算子（4~8 周，含缓冲）
 - M1a（1~2 周）：表达式 IR 降级与调度骨架打通。
 - M1b（1~2 周）：逐点表达式 + reduction kernel GPU 化并建立对齐测试。
 - M1c（1~2 周）：常见 stencil kernel GPU 化与 tile 参数初调。
 - M1d（1~2 周）：单 GPU 单机主链路集成与回归门禁接入。
+- 退出准则：Pointwise/Reduction/Stencil 核心场景功能通过，单卡性能达到阶段门槛（>= CPU 3x，按基准集）。
 
 ### M2：方程组装与线性求解（5~9 周，含缓冲）
 - M2a（1~2 周）：matrix-free `apply` 与 `LinearOperator` GPU 接口收敛。
 - M2b（1~2 周）：CSR 路径与并行组装链路打通。
 - M2c（2~3 周）：Krylov + 基础预条件 GPU 化与数值收敛对齐。
 - M2d（1~2 周）：求解器性能基线固化与回归阈值接入。
+- 退出准则：Poisson/对流扩散主算例收敛稳定，迭代误差与 CPU 参考对齐，性能基线入库。
 
 ### M3：MPI 多 GPU（3~5 周）
 - halo exchange GPU 直连。
 - 自动并行策略 v1（启发式 + 采样反馈）。
+- 退出准则：2~8 GPU 强扩展曲线稳定，通信 overlap 生效且并行效率达到预设阈值。
 
 ### M4：优化与稳态（持续）
 - Ada/新架构 autotune。
 - 性能回归门禁、文档与运维手册完善。
+- 退出准则：nightly 连续稳定，关键业务场景无性能回退告警，运维手册可独立执行。
 
 ---
 
@@ -329,6 +622,9 @@
 3. 表达式 IR 与 kernel 融合规则说明。
 4. MPI 多 GPU 自动并行策略说明与评测计划。
 5. 功能回归 + 性能回归测试规范。
+6. 核心运行时接口草案（`ExecutionContext`/`FieldHandle`/`LinearOperator`）。
+7. 关键执行链路伪代码（计划构建、求解主循环、halo overlap）。
+8. 里程碑退出准则与基线更新流程说明。
 
 ---
 
