@@ -1,4 +1,90 @@
 # OpFlow Python DSL JIT 迁移设计方案
+- [OpFlow Python DSL JIT 迁移设计方案](#opflow-python-dsl-jit-迁移设计方案)
+  - [1. 目标与范围](#1-目标与范围)
+    - [1.1 总体目标](#11-总体目标)
+    - [1.2 迁移阶段](#12-迁移阶段)
+    - [1.3 第一阶段范围](#13-第一阶段范围)
+  - [2. 现有 C++ DSL 分析](#2-现有-c-dsl-分析)
+    - [2.1 语法要素映射表](#21-语法要素映射表)
+    - [2.2 编译单元：从表达式到 Kernel 函数](#22-编译单元从表达式到-kernel-函数)
+    - [2.3 算子定义：从模板结构体到 `@op.operator`](#23-算子定义从模板结构体到-opoperator)
+    - [2.4 语义要素](#24-语义要素)
+    - [2.5 类型系统](#25-类型系统)
+  - [3. Python DSL 设计](#3-python-dsl-设计)
+    - [3.1 Mesh 类型层次设计](#31-mesh-类型层次设计)
+      - [使用示例](#使用示例)
+    - [3.1.3 MDIndex 多维索引类型](#313-mdindex-多维索引类型)
+      - [mesh.dx 索引接口（支持 MDIndex）](#meshdx-索引接口支持-mdindex)
+    - [3.2 `@op.operator` 算子定义](#32-opoperator-算子定义)
+      - [3.2.1 C++ Operator 概念映射](#321-c-operator-概念映射)
+      - [3.2.2 `@op.operator` 接口规范](#322-opoperator-接口规范)
+      - [3.2.3 Operator 元数据](#323-operator-元数据)
+      - [3.2.4 使用 Operator](#324-使用-operator)
+      - [3.2.5 Operator 与 `@op.kernel` 的关系](#325-operator-与-opkernel-的关系)
+      - [3.2.6 内置 Operator 库](#326-内置-operator-库)
+      - [3.2.7 LocOnMesh 处理](#327-loconmesh-处理)
+      - [3.2.8 多轴 Operator](#328-多轴-operator)
+      - [3.2.9 Operator 编译与 IR 表示](#329-operator-编译与-ir-表示)
+      - [3.2.10 Operator 约束检查](#3210-operator-约束检查)
+    - [3.3 条件表达式 - Python 三元运算符](#33-条件表达式---python-三元运算符)
+    - [3.4 归约操作 - `op.reduce()` + Param](#34-归约操作---opreduce--param)
+    - [3.5 Kernel 函数设计](#35-kernel-函数设计)
+      - [3.5.1 `@op.kernel` 装饰器接口](#351-opkernel-装饰器接口)
+      - [3.5.2 Kernel 函数 vs 普通 Python 函数](#352-kernel-函数-vs-普通-python-函数)
+      - [3.5.3 Kernel 函数约束](#353-kernel-函数约束)
+      - [3.5.4 编译期约束检查机制](#354-编译期约束检查机制)
+      - [3.5.5 Kernel 编译流程](#355-kernel-编译流程)
+      - [3.5.6 Kernel 函数与普通函数互操作](#356-kernel-函数与普通函数互操作)
+    - [3.6 核心 API 示例（整合版）](#36-核心-api-示例整合版)
+    - [3.7 IR 设计](#37-ir-设计)
+    - [3.8 AST → IR 构建流程](#38-ast--ir-构建流程)
+    - [3.9 类型推导](#39-类型推导)
+    - [3.10 Range 分析](#310-range-分析)
+      - [3.10.1 BC ↔ Range 交互规则](#3101-bc--range-交互规则)
+    - [3.11 求值路径设计（Phase 1: eval only）](#311-求值路径设计phase-1-eval-only)
+    - [3.12 边界条件 IR 表示](#312-边界条件-ir-表示)
+  - [4. JIT 编译架构](#4-jit-编译架构)
+    - [4.1 Phase 1: C++ 源到源编译](#41-phase-1-c-源到源编译)
+      - [4.1.1 代码生成器框架](#411-代码生成器框架)
+      - [4.1.2 Ghost Cell 预填充代码生成](#412-ghost-cell-预填充代码生成)
+      - [4.1.3 assign() 完整代码生成流程](#413-assign-完整代码生成流程)
+    - [4.2 Phase 2: Taichi 后端](#42-phase-2-taichi-后端)
+    - [4.3 Phase 3: MLIR/LLVM 后端](#43-phase-3-mlirllvm-后端)
+  - [5. 表达式示例对比](#5-表达式示例对比)
+    - [5.1 Poisson 方程求解](#51-poisson-方程求解)
+    - [5.2 对流扩散方程](#52-对流扩散方程)
+  - [6. 优化 Pass 设计](#6-优化-pass-设计)
+    - [6.0 Pass 框架](#60-pass-框架)
+    - [6.1 Kernel 融合（Phase 2）](#61-kernel-融合phase-2)
+    - [6.2 Stencil 特化](#62-stencil-特化)
+    - [6.3 内存访问优化](#63-内存访问优化)
+  - [7. 多后端支持](#7-多后端支持)
+    - [7.1 后端抽象接口](#71-后端抽象接口)
+    - [7.2 后端能力矩阵](#72-后端能力矩阵)
+  - [8. 缓存与热加载](#8-缓存与热加载)
+    - [8.1 编译缓存](#81-编译缓存)
+    - [8.2 热重载](#82-热重载)
+  - [9. 测试策略](#9-测试策略)
+    - [9.1 单元测试](#91-单元测试)
+    - [9.1.3 Ghost Cell 与边界条件测试](#913-ghost-cell-与边界条件测试)
+    - [9.2 与 C++ 结果对比测试](#92-与-c-结果对比测试)
+    - [9.3 性能基准测试](#93-性能基准测试)
+  - [10. 工程落地计划](#10-工程落地计划)
+    - [10.1 里程碑](#101-里程碑)
+    - [10.2 依赖](#102-依赖)
+    - [10.3 目录结构](#103-目录结构)
+  - [11. Python-C++ 互操作策略](#11-python-c-互操作策略)
+    - [11.1 互操作方案对比](#111-互操作方案对比)
+    - [11.2 数组传递策略](#112-数组传递策略)
+    - [11.3 错误处理跨语言传播](#113-错误处理跨语言传播)
+  - [12. 编译器依赖管理](#12-编译器依赖管理)
+    - [12.1 编译器检测](#121-编译器检测)
+    - [12.2 编译器 Fallback 策略](#122-编译器-fallback-策略)
+    - [12.3 预编译 Kernel 库（Wheel 分发）](#123-预编译-kernel-库wheel-分发)
+  - [13. 风险与缓解](#13-风险与缓解)
+  - [14. 后续扩展](#14-后续扩展)
+  - [附录 A: 架构图](#附录-a-架构图)
+  - [附录 B: 数据流图](#附录-b-数据流图)
 
 ## 1. 目标与范围
 
@@ -11,11 +97,11 @@
 
 ### 1.2 迁移阶段
 
-| 阶段 | 方案 | 输出 | 时间估计 |
-|------|------|------|----------|
-| Phase 1 | 源到源 JIT | C++ 代码 → 编译 → 动态加载 | 2-3 月 |
-| Phase 2 | Taichi 后端 | Taichi JIT (CPU/GPU) | 1-2 月 |
-| Phase 3 | MLIR/LLVM | 原生机器码 | 3-4 月 |
+| 阶段    | 方案        | 输出                       | 时间估计 |
+| ------- | ----------- | -------------------------- | -------- |
+| Phase 1 | 源到源 JIT  | C++ 代码 → 编译 → 动态加载 | 2-3 月   |
+| Phase 2 | Taichi 后端 | Taichi JIT (CPU/GPU)       | 1-2 月   |
+| Phase 3 | MLIR/LLVM   | 原生机器码                 | 3-4 月   |
 
 ### 1.3 第一阶段范围
 
@@ -37,20 +123,20 @@
 
 ### 2.1 语法要素映射表
 
-| C++ 语法 | Python DSL 语法 | 说明 |
-|----------|-----------------|------|
-| `CartesianMesh<Meta::int_<2>>` | `CartesianMesh(shape=(..., ...), extent=...)` | 网格类型实例化 |
-| `CartesianField<Real, Mesh>` | `Field(mesh, dtype="float64")` | 类型参数简化 |
-| `u + v` | `u + v` | 运算符重载（Python 原生支持） |
-| `u * 2.0` | `u * 2.0` | 标量广播（Python 原生） |
-| `struct D1FirstOrderCentered {...}` | `@op.operator def D1FirstOrderCentered(...)` | 单点计算格式定义 |
-| `dx<D1FirstOrderCentered>(u)` | `d(u, axis=0, scheme=D1FirstOrderCentered)` | scheme 参数指定格式 |
-| `conv(u, kernel)` | `conv(u, kernel)` | 直接映射 |
-| `conditional(c, t, f)` | `t if c else f` | Python 三元运算符 |
-| `rangeFor(range, func)` | `for i, j in mesh.interior_range():` | kernel 内显式循环 |
-| `rangeReduce(range, +, func)` | `total += expr` (原子 `+=`) | 隐式规约 |
-| **编译单元** | `@op.kernel` 装饰器 | 整个函数作为 JIT 单元 |
-| **算子定义** | `@op.operator` 装饰器 | 单点计算格式 |
+| C++ 语法                            | Python DSL 语法                               | 说明                          |
+| ----------------------------------- | --------------------------------------------- | ----------------------------- |
+| `CartesianMesh<Meta::int_<2>>`      | `CartesianMesh(shape=(..., ...), extent=...)` | 网格类型实例化                |
+| `CartesianField<Real, Mesh>`        | `Field(mesh, dtype="float64")`                | 类型参数简化                  |
+| `u + v`                             | `u + v`                                       | 运算符重载（Python 原生支持） |
+| `u * 2.0`                           | `u * 2.0`                                     | 标量广播（Python 原生）       |
+| `struct D1FirstOrderCentered {...}` | `@op.operator def D1FirstOrderCentered(...)`  | 单点计算格式定义              |
+| `dx<D1FirstOrderCentered>(u)`       | `d(u, axis=0, scheme=D1FirstOrderCentered)`   | scheme 参数指定格式           |
+| `conv(u, kernel)`                   | `conv(u, kernel)`                             | 直接映射                      |
+| `conditional(c, t, f)`              | `t if c else f`                               | Python 三元运算符             |
+| `rangeFor(range, func)`             | `w.assign(expr)`                                      | 表达式赋值触发计算            |
+| `rangeReduce(range, +, func)`       | `op.reduce(expr, op='sum')` / `op.sum(expr)`          | 归约操作                      |
+| **编译单元**                        | `@op.kernel` 装饰器                           | 整个函数作为 JIT 单元         |
+| **算子定义**                        | `@op.operator` 装饰器                         | 单点计算格式                  |
 
 ### 2.2 编译单元：从表达式到 Kernel 函数
 
@@ -80,13 +166,13 @@ diffusion_step(u, w, dt=0.001)
 
 **关键差异**：
 
-| 特性 | C++ 表达式模板 | Python `@op.kernel` |
-|------|----------------|---------------------|
-| 编译单元 | 单个赋值表达式 | 整个函数 |
-| 触发时机 | 赋值操作 | 函数调用 |
-| 控制流 | 受限（表达式内无循环） | 完整支持（kernel 内可有循环/分支） |
-| 可读性 | 模板元编程复杂 | 原生 Python 语法 |
-| 调试 | 困难（编译期错误难定位） | 编译期约束检查 + 清晰错误信息 |
+| 特性     | C++ 表达式模板           | Python `@op.kernel`                |
+| -------- | ------------------------ | ---------------------------------- |
+| 编译单元 | 单个赋值表达式           | 整个函数                           |
+| 触发时机 | 赋值操作                 | 函数调用                           |
+| 计算模型 | 表达式语法（`w = expr`） | 表达式语法（`w.assign(expr)`）     |
+| 可读性   | 模板元编程复杂           | 原生 Python 语法                   |
+| 调试     | 困难（编译期错误难定位） | 编译期约束检查 + 清晰错误信息      |
 
 ### 2.3 算子定义：从模板结构体到 `@op.operator`
 
@@ -114,10 +200,12 @@ from opflow import d
 
 # Python: @op.operator 定义单点计算格式
 @op.operator
-def D1FirstOrderCentered(f: FieldAccessor, i: int, j: int) -> float:
-    """一阶中心差分: (f[i+1] - f[i-1]) / (2*dx)，dx 从 mesh 获取"""
-    dx = f.mesh.dx[0]  # 从 mesh 获取网格间距
-    return (f[i+1, j] - f[i-1, j]) / (2.0 * dx)
+def D1FirstOrderCentered(f: FieldAccessor, axis: int, i: MDIndex) -> float:
+    """一阶中心差分（staggered mesh），loc_transform 翻转位置"""
+    if f.loc[axis] == LocOnMesh.CENTER:
+        return (f[i] - f[i.prev(axis)]) / (f.mesh.dx(axis, i[axis] - 1) + f.mesh.dx(axis, i[axis])) * 2
+    else:
+        return (f[i.next(axis)] - f[i]) / f.mesh.dx(axis, i[axis])
 
 # 使用
 du = d(u, axis=0, scheme=D1FirstOrderCentered)
@@ -131,14 +219,14 @@ def compute_gradient(u: Field, du: Field):
 
 **Operator vs Kernel 职责分离**：
 
-| 特性 | `@op.operator` | `@op.kernel` |
-|------|----------------|--------------|
-| 定义内容 | 单点计算格式 | 循环结构 + 并行策略 |
-| 可复用性 | 高（可传给任意 `d()` 调用） | 低（特定场景） |
-| 参数类型 | `FieldAccessor` (只读) | `Field` (读写) |
-| 网格参数 | 从 `f.mesh` 获取 | 从 `Field.mesh` 获取 |
-| 并行化 | 由调用方决定 | 自身包含并行循环 |
-| 典型用途 | 微分格式、插值、滤波 | 求解器核心循环 |
+| 特性     | `@op.operator`              | `@op.kernel`         |
+| -------- | --------------------------- | -------------------- |
+| 定义内容 | 单点计算格式                | 循环结构 + 并行策略  |
+| 可复用性 | 高（可传给任意 `d()` 调用） | 低（特定场景）       |
+| 参数类型 | `FieldAccessor` (只读)      | `Field` (读写)       |
+| 网格参数 | 从 `f.mesh` 获取            | 从 `Field.mesh` 获取 |
+| 并行化   | 由调用方决定                | 自身包含并行循环     |
+| 典型用途 | 微分格式、插值、滤波        | 求解器核心循环       |
 
 ### 2.4 语义要素
 
@@ -183,12 +271,12 @@ KernelFunction
 ├── name: 函数名
 ├── params: List[Param]  # 带类型标注的参数
 │   ├── name: 参数名
-│   ├── type: Field | float | int
+│   ├── type: Field | Param | float | int
 │   └── is_output: bool
 ├── body: List[Statement]  # 函数体 AST
 ├── loop_vars: Set[str]    # 循环变量
 ├── reduction_vars: Set[str]  # 归约变量
-└── return_type: void | float | int
+└── return_type: void      # Kernel 无返回值（输出通过 Field/Param assign）
 ```
 
 ---
@@ -308,6 +396,18 @@ class CartesianMesh(MeshBase):
         else:
             raise ValueError("必须指定 extent 或 dx")
 
+        # 计算坐标数组 _x（每维一个数组，对应 C++ mesh._x[d][i]）
+        self._x = []
+        for axis in range(self._dim):
+            if isinstance(self._dx[axis], np.ndarray):
+                # 非均匀网格：从 dx 累积积分
+                x_coords = np.concatenate([[0.0], np.cumsum(self._dx[axis])])
+            else:
+                # 均匀网格
+                x0 = extent[2 * axis] if extent is not None else 0.0
+                x_coords = x0 + np.arange(shape[axis] + 1) * self._dx[axis]
+            self._x.append(x_coords)
+
     @property
     def dim(self) -> int:
         return self._dim
@@ -322,36 +422,36 @@ class CartesianMesh(MeshBase):
         return all(not isinstance(d, np.ndarray) for d in self._dx)
 
     @property
-    def dx(self) -> Tuple[float, ...]:
-        """网格间距（均匀网格返回常量，非均匀返回数组）"""
-        return self._dx
-
-    @property
     def shape(self) -> Tuple[int, ...]:
         return self._shape
 
-    def __getitem__(self, key) -> Union[float, np.ndarray]:
-        """支持 mesh.dx[0] 和 mesh.dx[0, i] 语法
+    def dx(self, axis: int, i: int) -> float:
+        """获取指定维度、指定位置的网格间距
 
-        对应 C++:
-        - mesh.dx(d)        → mesh.dx[d]
-        - mesh.dx(d, i)     → mesh.dx[d, i]
+        对应 C++: mesh.dx(d, i)
+
+        始终需要两个参数，不提供单参数简化（避免非均匀网格语义错误）。
+        返回第 axis 维第 i 个 cell 的间距（= x(axis, i+1) - x(axis, i)）。
 
         用法：
-            dx = mesh.dx[0]        # 均匀网格，第 0 维间距
-            dx = mesh.dx[0, i]      # 第 0 维，在 index i 位置的间距
-            dx = mesh.dx[0, i]      # i 可以是完整的多维索引
+            dx_val = mesh.dx(0, i[0])       # 第 0 维在 i[0] 处的间距
+            dx_val = mesh.dx(1, i[1])       # 第 1 维在 i[1] 处的间距
         """
-        if isinstance(key, int):
-            val = self._dx[key]
-            return float(val) if not isinstance(val, np.ndarray) else val
-        elif isinstance(key, tuple):
-            axis, index = key[0], key[1]
-            val = self._dx[axis]
-            if isinstance(val, np.ndarray):
-                return float(val[index])
-            else:
-                return float(val)
+        val = self._dx[axis]
+        if isinstance(val, np.ndarray):
+            return float(val[i])
+        else:
+            return float(val)
+
+    def x(self, axis: int, i: int) -> float:
+        """获取指定维度、指定位置的坐标值
+
+        对应 C++: mesh._x[d][i]
+
+        用法：
+            x_val = mesh.x(0, i[0])  # 第 0 维在 i[0] 处的坐标
+        """
+        return float(self._x[axis][i])
 
 
 class AMRMesh(MeshBase):
@@ -398,6 +498,20 @@ class LocOnMesh(Enum):
     CENTER = auto()  # 单元中心
     CORNER = auto()  # 网格角点
 
+    def flip(self) -> "LocOnMesh":
+        """翻转位置：Center ↔ Corner"""
+        return LocOnMesh.CORNER if self == LocOnMesh.CENTER else LocOnMesh.CENTER
+
+
+class MeshExtMode(Enum):
+    """Mesh halo 区坐标外推模式
+
+    对应 C++: MeshExtMode
+    """
+    SYMM = auto()      # 对称外推
+    PERIODIC = auto()   # 周期外推
+    UNIFORM = auto()    # 等间距外推（默认）
+
 
 class DimPos(Enum):
     """边界位置
@@ -426,19 +540,31 @@ class BCType(Enum):
 
 @dataclass
 class ConstBC:
-    """常量边界条件"""
+    """常量/函数边界条件
+
+    value 支持三种形式:
+    - float/int/complex: 常量 BC（自动包装为 ScalarNode）
+    - Callable: 空间变化函数 BC（functor BC，对应 C++ FunctorDircBC/FunctorNeumBC）
+    - IRNode: IR 表达式树（引用 mesh.x 坐标，可编译为 C++ 内联表达式）
+    """
     bc_type: BCType
-    value: Optional[float] = None
-    # Robin BC 参数: a*u + b*du/dn = c
-    robin_a: Optional[float] = None
-    robin_b: Optional[float] = None
-    robin_c: Optional[float] = None
+    value: Optional[Union[float, int, complex, Callable, "IRNode"]] = None
+    # Robin BC 参数: a*u + b*du/dn = c（支持空间变化）
+    robin_a: Optional[Union[float, "IRNode"]] = None
+    robin_b: Optional[Union[float, "IRNode"]] = None
+    robin_c: Optional[Union[float, "IRNode"]] = None
 
 
 @dataclass
 class LogicalBC:
-    """逻辑边界条件（对称、反对称、周期）"""
+    """逻辑边界条件（对称、反对称、周期）
+
+    需要持有字段引用，用于 ghost cell 填充时读取镜像/对端值。
+    对应 C++: SymmBC/ASymmBC/PeriodicBC 持有字段指针。
+    field 引用在 Field.set_bc() 时自动注入。
+    """
     bc_type: BCType
+    field: Optional["Field"] = None  # 反向引用，用于 Symm/Periodic 填充
 
 
 class Field:
@@ -457,8 +583,8 @@ class Field:
         self,
         mesh: MeshBase,
         *,
-        dtype: str = "float64",
-        halo: int = 0,
+        dtype: Union[DType, str] = DType.FLOAT64,
+        halo: Union[int, List[Tuple[int, int]]] = 0,
         loc: Union[LocOnMesh, Tuple[LocOnMesh, ...]] = LocOnMesh.CENTER,
         name: Optional[str] = None,
     ):
@@ -469,25 +595,43 @@ class Field:
 
         参数：
             mesh: 网格对象
-            dtype: 数据类型 ("float32" | "float64")
-            halo: 边界扩展宽度（stencil 计算需要）
+            dtype: 数据类型（DType 枚举，或字符串兼容写法自动转换）
+            halo: 边界扩展宽度，支持两种格式：
+                - int: 所有维度、所有方向使用相同宽度（简化写法）
+                - List[Tuple[int, int]]: per-dim per-side [(start, end), ...]
+                  对应 C++: std::array<Pair<int>, dim>
             loc: 变量位置（每维独立）
                 - 单个值: 所有维度使用相同位置
                 - 元组: 每维指定位置 (例如 2D: (CENTER, CENTER))
             name: 字段名称（调试用）
 
         示例：
-            # 标准中心场
+            # 标准中心场（简化 halo）
             p = Field(mesh, halo=1, loc=LocOnMesh.CENTER)
+
+            # per-dim per-side halo
+            u = Field(mesh, halo=[(1, 1), (2, 2)], loc=LocOnMesh.CENTER)
 
             # 交错网格：x-速度在角点，y-速度在中心
             u = Field(mesh, halo=1, loc=(LocOnMesh.CORNER, LocOnMesh.CENTER))
-            v = Field(mesh, halo=1, loc=(LocOnMesh.CENTER, LocOnMesh.CORNER))
         """
         self._mesh = mesh
+        # 字符串兼容：自动转换 "float64" → DType.FLOAT64
+        if isinstance(dtype, str):
+            dtype = DType({"float64": "f64", "float32": "f32", "int32": "i32",
+                           "complex128": "c128", "complex64": "c64", "bool": "i1",
+                           "f64": "f64", "f32": "f32", "i32": "i32",
+                           "c128": "c128", "c64": "c64", "i1": "i1"}[dtype])
         self._dtype = dtype
-        self._halo = halo
         self._name = name or f"field_{id(self)}"
+
+        # 标准化 halo 为 per-dim per-side
+        if isinstance(halo, int):
+            self._halo = [(halo, halo) for _ in range(mesh.dim)]
+        else:
+            if len(halo) != mesh.dim:
+                raise ValueError(f"halo 长度 ({len(halo)}) 必须等于网格维度 ({mesh.dim})")
+            self._halo = list(halo)
 
         # 标准化 loc 为元组（每维一个）
         if isinstance(loc, LocOnMesh):
@@ -500,12 +644,18 @@ class Field:
         # 边界条件字典: key = (axis, pos) where pos = DimPos.START | DimPos.END
         self._bc: Dict[Tuple[int, DimPos], Union[ConstBC, LogicalBC]] = {}
 
-        # 计算含 halo 的总 shape
-        total_shape = tuple(s + 2 * halo for s in mesh.shape)
+        # 计算含 halo 的总 shape（halo 已标准化为 list[tuple[int, int]]）
+        total_shape = tuple(
+            s + h_start + h_end
+            for s, (h_start, h_end) in zip(mesh.shape, self._halo)
+        )
         self._buffer = np.zeros(total_shape, dtype=dtype)
         # 内部视图（不含 halo）
-        if halo > 0:
-            slices = tuple(slice(halo, -halo) for _ in range(mesh.dim))
+        if any(h_start > 0 or h_end > 0 for h_start, h_end in self._halo):
+            slices = tuple(
+                slice(h_start, s + h_start)
+                for s, (h_start, h_end) in zip(mesh.shape, self._halo)
+            )
             self._array = self._buffer[slices]
         else:
             self._array = self._buffer
@@ -519,8 +669,47 @@ class Field:
         return self._dtype
 
     @property
-    def halo(self) -> int:
+    def halo(self) -> List[Tuple[int, int]]:
+        """Per-dim per-side halo，对应 C++ std::array<Pair<int>, dim>"""
         return self._halo
+
+    @property
+    def accessible_range(self) -> "Range":
+        """全局有效数据范围（不含 ghost cell）
+
+        即 mesh 的逻辑范围，不包含 ghost 区域。
+        对应 C++: field.accessibleRange
+        """
+        return Range(
+            start=[0] * self._mesh.dim,
+            end=list(self._mesh.shape)
+        )
+
+    @property
+    def local_range(self) -> "Range":
+        """本进程持有的范围（MPI 分区）
+
+        Phase 1 单进程：与 accessible_range 相同。
+        """
+        return self.accessible_range
+
+    @property
+    def assignable_range(self) -> "Range":
+        """可写范围（= accessible_range，由 kernel 编译时经 RangeAnalyzer 收缩）
+
+        Field 本身的 assignable_range 等于 accessible_range。
+        实际赋值时的有效范围由表达式的 range_effect 决定，
+        在 @op.kernel 编译时由 RangeAnalyzer 计算。
+        """
+        return self.accessible_range
+
+    @property
+    def logical_range(self) -> "Range":
+        """含 ghost cell 的扩展范围（用于内存分配和 ghost cell 填充）"""
+        return Range(
+            start=[-h[0] for h in self._halo],
+            end=[s + h[1] for s, h in zip(self._mesh.shape, self._halo)]
+        )
 
     @property
     def loc(self) -> Tuple[LocOnMesh, ...]:
@@ -541,7 +730,7 @@ class Field:
         d: int,
         pos: DimPos,
         bc_type: BCType,
-        value: Optional[float] = None,
+        value: Optional[Union[float, Callable]] = None,
         **kwargs
     ):
         """设置边界条件
@@ -574,7 +763,7 @@ class Field:
                 raise ValueError(f"{bc_type.name} BC requires a value")
             bc_node = ConstBC(bc_type, value, **kwargs)
         elif bc_type in (BCType.SYMM, BCType.ASYM, BCType.PERIODIC):
-            bc_node = LogicalBC(bc_type)
+            bc_node = LogicalBC(bc_type, field=self)  # 注入字段引用
         else:
             raise ValueError(f"Unsupported BC type: {bc_type}")
 
@@ -586,10 +775,43 @@ class Field:
         self._array.fill(value)
 
     def assign(self, other: Union["Field", "ExprNode"]):
-        """赋值操作 - 触发 JIT 编译"""
-        # 在 kernel 中使用: du.assign(d(u, axis=0))
-        # 这里会触发表达式求值和 JIT 编译
+        """赋值操作 - 触发 JIT 编译
+
+        完整语义（对应 C++ FieldAssigner）：
+        1. 别名检测：遍历 expr IR 树收集引用的 Field ID，
+           如果 dst.id in referenced_fields → 创建临时副本
+        2. 源 Field ghost cell 预填充（所有源 Field 的 update_padding）
+        3. 计算 assignable_range（基于累积 range_effect）
+        4. 遍历 assignable_range 执行 dst[i] = expr.eval(i)
+        5. 目标 Field 自动调用 dst.update_padding() 填充 ghost cell
+        """
         ...
+
+    def update_padding(self):
+        """填充 ghost cell（对应 C++ updatePadding()）
+
+        在 @op.kernel 编译模式下，此方法不在 Python 运行时执行。
+        ghost cell 填充代码由 CppCodeGen._gen_update_padding() 生成为 C++ 代码，
+        内联到编译后的 kernel 函数中（在主循环之前执行）。
+
+        纯 Python eval 路径（调试/测试用）：
+        """
+        for axis in range(self._mesh.dim):
+            for side in ("start", "end"):
+                bc = self._bc.get((axis, side))
+                if bc is None:
+                    continue
+                h = self._halo[axis][0 if side == "start" else 1]
+                if bc.bc_type == BCType.DIRC:
+                    self._fill_dirichlet_ghost(axis, side, h, bc.value)
+                elif bc.bc_type == BCType.NEUM:
+                    self._fill_neumann_ghost(axis, side, h, bc.value)
+                elif bc.bc_type == BCType.PERIODIC:
+                    self._fill_periodic_ghost(axis, h)
+                elif bc.bc_type == BCType.SYMM:
+                    self._fill_symmetric_ghost(axis, side, h, sign=1.0)
+                elif bc.bc_type == BCType.ASYM:
+                    self._fill_symmetric_ghost(axis, side, h, sign=-1.0)
 
     # 运算符重载
     def __add__(self, other) -> "ExprNode":
@@ -774,38 +996,37 @@ l = j + k                # MDIndex(4, 5, 6)
 
 ```python
 class CartesianMesh:
-    def __getitem__(self, key) -> Union[float, np.ndarray]:
-        """支持多种索引语法
+    def dx(self, axis: int, i: Union[int, "MDIndex"]) -> float:
+        """获取指定维度在指定位置的网格间距
 
-        - mesh.dx[0] → 整个轴的间距（均匀是 float，非均匀是 np.ndarray）
-        - mesh.dx[0, i] → 第 0 维在标量 i 处的间距
-        - mesh.dx[0, MDIndex(...)] → 第 0 维在多维索引处（非均匀网格）
+        对应 C++: mesh.dx(d, i) / mesh.dx(d, MDIndex)
+
+        始终需要两个参数（axis + index），不提供单参数重载。
+
+        - mesh.dx(0, i)           → 第 0 维在标量 i 处的间距
+        - mesh.dx(0, MDIndex(...)) → 第 0 维在多维索引处（自动提取 axis 分量）
 
         对应 C++：
-        - mesh.dx(d)           → mesh.dx[d]
-        - mesh.dx(d, i)        → mesh.dx[d, i]
+        - mesh.dx(d, i)           → mesh.dx(d, i)
+        - mesh.dx(d, MDIndex)     → mesh.dx(d, idx)
         """
-        if isinstance(key, int):
-            # mesh.dx[0]
-            val = self._dx[key]
-            return float(val) if not isinstance(val, np.ndarray) else val
+        if isinstance(i, MDIndex):
+            index = i[axis]
+        else:
+            index = i
 
-        elif isinstance(key, tuple):
-            axis, index = key[0], key[1]
-            val = self._dx[axis]
+        val = self._dx[axis]
+        if isinstance(val, np.ndarray):
+            return float(val[index])
+        else:
+            return float(val)  # 均匀网格
 
-            if isinstance(val, np.ndarray):
-                # 非均匀网格
-                if isinstance(index, MDIndex):
-                    # mesh.dx[0, MDIndex(i, j)] → 提取第 0 维在 i 处的间距
-                    return float(val[index[axis]])
-                elif isinstance(index, tuple):
-                    return float(val[index[axis]])
-                else:
-                    return float(val[index])
-            else:
-                # 均匀网格：返回常量
-                return float(val)
+    def x(self, axis: int, i: int) -> float:
+        """获取指定维度在指定位置的坐标值
+
+        对应 C++: mesh._x[d][i]
+        """
+        return float(self._x[axis][i])
 ```
 
 ### 3.2 `@op.operator` 算子定义
@@ -840,75 +1061,107 @@ Python DSL 使用 `@op.operator` 装饰器定义等效的单点格式：
 ```python
 import opflow as op
 
-@op.operator
+@op.operator(loc_transform=lambda loc: loc.flip())
 def D1FirstOrderCentered(f: FieldAccessor, axis: int, i: MDIndex) -> float:
-    """一阶中心差分 - 维度无关，支持非均匀网格
+    """一阶中心差分 - 严格对齐 C++ staggered mesh 语义
 
     对应 C++: template <std::size_t d> struct D1FirstOrderCentered
+
+    公式（与 C++ 完全一致）：
+    - Center 位置: (f[i] - f[i-1]) / (dx[i-1] + dx[i]) * 2
+      结果位于 Corner 位置（loc 翻转）
+    - Corner 位置: (f[i+1] - f[i]) / dx[i]
+      结果位于 Center 位置（loc 翻转）
+
+    注意：这是非对称 staggered 差分，非教科书对称差分 (f[i+1]-f[i-1])/2dx
+
+    range_effect 由 StencilAnalyzer 从 AST 自动推导：
+    - Center: prev(axis, 1) → start 侧收缩 1
+    - Corner: next(axis, 1) → end 侧收缩 1
 
     参数：
         f: 字段访问器
         axis: 求导方向（C++ 中是模板参数，Python 中作为参数传递）
         i: 多维索引
-
-    使用：
-        du = d(u, axis=0, scheme=D1FirstOrderCentered)  # x 方向
-        dv = d(v, axis=1, scheme=D1FirstOrderCentered)  # y 方向
     """
-    # 非均匀网格：获取 i 位置的 dx
-    dx = f.mesh.dx[axis, i]
-
-    # i.next(axis) 和 i.prev(axis) 对应 C++ 的 i.template next<d>() 和 i.template prev<d>()
-    return (f[i.next(axis)] - f[i.prev(axis)]) / (2.0 * dx)
+    if f.loc[axis] == LocOnMesh.CENTER:
+        # Center→Corner: 非对称 staggered 差分
+        return (f[i] - f[i.prev(axis)]) / (f.mesh.dx(axis, i[axis] - 1) + f.mesh.dx(axis, i[axis])) * 2
+    else:
+        # Corner→Center: 单侧差分
+        return (f[i.next(axis)] - f[i]) / f.mesh.dx(axis, i[axis])
 
 
 @op.operator
 def D1SecondOrderCentered(f: FieldAccessor, axis: int, i: MDIndex) -> float:
     """二阶中心差分"""
-    dx = f.mesh.dx[axis, i]
+    dx = f.mesh.dx(axis, i[axis])
     return (-f[i.next(axis, 2)] + 8.0*f[i.next(axis)] -
             8.0*f[i.prev(axis)] + f[i.prev(axis, 2)]) / (12.0 * dx)
 
 
 @op.operator
 def D2SecondOrderCentered(f: FieldAccessor, axis: int, i: MDIndex) -> float:
-    """二阶导数中心差分 - 支持非均匀网格"""
-    # 非均匀网格二阶差分公式
-    dx_plus = f.mesh.dx[axis, i.next(axis)]
-    dx_minus = f.mesh.dx[axis, i.prev(axis)]
+    """二阶导数中心差分 - 严格对齐 C++ staggered mesh 语义
 
-    u_right = f[i.next(axis)]
-    u_center = f[i]
-    u_left = f[i.prev(axis)]
+    对应 C++: template <std::size_t d> struct D2SecondOrderCentered
 
-    return 2.0 / (dx_plus + dx_minus) * (
-        (u_right - u_center) / dx_plus - (u_center - u_left) / dx_minus
+    公式：loc 决定间距的计算方式
+    - Corner: dx_l = dx(i-1), dx_r = dx(i)
+    - Center: dx_l = (dx(i-1)+dx(i))/2, dx_r = (dx(i)+dx(i+1))/2
+    二阶导 = (2/(dx_l+dx_r)) * ((f[i+1]-f[i])/dx_r - (f[i]-f[i-1])/dx_l)
+
+    loc_transform: 不翻转（二阶导保持原位置）
+    """
+    if f.loc[axis] == LocOnMesh.CORNER:
+        dx_l = f.mesh.dx(axis, i[axis] - 1)
+        dx_r = f.mesh.dx(axis, i[axis])
+    else:
+        dx_l = (f.mesh.dx(axis, i[axis] - 1) + f.mesh.dx(axis, i[axis])) * 0.5
+        dx_r = (f.mesh.dx(axis, i[axis]) + f.mesh.dx(axis, i[axis] + 1)) * 0.5
+
+    return 2.0 / (dx_l + dx_r) * (
+        (f[i.next(axis)] - f[i]) / dx_r - (f[i] - f[i.prev(axis)]) / dx_l
     )
 
 
-@op.operator
+@op.operator(loc_transform=lambda loc: loc.flip())
 def D1WENO53Upwind(f: FieldAccessor, axis: int, i: MDIndex) -> float:
-    """WENO 5点 3阶迎风格式"""
-    dx = f.mesh.dx[axis, i]
+    """WENO5-3 迎风格式（通量差分形式）
 
-    # WENO 权重计算（在 axis 方向）
-    f1 = f[i.prev(axis, 2)]
-    f2 = f[i.prev(axis)]
-    f3 = f[i]
-    f4 = f[i.next(axis)]
-    f5 = f[i.next(axis, 2)]
+    对应 C++: D1WENO53Upwind
+    6 点 stencil: i-2, i-1, i, i+1, i+2, i+3
+    bc_width = 3（两侧各收缩 3）
+    loc_transform: 翻转（一阶导数在 staggered mesh 上）
+    """
+    h = f.mesh.dx(axis, i[axis])  # 假设均匀网格
+
+    # 6 点取值
+    pm2 = f[i.prev(axis, 2)]
+    pm1 = f[i.prev(axis)]
+    p0  = f[i]
+    pp1 = f[i.next(axis)]
+    pp2 = f[i.next(axis, 2)]
+    pp3 = f[i.next(axis, 3)]
+
+    # 通量差分
+    d1 = (pp3 - pp2) / h
+    d2 = (pp2 - pp1) / h
+    d3 = (pp1 - p0)  / h
+    d4 = (p0  - pm1)  / h
+    d5 = (pm1 - pm2)  / h
 
     # 三个子模板
-    q1 = (2*f1 - 7*f2 + 11*f3) / 6.0
-    q2 = (-f2 + 5*f3 + 2*f4) / 6.0
-    q3 = (2*f3 + 5*f4 - f5) / 6.0
+    q1 = d1 / 3.0 - 7.0 * d2 / 6.0 + 11.0 * d3 / 6.0
+    q2 = -d2 / 6.0 + 5.0 * d3 / 6.0 + d4 / 3.0
+    q3 = d3 / 3.0 + 5.0 * d4 / 6.0 - d5 / 6.0
 
     # 光滑指示子
-    s1 = (13/12.0)*(f1-2*f2+f3)**2 + 0.25*(f1-4*f2+3*f3)**2
-    s2 = (13/12.0)*(f2-2*f3+f4)**2 + 0.25*(f2-f4)**2
-    s3 = (13/12.0)*(f3-2*f4+f5)**2 + 0.25*(3*f3-4*f4+f5)**2
+    s1 = (13.0/12.0) * (d1 - 2*d2 + d3)**2 + 0.25 * (d1 - 4*d2 + 3*d3)**2
+    s2 = (13.0/12.0) * (d2 - 2*d3 + d4)**2 + 0.25 * (d2 - d4)**2
+    s3 = (13.0/12.0) * (d3 - 2*d4 + d5)**2 + 0.25 * (3*d3 - 4*d4 + d5)**2
 
-    eps = 1e-6
+    eps = 1e-6 * max(d1*d1, d2*d2, d3*d3, d4*d4, d5*d5) + 1e-99
     a1 = 0.1 / (s1 + eps)**2
     a2 = 0.6 / (s2 + eps)**2
     a3 = 0.3 / (s3 + eps)**2
@@ -939,7 +1192,7 @@ def MyOperator(
 4. 返回类型必须是 `float`
 5. 函数体内只能进行纯计算（无副作用）
 6. 对 `f` 的访问必须通过 `i.next(axis)` / `i.prev(axis)` 或 `MDIndex` 运算
-7. 网格参数通过 `f.mesh.dx[axis, i]` 获取（支持非均匀网格）
+7. 网格参数通过 `f.mesh.dx(axis, i)` 获取（支持非均匀网格）
 
 **FieldAccessor vs Field**：
 
@@ -959,20 +1212,25 @@ def BadOp(f: Field, axis: int, i: MDIndex) -> float:  # ❌ 必须用 FieldAcces
 
 ```python
 @op.operator(
-    name="d1_first_order_centered",  # 可选：显式命名
-    order=1,                          # 精度阶数
-    stencil_width=2,                  # stencil 宽度（单侧点数）
-    category="d1"                     # 类别: d1, d2, conv, custom
+    name="d1_first_order_centered",     # 可选：显式命名
+    order=1,                             # 精度阶数
+    category="d1",                       # 类别: d1, d2, interp, conv, custom
+    loc_transform=lambda loc: loc.flip() # loc 变换（默认: lambda loc: loc，即 preserve）
+    # range_effect: 由 StencilAnalyzer 从 AST 自动推导，无需手动声明
+    # 自动推导基于 f[i.next(axis, k)] / f[i.prev(axis, k)] 的访问模式
 )
 def D1FirstOrderCentered(f: FieldAccessor, axis: int, i: MDIndex) -> float:
-    dx = f.mesh.dx[axis, i]
-    return (f[i.next(axis)] - f[i.prev(axis)]) / (2.0 * dx)
+    if f.loc[axis] == LocOnMesh.CENTER:
+        return (f[i] - f[i.prev(axis)]) / (f.mesh.dx(axis, i[axis] - 1) + f.mesh.dx(axis, i[axis])) * 2
+    else:
+        return (f[i.next(axis)] - f[i]) / f.mesh.dx(axis, i[axis])
 
 
 # 元数据访问
-print(D1FirstOrderCentered.order)         # 1
-print(D1FirstOrderCentered.stencil_width) # 2
-print(D1FirstOrderCentered.category)      # "d1"
+print(D1FirstOrderCentered.order)          # 1
+print(D1FirstOrderCentered.category)       # "d1"
+print(D1FirstOrderCentered.loc_transform)  # <lambda: loc.flip()>
+print(D1FirstOrderCentered.range_effect)   # 自动推导结果: {Center: (start_shrink=1, end_shrink=0), Corner: (start_shrink=0, end_shrink=1)}
 ```
 
 #### 3.2.4 使用 Operator
@@ -1020,7 +1278,7 @@ def custom_diffusion(u: Field, du: Field):
 │  │  ┌─────────────────────────────────────────────────────┐  │  │
 │  │  │  @op.operator                                       │  │  │
 │  │  │  def D1FirstOrderCentered(f, axis, i):             │  │  │
-│  │  │      dx = f.mesh.dx[axis, i]                        │  │  │
+│  │  │      dx = f.mesh.dx(axis, i[axis])                     │  │  │
 │  │  │      return (f[i.next(axis)] - f[i.prev(axis)])... │  │  │
 │  │  └─────────────────────────────────────────────────────┘  │  │
 │  └───────────────────────────────────────────────────────────┘  │
@@ -1034,18 +1292,21 @@ i 是 MDIndex 类型，通过 i.next(axis)/i.prev(axis) 访问邻域
 #### 3.2.6 内置 Operator 库
 
 ```python
-# opflow.schemes - 内置微分格式
+# opflow.schemes - 内置微分格式（命名与 C++ 一致）
 
-# 一阶导数（维度无关）
-D1FirstOrderForward    # 前向差分
-D1FirstOrderBackward   # 后向差分
-D1FirstOrderCentered   # 中心差分
-D1SecondOrderCentered  # 二阶中心
-D1WENO53Upwind         # WENO-5 迎风
-D1WENO53Downwind       # WENO-5 顺风
-D1Quick                # QUICK 格式
+# 一阶导数（维度无关，loc 翻转）
+D1FirstOrderBiasedUpwind    # 迎风偏置差分（C++ D1FirstOrderBiasedUpwind）
+D1FirstOrderBiasedDownwind   # 顺风偏置差分（C++ D1FirstOrderBiasedDownwind）
+D1FirstOrderCentered         # 中心差分（staggered）
+D1WENO53Upwind               # WENO-5 迎风
+D1WENO53Downwind             # WENO-5 顺风
 
-# 二阶导数（维度无关）
+# 插值算子（交错网格基础设施）
+D1LinearCen2Cor   # Center→Corner 线性插值（loc_transform → CORNER）
+D1LinearCor2Cen   # Corner→Center 线性插值（loc_transform → CENTER）
+
+# 二阶导数（维度无关，loc 不变）
+D2SecondOrderCentered  # 二阶中心差分
 
 # 混合导数（不需要 axis 参数）
 D2MixedOrderCentered   # 混合导数 ∂²f/∂x∂y
@@ -1053,68 +1314,108 @@ D2MixedOrderCentered   # 混合导数 ∂²f/∂x∂y
 
 #### 3.2.7 LocOnMesh 处理
 
-**设计决策**：`loc` 是 Field 的属性，Operator 通过 `f.loc[axis]` 获取
+**设计决策**：
+- `loc` 是 Field 的属性，Operator 通过 `f.loc[axis]` 获取
+- `loc_transform` 通过 `@op.operator` 装饰器的 lambda 表达式显式声明
+- **不可从公式自动推导**（公式描述如何计算，不描述结果在网格的哪个位置）
+- `range_effect` 由 StencilAnalyzer 从 AST 自动推导
 
 ```python
 class FieldAccessor:
-    """字段访问器 - Operator 内部使用"""
+    """字段访问器 - Operator 内部使用
+
+    在执行式 IR 构建中，FieldAccessor 是 IR 代理对象：
+    - 所有操作返回 IR 节点而非实际数据
+    - f[i] 返回 FieldAccessNode（偏移量为 0 的字段引用）
+    - f[i.next(axis, k)] 返回 FieldAccessNode（偏移量为 +k）
+    - f.mesh 返回 MeshProxy（提供 dx/x 的 IR 节点）
+    - f.loc 返回实际 loc 元组（编译期已知常量）
+    """
+
+    def __init__(self, field_node: FieldNode):
+        self._field_node = field_node
+
+    def __getitem__(self, idx: "MDIndex") -> "FieldAccessNode":
+        """f[i] / f[i.next(axis)] → 生成带偏移的字段访问 IR 节点"""
+        return FieldAccessNode(
+            field=self._field_node,
+            offsets=idx.offsets  # MDIndex 记录了相对偏移
+        )
 
     @property
     def loc(self) -> Tuple[LocOnMesh, ...]:
-        """返回当前字段在各维度的位置类型
+        """返回当前字段在各维度的位置类型（编译期常量）
 
         对应 C++: f.loc[d]
         """
-        return self._field.loc
+        return self._field_node.loc
+
+    @property
+    def mesh(self) -> "MeshProxy":
+        """返回 mesh 代理，提供 dx() / x() 的 IR 节点"""
+        return MeshProxy(self._field_node.mesh_id)
 
 
-# === Operator 根据 loc 选择正确的计算方式 ===
+class MeshProxy:
+    """Mesh 代理 - 返回 IR 节点而非实际数据"""
 
-@op.operator
+    def __init__(self, mesh_id: int):
+        self._mesh_id = mesh_id
+
+    def dx(self, axis: int, idx=None) -> "MeshDxNode":
+        """返回 dx IR 节点（编译期展开为 C++ dx 数组访问）"""
+        return MeshDxNode(mesh_id=self._mesh_id, axis=axis, idx=idx)
+
+    def x(self, axis: int, idx=None) -> "MeshXNode":
+        """返回坐标 IR 节点"""
+        return MeshXNode(mesh_id=self._mesh_id, axis=axis, idx=idx)
+
+
+# === loc_transform 声明方式 ===
+
+# 1. D1 中心差分 — 翻转 loc（Center↔Corner）
+@op.operator(loc_transform=lambda loc: loc.flip())
 def D1FirstOrderCentered(f: FieldAccessor, axis: int, i: MDIndex) -> float:
-    """一阶中心差分 - 自动适应 LocOnMesh
-
-    根据 f.loc[axis] 选择正确的差分公式：
-    - Center: 使用中心差分 (f[i+1] - f[i-1]) / 2dx
-    - Corner: 使用单侧差分 (f[i+1] - f[i]) / dx
-    """
-    dx = f.mesh.dx[axis, i]
-
     if f.loc[axis] == LocOnMesh.CENTER:
-        # Center 位置：标准中心差分
-        return (f[i.next(axis)] - f[i.prev(axis)]) / (2.0 * dx)
+        return (f[i] - f[i.prev(axis)]) / (f.mesh.dx(axis, i[axis] - 1) + f.mesh.dx(axis, i[axis])) * 2
     else:
-        # Corner 位置：单侧差分
-        return (f[i.next(axis)] - f[i]) / dx
+        return (f[i.next(axis)] - f[i]) / f.mesh.dx(axis, i[axis])
 
+# 2. 插值 Cen2Cor — 设置为 CORNER
+@op.operator(loc_transform=lambda loc: LocOnMesh.CORNER)
+def D1LinearCen2Cor(f: FieldAccessor, axis: int, i: MDIndex) -> float:
+    # 非均匀网格: 线性插值（与 C++ Math::Interpolator1D::intp 一致）
+    x1 = f.mesh.x(axis, i[axis] - 1) + f.mesh.dx(axis, i[axis] - 1) * 0.5
+    x2 = f.mesh.x(axis, i[axis]) + f.mesh.dx(axis, i[axis]) * 0.5
+    x = f.mesh.x(axis, i[axis])
+    y1 = f[i.prev(axis)]
+    y2 = f[i]
+    # Lagrange 线性插值: y = y1 + (y2-y1)*(x-x1)/(x2-x1)
+    return y1 + (y2 - y1) * (x - x1) / (x2 - x1)
 
+# 3. 插值 Cor2Cen — 设置为 CENTER
+@op.operator(loc_transform=lambda loc: LocOnMesh.CENTER)
+def D1LinearCor2Cen(f: FieldAccessor, axis: int, i: MDIndex) -> float:
+    # 简单平均（与 C++ Math::mid 一致）
+    return (f[i] + f[i.next(axis)]) * 0.5
+
+# 4. D2 二阶导 — 不声明 loc_transform（默认 preserve）
 @op.operator
 def D2SecondOrderCentered(f: FieldAccessor, axis: int, i: MDIndex) -> float:
-    """二阶中心差分 - 自动适应 LocOnMesh"""
-    dx = f.mesh.dx[axis, i]
-
-    if f.loc[axis] == LocOnMesh.CENTER:
-        u_right = f[i.next(axis)]
-        u_center = f[i]
-        u_left = f[i.prev(axis)]
-        return (u_right - 2.0 * u_center + u_left) / (dx * dx)
-    else:
-        # Corner 位置：可能需要不同的格式
-        u_right = f[i.next(axis)]
-        u_center = f[i]
-        u_left = f[i.prev(axis)]
-        return (u_right - 2.0 * u_center + u_left) / (dx * dx)
+    ...  # loc 不变
 
 
 # === 使用示例 ===
 
 # Center 位置的场
 p = Field(mesh, halo=1, loc=LocOnMesh.CENTER)
-dp = d(p, axis=0, scheme=D1FirstOrderCentered)  # 使用中心差分
+dp = d(p, axis=0, scheme=D1FirstOrderCentered)
+# dp 的 loc[0] = CENTER.flip() = CORNER（由 loc_transform 决定）
 
 # Corner 位置的场（交错网格）
 u = Field(mesh, halo=1, loc=(LocOnMesh.CORNER, LocOnMesh.CENTER))
-du = d(u, axis=0, scheme=D1FirstOrderCentered)  # 自动使用单侧差分
+du = d(u, axis=0, scheme=D1FirstOrderCentered)
+# du 的 loc[0] = CORNER.flip() = CENTER
 ```
 
 **C++ 对应代码**：
@@ -1131,6 +1432,7 @@ struct D1FirstOrderCentered {
                : (e.evalAt(i.template next<d>()) - e.evalAt(i)) / (e.mesh.dx(d, i[d]));
     }
 };
+// C++ loc 翻转: 通过 Expression 的 loc 推导（编译期模板特化）
 ```
 
 #### 3.2.8 多轴 Operator
@@ -1142,7 +1444,7 @@ def D2MixedCentered(f: FieldAccessor, i: MDIndex) -> float:
 
     混合导数访问多个轴，不使用 axis 参数
     """
-    dx, dy = f.mesh.dx[0, i], f.mesh.dx[1, i]
+    dx, dy = f.mesh.dx(0, i[0]), f.mesh.dx(1, i[1])
 
     # f[i+1, j+1] - f[i+1, j-1] - f[i-1, j+1] + f[i-1, j-1]
     return (f[i.next(0).next(1)] - f[i.next(0).prev(1)] -
@@ -1156,24 +1458,71 @@ def compute_hessian(u: Field, hxx: Field, hyy: Field, hxy: Field):
     hxy.assign(d2(u, scheme=D2MixedCentered))  # 混合导数（不需要 axis）
 ```
 
-#### 3.2.8 Operator 编译与 IR 表示
+#### 3.2.9 Operator 编译与 IR 表示
 
 ```python
+@dataclass
+class RangeEffect:
+    """算子对有效范围的影响（per-axis per-loc）
+
+    由 StencilAnalyzer 从算子 AST 自动推导。
+    基于 f[i.next(axis, k)] / f[i.prev(axis, k)] 的访问模式分析。
+
+    符号约定（与 C++ OpFlow 一致）: 正值 = 向内收缩
+    - start_shrink = N 表示 new_start = old_start + N
+    - end_shrink   = N 表示 new_end   = old_end   - N
+    """
+    # key: LocOnMesh, value: (start_shrink, end_shrink)
+    # 例如 D1FirstOrderCentered:
+    #   {CENTER: (1, 0), CORNER: (0, 1)}
+    #   表示 Center 场时 start 侧收缩 1，Corner 场时 end 侧收缩 1
+    # 例如 D2SecondOrderCentered:
+    #   {CENTER: (1, 1), CORNER: (1, 1)}
+    #   表示两侧各收缩 1
+    # 例如 D1WENO53Upwind:
+    #   {CENTER: (3, 3), CORNER: (3, 3)}
+    #   表示两侧各收缩 3（bc_width=3）
+    effects: Dict[LocOnMesh, Tuple[int, int]]
+
+
 @dataclass
 class OperatorIR:
     """Operator IR 表示"""
     name: str
-    func: callable              # 原始 Python 函数
+    func: callable                  # 原始 Python 函数
     signature: inspect.Signature
-    stencil: List[MDIndex]      # 邻域偏移列表 [MDIndex(0,0), MDIndex(1,0), ...]
-    order: int                  # 精度阶数
-    category: str               # d1, d2, conv, custom
-    has_axis: bool              # 是否接受 axis 参数
+    order: int                      # 精度阶数
+    category: str                   # d1, d2, interp, conv, custom
+    has_axis: bool                  # 是否接受 axis 参数
 
-    def get_stencil_coefficients(self) -> Dict[MDIndex, float]:
-        """提取 stencil 系数"""
-        # 通过符号执行或 AST 分析提取
-        ...
+    # === 核心元数据（取代旧的 stencil_width / bc_width）===
+    loc_transform: Callable         # loc 变换函数，从 @op.operator 装饰器获取
+                                    # 默认: lambda loc: loc（preserve）
+    range_effect: RangeEffect       # 由 StencilAnalyzer 自动推导
+
+    def get_output_loc(self, input_loc: LocOnMesh, axis: int) -> LocOnMesh:
+        """计算输出场在指定 axis 上的 loc"""
+        return self.loc_transform(input_loc)
+
+    def get_range_shrink(self, input_loc: LocOnMesh) -> Tuple[int, int]:
+        """获取给定 input_loc 时的 range 收缩量 (start_shrink, end_shrink)"""
+        return self.range_effect.effects.get(input_loc, (0, 0))
+
+
+class StencilAnalyzer(ast.NodeVisitor):
+    """从算子 AST 自动推导 range_effect
+
+    分析策略：
+    1. 解析 f[i.next(axis, k)] / f[i.prev(axis, k)] 的偏移量
+    2. 按 if f.loc[axis] 分支分组收集
+    3. 对每个分支计算 min/max 偏移 → range_effect
+    """
+
+    def analyze(self, func: callable) -> RangeEffect:
+        source = inspect.getsource(func)
+        tree = ast.parse(source)
+        # ... 分析 AST，提取 stencil 访问模式
+        return RangeEffect(effects=self._compute_effects())
 
 
 # 编译时 IR 提取
@@ -1181,13 +1530,13 @@ def compile_operator(op_func: callable) -> OperatorIR:
     source = inspect.getsource(op_func)
     tree = ast.parse(source)
 
-    # 1. 分析 stencil 访问模式
+    # 1. StencilAnalyzer 自动推导 range_effect
     stencil_analyzer = StencilAnalyzer()
-    stencil_analyzer.visit(tree)
-    stencil = stencil_analyzer.get_stencil_offsets()
+    range_effect = stencil_analyzer.analyze(op_func)
 
-    # 2. 提取元数据
+    # 2. 提取 loc_transform（从装饰器参数）
     metadata = getattr(op_func, '_op_metadata', {})
+    loc_transform = metadata.get('loc_transform', lambda loc: loc)
 
     # 3. 检查是否有 axis 参数
     sig = inspect.signature(op_func)
@@ -1198,68 +1547,188 @@ def compile_operator(op_func: callable) -> OperatorIR:
         name=op_func.__name__,
         func=op_func,
         signature=sig,
-        stencil=stencil,
         order=metadata.get('order', 1),
         category=metadata.get('category', 'custom'),
-        has_axis=has_axis
+        has_axis=has_axis,
+        loc_transform=loc_transform,
+        range_effect=range_effect
     )
 ```
 
-#### 3.2.9 Operator 约束检查
+#### 3.2.10 约束检查架构
+
+**设计原则**：
+1. 装饰器只做语法层面检查（纯 Python AST，不涉及 IR）
+2. 所有语义检查作为独立 Pass，由 PassPipeline 统一调度
+3. 移除旧的 `OperatorChecker` / `ConstraintChecker` / `ExprLocChecker`
+
+**架构总览**：
+
+```
+@op.operator 装饰期           @op.kernel 首次调用
+──────────────────           ─────────────────────────────────────
+_operator_syntax_check()     _kernel_syntax_check()
+  - 签名格式                   - 参数类型标注
+  - 参数类型                   - 禁止 AST 节点
+  - 返回类型                   - 禁止内置函数
+  - 只读约束（无赋值）         - 无返回值
+                                     │
+                                     ▼
+                              执行式 IR 构建
+                              （运算符重载 → IR 节点）
+                                     │
+                                     ▼
+                              PassPipeline（见 Section 6.0）
+                              ┌──────────────────────────┐
+                              │ 验证:                     │
+                              │   LocConsistencyPass      │
+                              │   TypeInferencePass       │
+                              │   ReduceDependencyPass    │
+                              │ 分析:                     │
+                              │   StencilAnalysisPass     │
+                              │   RangeAnalysisPass       │
+                              │ 后端验证:                  │
+                              │   HaloSufficiencyPass     │
+                              │ 优化:                     │
+                              │   StencilSpecPass         │
+                              │   MemoryAccessPass        │
+                              └──────────────────────────┘
+                                     │
+                                     ▼
+                              代码生成
+```
+
+**装饰器语法检查**：
 
 ```python
-class OperatorChecker(ast.NodeVisitor):
-    """Operator 约束检查器"""
+def _operator_syntax_check(func: callable):
+    """@op.operator 装饰期语法检查
 
-    def check(self, func: callable) -> List[ConstraintError]:
-        errors = []
+    仅检查 Python 函数签名和 AST 结构，不涉及 IR。
+    失败时立即 raise（定义时报错，非运行时）。
+    """
+    sig = inspect.signature(func)
+    params = list(sig.parameters.values())
 
-        # 1. 检查签名
-        sig = inspect.signature(func)
-        params = list(sig.parameters.values())
+    # 1. 参数数量: 至少 2 个 (f, i) 或 3 个 (f, axis, i)
+    if len(params) < 2:
+        raise SyntaxError("Operator must have at least 2 params: (f, i) or (f, axis, i)")
 
-        if len(params) < 2:
-            errors.append("Operator must have at least 2 params: (f, i) or (f, axis, i)")
+    # 2. 第一个参数必须是 FieldAccessor
+    if params[0].annotation is not FieldAccessor:
+        raise TypeError(f"First param must be FieldAccessor, got {params[0].annotation}")
 
-        # 第一个参数类型
-        first_param = params[0]
-        if not self._is_field_accessor(first_param):
-            errors.append(f"First param must be FieldAccessor, got {first_param.annotation}")
+    # 3. axis 参数（如有）位置固定
+    if len(params) >= 3 and params[1].name == "axis":
+        if params[2].annotation is not MDIndex:
+            raise TypeError(f"Third param must be MDIndex, got {params[2].annotation}")
+    elif params[-1].annotation is not MDIndex:
+        raise TypeError(f"Last param must be MDIndex, got {params[-1].annotation}")
 
-        # 第二个参数：axis (可选) 或 i (MDIndex)
-        if len(params) >= 3:
-            # 有 axis 参数的情况: (f, axis, i)
-            if params[1].name != "axis":
-                errors.append(f"Second param must be 'axis', got {params[1].name}")
-            if not self._is_mdindex(params[2]):
-                errors.append(f"Third param must be MDIndex, got {params[2].annotation}")
-        elif len(params) == 2:
-            # 没有 axis 参数的情况: (f, i)
-            if not self._is_mdindex(params[1]):
-                errors.append(f"Second param must be MDIndex, got {params[1].annotation}")
+    # 4. 返回类型
+    if sig.return_annotation not in (float, int, inspect.Parameter.empty):
+        raise TypeError(f"Return type must be float or int, got {sig.return_annotation}")
 
-        # 2. 检查返回类型
-        if sig.return_annotation != float:
-            errors.append(f"Return type must be float, got {sig.return_annotation}")
+    # 5. AST 只读约束：operator 函数体不能写入 field
+    tree = ast.parse(inspect.getsource(func))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Subscript):
+            raise SyntaxError("Operator cannot write to field (read-only)")
 
-        # 3. 检查函数体（只读访问、无副作用）
-        tree = ast.parse(inspect.getsource(func))
-        for node in ast.walk(tree):
-            # 禁止写入操作
-            if isinstance(node, ast.Assign):
-                if isinstance(node.targets[0], ast.Subscript):
-                    errors.append("Operator cannot write to field (read-only)")
 
-            # 禁止外部函数调用
-            if isinstance(node, ast.Call):
-                if isinstance(node.func, ast.Name):
-                    if node.func.id not in ALLOWED_BUILTINS:
-                        errors.append(f"Cannot call external function '{node.func.id}'")
+def _kernel_syntax_check(func: callable):
+    """@op.kernel 装饰期语法检查
 
-        # 4. 检查索引仿射性（通过 MDIndex.next/prev）
-        self._check_affine_indices(tree, errors)
+    仅检查 Python 函数签名和 AST 结构，不涉及 IR。
+    """
+    sig = inspect.signature(func)
+    tree = ast.parse(inspect.getsource(func))
 
-        return errors
+    # 1. 参数类型标注完整性
+    for name, param in sig.parameters.items():
+        if param.annotation is inspect.Parameter.empty:
+            raise TypeError(f"Parameter '{name}' lacks type annotation")
+
+    # 2. 禁止的 AST 节点
+    FORBIDDEN = {ast.Import, ast.ImportFrom, ast.Global, ast.Nonlocal,
+                 ast.ClassDef, ast.Lambda, ast.Yield, ast.AsyncDef, ast.With}
+    for node in ast.walk(tree):
+        if type(node) in FORBIDDEN:
+            raise SyntaxError(f"{type(node).__name__} is forbidden in kernels")
+
+    # 3. 禁止的内置函数
+    FORBIDDEN_BUILTINS = {'eval', 'exec', 'compile', 'open', 'input',
+                          'print', '__import__'}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+            if node.func.id in FORBIDDEN_BUILTINS:
+                raise SyntaxError(f"Built-in '{node.func.id}' is forbidden in kernels")
+
+    # 4. kernel 无返回值
+    if sig.return_annotation not in (None, inspect.Parameter.empty):
+        raise TypeError("Kernel must not have a return type (outputs via Field/Param.assign)")
+```
+
+**验证 Pass（纳入 PassPipeline）**：
+
+```python
+class LocConsistencyPass(IRPass):
+    """二元运算操作数 loc 一致性检查
+
+    遍历 IR 树，检查每个 BinaryOpNode 的左右操作数 loc 是否匹配。
+    """
+    name = "loc_consistency"
+
+    def run(self, kernel_ir: KernelIR) -> KernelIR:
+        for assign in kernel_ir.all_assigns():
+            self._check(assign.expr)
+        return kernel_ir
+
+    def _check(self, ir: IRNode):
+        if isinstance(ir, BinaryOpNode):
+            self._check(ir.left)
+            self._check(ir.right)
+            if hasattr(ir.left, 'loc') and hasattr(ir.right, 'loc'):
+                if ir.left.loc != ir.right.loc:
+                    raise CompileError(f"Loc mismatch: {ir.left.loc} vs {ir.right.loc}")
+        elif isinstance(ir, UnaryOpNode):
+            self._check(ir.child)
+
+
+class HaloSufficiencyPass(IRPass):
+    """Stencil 所需 halo ≤ Field 实际 halo
+
+    在 RangeAnalysisPass 之后运行（依赖 range_effect 结果）。
+    """
+    name = "halo_sufficiency"
+
+    def run(self, kernel_ir: KernelIR) -> KernelIR:
+        for assign in kernel_ir.field_assigns():
+            for field_ref in self._collect_field_refs(assign.expr):
+                required = self._required_halo(field_ref, assign.expr)
+                actual = field_ref.halo
+                for axis in range(len(actual)):
+                    if required[axis][0] > actual[axis][0] or required[axis][1] > actual[axis][1]:
+                        raise CompileError(
+                            f"Field '{field_ref.name}' axis {axis}: "
+                            f"needs halo {required[axis]}, has {actual[axis]}")
+        return kernel_ir
+
+
+class ReduceDependencyPass(IRPass):
+    """Param assign 依赖分析 + 循环依赖检测
+
+    拓扑排序所有 Param assign，将排序结果写入 kernel_ir.param_schedule。
+    """
+    name = "reduce_dependency"
+
+    def run(self, kernel_ir: KernelIR) -> KernelIR:
+        dag = self._build_dag(kernel_ir.param_assigns())
+        schedule = self._topo_sort(dag)
+        if schedule is None:
+            raise CompileError("CyclicDependencyError: Param assigns have circular dependency")
+        kernel_ir.param_schedule = schedule
+        return kernel_ir
 ```
 
 ### 3.3 条件表达式 - Python 三元运算符
@@ -1281,114 +1750,194 @@ result = (
 # Python `a if cond else b` → IR TernaryOpNode(cond, a, b)
 ```
 
-### 3.4 归约操作 - 原子 `+=` 重载
+### 3.4 归约操作 - `op.reduce()` + Param
 
-**设计决策**：通过重载 `+=` 等运算符实现隐式原子规约
+**设计决策**：
+
+1. **Param（参量）**是一等概念：定义在网格定义域上的 0 维数据。分布式场景下所有进程观察到的值保持一致（allreduce 语义）。
+2. `op.reduce()` 返回 `Param`，不是裸 scalar。
+3. **Kernel 没有返回值**——输出全部通过 `assign` 写入 Field 或 Param。
 
 ```python
-# 方式 1: for-range + 原子 +=（隐式规约）
-total = 0.0
-for i, j in mesh.interior_range():
-    total += u[i, j] * mesh.cell_volume(i, j)
+# === Param 定义 ===
+class Param:
+    """定义在网格定义域上的 0 维数据（标量参量）
 
-# 编译器识别 `total +=` 为规约操作，生成原子代码
+    - 与 Field 同为 kernel 的一等输入/输出
+    - 分布式场景：allreduce 保证所有进程值一致
+    - 可参与 assign 表达式（作为标量因子）
+    """
+    def __init__(self, mesh: "Mesh", dtype: DType = DType.FLOAT64,
+                 name: str = ""):
+        self.mesh = mesh
+        self.dtype = dtype
+        self.name = name
+        self._value: Optional[float] = None
 
-# 方式 2: 内置规约方法
-sum_val = u.sum()
-max_val = u.max()
-min_val = u.min()
-norm_l2 = (u ** 2).sum() ** 0.5
+    def assign(self, expr):
+        """赋值（在 kernel 上下文中记录到 KernelContext）"""
+        ctx = KernelContext.current()
+        if ctx is None:
+            raise RuntimeError("Param.assign() must be inside @op.kernel")
+        ctx.record_param_assign(self, expr)
 
-# 方式 3: 多进程并行归约
-integral = u.sum(parallel=True)  # 启用 OpenMP/MPI 归约
+# === 核心 API: op.reduce() ===
+total = op.reduce(u * u, op='sum')           # 返回 Param 代理
+max_val = op.reduce(op.abs(u), op='max')     # 返回 Param 代理
+
+# === 语法糖 ===
+total = op.sum(u * u)                        # 等价于 op.reduce(..., op='sum')
+max_val = op.max(op.abs(u))                  # 等价于 op.reduce(..., op='max')
+min_val = op.min(u)                          # 等价于 op.reduce(..., op='min')
+
+# === 在 kernel 中使用 ===
+@op.kernel
+def compute_normalized(u: Field, w: Field, norm: Param):
+    """Reduce 结果写入 Param，Param 参与 assign 表达式"""
+    norm.assign(op.sqrt(op.sum(u * u)))
+    w.assign(u / norm)
+
+@op.kernel
+def compute_stats(u: Field, v: Field, w: Field,
+                  energy: Param, max_speed: Param):
+    """多个 Reduce：各自独立循环"""
+    energy.assign(op.sum(u * u + v * v))
+    max_speed.assign(op.max(op.sqrt(u * u + v * v)))
+    w.assign((u * u + v * v) / energy)
+
+@op.kernel
+def compute_derived(u: Field, w: Field,
+                    total: Param, normed: Param):
+    """Reduce 之间允许依赖：拓扑排序分阶段执行"""
+    total.assign(op.sum(u * u))
+    normed.assign(total / op.sum(u))      # 依赖 total
+    w.assign(u / total)
+```
+
+**执行模型**：
+
+```
+@op.kernel 执行过程：
+1. 执行函数体 → 收集 Param assign + Field assign
+2. 构建 Param 依赖 DAG，拓扑排序
+   - 循环依赖 → CompileError("CyclicDependencyError")
+3. 分阶段执行 Param 计算：
+   Stage 0: 无依赖的 reduce（各自独立循环）
+   Stage 1: 依赖 Stage 0 的 reduce/标量运算
+   Stage N: ...
+4. 所有 Param 就绪后，执行 Field assign 循环
+```
+
+**代码生成示例**（`compute_derived`）：
+
+```cpp
+void kernel(double* u, double* w, int n, ...) {
+    // Stage 0: total = sum(u*u)
+    double _r0 = 0.0;
+    #pragma omp parallel for collapse(2) reduction(+: _r0)
+    for (int i = i_start; i < i_end; ++i)
+        for (int j = j_start; j < j_end; ++j)
+            _r0 += u[idx] * u[idx];
+    double total = _r0;
+
+    // Stage 0: _sum_u = sum(u)
+    double _r1 = 0.0;
+    #pragma omp parallel for collapse(2) reduction(+: _r1)
+    for (int i = i_start; i < i_end; ++i)
+        for (int j = j_start; j < j_end; ++j)
+            _r1 += u[idx];
+
+    // Stage 1: normed = total / sum(u)（纯标量运算）
+    double normed = total / _r1;
+
+    // Field assign
+    #pragma omp parallel for collapse(2)
+    for (int i = i_start; i < i_end; ++i)
+        for (int j = j_start; j < j_end; ++j)
+            w[idx] = u[idx] / total;
+}
 ```
 
 **实现原理**：
 
 ```python
-class ReductionVar:
-    """规约变量 - 原子操作代理"""
+def reduce(expr: "ExprNode", *, op: str = 'sum') -> "ReduceNode":
+    """创建归约 IR 节点，返回 Param 代理
 
-    def __init__(self, initial: float):
-        self._value = initial
+    代码生成时根据后端选择归约策略：
+    - C++ (Phase 1): OpenMP reduction
+    - Taichi (Phase 2): ti.reduce
+    - CUDA: block-level reduction + warp shuffle
+    """
+    return ReduceNode(input=expr, reduce_op=op)
 
-    def __iadd__(self, other) -> "ReductionVar":
-        """原子 += 操作
+# 语法糖
+def sum(expr: "ExprNode") -> "ReduceNode":
+    return reduce(expr, op='sum')
 
-        JIT 编译器识别此模式，生成：
-        - OpenMP: `#pragma omp atomic`
-        - CUDA: `atomicAdd()`
-        - MPI: `MPI_Allreduce()`
-        """
-        # 运行时实现（调试用）
-        self._value += other
-        return self
+def max(expr: "ExprNode") -> "ReduceNode":
+    return reduce(expr, op='max')
 
-    @property
-    def value(self) -> float:
-        return self._value
+def min(expr: "ExprNode") -> "ReduceNode":
+    return reduce(expr, op='min')
 ```
+
+**Phase 1 限制**：
+- 仅全局 reduce（整个 accessibleRange），不支持 per-axis reduce
+- OpenMP `reduction` 子句并行
+- 多个 reduce 独立循环，不融合（Phase 2 可优化为单循环多归约）
 
 ### 3.5 Kernel 函数设计
 
 #### 3.5.1 `@op.kernel` 装饰器接口
 
-JIT 编译的基本单元是**整个 kernel 函数**，而非单个表达式。使用 `@op.kernel` 装饰器标记需要 JIT 编译的函数：
+JIT 编译的基本单元是**整个 kernel 函数**。`@op.kernel` 是编译边界标记，区分普通 Python 代码和 OpFlow 要执行编译的代码。
+
+**核心原则**：kernel 内部使用**表达式语法**（与 C++ 一致），**不使用显式逐点循环**。`w.assign(expr)` 等价于 C++ `w = expr`，触发计算。
 
 ```python
 import opflow as op
 from opflow import CartesianMesh, Field
-from opflow.schemes import D2SecondOrderCentered
+from opflow.schemes import D2SecondOrderCentered, D1FirstOrderCentered
 
-# === Kernel 函数定义 ===
+# === Kernel 函数定义 — 表达式语法 ===
 @op.kernel
-def laplacian_kernel(u: Field, du: Field, dx: float):
-    """5点 Laplacian stencil 计算
-
-    约束：
-    - u, du 必须在同一 mesh 上
-    - 循环范围由 mesh.interior_range() 决定
-    - 索引访问必须在 halo 范围内
-    """
-    for i, j in u.mesh.interior_range():
-        du[i, j] = (u[i-1, j] + u[i+1, j] +
-                    u[i, j-1] + u[i, j+1] - 4.0 * u[i, j]) / (dx * dx)
+def laplacian_kernel(u: Field, du: Field):
+    """Laplacian 计算 — 使用算子表达式"""
+    du.assign(
+        op.d2(u, axis=0, scheme=D2SecondOrderCentered) +
+        op.d2(u, axis=1, scheme=D2SecondOrderCentered)
+    )
 
 
 @op.kernel
-def time_step(u: Field, u_new: Field, dt: float, dx: float):
+def time_step(u: Field, u_new: Field, dt: float):
     """显式时间推进"""
-    for i, j in u.mesh.interior_range():
-        lap = (u[i-1, j] + u[i+1, j] +
-               u[i, j-1] + u[i, j+1] - 4.0 * u[i, j]) / (dx * dx)
-        u_new[i, j] = u[i, j] + dt * lap
+    lap = op.d2(u, axis=0, scheme=D2SecondOrderCentered) + \
+          op.d2(u, axis=1, scheme=D2SecondOrderCentered)
+    u_new.assign(u + dt * lap)
 
 
 @op.kernel
-def compute_residual(u: Field, rhs: Field, res: Field, dx: float):
+def compute_residual(u: Field, rhs: Field, res: Field):
     """计算残差 = Laplacian(u) - rhs"""
-    for i, j in u.mesh.interior_range():
-        lap = (u[i-1, j] + u[i+1, j] +
-               u[i, j-1] + u[i, j+1] - 4.0 * u[i, j]) / (dx * dx)
-        res[i, j] = lap - rhs[i, j]
+    lap = op.d2(u, axis=0, scheme=D2SecondOrderCentered) + \
+          op.d2(u, axis=1, scheme=D2SecondOrderCentered)
+    res.assign(lap - rhs)
 
 
 @op.kernel
-def compute_l2_norm(u: Field) -> float:
-    """归约：计算 L2 范数"""
-    total = 0.0  # ReductionVar - 原子累加
-    for i, j in u.mesh.interior_range():
-        total += u[i, j] * u[i, j]
-    return op.sqrt(total)
+def compute_l2_norm(u: Field, norm: Param):
+    """归约：计算 L2 范数，写入 Param"""
+    norm.assign(op.sqrt(op.sum(u * u)))
 
 
 @op.kernel
-def jacobi_sweep(u: Field, u_new: Field, rhs: Field, dx: float):
-    """Jacobi 迭代"""
-    for i, j in u.mesh.interior_range():
-        u_new[i, j] = 0.25 * (u[i-1, j] + u[i+1, j] +
-                              u[i, j-1] + u[i, j+1] -
-                              dx * dx * rhs[i, j])
+def jacobi_sweep(u: Field, u_new: Field, rhs: Field):
+    """Jacobi 迭代 — 表达式语法"""
+    lap = op.d2(u, axis=0, scheme=D2SecondOrderCentered) + \
+          op.d2(u, axis=1, scheme=D2SecondOrderCentered)
+    u_new.assign(0.25 * (lap + rhs))  # 简化形式
 
 
 # === 使用示例 ===
@@ -1397,11 +1946,11 @@ u = Field(mesh, halo=1, dtype="float64", name="u")
 u_new = Field(mesh, halo=1, dtype="float64", name="u_new")
 
 # 调用 kernel（首次触发 JIT 编译）
-laplacian_kernel(u, u_new, dx=0.01)
+laplacian_kernel(u, u_new)
 
 # 时间步进循环
 for step in range(1000):
-    time_step(u, u_new, dt=0.0001, dx=0.01)
+    time_step(u, u_new, dt=0.0001)
     u, u_new = u_new, u  # 交换缓冲区
 
     if step % 100 == 0:
@@ -1411,17 +1960,17 @@ for step in range(1000):
 
 #### 3.5.2 Kernel 函数 vs 普通 Python 函数
 
-| 特性 | 普通 Python 函数 | `@op.kernel` 函数 |
-|------|------------------|-------------------|
-| **执行方式** | Python 解释器 | JIT 编译为原生代码 |
-| **控制流** | 动态，可任意 | 静态可分析，有限制 |
-| **数据类型** | 动态类型 | 静态类型推断 |
-| **循环** | 任意 Python 循环 | 仅限 `for ... in mesh.range()` |
-| **函数调用** | 任意 Python 函数 | 仅限 `@op.kernel` 或内联函数 |
-| **异常** | Python 异常 | 编译期错误，运行时无异常 |
-| **副作用** | 任意 | 仅限 Field 写入/归约 |
-| **闭包** | 支持 | 禁止捕获可变状态 |
-| **返回值** | 任意类型 | 仅限标量或 void |
+| 特性         | 普通 Python 函数 | `@op.kernel` 函数              |
+| ------------ | ---------------- | ------------------------------ |
+| **执行方式** | Python 解释器    | JIT 编译为原生代码             |
+| **计算模型** | 任意 Python 代码 | 表达式语法 (`w.assign(expr)`)  |
+| **数据类型** | 动态类型         | 静态类型推断                   |
+| **归约**     | 普通 Python 运算 | `op.reduce()` / `op.sum()` 等  |
+| **函数调用** | 任意 Python 函数 | `@op.kernel` / `@op.inline`    |
+| **异常**     | Python 异常      | 编译期错误，运行时无异常       |
+| **副作用**   | 任意             | 仅限 Field.assign / 归约       |
+| **闭包**     | 支持             | 禁止捕获可变状态               |
+| **返回值**   | 任意类型         | void（输出通过 Field/Param.assign） |
 
 #### 3.5.3 Kernel 函数约束
 
@@ -1445,8 +1994,7 @@ def bad_kernel(u, v, alpha):  # ❌ 缺少类型标注 → 编译错误
 # ============================================
 @op.kernel
 def good_kernel(u: Field, v: Field):
-    for i, j in u.mesh.interior_range():
-        v[i, j] = u[i, j] + 1.0  # ✅ 同 mesh
+    v.assign(u + 1.0)  # ✅ 同 mesh，表达式语法
 
 @op.kernel
 def bad_kernel(u: Field, v: Field):
@@ -1456,46 +2004,21 @@ def bad_kernel(u: Field, v: Field):
 
 
 # ============================================
-# 约束 3: 循环范围必须是 mesh.range() 变体
+# 约束 3: 使用表达式语法，不使用显式逐点循环
 # ============================================
 @op.kernel
-def good_kernel(u: Field):
-    for i, j in u.mesh.interior_range():  # ✅ mesh 提供的 range
-        ...
-
-    for i, j in u.mesh.local_range():  # ✅ 不同的 range
-        ...
+def good_kernel(u: Field, w: Field, dt: float):
+    lap = op.d2(u, axis=0) + op.d2(u, axis=1)
+    w.assign(u + dt * lap)  # ✅ 表达式语法
 
 @op.kernel
-def bad_kernel(u: Field):
-    for i in range(100):  # ❌ 魔数循环 → 编译警告
-        ...
-
-    for i in some_list:  # ❌ 动态迭代器 → 编译错误
-        ...
+def bad_kernel(u: Field, w: Field, dt: float):
+    for i, j in u.mesh.interior_range():  # ❌ 显式逐点循环
+        w[i, j] = u[i, j] + dt * (...)
 
 
 # ============================================
-# 约束 4: 索引表达式必须是仿射的
-# ============================================
-@op.kernel
-def good_kernel(u: Field):
-    for i, j in u.mesh.interior_range():
-        a = u[i, j]       # ✅ 直接索引
-        b = u[i-1, j]     # ✅ 常量偏移
-        c = u[i+1, j+2]   # ✅ 常量偏移
-        offset = 1
-        d = u[i+offset, j]  # ✅ 编译期常量
-
-@op.kernel
-def bad_kernel(u: Field, offsets: list):
-    for i, j in u.mesh.interior_range():
-        a = u[i*2, j]     # ❌ 非仿射（乘法）→ 编译错误
-        b = u[i+offsets[0], j]  # ❌ 运行时值作为索引 → 编译错误
-
-
-# ============================================
-# 约束 5: 禁止的 Python 构造
+# 约束 4: 禁止的 Python 构造
 # ============================================
 @op.kernel
 def bad_kernel(u: Field):
@@ -1512,53 +2035,44 @@ def bad_kernel(u: Field):
 
 
 # ============================================
-# 约束 6: 归约变量必须显式初始化
+# 约束 5: 归约使用 op.reduce() / 语法糖，结果写入 Param
 # ============================================
 @op.kernel
-def good_kernel(u: Field) -> float:
-    total = 0.0  # ✅ 归约变量初始化
-    for i, j in u.mesh.interior_range():
-        total += u[i, j]
-    return total
+def good_kernel(u: Field, norm: Param):
+    norm.assign(op.sqrt(op.sum(u * u)))  # ✅ op.sum 语法糖 + Param 输出
 
 @op.kernel
-def bad_kernel(u: Field) -> float:
-    # ❌ total 未初始化 → 编译错误
-    for i, j in u.mesh.interior_range():
-        total += u[i, j]
-    return total
+def bad_kernel(u: Field, total: Param):
+    total_val = 0.0
+    for i, j in u.mesh.interior_range():  # ❌ 显式循环归约
+        total_val += u[i, j]
+    total.assign(total_val)               # ❌ 不支持显式循环
 
 
 # ============================================
-# 约束 7: 条件分支必须可静态分析
+# 约束 6: 条件表达式使用 Python 三元运算符
 # ============================================
 @op.kernel
-def good_kernel(u: Field, threshold: float):
-    for i, j in u.mesh.interior_range():
-        # ✅ 编译期可分析的三元表达式
-        u[i, j] = u[i, j] if u[i, j] > threshold else 0.0
-
-        # ✅ if-elif-else 结构
-        if u[i, j] > 1.0:
-            u[i, j] = 1.0
-        elif u[i, j] < 0.0:
-            u[i, j] = 0.0
-
-@op.kernel
-def bad_kernel(u: Field):
-    for i, j in u.mesh.interior_range():
-        if some_external_function():  # ❌ 外部函数调用 → 编译错误
-            ...
+def good_kernel(u: Field, w: Field, threshold: float):
+    # ✅ 在表达式中使用条件
+    w.assign(u if u > threshold else 0.0)
 ```
 
-#### 3.5.4 编译期约束检查机制
+#### 3.5.4 编译期约束检查架构
+
+> **设计原则**：装饰器做语法检查（纯 AST），语义检查以标准 Pass 形式纳入 PassPipeline。
+> 详见 Section 3.2.10 中 `_operator_syntax_check()` / `_kernel_syntax_check()` 的完整实现。
+
+**两层检查架构**：
+
+| 层级 | 时机 | 检查内容 | 实现方式 |
+|------|------|---------|---------|
+| **语法检查** | 装饰器应用时 | AST 节点白名单、参数类型标注、禁止构造、无返回值 | `_kernel_syntax_check()` — 纯 Python AST 遍历 |
+| **语义验证** | PassPipeline 中 | loc 一致性、类型推导、reduce 依赖、halo 充分性 | 独立 Pass（见 Section 6.0） |
+
+**错误类型**：
 
 ```python
-from dataclasses import dataclass
-from typing import List, Optional, Set
-from enum import Enum, auto
-import ast
-
 class ConstraintError(Exception):
     """约束违反错误"""
     def __init__(self, message: str, lineno: int, col_offset: int):
@@ -1567,159 +2081,9 @@ class ConstraintError(Exception):
         self.col_offset = col_offset
         super().__init__(f"Line {lineno}:{col_offset} - {message}")
 
-
-class ConstraintChecker(ast.NodeVisitor):
-    """Kernel 函数 AST 约束检查器"""
-
-    FORBIDDEN_NODES = {
-        ast.Import: "import statements are forbidden in kernels",
-        ast.ImportFrom: "import statements are forbidden in kernels",
-        ast.Global: "global statements are forbidden in kernels",
-        ast.Nonlocal: "nonlocal statements are forbidden in kernels",
-        ast.ClassDef: "class definitions are forbidden in kernels",
-        ast.Lambda: "lambda expressions are forbidden in kernels",
-        ast.Yield: "yield expressions are forbidden in kernels",
-        ast.AsyncDef: "async functions are forbidden in kernels",
-        ast.With: "with statements are forbidden in kernels",
-    }
-
-    FORBIDDEN_BUILTINS = {
-        'eval', 'exec', 'compile', 'open', 'input', 'print',
-        '__import__', 'globals', 'locals', 'vars',
-        'getattr', 'setattr', 'delattr', 'hasattr',
-    }
-
-    def __init__(self, kernel_func: callable):
-        self.kernel_func = kernel_func
-        self.source = inspect.getsource(kernel_func)
-        self.tree = ast.parse(self.source)
-        self.errors: List[ConstraintError] = []
-        self.warnings: List[str] = []
-
-        # 类型环境
-        self.var_types: dict[str, str] = {}
-        self.loop_vars: Set[str] = set()
-        self.reduction_vars: Set[str] = set()
-        self.field_params: List[str] = []
-
-    def check(self) -> bool:
-        """执行所有约束检查"""
-        self._check_type_annotations()
-        self._check_ast_nodes()
-        self._check_control_flow()
-        self._check_index_expressions()
-        self._check_reduction_vars()
-
-        if self.errors:
-            raise ConstraintErrorGroup(self.errors)
-        return True
-
-    def _check_type_annotations(self):
-        """检查参数类型标注"""
-        sig = inspect.signature(self.kernel_func)
-        for param_name, param in sig.parameters.items():
-            if param.annotation == inspect.Parameter.empty:
-                self.errors.append(ConstraintError(
-                    f"Parameter '{param_name}' lacks type annotation",
-                    self.tree.body[0].lineno, 0
-                ))
-            elif self._is_field_type(param.annotation):
-                self.field_params.append(param_name)
-
-    def _check_ast_nodes(self):
-        """检查禁止的 AST 节点"""
-        for node in ast.walk(self.tree):
-            node_type = type(node)
-            if node_type in self.FORBIDDEN_NODES:
-                self.errors.append(ConstraintError(
-                    self.FORBIDDEN_NODES[node_type],
-                    getattr(node, 'lineno', 0),
-                    getattr(node, 'col_offset', 0)
-                ))
-
-            # 检查禁止的内置函数调用
-            if isinstance(node, ast.Call):
-                if isinstance(node.func, ast.Name):
-                    if node.func.id in self.FORBIDDEN_BUILTINS:
-                        self.errors.append(ConstraintError(
-                            f"Built-in function '{node.func.id}' is forbidden",
-                            node.lineno, node.col_offset
-                        ))
-
-    def _check_control_flow(self):
-        """检查控制流约束"""
-        for node in ast.walk(self.tree):
-            if isinstance(node, ast.For):
-                self._check_for_loop(node)
-            if isinstance(node, ast.Try):
-                self.errors.append(ConstraintError(
-                    "try-except blocks are forbidden in kernels",
-                    node.lineno, node.col_offset
-                ))
-
-    def _check_for_loop(self, node: ast.For):
-        """检查 for 循环是否使用合法的 range"""
-        if isinstance(node.iter, ast.Call):
-            if isinstance(node.iter.func, ast.Attribute):
-                method_name = node.iter.func.attr
-                valid_methods = {'interior_range', 'local_range',
-                                 'assignable_range', 'logical_range'}
-                if method_name not in valid_methods:
-                    self.warnings.append(
-                        f"Line {node.lineno}: Loop uses non-standard range"
-                    )
-            else:
-                if isinstance(node.iter.func, ast.Name) and node.iter.func.id == 'range':
-                    self._check_range_literal(node)
-                else:
-                    self.errors.append(ConstraintError(
-                        "Loop iterator must be mesh.range() or range()",
-                        node.lineno, node.col_offset
-                    ))
-
-    def _check_index_expressions(self):
-        """检查索引表达式是否为仿射"""
-        for node in ast.walk(self.tree):
-            if isinstance(node, ast.Subscript):
-                self._check_subscript_affine(node)
-
-    def _check_subscript_affine(self, node: ast.Subscript):
-        """检查下标是否为仿射表达式 (i + c 或 i - c)"""
-        index = node.slice
-        if isinstance(index, ast.Tuple):
-            for idx in index.elts:
-                if not self._is_affine_index(idx):
-                    self.errors.append(ConstraintError(
-                        "Index must be affine (loop_var ± constant)",
-                        node.lineno, node.col_offset
-                    ))
-
-    def _is_affine_index(self, node) -> bool:
-        """判断索引是否为仿射表达式"""
-        if isinstance(node, ast.Name):
-            return node.id in self.loop_vars
-        if isinstance(node, ast.Constant):
-            return True
-        if isinstance(node, ast.BinOp):
-            if isinstance(node.op, (ast.Add, ast.Sub)):
-                left_ok = (isinstance(node.left, ast.Name) and
-                          node.left.id in self.loop_vars)
-                right_ok = isinstance(node.right, ast.Constant)
-                return left_ok and right_ok
-        return False
-
-    def _check_reduction_vars(self):
-        """检查归约变量"""
-        for node in ast.walk(self.tree):
-            if isinstance(node, ast.AugAssign):
-                if isinstance(node.op, ast.Add):
-                    if isinstance(node.target, ast.Name):
-                        self.reduction_vars.add(node.target.id)
-
-
 @dataclass
 class ConstraintErrorGroup(Exception):
-    """约束错误组"""
+    """约束错误组（语法检查阶段收集多个错误后统一抛出）"""
     errors: List[ConstraintError]
 
     def __str__(self):
@@ -1728,6 +2092,20 @@ class ConstraintErrorGroup(Exception):
             lines.append(f"  {err}")
         return "\n".join(lines)
 ```
+
+**语法检查要点**（`_kernel_syntax_check()` 摘要）：
+- 参数必须标注类型（`Field` / `Param` / `float` / `int`）
+- 禁止 AST 节点：`Import`, `Global`, `ClassDef`, `Lambda`, `Yield`, `AsyncDef`, `With`, `Try`
+- 禁止内置函数：`eval`, `exec`, `compile`, `open`, `print` 等
+- 禁止 `return` 语句（kernel 无返回值）
+
+**语义验证 Pass**（详见 Section 6.0 `default_pipeline()`）：
+- `LocConsistencyPass`：二元运算 loc 一致性
+- `TypeInferencePass`：类型推导 + 算子-类型约束
+- `ReduceDependencyPass`：Param 依赖 DAG + 循环依赖检测
+- `StencilAnalysisPass`：stencil 访问模式 → range_effect
+- `RangeAnalysisPass`：range 传播
+- `HaloSufficiencyPass`：stencil 所需 halo ≤ Field 实际 halo
 
 #### 3.5.5 Kernel 编译流程
 
@@ -1745,12 +2123,11 @@ class ConstraintErrorGroup(Exception):
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  2. 约束检查 (ConstraintChecker)                                │
+│  2. 语法检查 (_kernel_syntax_check)                              │
 │     - 参数类型标注检查                                          │
 │     - 禁止构造检查 (动态代码执行, import, class, ...)          │
-│     - 循环范围检查 (mesh.range())                               │
-│     - 索引仿射性检查                                            │
-│     - 归约变量检查                                              │
+│     - 禁止 return 语句                                          │
+│     - 禁止内置函数调用                                          │
 └─────────────────────────────────────────────────────────────────┘
                               │
                    ┌──────────┴──────────┐
@@ -1818,10 +2195,9 @@ def flux_limiter(r: float) -> float:
 
 @op.kernel
 def advect_with_limiter(u: Field, flux: Field, v: float):
-    for i, j in u.mesh.interior_range():
-        r = (u[i, j] - u[i-1, j]) / (u[i+1, j] - u[i, j] + 1e-10)
-        limited = flux_limiter(r)  # ✅ 调用内联函数
-        flux[i, j] = v * u[i, j] * limited
+    """使用自定义内联函数的 kernel — 表达式语法"""
+    # flux_limiter 作为逐点操作应用于表达式
+    flux.assign(v * u * op.apply(flux_limiter, u))
 
 
 # === Host 函数：在 Python 端调用，不可在 kernel 中调用 ===
@@ -1837,18 +2213,16 @@ def initialize_field(mesh: CartesianMesh) -> Field:
 @op.kernel
 def step1(u: Field, tmp: Field):
     """第一步：计算中间值"""
-    for i, j in u.mesh.interior_range():
-        tmp[i, j] = u[i, j] + 0.5 * u[i-1, j]
+    tmp.assign(u + 0.5 * op.d(u, axis=0, scheme=D1FirstOrderCentered))
 
 @op.kernel
 def step2(tmp: Field, out: Field):
     """第二步：计算最终值"""
-    for i, j in tmp.mesh.interior_range():
-        out[i, j] = tmp[i, j] * 2.0
+    out.assign(tmp * 2.0)
 
 def composed_solve(u: Field, out: Field):
     """组合多个 kernel 的 host 函数"""
-    tmp = Field(u.mesh, dtype="float64", name="tmp")
+    tmp = Field(u.mesh, dtype="float64", name="tmp", halo=1)
     step1(u, tmp)   # 调用 kernel
     step2(tmp, out) # 调用 kernel
 ```
@@ -1872,33 +2246,29 @@ u.set_bc(0, DimPos.END, BCType.NEUM, 0.0)
 u.set_bc(1, DimPos.START, BCType.PERIODIC)
 u.set_bc(1, DimPos.END, BCType.PERIODIC)
 
-# === 定义 Kernel 函数 ===
+# === 定义 Kernel 函数（表达式语法）===
 @op.kernel
-def diffusion_step(u: Field, u_new: Field, dt: float, dx: float):
+def diffusion_step(u: Field, u_new: Field, dt: float):
     """显式扩散时间步"""
-    for i, j in u.mesh.interior_range():
-        lap = (u[i-1, j] + u[i+1, j] +
-               u[i, j-1] + u[i, j+1] - 4.0 * u[i, j]) / (dx * dx)
-        u_new[i, j] = u[i, j] + dt * lap
+    lap = op.d2(u, axis=0, scheme=D2SecondOrderCentered) + \
+          op.d2(u, axis=1, scheme=D2SecondOrderCentered)
+    u_new.assign(u + dt * lap)
 
 @op.kernel
-def compute_error(u: Field, exact: Field) -> float:
-    """计算 L2 误差"""
-    err_sq = 0.0
-    for i, j in u.mesh.interior_range():
-        err_sq += (u[i, j] - exact[i, j]) ** 2
-    return op.sqrt(err_sq)
+def compute_error(u: Field, exact: Field, error: Param):
+    """计算 L2 误差，写入 Param"""
+    error.assign(op.sqrt(op.sum((u - exact) ** 2)))
 
 # === 主循环（Host 代码）===
-dx = 0.01
 dt = 0.00001
+error = Param(mesh, name="error")
 for step in range(10000):
-    diffusion_step(u, u_new, dt, dx)
+    diffusion_step(u, u_new, dt)
     u, u_new = u_new, u  # 交换缓冲区
 
     if step % 1000 == 0:
-        error = compute_error(u, exact_solution)
-        print(f"Step {step}: Error = {error}")
+        compute_error(u, exact_solution, error)
+        print(f"Step {step}: Error = {error._value}")
 ```
 
 ### 3.7 IR 设计
@@ -1909,6 +2279,13 @@ from typing import List, Optional, Union, Literal
 from enum import Enum, auto
 
 class OpType(Enum):
+    """操作类型枚举
+
+    设计决策：Phase 1 保持单一枚举，不按语义分组。
+    - 新增算子仅需 ~5 行追加式修改（枚举 + codegen 分支）
+    - 多后端扩展性在 Backend 抽象层解决，与枚举拆分无关
+    - Phase 2 如超过 ~80 成员再考虑按语义分组
+    """
     # 逐点操作
     ADD = auto()
     SUB = auto()
@@ -1927,6 +2304,7 @@ class OpType(Enum):
     # 微分算子
     D1 = auto()  # 一阶导
     D2 = auto()  # 二阶导
+    INTERP = auto()  # 插值算子
 
     # 卷积/Stencil
     CONV = auto()
@@ -1939,6 +2317,28 @@ class OpType(Enum):
     MAX = auto()
     MIN = auto()
     REDUCE = auto()
+
+    # 比较/布尔运算
+    GT = auto()    # >
+    GE = auto()    # >=
+    LT = auto()    # <
+    LE = auto()    # <=
+    EQ = auto()    # ==
+    NE = auto()    # !=
+    AND = auto()   # logical and
+    OR = auto()    # logical or
+    NOT = auto()   # logical not
+
+    # 额外数学函数
+    MOD = auto()
+    POW = auto()
+    TAN = auto()
+    ASIN = auto()
+    ACOS = auto()
+    ATAN = auto()
+    ERF = auto()
+    CEIL = auto()
+    FLOOR = auto()
 
     # 字段访问
     FIELD_REF = auto()
@@ -1963,10 +2363,15 @@ class Range:
 class IRNode:
     """IR 节点基类"""
     op: OpType
-    dtype: str  # "float64", "float32", "int32", etc.
+    dtype: DType  # DType 枚举（见 Section 3.9），不再使用字符串
     shape: List[int]
-    accessible_range: Range
-    local_range: Range
+
+    # 四种 Range（对齐 C++）
+    accessible_range: Range     # 全局有效数据范围（不含 ghost）
+    local_range: Range          # 本进程持有的范围
+    assignable_range: Optional[Range] = None  # 可写范围（表达式为 None）
+    logical_range: Optional[Range] = None     # 含 ghost cell 的扩展范围
+
     children: List["IRNode"] = field(default_factory=list)
 
     # 优化提示
@@ -2031,16 +2436,15 @@ class FieldNode(IRNode):
     """字段引用节点"""
     name: str
     mesh_id: int
-    halo: int
-    loc: List[str]  # ["Center", "Center"] for cell-centered
+    halo: List[Tuple[int, int]]  # per-dim per-side [(start, end), ...]
+    loc: List[LocOnMesh]  # [LocOnMesh.CENTER, LocOnMesh.CENTER] for cell-centered
 
-    # === 扩展属性（基于 C++ DSL 分析）===
-    bc_width: int = 0           # 边界宽度，用于 Range 传播
+    # === 扩展属性 ===
     is_concrete: bool = True    # 是否为具体字段（vs 临时表达式）
     mesh_type: str = "structured"  # 预留：structured | amr | unstructured
+    offset: Optional[List[int]] = None  # MPI 分布式索引偏移（Phase 1 预留）
 
     # 边界条件（每轴每侧）
-    # key: (axis, side) where side = "start" | "end"
     bc: Dict[Tuple[int, str], "BCNode"] = field(default_factory=dict)
 
 @dataclass
@@ -2053,53 +2457,48 @@ class BCNode(IRNode):
     - Periodic: u(start) = u(end)
     - Robin: a*u + b*du/dn = c
     - Outflow: 零梯度外推 (同 Neumann value=0)
+
+    BC 值表示（统一为 Optional[IRNode]）:
+    - 常量 BC: value = ScalarNode(0.0)
+    - 空间函数 BC: value = op.sin(mesh.x[0]) * op.exp(-mesh.x[1])
+      （IR 表达式树引用坐标，代码生成时展开为 C++ 表达式）
+    - 逻辑 BC (Periodic/Symm/ASymm): value = None（无值）
+
+    时间变化 BC:
+    - 每个时间步调用 set_bc() 更新 value，下次 kernel 调用使用新 IR
+    - 与 C++ OpFlow 的 FunctorDircBC/FunctorNeumBC 行为一致
     """
-    bc_type: str  # "dirichlet" | "neumann" | "periodic" | "robin" | "outflow"
+    bc_type: BCType  # BCType.DIRC | NEUM | PERIODIC | ROBIN | SYMM | ASYM
     axis: int
     side: str     # "start" | "end"
-    value: Optional[IRNode] = None  # BC 值（常量或表达式）
+    value: Optional[IRNode] = None  # BC 值（ScalarNode 常量或 IR 表达式树）
 
     # Robin BC 参数: a*u + b*du/dn = c
-    robin_a: Optional[float] = None
-    robin_b: Optional[float] = None
-    robin_c: Optional[float] = None
-
-@dataclass
-class ShiftNode(IRNode):
-    """偏移访问节点 - 用于 Jacobi 迭代等场景
-
-    示例: u.shift(0, -1) 在 dim=0 方向偏移 -1
-
-    **设计决策**:
-    - ShiftNode **不处理边界条件**
-    - 如果 shift 操作导致越界访问，视为**未定义行为（UB）**
-    - Range 分析阶段会确保 shift 在 accessible_range 内有效
-    - 越界访问在 debug 模式下触发断言
-    """
-    input: IRNode
-    offsets: Tuple[int, ...]  # 每维的偏移量
-
-    # 不需要 boundary_mode 或 fill_value
-    # 越界 = UB，由 Range 分析保证正确性
+    # 支持空间变化：ScalarNode（常量）或 IR 表达式树
+    robin_a: Optional[IRNode] = None
+    robin_b: Optional[IRNode] = None
+    robin_c: Optional[IRNode] = None
 
 @dataclass
 class ScalarNode(IRNode):
     """标量常量节点"""
-    value: float
+    value: Union[float, int, complex, bool]  # Python 值，dtype 由 _infer_scalar_dtype() 推导
 
 @dataclass
 class UnaryOpNode(IRNode):
-    """一元操作节点"""
+    """一元操作节点
+
+    两类操作:
+    1. 逐元素操作 (NEG, ABS): axis=None, operator_ir=None
+    2. 微分/插值操作 (d/d2/interp): axis=操作轴, operator_ir=关联算子
+    """
     child: IRNode
-    # 对于微分算子
+    # 操作轴: 仅微分/插值类操作使用，逐元素操作(NEG/ABS)为 None
     axis: Optional[int] = None
-    kernel: Optional[str] = None  # "centered", "upwind", "weno5", etc.
 
-    # === 安全模式（对齐 C++ eval/eval_safe）===
-    safety_mode: str = "fast"  # "fast" (eval) | "safe" (eval_safe)
-
-    # === 边界宽度传播 ===
-    bc_width: int = 0  # 该算子需要的额外边界单元数
+    # === 算子元数据（微分/插值操作） ===
+    operator_ir: Optional["OperatorIR"] = None  # 关联的 OperatorIR，含 loc_transform/range_effect
+    expanded_ir: Optional[IRNode] = None        # 执行式展开后的 IR 子树（供 _gen_expr 递归）
 
 @dataclass
 class BinaryOpNode(IRNode):
@@ -2123,10 +2522,27 @@ class ConvNode(IRNode):
 
 @dataclass
 class ReduceNode(IRNode):
-    """归约节点"""
+    """归约节点
+
+    执行模型：
+    - 不可内联到赋值表达式，必须提升为独立循环
+    - 结果写入 Param（0 维参量）
+    - 多个 ReduceNode 按依赖 DAG 拓扑排序分阶段执行
+    - Phase 1 仅全局 reduce（axes=None）
+    """
     input: IRNode
-    op: str  # "sum", "max", "min", "custom"
-    axes: Optional[List[int]] = None  # None = all axes
+    reduce_op: str  # "sum", "max", "min"
+    axes: Optional[List[int]] = None  # None = all axes（Phase 1 仅支持 None）
+
+@dataclass
+class ParamNode(IRNode):
+    """参量引用节点（0 维标量）
+
+    表示对已计算的 Param 结果的引用。
+    在 kernel 代码生成中展开为 C++ 变量名。
+    """
+    name: str
+    mesh_id: int
 ```
 
 ### 3.8 AST → IR 构建流程
@@ -2154,33 +2570,137 @@ class IRBuilder:
 ### 3.9 类型推导
 
 ```python
-class TypeInferencer:
-    """类型推导 Pass"""
+class DType(Enum):
+    """数据类型枚举
 
-    def infer(self, ir: IRNode) -> str:
-        """推导 IR 节点的输出类型"""
+    Phase 1 即支持全部类型。IRNode.dtype 使用此枚举而非字符串。
+    """
+    FLOAT64    = "f64"     # double,                8B
+    FLOAT32    = "f32"     # float,                 4B
+    COMPLEX128 = "c128"    # std::complex<double>, 16B
+    COMPLEX64  = "c64"     # std::complex<float>,   8B
+    INT32      = "i32"     # int32_t,               4B
+    BOOL       = "i1"      # bool,                  1B
+
+# C++ 类型映射
+DTYPE_CTYPE = {
+    DType.FLOAT64:    "double",
+    DType.FLOAT32:    "float",
+    DType.COMPLEX128: "std::complex<double>",
+    DType.COMPLEX64:  "std::complex<float>",
+    DType.INT32:      "int32_t",
+    DType.BOOL:       "bool",
+}
+
+# Python 值 → DType 推导
+def _infer_scalar_dtype(value) -> DType:
+    if isinstance(value, bool):     return DType.BOOL
+    if isinstance(value, int):      return DType.INT32
+    if isinstance(value, float):    return DType.FLOAT64
+    if isinstance(value, complex):  return DType.COMPLEX128
+    raise TypeError(f"Unsupported scalar type: {type(value)}")
+
+# 类型提升表（对称，遵循 NumPy 语义）
+# 核心规则：精度不丢失 + real→complex 自动提升
+# 注意：f64 + c64 → c128（f64 精度高于 c64 的 float 实部）
+PROMOTE_TABLE: Dict[Tuple[DType, DType], DType] = {
+    # i1 行
+    (DType.BOOL,       DType.BOOL):       DType.BOOL,
+    (DType.BOOL,       DType.INT32):      DType.INT32,
+    (DType.BOOL,       DType.FLOAT32):    DType.FLOAT32,
+    (DType.BOOL,       DType.FLOAT64):    DType.FLOAT64,
+    (DType.BOOL,       DType.COMPLEX64):  DType.COMPLEX64,
+    (DType.BOOL,       DType.COMPLEX128): DType.COMPLEX128,
+    # i32 行
+    (DType.INT32,      DType.INT32):      DType.INT32,
+    (DType.INT32,      DType.FLOAT32):    DType.FLOAT32,
+    (DType.INT32,      DType.FLOAT64):    DType.FLOAT64,
+    (DType.INT32,      DType.COMPLEX64):  DType.COMPLEX64,
+    (DType.INT32,      DType.COMPLEX128): DType.COMPLEX128,
+    # f32 行
+    (DType.FLOAT32,    DType.FLOAT32):    DType.FLOAT32,
+    (DType.FLOAT32,    DType.FLOAT64):    DType.FLOAT64,
+    (DType.FLOAT32,    DType.COMPLEX64):  DType.COMPLEX64,
+    (DType.FLOAT32,    DType.COMPLEX128): DType.COMPLEX128,
+    # f64 行
+    (DType.FLOAT64,    DType.FLOAT64):    DType.FLOAT64,
+    (DType.FLOAT64,    DType.COMPLEX64):  DType.COMPLEX128,  # 注意！
+    (DType.FLOAT64,    DType.COMPLEX128): DType.COMPLEX128,
+    # c64 行
+    (DType.COMPLEX64,  DType.COMPLEX64):  DType.COMPLEX64,
+    (DType.COMPLEX64,  DType.COMPLEX128): DType.COMPLEX128,
+    # c128 行
+    (DType.COMPLEX128, DType.COMPLEX128): DType.COMPLEX128,
+}
+# 自动填充对称项
+PROMOTE_TABLE.update({(b, a): r for (a, b), r in list(PROMOTE_TABLE.items())})
+
+# 算子-类型约束
+OP_TYPE_CONSTRAINTS = {
+    # 复数禁止比较 (>, <, >=, <=)，==和!= 允许
+    "compare_ordered": {DType.BOOL, DType.INT32, DType.FLOAT32, DType.FLOAT64},
+    # 逻辑运算仅限 BOOL（其他类型隐式转 BOOL 后可用）
+    "logical": {DType.BOOL},
+    # 归约: max/min 不支持 complex
+    "reduce_ordered": {DType.INT32, DType.FLOAT32, DType.FLOAT64},
+}
+
+class TypeInferencer(IRPass):
+    """类型推导 Pass"""
+    name = "type_inference"
+
+    def run(self, kernel_ir: "KernelIR") -> "KernelIR":
+        for assign in kernel_ir.assignments:
+            self._infer(assign.expr)
+        return kernel_ir
+
+    def _infer(self, ir: IRNode) -> DType:
+        """递归推导 IR 节点的输出类型"""
         if isinstance(ir, FieldNode):
             return ir.dtype
         elif isinstance(ir, ScalarNode):
-            return type(ir.value).__name__
+            return _infer_scalar_dtype(ir.value)
         elif isinstance(ir, BinaryOpNode):
-            left_type = self.infer(ir.left)
-            right_type = self.infer(ir.right)
-            return self._promote_types(left_type, right_type)
-        # ...
+            left_type = self._infer(ir.left)
+            right_type = self._infer(ir.right)
+            result = self._promote(left_type, right_type)
+            self._check_op_constraint(ir.op, result)
+            ir.dtype = result
+            return result
+        elif isinstance(ir, UnaryOpNode):
+            child_type = self._infer(ir.child)
+            ir.dtype = child_type
+            return child_type
+        # ... TernaryOpNode, ReduceNode 等
 
-    def _promote_types(self, t1: str, t2: str) -> str:
-        """类型提升规则"""
-        type_order = ["int32", "float32", "float64"]
-        i1, i2 = type_order.index(t1), type_order.index(t2)
-        return type_order[max(i1, i2)]
+    def _promote(self, t1: DType, t2: DType) -> DType:
+        result = PROMOTE_TABLE.get((t1, t2))
+        if result is None:
+            raise TypeError(f"Cannot promote {t1} and {t2}")
+        # 损失精度时报 warning
+        if t1 != result or t2 != result:
+            if self._is_lossy(t1, result) or self._is_lossy(t2, result):
+                warnings.warn(f"Implicit conversion may lose precision: {t1}/{t2} -> {result}")
+        return result
+
+    def _check_op_constraint(self, op: OpType, dtype: DType):
+        """检查算子-类型兼容性"""
+        if op in (OpType.GT, OpType.GE, OpType.LT, OpType.LE):
+            if dtype not in OP_TYPE_CONSTRAINTS["compare_ordered"]:
+                raise TypeError(f"Ordered comparison not supported for {dtype}")
+        # ... 其他约束检查
 ```
 
 ### 3.10 Range 分析
 
 ```python
 class RangeAnalyzer:
-    """Range 传播分析 Pass"""
+    """Range 传播分析 Pass — 基于 per-operator range_effect
+
+    取代旧的统一 bc_width 标量，使用 per-axis per-side 精确收缩。
+    range_effect 由 StencilAnalyzer 从算子 AST 自动推导，
+    在表达式树遍历时逐层叠加各节点的 range_effect。
+    """
 
     def analyze(self, ir: IRNode) -> IRNode:
         """分析并填充 Range 信息"""
@@ -2190,6 +2710,9 @@ class RangeAnalyzer:
     def _propagate_range(self, ir: IRNode):
         if isinstance(ir, FieldNode):
             # 字段的 Range 由网格定义
+            # accessible_range = mesh range（不含 ghost）
+            # logical_range = mesh range + halo
+            # assignable_range = accessible_range（具体字段可写）
             pass
         elif isinstance(ir, BinaryOpNode):
             self._propagate_range(ir.left)
@@ -2201,24 +2724,28 @@ class RangeAnalyzer:
             ir.local_range = ir.left.local_range.intersection(
                 ir.right.local_range
             )
+            # 二元运算无 assignable_range（不可赋值）
+            ir.assignable_range = None
         elif isinstance(ir, UnaryOpNode):
             self._propagate_range(ir.child)
             ir.accessible_range = ir.child.accessible_range.copy()
             ir.local_range = ir.child.local_range.copy()
 
-            # bc_width 传播：缩小有效范围
-            if ir.bc_width > 0:
-                ir.accessible_range = self._shrink_range(
-                    ir.accessible_range, [ir.bc_width] * ir.accessible_range.dim
-                )
-        elif isinstance(ir, ShiftNode):
-            self._propagate_range(ir.input)
-            # shift 不改变 range（假设 halo 足够）
-            ir.accessible_range = ir.input.accessible_range.copy()
-            ir.local_range = ir.input.local_range.copy()
+            # 使用 per-operator range_effect 精确收缩
+            if ir.operator_ir is not None:
+                input_loc = self._get_loc(ir.child)
+                start_shrink, end_shrink = ir.operator_ir.get_range_shrink(input_loc)
+                if ir.axis is not None:
+                    # 仅在操作轴上收缩
+                    ir.accessible_range = self._shrink_range_axis(
+                        ir.accessible_range, ir.axis, start_shrink, end_shrink
+                    )
+                    ir.local_range = self._shrink_range_axis(
+                        ir.local_range, ir.axis, start_shrink, end_shrink
+                    )
         elif isinstance(ir, ConvNode):
             self._propagate_range(ir.input)
-            # 卷积会缩小有效范围
+            # 卷积按 kernel 形状收缩
             padding = [s // 2 for s in ir.kernel_shape]
             ir.accessible_range = self._shrink_range(
                 ir.input.accessible_range, padding
@@ -2226,71 +2753,195 @@ class RangeAnalyzer:
             ir.local_range = self._shrink_range(
                 ir.input.local_range, padding
             )
+        elif isinstance(ir, TernaryOpNode):
+            # 条件表达式: cond ? true_expr : false_expr
+            self._propagate_range(ir.cond)
+            self._propagate_range(ir.true_expr)
+            self._propagate_range(ir.false_expr)
+            # 三分支取交集
+            ir.accessible_range = ir.cond.accessible_range.intersection(
+                ir.true_expr.accessible_range
+            ).intersection(ir.false_expr.accessible_range)
+            ir.local_range = ir.cond.local_range.intersection(
+                ir.true_expr.local_range
+            ).intersection(ir.false_expr.local_range)
+            ir.assignable_range = None
+        elif isinstance(ir, ReduceNode):
+            # 归约: 在子表达式 range 上归约，输出 scalar（无 range）
+            self._propagate_range(ir.child)
+            ir.accessible_range = ir.child.accessible_range.copy()
+            ir.local_range = ir.child.local_range.copy()
+            ir.assignable_range = None
+
+    def _shrink_range_axis(self, range: Range, axis: int,
+                           start_shrink: int, end_shrink: int) -> Range:
+        """在指定轴上按 start/end shrink 收缩 range
+
+        符号约定: 正值=向内收缩（与 C++ OpFlow 一致）
+        - new_start = old_start + start_shrink
+        - new_end   = old_end   - end_shrink
+        """
+        new_start = list(range.start)
+        new_end = list(range.end)
+        new_start[axis] += start_shrink
+        new_end[axis]   -= end_shrink
+        return Range(start=new_start, end=new_end)
 ```
 
-### 3.11 eval vs eval_safe 双路径设计
+#### 3.10.1 BC ↔ Range 交互规则
 
-现有 C++ 实现中每个算子都有两条求值路径：
+**与 C++ 一致的行为**（参见 `StencilField.hpp:112-121`，`D2SecondOrderCentered.hpp:206-239`）：
 
-```cpp
-// C++: 双路径求值
-OPFLOW_STRONG_INLINE static auto eval(const T1& t1, auto&&... i) {
-    return t1.evalAt(OP_PERFECT_FOWD(i)...);  // 快速路径
-}
-OPFLOW_STRONG_INLINE static auto eval_safe(const T1& t1, auto&&... i) {
-    return t1.evalSafeAt(OP_PERFECT_FOWD(i)...);  // 安全路径（边界检查）
-}
-```
+| BC 类型 | 对 accessible_range 的影响 | 原因 |
+|---------|--------------------------|------|
+| **Periodic** | 不收缩（恢复 logicalRange） | wraparound 使全域可访问 |
+| **Dirichlet** | 由 operator 的 `range_effect` 收缩 | 边界值已知但 stencil 仍需 ghost |
+| **Neumann** | 不额外收缩（仅 operator 收缩） | 梯度已填入 ghost cell |
+| **Symmetric/Asymmetric** | 不额外收缩 | 镜像值已填入 ghost cell |
+| **Robin** | 不额外收缩 | 线性组合值已填入 ghost cell |
 
-**Python DSL IR 中的表示**：
+**关键规则**：
+
+1. **Periodic BC 恢复全域**：若某轴为 Periodic BC，该轴 `accessible_range` 不应用 operator 收缩（因为 wraparound 提供了越界数据）：
 
 ```python
-@dataclass
-class UnaryOpNode(IRNode):
-    child: IRNode
-    safety_mode: str = "fast"  # "fast" | "safe"
+def _apply_bc_range_adjustment(self, ir: IRNode, field: FieldNode):
+    """BC 类型对 Range 的修正（在 operator 收缩之后执行）"""
+    for axis in range(field.mesh.dim):
+        bc_start = field.get_bc(axis, "start")
+        bc_end = field.get_bc(axis, "end")
+        if bc_start and bc_start.bc_type == BCType.PERIODIC:
+            # Periodic: 恢复该轴到 logicalRange（不收缩）
+            ir.accessible_range.start[axis] = field.logical_range.start[axis]
+            ir.accessible_range.end[axis] = field.logical_range.end[axis]
 ```
 
-**代码生成策略**：
-
-1. **Fast 模式**：直接生成索引访问，假设索引有效
-2. **Safe 模式**：生成边界检查 + BC 应用逻辑
+2. **Stencil 宽度 vs halo 编译期校验**：
 
 ```python
-def _gen_kernel_safe(self, ir: IRNode) -> str:
-    """生成带边界检查的 kernel"""
-    if isinstance(ir, BinaryOpNode):
-        return f'''
-        if (in_range(i, {ir.accessible_range})) {{
-            {self._gen_kernel(ir)}
-        }} else {{
-            // 应用边界条件
-            {self._gen_bc_fallback(ir)}
-        }}
-        '''
+def _validate_halo(self, field: FieldNode, operator_ir: OperatorIR, axis: int):
+    """编译期检查: stencil 所需 halo 不超过 Field 实际 halo"""
+    input_loc = field.loc[axis]
+    start_shrink, end_shrink = operator_ir.get_range_shrink(input_loc)
+    h_start, h_end = field.halo[axis]
+    if start_shrink > h_start or end_shrink > h_end:
+        raise CompileError(
+            f"Operator {operator_ir.name} requires halo ({start_shrink}, {end_shrink}) "
+            f"on axis {axis}, but field {field.name} has halo ({h_start}, {h_end}). "
+            f"Increase Field halo or use a lower-order scheme."
+        )
 ```
 
-### 3.12 边界条件 IR 表示
+3. **Dirichlet BC 在 operator 层面的额外收缩**（仅影响特定 operator，如 D2 在 Corner 场时 Dirichlet 侧额外收缩）：
 
 ```python
-@dataclass
-class BCNode(IRNode):
-    """边界条件节点"""
-    bc_type: str      # "dirichlet", "neumann", "periodic", "symmetric"
-    axis: int
-    side: str         # "start" | "end"
-    value: Optional[IRNode] = None  # BC 值（可以是常量或表达式）
+# 在 operator 的 @op.operator 定义中，if f.loc[axis] 分支已隐式处理：
+# D2SecondOrderCentered 对 Corner+Dirichlet 的分支会自然产生不同的 stencil 模式，
+# StencilAnalyzer 在分析 IR 树时已正确捕获这一差异。
+# 因此 BC 对 range 的影响通过 operator 的 range_effect 间接传递，无需单独处理。
+```
 
-    def to_cpp(self) -> str:
-        """生成 C++ 边界条件代码"""
-        if self.bc_type == "dirichlet":
-            return f"return {self.value};"
-        elif self.bc_type == "neumann":
-            # 使用 ghost cell 外推
-            return f"return inner_value + dx * {self.value};"
-        elif self.bc_type == "periodic":
-            return "return opposite_side_value;"
-        ...
+### 3.11 求值路径设计（Phase 1: eval only）
+
+**C++ 实际行为分析**：
+
+C++ 代码库中有 `eval` 和 `eval_safe` 两条并行的递归方法链，但深度分析发现：
+- `FieldAssigner`（主要赋值循环）**从未**使用 `evalSafeAt`，始终使用 `evalAt`
+- 文档中描述的 split-loop 模式（边界 safe + 内部 fast）**从未实现**
+- 多个算子（D1FirstOrderCentered、D1Biased*、D1Linear）**没有** `eval_safe` 实现
+- BC 处理完全依赖 `updatePadding()` ghost cell 预填充
+
+**Phase 1 设计决策**：只实现 `eval` 路径
+
+```python
+# Phase 1: 单一求值路径
+# 1. 赋值前自动调用 update_padding() 填充 ghost cell
+# 2. 算子在有效范围内直接访问邻域（ghost cell 已填充）
+# 3. 无需边界特判
+
+# Phase 2+（未来优化预留）:
+# @op.operator(has_eval_safe=True)
+# def D2SecondOrderCentered(...):
+#     def eval(f, axis, i): ...
+#     def eval_safe(f, axis, i): ...  # 边界特化 stencil
+```
+
+### 3.12 边界条件处理（Ghost Cell 预填充模型）
+
+**设计决策**：BC 处理完全通过 ghost cell 预填充实现（对齐 C++ 实际行为），
+不在 kernel 内联 BC 判断。
+
+```python
+class GhostCellFiller:
+    """Ghost cell 填充器（对应 C++ updatePadding()）
+
+    在 assign() 赋值后自动调用，填充 halo 区域。
+    每种 BC 类型有独立的填充策略。
+    """
+
+    def fill(self, field: Field):
+        """填充所有维度所有侧的 ghost cell"""
+        for axis in range(field.mesh.dim):
+            for side in (DimPos.START, DimPos.END):
+                bc = field.get_bc(axis, side)
+                if bc is None:
+                    continue
+                self._fill_side(field, axis, side, bc)
+
+    def _fill_side(self, field: Field, axis: int, side: DimPos,
+                   bc: Union[ConstBC, LogicalBC]):
+        if bc.bc_type == BCType.DIRC:
+            # Dirichlet: 插值填充 ghost cell
+            # ghost_value = 2 * bc_value - inner_value
+            ...
+        elif bc.bc_type == BCType.NEUM:
+            # Neumann: 外推填充
+            # ghost_value = inner_value + dx * bc_value
+            ...
+        elif bc.bc_type == BCType.SYMM:
+            # 对称: 镜像反射（需要 bc.field 引用）
+            # ghost[i] = field[mirror(i)]
+            ...
+        elif bc.bc_type == BCType.ASYM:
+            # 反对称: 镜像反射取反
+            # ghost[i] = -field[mirror(i)]
+            ...
+        elif bc.bc_type == BCType.PERIODIC:
+            # 周期: 复制对端值（需要 bc.field 引用）
+            # ghost[start] = field[end - halo : end]
+            ...
+        elif bc.bc_type == BCType.ROBIN:
+            # Robin: a*u + b*du/dn = c → ghost 外推
+            # ghost_value = (c - b * (inner - inner_next) / dx) / a
+            # 需要 bc.robin_a, bc.robin_b, bc.robin_c
+            ...
+```
+
+**代码生成中的 BC 处理**（Phase 1 C++ 代码生成）：
+
+```python
+class CppCodeGen:
+    def _gen_update_padding(self, field: FieldNode) -> str:
+        """生成 ghost cell 填充代码（在 kernel 主循环之前执行）"""
+        bc_codes = []
+        for (axis, side), bc in field.bc.items():
+            bc_codes.append(self._gen_ghost_fill(field, axis, side, bc))
+        return "\n".join(bc_codes)
+
+    def _gen_ghost_fill(self, field: FieldNode, axis: int,
+                        side: str, bc: BCNode) -> str:
+        """生成单侧 ghost cell 填充代码"""
+        if bc.bc_type == BCType.DIRC:
+            return f"""
+    // Dirichlet BC: ghost cell 插值
+    for (int j = 0; j < halo; ++j) {{
+        {field.name}[ghost_idx] = 2.0 * {bc.value} - {field.name}[inner_idx];
+    }}"""
+        elif bc.bc_type == BCType.PERIODIC:
+            return f"""
+    // Periodic BC: 复制对端
+    std::copy_n(&{field.name}[src_start], halo_size, &{field.name}[dst_start]);"""
+        # ... 其他 BC 类型
 ```
 
 **在 FieldNode 中的关联**：
@@ -2300,16 +2951,16 @@ class BCNode(IRNode):
 class FieldNode(IRNode):
     name: str
     mesh_id: int
-    halo: int
-    loc: List[str]
+    halo: List[Tuple[int, int]]  # per-dim per-side [(start, end), ...]
+    loc: List[LocOnMesh]
 
     # 边界条件字典: key = (axis, side)
     bc: Dict[Tuple[int, str], BCNode] = field(default_factory=dict)
 
-    def set_bc(self, axis: int, side: str, bc_type: str, value=None):
+    def set_bc(self, axis: int, side: str, bc_type: BCType, value=None):
         """设置边界条件"""
         bc_node = BCNode(
-            op=OpType.BC,
+            op=OpType.FIELD_REF,  # BC 节点挂载在 FieldNode 下
             dtype=self.dtype,
             bc_type=bc_type,
             axis=axis,
@@ -2376,8 +3027,10 @@ OPFLOW_STRONG_INLINE void {func_name}_kernel(
     {params},
     int i_start, int i_end, int j_start, int j_end
 ) {{
-    {bc_handling}
+    // Ghost cell 已由 update_padding 预填充，无需 kernel 内 BC 判断
 
+    // 注: C++ OpFlow 实际使用 TBB parallel_for
+    // Phase 1 生成的代码可选 OpenMP 或 TBB
     #pragma omp parallel for collapse(2) schedule(static)
     for (int i = i_start; i < i_end; ++i) {{
         for (int j = j_start; j < j_end; ++j) {{
@@ -2386,186 +3039,294 @@ OPFLOW_STRONG_INLINE void {func_name}_kernel(
     }}
 }}
 '''
+
+    # ---- _gen_expr: IR 树递归展开为 C++ 表达式 ----
+
+    def _gen_expr(self, ir: IRNode, *idx_vars: str) -> str:
+        """递归将 IR 节点展开为内联 C++ 表达式
+
+        策略: 完全内联展开（与 C++ OpFlow evalAt() 递归一致）。
+        每种 IRNode 类型对应一种展开规则。
+
+        参数:
+            ir: 当前 IR 节点
+            idx_vars: 循环索引变量名 ("i", "j", ...)
+
+        返回:
+            C++ 表达式字符串
+
+        示例: d2(u, axis=0) + d2(u, axis=1) 展开为:
+            ((u[(i+1)*s+j] - 2.0*u[i*s+j] + u[(i-1)*s+j]) / (dx0*dx0)
+             + (u[i*s+(j+1)] - 2.0*u[i*s+j] + u[i*s+(j-1)]) / (dx1*dx1))
+        """
+        if isinstance(ir, ScalarNode):
+            # 标量常量
+            return self._format_scalar(ir.value)
+
+        elif isinstance(ir, FieldNode):
+            # 字段访问 → 线性索引
+            return f"{ir.name}[{self._linear_idx(ir, idx_vars)}]"
+
+        elif isinstance(ir, BinaryOpNode):
+            # 二元运算 → (left) op (right)
+            left = self._gen_expr(ir.left, *idx_vars)
+            right = self._gen_expr(ir.right, *idx_vars)
+            op_str = {
+                OpType.ADD: "+", OpType.SUB: "-",
+                OpType.MUL: "*", OpType.DIV: "/",
+            }[ir.op]
+            return f"({left} {op_str} {right})"
+
+        elif isinstance(ir, UnaryOpNode):
+            if ir.op in (OpType.NEG, OpType.ABS):
+                # 逐元素一元操作
+                child = self._gen_expr(ir.child, *idx_vars)
+                if ir.op == OpType.NEG:
+                    return f"(-{child})"
+                else:
+                    return f"std::abs({child})"
+            else:
+                # d/d2 等 stencil 操作 → 内联展开 operator 的 IR 子树
+                # operator_ir 在执行式构建时已展开为具体的 IR 树
+                # （例如 D1FirstOrderCentered 展开为 (f[i]-f[i-1])/(dx+dx)*2）
+                # 递归展开该子树即可
+                return self._gen_expr(ir.expanded_ir, *idx_vars)
+
+        elif isinstance(ir, TernaryOpNode):
+            # 条件表达式 → C++ 三元运算符
+            cond = self._gen_expr(ir.cond, *idx_vars)
+            true_e = self._gen_expr(ir.true_expr, *idx_vars)
+            false_e = self._gen_expr(ir.false_expr, *idx_vars)
+            return f"({cond} ? {true_e} : {false_e})"
+
+        elif isinstance(ir, ReduceNode):
+            # 归约操作 → 需要独立循环，用临时变量
+            raise CodeGenError("ReduceNode must be lifted to separate loop")
+
+        else:
+            raise CodeGenError(f"Unknown IR node type: {type(ir)}")
+
+    def _linear_idx(self, field: FieldNode, idx_vars: tuple) -> str:
+        """生成线性化索引表达式
+
+        对于 2D field with halo:
+          field[(i + h_start_0) * stride_0 + (j + h_start_1)]
+        其中 stride_0 = shape[1] + h_start_1 + h_end_1
+        """
+        dim = len(idx_vars)
+        terms = []
+        for d in range(dim):
+            h_start = field.halo[d][0]
+            var = idx_vars[d]
+            if h_start > 0:
+                terms.append(f"({var} + {h_start})")
+            else:
+                terms.append(var)
+
+        # 构建行优先线性索引: (...((t0) * s1 + t1) * s2 + t2)...
+        if dim == 1:
+            return terms[0]
+        expr = terms[0]
+        for d in range(1, dim):
+            stride_name = f"{field.name}_stride_{d}"
+            expr = f"({expr}) * {stride_name} + {terms[d]}"
+        return expr
+
+    def _format_scalar(self, value) -> str:
+        """格式化标量常量为 C++ 字面量"""
+        if isinstance(value, float):
+            return f"{value}"
+        elif isinstance(value, int):
+            return f"{value}.0"  # 确保浮点运算
+        return str(value)
+
+    # ---- ConvNode 代码生成 ----
+
+    def _gen_conv_expr(self, ir: ConvNode, *idx_vars: str) -> str:
+        """ConvNode → 嵌套求和循环
+
+        生成卷积计算: sum_k sum_l (kernel[k][l] * input[i+k-pad][j+l-pad])
+        卷积 kernel 作为编译期常量内联。
+        """
+        dim = len(idx_vars)
+        kernel_shape = ir.kernel_shape
+        padding = [s // 2 for s in kernel_shape]
+
+        # 构建嵌套求和
+        sum_vars = [f"_k{d}" for d in range(dim)]
+        inner_idx = []
+        for d in range(dim):
+            inner_idx.append(f"({idx_vars[d]} + {sum_vars[d]} - {padding[d]})")
+
+        # 内联 kernel 权重为字面量
+        input_expr = self._gen_expr(ir.input, *inner_idx)
+        kernel_access = " * ".join(
+            f"kernel_{ir.name}[{sum_vars[d]}]" for d in range(dim)
+        )
+
+        loops = ""
+        for d in range(dim):
+            loops += f"[&]() {{ double _s = 0.0; "
+            loops += f"for (int {sum_vars[d]} = 0; {sum_vars[d]} < {kernel_shape[d]}; ++{sum_vars[d]}) "
+
+        return f"{loops}{{ _s += {kernel_access} * {input_expr}; }} return _s; }}()"
+
+    # ---- ReduceNode 代码生成 ----
+
+    def _gen_reduce(self, ir: ReduceNode, func_name: str) -> str:
+        """ReduceNode → 独立归约循环 + OpenMP parallel reduction
+
+        ReduceNode 不可内联到赋值表达式中，必须作为独立循环：
+        1. 声明归约临时变量
+        2. OpenMP parallel for reduction
+        3. 结果存入 scalar 变量供后续使用
+        """
+        child_expr = self._gen_expr(ir.child, "i", "j")
+        reduce_op = {OpType.REDUCE_SUM: "+", OpType.REDUCE_MAX: "max",
+                     OpType.REDUCE_MIN: "min"}[ir.reduce_op]
+        init_val = {OpType.REDUCE_SUM: "0.0", OpType.REDUCE_MAX: "-INFINITY",
+                    OpType.REDUCE_MIN: "INFINITY"}[ir.reduce_op]
+
+        omp_clause = f"reduction({reduce_op}: _reduce_val)"
+
+        return f'''
+    double _reduce_val = {init_val};
+    #pragma omp parallel for collapse(2) {omp_clause}
+    for (int i = i_start; i < i_end; ++i) {{
+        for (int j = j_start; j < j_end; ++j) {{
+            _reduce_val {reduce_op}= {child_expr};
+        }}
+    }}
+    // _reduce_val 可供后续表达式引用
+'''
 ```
 
-#### 4.1.2 边界条件代码生成
+**别名检测与临时副本生成** (H3d):
 
 ```python
-def _gen_bc_handling(self, ir: IRNode) -> str:
-    """生成边界条件处理代码"""
+    def _gen_alias_copy(self, dst: FieldNode) -> str:
+        """生成别名临时副本代码
 
-    fields = self._collect_fields(ir)
+        当 assign() 的目标字段同时出现在表达式右侧时（如 u.assign(u + v)），
+        需要在赋值前创建目标字段的临时副本，避免读写冲突。
+
+        别名检测在 Python 侧编译期完成（对比 FieldNode identity），
+        仅在检测到别名时生成此代码段。
+        """
+        total_size = " * ".join(f"{dst.name}_total_shape_{d}" for d in range(dst.mesh_dim))
+        return f'''
+    // Alias detected: {dst.name} appears on both sides of assignment
+    // Create temporary copy of destination field
+    double* {dst.name}_tmp = (double*)malloc(sizeof(double) * {total_size});
+    std::memcpy({dst.name}_tmp, {dst.name}, sizeof(double) * {total_size});
+    // Note: 后续表达式中的 {dst.name} 读取改为从 {dst.name}_tmp 读取
+'''
+
+    def _gen_alias_cleanup(self, dst: FieldNode) -> str:
+        """释放别名临时副本"""
+        return f"    free({dst.name}_tmp);"
+```
+
+#### 4.1.2 Ghost Cell 预填充代码生成
+
+```python
+def _gen_update_padding(self, field: FieldNode) -> str:
+    """生成 ghost cell 预填充代码（在 kernel 主循环之前执行）
+
+    对应 C++: field.updatePadding()
+    """
     bc_codes = []
+    for (axis, side), bc in field.bc.items():
+        if bc.bc_type == BCType.DIRC:
+            bc_codes.append(self._gen_dirichlet_ghost(field, bc))
+        elif bc.bc_type == BCType.NEUM:
+            bc_codes.append(self._gen_neumann_ghost(field, bc))
+        elif bc.bc_type == BCType.PERIODIC:
+            bc_codes.append(self._gen_periodic_ghost(field, bc))
+        elif bc.bc_type == BCType.SYMM:
+            bc_codes.append(self._gen_symmetric_ghost(field, bc))
+        elif bc.bc_type == BCType.ASYM:
+            bc_codes.append(self._gen_antisymmetric_ghost(field, bc))
+        elif bc.bc_type == BCType.ROBIN:
+            bc_codes.append(self._gen_robin_ghost(field, bc))
+    return "\n".join(bc_codes) if bc_codes else "// No BC padding needed"
 
-    for field in fields:
-        for (axis, side), bc in field.bc.items():
-            if bc.bc_type == "dirichlet":
-                bc_codes.append(self._gen_dirichlet_bc(field, bc))
-            elif bc.bc_type == "neumann":
-                bc_codes.append(self._gen_neumann_bc(field, bc))
-            elif bc.bc_type == "periodic":
-                bc_codes.append(self._gen_periodic_bc(field, bc))
-            elif bc.bc_type == "outflow":
-                bc_codes.append(self._gen_outflow_bc(field, bc))
-
-    return "\n".join(bc_codes) if bc_codes else "// No special BC handling"
-
-def _gen_dirichlet_bc(self, field: FieldNode, bc: BCNode) -> str:
-    """生成 Dirichlet 边界条件"""
-    idx = "i" if bc.axis == 0 else "j"
-    bound = "0" if bc.side == "start" else f"n{bc.axis}"
-
+def _gen_dirichlet_ghost(self, field: FieldNode, bc: BCNode) -> str:
+    """Dirichlet BC: ghost = 2 * bc_value - inner_value"""
     return f'''
     // Dirichlet BC on {field.name}: axis={bc.axis}, side={bc.side}
-    if ({idx} == {bound}) {{
-        output[{idx} * stride] = {bc.value};
-        continue;
+    // Ghost cell interpolation: ghost = 2 * value - inner
+    for (int h = 0; h < halo; ++h) {{
+        {field.name}[ghost_idx(h)] = 2.0 * {bc.value} - {field.name}[inner_idx(h)];
     }}
     '''
 
-def _gen_neumann_bc(self, field: FieldNode, bc: BCNode) -> str:
-    """生成 Neumann 边界条件（一阶外推）"""
-    idx = "i" if bc.axis == 0 else "j"
-    bound = "0" if bc.side == "start" else f"n{bc.axis} - 1"
-    inner_idx = "1" if bc.side == "start" else f"n{bc.axis} - 2"
-
+def _gen_neumann_ghost(self, field: FieldNode, bc: BCNode) -> str:
+    """Neumann BC: ghost = inner + dx * gradient"""
     return f'''
     // Neumann BC on {field.name}: axis={bc.axis}, side={bc.side}
-    if ({idx} == {bound}) {{
-        // du/dn = {bc.value} => u_ghost = u_inner + dx * {bc.value}
-        output[{idx} * stride] = {field.name}[{inner_idx} * stride] + dx * {bc.value};
-        continue;
+    // Ghost cell extrapolation: ghost = inner + dx * value
+    for (int h = 0; h < halo; ++h) {{
+        {field.name}[ghost_idx(h)] = {field.name}[inner_idx(h)] + dx[{bc.axis}] * {bc.value};
     }}
     '''
 
-def _gen_periodic_bc(self, field: FieldNode, bc: BCNode) -> str:
-    """生成周期边界条件（需要在 launcher 中处理）"""
-    # 周期边界通常通过 halo exchange 处理，此处只是标记
-    return f"// Periodic BC on {field.name}: axis={bc.axis}, handled by halo exchange"
+def _gen_periodic_ghost(self, field: FieldNode, bc: BCNode) -> str:
+    """Periodic BC: copy from opposite side"""
+    return f'''
+    // Periodic BC on {field.name}: axis={bc.axis}
+    // Copy from opposite boundary
+    std::copy_n(&{field.name}[src_start], halo_size, &{field.name}[dst_start]);
+    '''
+
+def _gen_symmetric_ghost(self, field: FieldNode, bc: BCNode) -> str:
+    """Symmetric BC: mirror reflection"""
+    return f'''
+    // Symmetric BC on {field.name}: axis={bc.axis}, side={bc.side}
+    for (int h = 0; h < halo; ++h) {{
+        {field.name}[ghost_idx(h)] = {field.name}[mirror_idx(h)];
+    }}
+    '''
 ```
 
-#### 4.1.3 eval/eval_safe 双路径生成
+#### 4.1.3 assign() 完整代码生成流程
 
 ```python
-def _gen_expr(self, ir: IRNode, *indices) -> str:
-    """生成表达式代码，自动处理 eval/eval_safe"""
+def _gen_assign(self, dst: FieldNode, expr: IRNode) -> str:
+    """生成 assign() 的完整 C++ 代码
 
-    # 检查是否需要安全模式
-    if self._requires_safe_mode(ir):
-        return self._gen_expr_safe(ir, *indices)
-    else:
-        return self._gen_expr_fast(ir, *indices)
-
-def _requires_safe_mode(self, ir: IRNode) -> bool:
-    """检查是否需要安全模式（边界检查）"""
-    if isinstance(ir, UnaryOpNode):
-        return ir.safety_mode == "safe" or self._requires_safe_mode(ir.child)
-    elif isinstance(ir, BinaryOpNode):
-        return self._requires_safe_mode(ir.left) or self._requires_safe_mode(ir.right)
-    return False
-
-def _gen_expr_safe(self, ir: IRNode, *indices) -> str:
-    """生成带边界检查的表达式"""
-    if isinstance(ir, ShiftNode):
-        # 生成带边界检查的偏移访问
-        base_idx = self._gen_expr_safe(ir.input, *indices)
-        offset_idx = self._apply_shift(indices, ir.offsets)
-
-        # 检查是否越界，越界时应用 BC
-        return f'''[](){{
-            auto idx = {offset_idx};
-            if (in_range(idx)) {{
-                return {base_idx};
-            }} else {{
-                return {self._gen_bc_fallback(ir.input, "idx")};
-            }}
-        }}()'''
-
-    return self._gen_expr_fast(ir, *indices)
-
-def _gen_bc_fallback(self, field: FieldNode, idx_var: str) -> str:
-    """生成边界条件回退代码
-
-    **注意**: 此函数用于 eval_safe 模式，处理可能的边界访问。
-    ShiftNode 不使用此函数（ShiftNode 越界 = UB）。
-
-    **修复**: 正确处理三元链语法
+    对应 C++ FieldAssigner 的实际行为：
+    1. 别名检测 → 必要时创建临时副本
+    2. Ghost cell 预填充（所有源 Field 的 updatePadding）
+    3. 计算 assignable_range
+    4. 遍历 assignable_range 执行赋值
+    5. 目标 Field 的 updatePadding
     """
-    # 收集所有边界条件分支
-    bc_branches = []
 
-    for (axis, side), bc in field.bc.items():
-        condition = self._gen_bc_condition(idx_var, axis, side, field.shape)
-        value = self._gen_bc_value(bc, field)
-        bc_branches.append((condition, value))
+    # 1. 别名检测
+    src_fields = self._collect_fields(expr)
+    alias_check = ""
+    if dst in src_fields:
+        alias_check = self._gen_alias_copy(dst)
 
-    if not bc_branches:
-        # 无边界条件定义，返回零
-        return "0.0"
+    # 2. 源 Field ghost cell 预填充
+    padding_code = "\n".join(
+        self._gen_update_padding(f) for f in src_fields
+    )
 
-    # 生成嵌套三元表达式
-    # (cond1) ? val1 : ((cond2) ? val2 : default)
-    result = "0.0"  # 默认值
-    for condition, value in reversed(bc_branches):
-        result = f"({condition}) ? ({value}) : ({result})"
+    # 3-4. 主循环（在 assignable_range 上）
+    range_info = RangeAnalyzer().analyze(expr)
+    loop = self._gen_kernel(expr, "assign_kernel")
 
-    return result
+    # 5. 目标 Field ghost cell 填充
+    dst_padding = self._gen_update_padding(dst)
 
-def _gen_bc_condition(self, idx_var: str, axis: int, side: str, shape: List[int]) -> str:
-    """生成边界条件判断条件
-
-    **修复**: 正确处理多维索引
+    return f"""
+    {alias_check}
+    {padding_code}
+    {loop}
+    {dst_padding}
     """
-    dim = len(shape)
-
-    if dim == 1:
-        idx_expr = idx_var
-    else:
-        # 假设 idx_var 是线性索引，需要转换为多维
-        # 或者 idx_var 已经是 NDIndex 类型
-        idx_expr = f"{idx_var}[{axis}]"
-
-    if side == "start":
-        return f"{idx_expr} < 0"
-    else:  # side == "end"
-        return f"{idx_expr} >= {shape[axis]}"
-
-def _gen_bc_value(self, bc: BCNode, field: FieldNode) -> str:
-    """生成边界条件值
-
-    支持 Dirichlet, Neumann, Periodic, Robin, Outflow
-    """
-    if bc.bc_type == "dirichlet":
-        if isinstance(bc.value, ScalarNode):
-            return str(bc.value.value)
-        else:
-            return self._gen_expr(bc.value)
-
-    elif bc.bc_type == "neumann":
-        # Neumann: du/dn = value
-        # ghost_value = inner_value + dx * value
-        inner_idx = self._get_inner_idx_expr(field, bc.axis, bc.side)
-        dx_val = self._gen_expr(bc.value) if bc.value else "0.0"
-        return f"{field.name}[{inner_idx}] + dx[{bc.axis}] * {dx_val}"
-
-    elif bc.bc_type == "periodic":
-        # Periodic: wrap around
-        opposite_idx = self._get_opposite_idx_expr(field, bc.axis, bc.side)
-        return f"{field.name}[{opposite_idx}]"
-
-    elif bc.bc_type == "robin":
-        # Robin: a*u + b*du/dn = c
-        # u_bc = (c - b * du_inner / dx) / a
-        inner_idx = self._get_inner_idx_expr(field, bc.axis, bc.side)
-        return f"({bc.robin_c} - {bc.robin_b} * ({field.name}[idx] - {field.name}[{inner_idx}]) / dx[{bc.axis}]) / {bc.robin_a}"
-
-    elif bc.bc_type == "outflow":
-        # Outflow: zero gradient
-        inner_idx = self._get_inner_idx_expr(field, bc.axis, bc.side)
-        return f"{field.name}[{inner_idx}]"
-
-    else:
-        raise NotImplementedError(f"BC type '{bc.bc_type}' not implemented")
 ```
 
 **编译流程**：
@@ -2587,6 +3348,10 @@ class CppJITCompiler:
         """编译 C++ 代码并返回 Python 可调用函数"""
 
         # 1. 计算代码哈希作为缓存键
+        # 注: 使用 C++ 代码哈希而非 IR 哈希。
+        # 在执行式 IR 构建中，相同的 Python 表达式总是生成相同的 IR 和 C++ 代码，
+        # 因此 C++ 代码哈希与 IR 哈希等价。
+        # 优势: 代码哈希更健壮（不依赖 IR 序列化稳定性），且可检测手动调优的 C++ 代码。
         code_hash = hashlib.sha256(cpp_code.encode()).hexdigest()[:16]
 
         # 2. 检查缓存
@@ -2611,10 +3376,41 @@ class CppJITCompiler:
 
         # 6. 设置函数签名
         func = getattr(lib, func_name)
-        func.argtypes = [...]  # 根据 IR 设置
+        func.argtypes = self._build_argtypes(ir)
         func.restype = None
 
         return func
+
+    def _build_argtypes(self, ir: IRNode) -> list:
+        """根据 IR 动态构造 ctypes 函数签名
+
+        @op.kernel 编译产物的 C 函数签名为:
+          void kernel_func(
+              double* dst_0, ..., double* dst_N,      // 输出字段指针
+              const double* src_0, ..., const double* src_M,  // 输入字段指针
+              const double* dx_0, ..., const double* dx_D,    // 网格 dx 数组
+              int i_start, int i_end, ...,             // 各轴循环范围
+              int stride_0, ...                        // 各字段 stride
+          )
+        """
+        argtypes = []
+        # 输出字段: double*
+        for dst in self._collect_dst_fields(ir):
+            argtypes.append(ctypes.POINTER(ctypes.c_double))
+        # 输入字段: const double* (ctypes 无 const 区分)
+        for src in self._collect_src_fields(ir):
+            argtypes.append(ctypes.POINTER(ctypes.c_double))
+        # 网格 dx: const double*
+        for axis in range(ir.mesh_dim):
+            argtypes.append(ctypes.POINTER(ctypes.c_double))
+        # 循环范围: int * 2 * dim (start, end per axis)
+        for _ in range(ir.mesh_dim * 2):
+            argtypes.append(ctypes.c_int)
+        # stride: int per field per dim
+        for f in self._collect_all_fields(ir):
+            for d in range(1, ir.mesh_dim):
+                argtypes.append(ctypes.c_int)
+        return argtypes
 ```
 
 ### 4.2 Phase 2: Taichi 后端
@@ -2695,13 +3491,12 @@ auto rhs = ExprBuilder<CartesianField<Real, decltype(mesh)>>()
 
 // 初始化右端项
 rangeFor(rhs.assignableRange, [&](auto&& i) {
-    rhs[i] = -2.0 * std::sin(M_PI * mesh.x(i[0])) * std::sin(M_PI * mesh.y(i[1]));
+    rhs[i] = -2.0 * std::sin(M_PI * mesh.x(0, i[0])) * std::sin(M_PI * mesh.x(1, i[1]));
 });
 
-// Jacobi 迭代
+// Jacobi 迭代（表达式语法）
 for (int iter = 0; iter < 1000; ++iter) {
-    u = (u.shift<0, -1>() + u.shift<0, 1>() + u.shift<1, -1>() + u.shift<1, 1>()
-         - rhs * mesh.dx() * mesh.dx()) / 4.0;
+    u = (d2(u, 0) + d2(u, 1) - rhs) * (mesh.dx(0, 0) * mesh.dx(0, 0) / 4.0);
 }
 ```
 
@@ -2728,14 +3523,9 @@ for d in range(mesh.dim):
 x, y = mesh.coords()
 rhs[:] = -2.0 * np.sin(np.pi * x) * np.sin(np.pi * y)
 
-# Jacobi 迭代
+# Jacobi 迭代（表达式语法）
 for iter in range(1000):
-    # 方式1: 显式 stencil
-    u.assign((u.shift(0, -1) + u.shift(0, 1) + u.shift(1, -1) + u.shift(1, 1)
-              - rhs * mesh.dx**2) / 4.0)
-
-    # 方式2: 使用微分算子（更语义化）
-    # u_new = solve_jacobi(d2(u, axis=0) + d2(u, axis=1) == rhs)
+    u.assign((d2(u, axis=0) + d2(u, axis=1) - rhs) * (mesh.dx(0, 0)**2 / 4.0))
 ```
 
 ### 5.2 对流扩散方程
@@ -2780,32 +3570,87 @@ for t in np.arange(0, 1, dt):
 
 ## 6. 优化 Pass 设计
 
-### 6.1 Kernel 融合
+### 6.0 Pass 框架
+
+**设计决策**：Phase 1 采用最简框架——单一 Pipeline、显式排序、per-kernel 粒度。
 
 ```python
-class KernelFusionPass:
-    """Kernel 融合优化 Pass"""
+from abc import ABC, abstractmethod
+from typing import List
 
-    def optimize(self, ir: IRNode) -> IRNode:
-        """融合连续的逐点操作"""
-        return self._fuse_pointwise(ir)
+class IRPass(ABC):
+    """所有 Pass 的基类"""
+    name: str
 
-    def _fuse_pointwise(self, ir: IRNode) -> IRNode:
-        if isinstance(ir, BinaryOpNode):
-            # 检查是否可以融合
-            if self._is_pointwise(ir.op):
-                left = self._fuse_pointwise(ir.left)
-                right = self._fuse_pointwise(ir.right)
-                # 合并为单个融合 kernel
-                return FusedNode(op=ir.op, children=[left, right])
-        return ir
+    @abstractmethod
+    def run(self, kernel_ir: "KernelIR") -> "KernelIR":
+        """变换或分析 KernelIR，返回（可能修改的）KernelIR"""
+        ...
+
+class PassPipeline:
+    """按序执行 Pass 列表
+
+    Phase 1 设计选择：
+    - 单一 Pipeline，分析 Pass 排在优化 Pass 前面（显式排序）
+    - 不引入声明式依赖管理（Pass <10 个，排序即可）
+    - Per-kernel 粒度（KernelFusion 等跨 kernel 优化推迟到 Phase 2）
+    """
+
+    def __init__(self):
+        self._passes: List[IRPass] = []
+
+    def add(self, p: IRPass) -> "PassPipeline":
+        self._passes.append(p)
+        return self
+
+    def run(self, kernel_ir: "KernelIR") -> "KernelIR":
+        for p in self._passes:
+            kernel_ir = p.run(kernel_ir)
+        return kernel_ir
+
+# Phase 1 默认 Pipeline
+def default_pipeline() -> PassPipeline:
+    return (PassPipeline()
+        # 验证 Pass
+        .add(LocConsistencyPass())      # 二元运算 loc 一致性
+        .add(TypeInferencePass())       # 类型推导 + 算子-类型约束
+        .add(ReduceDependencyPass())    # Param 依赖 DAG + 循环依赖检测
+        # 分析 Pass
+        .add(StencilAnalysisPass())     # stencil 访问模式 → range_effect
+        .add(RangeAnalysisPass())       # range 传播
+        # 后端验证 Pass
+        .add(HaloSufficiencyPass())     # stencil 所需 halo ≤ Field 实际 halo
+        # 优化 Pass
+        .add(StencilSpecializationPass())
+        .add(MemoryAccessPass())
+    )
+```
+
+> **Phase 2 扩展路径**：当 Pass 数量增长或需要跨 kernel 优化时，引入：
+> - `AnalysisPipeline` / `OptimizationPipeline` 两阶段分离
+> - 声明式 `requires = [...]` 依赖 + 拓扑排序
+> - `ModuleIR` 粒度 Pass（用于 KernelFusion）
+
+### 6.1 Kernel 融合（Phase 2）
+
+> Phase 1 不实现。需要跨 kernel 视角（`ModuleIR` 粒度），推迟到 Phase 2。
+
+```python
+class KernelFusionPass(IRPass):
+    """Kernel 融合优化 Pass（Phase 2）"""
+    name = "kernel_fusion"
+
+    def run(self, kernel_ir: "KernelIR") -> "KernelIR":
+        # Phase 2: 融合连续的逐点操作
+        ...
 ```
 
 ### 6.2 Stencil 特化
 
 ```python
-class StencilSpecializationPass:
+class StencilSpecializationPass(IRPass):
     """Stencil 特化优化 Pass"""
+    name = "stencil_specialization"
 
     # 常用 stencil 的预定义实现
     STENCIL_TEMPLATES = {
@@ -2814,31 +3659,30 @@ class StencilSpecializationPass:
         (7, 7): "stencil_7x7",
     }
 
-    def optimize(self, ir: IRNode) -> IRNode:
-        if isinstance(ir, ConvNode):
-            key = tuple(ir.kernel_shape)
-            if key in self.STENCIL_TEMPLATES:
-                ir.flags["use_template"] = self.STENCIL_TEMPLATES[key]
-        return ir
+    def run(self, kernel_ir: "KernelIR") -> "KernelIR":
+        for ir in kernel_ir.assignments:
+            if isinstance(ir.expr, ConvNode):
+                key = tuple(ir.expr.kernel_shape)
+                if key in self.STENCIL_TEMPLATES:
+                    ir.expr.flags["use_template"] = self.STENCIL_TEMPLATES[key]
+        return kernel_ir
 ```
 
 ### 6.3 内存访问优化
 
 ```python
-class MemoryAccessPass:
+class MemoryAccessPass(IRPass):
     """内存访问优化 Pass"""
+    name = "memory_access"
 
-    def optimize(self, ir: IRNode) -> IRNode:
-        # 分析内存访问模式
-        access_pattern = self._analyze_access(ir)
-
-        # 选择最优内存布局
-        if access_pattern.is_sequential:
-            ir.flags["layout"] = "contiguous"
-        elif access_pattern.is_stencil:
-            ir.flags["layout"] = "blocked"  # 分块以提高缓存命中率
-
-        return ir
+    def run(self, kernel_ir: "KernelIR") -> "KernelIR":
+        for ir in kernel_ir.assignments:
+            access_pattern = self._analyze_access(ir.expr)
+            if access_pattern.is_sequential:
+                ir.expr.flags["layout"] = "contiguous"
+            elif access_pattern.is_stencil:
+                ir.expr.flags["layout"] = "blocked"
+        return kernel_ir
 ```
 
 ---
@@ -2887,11 +3731,11 @@ class BackendManager:
 
 ### 7.2 后端能力矩阵
 
-| 后端 | CPU | CUDA GPU | 融合优化 | Stencil 优化 | MPI |
-|------|-----|----------|----------|--------------|-----|
-| C++ (Phase 1) | ✅ | ❌ | 基础 | ✅ | ✅ |
-| Taichi (Phase 2) | ✅ | ✅ | ✅ | ✅ | ❌ |
-| MLIR/LLVM (Phase 3) | ✅ | ✅ | 高级 | 高级 | 计划中 |
+| 后端                | CPU | CUDA GPU | 融合优化 | Stencil 优化 | MPI    |
+| ------------------- | --- | -------- | -------- | ------------ | ------ |
+| C++ (Phase 1)       | ✅   | ❌        | 基础     | ✅            | ✅      |
+| Taichi (Phase 2)    | ✅   | ✅        | ✅        | ✅            | ❌      |
+| MLIR/LLVM (Phase 3) | ✅   | ✅        | 高级     | 高级         | 计划中 |
 
 > **GPU 支持说明**: Phase 1 不直接支持 GPU，需要 GPU 时请使用 Phase 2 的 Taichi 后端。
 
@@ -2981,125 +3825,120 @@ def test_stencil():
     assert lap[5, 5] == -4.0
 ```
 
-### 9.1.3 eval_safe 模式测试
+### 9.1.3 Ghost Cell 与边界条件测试
 
 ```python
-def test_eval_safe_boundary():
-    """测试 eval_safe 模式下的边界处理"""
+def test_dirichlet_ghost_cell_fill():
+    """测试 Dirichlet BC 的 ghost cell 预填充"""
     mesh = CartesianMesh(shape=(10, 10), extent=(0, 1, 0, 1))
     u = Field(mesh, halo=1, name="u")
     u.fill(1.0)
 
     # 设置 Dirichlet BC
     u.set_bc(0, DimPos.START, BCType.DIRC, 0.0)
-    u.set_bc(0, DimPos.END, BCType.DIRC, 0.0)
+    u.set_bc(0, DimPos.END, BCType.DIRC, 2.0)
 
-    # fast 模式：不检查边界，假设索引有效
-    d2_fast = d2(u, axis=0, mode="fast")
+    # 触发 ghost cell 填充
+    u.update_padding()
 
-    # safe 模式：在边界处应用 BC
-    d2_safe = d2(u, axis=0, mode="safe")
+    # 验证 ghost cell 被正确填充（Dirichlet 插值）
+    # ghost cell 值应基于 BC 值和内部值插值
+    assert u.data[0, 5] != 1.0  # ghost cell 已被修改
 
-    # 在内部点两者应相同
-    np.testing.assert_allclose(
-        d2_fast[1:-1, :].compute(),
-        d2_safe[1:-1, :].compute()
-    )
-
-    # 在边界处 safe 模式应返回 BC 值
-    assert d2_safe[0, 5] == 0.0  # Dirichlet BC
-    assert d2_safe[-1, 5] == 0.0
-
-def test_neumann_bc():
-    """测试 Neumann 边界条件（零梯度）"""
-    mesh = CartesianMesh(shape=(10, 10), dx=1.0)
+def test_neumann_ghost_cell_fill():
+    """测试 Neumann BC 的 ghost cell 预填充"""
+    mesh = CartesianMesh(shape=(10,), extent=(0, 1))
     u = Field(mesh, halo=1, name="u")
 
     # 初始化线性分布
     for i in range(10):
-        u[i, :] = float(i)
+        u[i] = float(i)
 
-    # Neumann BC: du/dx = 0
+    # Neumann BC: du/dx = 0（零梯度）
     u.set_bc(0, DimPos.START, BCType.NEUM, 0.0)
     u.set_bc(0, DimPos.END, BCType.NEUM, 0.0)
 
-    # 使用 safe 模式计算
-    d2_safe = d2(u, axis=0, mode="safe")
+    u.update_padding()
 
-    # Neumann BC 应保持线性分布的 d2 = 0
-    np.testing.assert_allclose(d2_safe.compute(), 0.0, atol=1e-10)
+    # Neumann 零梯度 → ghost cell = 最近内部值
+    assert u.data[0] == u.data[1]  # start ghost = first interior
+    assert u.data[-1] == u.data[-2]  # end ghost = last interior
 
-def test_periodic_bc():
-    """测试周期边界条件"""
-    mesh = CartesianMesh(shape=(10, 10), dx=1.0)
+def test_periodic_ghost_cell_fill():
+    """测试周期边界条件的 ghost cell 预填充"""
+    mesh = CartesianMesh(shape=(10,), extent=(0, 1))
     u = Field(mesh, halo=1, name="u")
 
-    # 初始化正弦波
-    x = np.linspace(0, 2*np.pi, 10, endpoint=False)
-    u[:, 0] = np.sin(x)
+    # 初始化
+    for i in range(10):
+        u[i] = float(i)
 
-    # Periodic BC
     u.set_bc(0, DimPos.START, BCType.PERIODIC)
     u.set_bc(0, DimPos.END, BCType.PERIODIC)
 
-    # shift 操作 + safe 模式
-    u_shift = u.shift(0, 1)  # 在周期边界下有效
+    u.update_padding()
 
-    # 验证周期性
-    np.testing.assert_allclose(
-        u_shift[0, 0].compute(mode="safe"),
-        u[1, 0].compute()
-    )
+    # Periodic → ghost cell 从对面复制
+    assert u.data[0] == u.data[-2]  # start ghost = last interior
+    assert u.data[-1] == u.data[1]  # end ghost = first interior
 
-def test_robin_bc():
-    """测试 Robin 边界条件"""
-    mesh = CartesianMesh(shape=(10, 10), dx=1.0)
+def test_symm_ghost_cell_fill():
+    """测试对称边界条件"""
+    mesh = CartesianMesh(shape=(10,), extent=(0, 1))
+    u = Field(mesh, halo=1, name="u")
+
+    for i in range(10):
+        u[i] = float(i)
+
+    u.set_bc(0, DimPos.START, BCType.SYMM)
+    u.update_padding()
+
+    # Symm → ghost cell 镜像反射
+    assert u.data[0] == u.data[1]
+
+def test_asymm_ghost_cell_fill():
+    """测试反对称边界条件"""
+    mesh = CartesianMesh(shape=(10,), extent=(0, 1))
+    u = Field(mesh, halo=1, name="u")
+
+    for i in range(10):
+        u[i] = float(i) + 1.0
+
+    u.set_bc(0, DimPos.START, BCType.ASYM)
+    u.update_padding()
+
+    # ASymm → ghost cell = -mirror
+    assert u.data[0] == -u.data[1]
+
+def test_assign_auto_update_padding():
+    """测试 assign() 自动触发 ghost cell 填充"""
+    mesh = CartesianMesh(shape=(10, 10), extent=(0, 1, 0, 1))
     u = Field(mesh, halo=1, name="u")
     u.fill(1.0)
+    u.set_bc(0, DimPos.START, BCType.DIRC, 0.0)
+    u.set_bc(0, DimPos.END, BCType.DIRC, 0.0)
 
-    # Robin BC: 2*u + 3*du/dn = 5
-    u.set_bc(0, DimPos.START, BCType.ROBIN, robin_a=2.0, robin_b=3.0, robin_c=5.0)
+    v = Field(mesh, halo=1, name="v")
 
-    d2_safe = d2(u, axis=0, mode="safe")
+    # assign 完成后应自动触发 v.update_padding()
+    v.assign(d2(u, axis=0))
 
-    # 验证 Robin BC 在边界处的值
-    # u_bc = (c - b * du_inner / dx) / a
-    # du_inner = 0 (因为 u 均匀)
-    # u_bc = 5.0 / 2.0 = 2.5
-    assert abs(d2_safe[0, 5].compute() - 2.5) < 1e-10
-```
+    # v 的 ghost cell 应已填充
+    # 且 v 的 assignable_range 应比 accessible_range 收缩
 
-### 9.1.4 ShiftNode UB 测试
-
-```python
-import pytest
-
-def test_shift_out_of_bounds_ub():
-    """验证 ShiftNode 越界为 UB（debug 模式断言）"""
-    mesh = CartesianMesh(shape=(10, 10), dx=1.0)
-    u = Field(mesh, halo=0, name="u")  # 无 halo
+def test_alias_detection():
+    """测试 assign() 的别名检测"""
+    mesh = CartesianMesh(shape=(10,), extent=(0, 1))
+    u = Field(mesh, halo=1, name="u")
     u.fill(1.0)
+    u.set_bc(0, DimPos.START, BCType.DIRC, 0.0)
+    u.set_bc(0, DimPos.END, BCType.DIRC, 0.0)
 
-    # shift 越界（无 halo 时访问 i=-1）
-    u_shift = u.shift(0, -1)
+    # u.assign(d2(u, axis=0)) — u 出现在 LHS 和 RHS
+    # 应自动检测别名并创建临时副本
+    u.assign(d2(u, axis=0))
 
-    # **预期**: Range 分析应报错或缩小有效范围
-    # 在 debug 模式下，越界访问应触发断言
-    with pytest.raises(AssertionError, match="out of bounds"):
-        u_shift[0, 5].compute(debug=True)
-
-def test_shift_with_sufficient_halo():
-    """验证足够 halo 时 shift 有效"""
-    mesh = CartesianMesh(shape=(10, 10), dx=1.0)
-    u = Field(mesh, halo=1, name="u")  # 有 halo
-    u.fill(1.0)
-
-    # 在 halo 范围内 shift
-    u_shift = u.shift(0, -1)
-
-    # 有效范围自动缩小，但内部访问正常
-    result = u_shift[1:9, :].compute()  # 不访问边界
-    np.testing.assert_allclose(result, 1.0)
+    # 结果应正确（非就地覆盖导致的错误结果）
 ```
 
 ### 9.2 与 C++ 结果对比测试
@@ -3255,12 +4094,12 @@ opflow_py/
 
 ### 11.1 互操作方案对比
 
-| 方案 | 优点 | 缺点 | 适用场景 |
-|------|------|------|----------|
-| `ctypes` | 无需额外依赖、纯 Python | 调用开销大、类型安全弱 | Phase 1 原型 |
-| `cffi` | 性能好、类型安全 | 需要编写 C 声明 | 高频调用 |
-| `pybind11` | 功能强大、支持复杂类型 | 编译复杂、依赖重 | 需要复杂交互 |
-| `nanobind` | 轻量、快速编译 | 生态不如 pybind11 | 新项目首选 |
+| 方案       | 优点                    | 缺点                   | 适用场景     |
+| ---------- | ----------------------- | ---------------------- | ------------ |
+| `ctypes`   | 无需额外依赖、纯 Python | 调用开销大、类型安全弱 | Phase 1 原型 |
+| `cffi`     | 性能好、类型安全        | 需要编写 C 声明        | 高频调用     |
+| `pybind11` | 功能强大、支持复杂类型  | 编译复杂、依赖重       | 需要复杂交互 |
+| `nanobind` | 轻量、快速编译          | 生态不如 pybind11      | 新项目首选   |
 
 ### 11.2 数组传递策略
 
@@ -3463,23 +4302,23 @@ class PrebuiltKernelLoader:
 
 ---
 
-## 14. 风险与缓解
+## 13. 风险与缓解
 
-| 风险 | 影响 | 缓解措施 |
-|------|------|----------|
-| JIT 编译延迟 | 首次执行慢 | 预热机制 + 持久化缓存 |
-| C++ 生成代码质量 | 性能差距 | 对比优化 + 手写模板特化 |
-| Python GIL 限制 | 并行效率 | 释放 GIL 的 C 扩展 + 多进程 |
-| Taichi API 变化 | 维护成本 | 抽象层隔离 + 版本兼容检测 |
-| 类型推导不完整 | 运行时错误 | 静态检查 + 详细错误信息 |
-| **Python-C++ 互操作** | 调用开销/错误传递 | 使用 ctypes.c_void_p + struct; 或考虑 pybind11 |
-| **编译器依赖** | 用户环境不兼容 | 提供 conda-forge 分发 + 编译器检测 + 预编译 wheel |
-| **边界条件复杂度** | 代码生成膨胀 | 分离 interior/boundary kernel + 模板特化 |
-| **跨平台编译** | Windows/macOS 差异 | 提供 Docker/Conda 环境 + 跨平台 CI |
+| 风险                  | 影响               | 缓解措施                                          |
+| --------------------- | ------------------ | ------------------------------------------------- |
+| JIT 编译延迟          | 首次执行慢         | 预热机制 + 持久化缓存                             |
+| C++ 生成代码质量      | 性能差距           | 对比优化 + 手写模板特化                           |
+| Python GIL 限制       | 并行效率           | 释放 GIL 的 C 扩展 + 多进程                       |
+| Taichi API 变化       | 维护成本           | 抽象层隔离 + 版本兼容检测                         |
+| 类型推导不完整        | 运行时错误         | 静态检查 + 详细错误信息                           |
+| **Python-C++ 互操作** | 调用开销/错误传递  | 使用 ctypes.c_void_p + struct; 或考虑 pybind11    |
+| **编译器依赖**        | 用户环境不兼容     | 提供 conda-forge 分发 + 编译器检测 + 预编译 wheel |
+| **边界条件复杂度**    | 代码生成膨胀       | 分离 interior/boundary kernel + 模板特化          |
+| **跨平台编译**        | Windows/macOS 差异 | 提供 Docker/Conda 环境 + 跨平台 CI                |
 
 ---
 
-## 15. 后续扩展
+## 14. 后续扩展
 
 **短期 (3-6 月)**：
 - [ ] AMR 网格支持
