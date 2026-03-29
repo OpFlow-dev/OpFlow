@@ -649,7 +649,7 @@ class Field:
             s + h_start + h_end
             for s, (h_start, h_end) in zip(mesh.shape, self._halo)
         )
-        self._buffer = np.zeros(total_shape, dtype=dtype)
+        self._buffer = np.zeros(total_shape, dtype=DTYPE_NUMPY_MAP[self._dtype])
         # 内部视图（不含 halo）
         if any(h_start > 0 or h_end > 0 for h_start, h_end in self._halo):
             slices = tuple(
@@ -770,6 +770,17 @@ class Field:
         self._bc[(d, pos)] = bc_node
         return self  # 支持链式调用
 
+    def get_bc(self, d: int, pos: DimPos) -> Optional[Union[ConstBC, LogicalBC]]:
+        """获取指定维度和位置的边界条件
+
+        对应 C++: field.getBC(d, pos)
+
+        返回 None 表示该侧未设置 BC。
+        RangeAnalyzer / GhostCellFiller / update_padding() 统一通过此接口读取 BC，
+        不直接访问 _bc 私有字典。
+        """
+        return self._bc.get((d, pos))
+
     def fill(self, value: float):
         """填充常量值"""
         self._array.fill(value)
@@ -797,21 +808,21 @@ class Field:
         纯 Python eval 路径（调试/测试用）：
         """
         for axis in range(self._mesh.dim):
-            for side in ("start", "end"):
-                bc = self._bc.get((axis, side))
+            for pos in (DimPos.START, DimPos.END):
+                bc = self.get_bc(axis, pos)
                 if bc is None:
                     continue
-                h = self._halo[axis][0 if side == "start" else 1]
+                h = self._halo[axis][0 if pos == DimPos.START else 1]
                 if bc.bc_type == BCType.DIRC:
-                    self._fill_dirichlet_ghost(axis, side, h, bc.value)
+                    self._fill_dirichlet_ghost(axis, pos, h, bc.value)
                 elif bc.bc_type == BCType.NEUM:
-                    self._fill_neumann_ghost(axis, side, h, bc.value)
+                    self._fill_neumann_ghost(axis, pos, h, bc.value)
                 elif bc.bc_type == BCType.PERIODIC:
                     self._fill_periodic_ghost(axis, h)
                 elif bc.bc_type == BCType.SYMM:
-                    self._fill_symmetric_ghost(axis, side, h, sign=1.0)
+                    self._fill_symmetric_ghost(axis, pos, h, sign=1.0)
                 elif bc.bc_type == BCType.ASYM:
-                    self._fill_symmetric_ghost(axis, side, h, sign=-1.0)
+                    self._fill_symmetric_ghost(axis, pos, h, sign=-1.0)
 
     # 运算符重载
     def __add__(self, other) -> "ExprNode":
@@ -1625,9 +1636,9 @@ def _operator_syntax_check(func: callable):
     elif params[-1].annotation is not MDIndex:
         raise TypeError(f"Last param must be MDIndex, got {params[-1].annotation}")
 
-    # 4. 返回类型
-    if sig.return_annotation not in (float, int, inspect.Parameter.empty):
-        raise TypeError(f"Return type must be float or int, got {sig.return_annotation}")
+    # 4. 返回类型（支持所有数值类型）
+    if sig.return_annotation not in (float, int, complex, inspect.Parameter.empty):
+        raise TypeError(f"Return type must be float, int, or complex, got {sig.return_annotation}")
 
     # 5. AST 只读约束：operator 函数体不能写入 field
     tree = ast.parse(inspect.getsource(func))
@@ -1954,8 +1965,9 @@ for step in range(1000):
     u, u_new = u_new, u  # 交换缓冲区
 
     if step % 100 == 0:
-        norm = compute_l2_norm(u)
-        print(f"Step {step}: L2 norm = {norm}")
+        norm = Param(mesh, name="norm")
+        compute_l2_norm(u, norm)
+        print(f"Step {step}: L2 norm = {norm._value}")
 ```
 
 #### 3.5.2 Kernel 函数 vs 普通 Python 函数
@@ -2378,17 +2390,11 @@ class IRNode:
     flags: dict = field(default_factory=dict)
 
     def hash(self) -> str:
-        """计算 IR 树的结构化哈希（用于缓存键）
+        """计算 IR 树的结构化哈希（用于 IR identity 和调试）
 
-        哈希包含：
-        - 节点类型
-        - 关键属性（不包括 flags）
-        - 子节点哈希
-
-        排除：
-        - flags（不影响语义）
-        - accessible_range（运行时确定）
-        """
+        注意：编译缓存使用 CompileCache.compute_cache_key()（基于生成的 C++ 代码 +
+        编译器 + flags），不使用此 IR hash。IR hash 仅用于 IR 树的 identity 比较
+        和代码生成注释中的溯源标记。
         import hashlib
         import json
 
@@ -2444,8 +2450,8 @@ class FieldNode(IRNode):
     mesh_type: str = "structured"  # 预留：structured | amr | unstructured
     offset: Optional[List[int]] = None  # MPI 分布式索引偏移（Phase 1 预留）
 
-    # 边界条件（每轴每侧）
-    bc: Dict[Tuple[int, str], "BCNode"] = field(default_factory=dict)
+    # 边界条件（每轴每侧），key = (axis, DimPos)
+    bc: Dict[Tuple[int, DimPos], "BCNode"] = field(default_factory=dict)
 
 @dataclass
 class BCNode(IRNode):
@@ -2470,7 +2476,7 @@ class BCNode(IRNode):
     """
     bc_type: BCType  # BCType.DIRC | NEUM | PERIODIC | ROBIN | SYMM | ASYM
     axis: int
-    side: str     # "start" | "end"
+    side: DimPos     # DimPos.START | DimPos.END
     value: Optional[IRNode] = None  # BC 值（ScalarNode 常量或 IR 表达式树）
 
     # Robin BC 参数: a*u + b*du/dn = c
@@ -2582,7 +2588,7 @@ class DType(Enum):
     INT32      = "i32"     # int32_t,               4B
     BOOL       = "i1"      # bool,                  1B
 
-# C++ 类型映射
+# C++ 类型映射（用于代码生成）
 DTYPE_CTYPE = {
     DType.FLOAT64:    "double",
     DType.FLOAT32:    "float",
@@ -2590,6 +2596,55 @@ DTYPE_CTYPE = {
     DType.COMPLEX64:  "std::complex<float>",
     DType.INT32:      "int32_t",
     DType.BOOL:       "bool",
+}
+
+# ctypes 类型映射（用于 Python↔C ABI 签名）
+# complex 使用显式 Structure 而非 c_double*2，确保 ctypes.POINTER(T)
+# 语义正确对应 std::complex<T>*（C++ 标准保证布局兼容）
+class Complex128(ctypes.Structure):
+    """对应 std::complex<double> 的 ctypes 布局"""
+    _fields_ = [("real", ctypes.c_double), ("imag", ctypes.c_double)]
+
+class Complex64(ctypes.Structure):
+    """对应 std::complex<float> 的 ctypes 布局"""
+    _fields_ = [("real", ctypes.c_float), ("imag", ctypes.c_float)]
+
+DTYPE_CTYPES_MAP = {
+    DType.FLOAT64:    ctypes.c_double,
+    DType.FLOAT32:    ctypes.c_float,
+    DType.COMPLEX128: Complex128,
+    DType.COMPLEX64:  Complex64,
+    DType.INT32:      ctypes.c_int32,
+    DType.BOOL:       ctypes.c_bool,
+}
+
+# NumPy dtype 映射（用于 Field buffer 分配）
+DTYPE_NUMPY_MAP = {
+    DType.FLOAT64:    np.float64,
+    DType.FLOAT32:    np.float32,
+    DType.COMPLEX128: np.complex128,
+    DType.COMPLEX64:  np.complex64,
+    DType.INT32:      np.int32,
+    DType.BOOL:       np.bool_,
+}
+
+# Reduce 操作的类型化初始值
+REDUCE_INIT = {
+    "sum": {
+        DType.FLOAT64: "0.0", DType.FLOAT32: "0.0f",
+        DType.COMPLEX128: "std::complex<double>(0.0, 0.0)",
+        DType.COMPLEX64: "std::complex<float>(0.0f, 0.0f)",
+        DType.INT32: "0", DType.BOOL: "false",
+    },
+    "max": {
+        DType.FLOAT64: "-INFINITY", DType.FLOAT32: "-INFINITY",
+        DType.INT32: "INT32_MIN",
+        # complex 不支持 max/min（OP_TYPE_CONSTRAINTS 保证）
+    },
+    "min": {
+        DType.FLOAT64: "INFINITY", DType.FLOAT32: "INFINITY",
+        DType.INT32: "INT32_MAX",
+    },
 }
 
 # Python 值 → DType 推导
@@ -2794,7 +2849,7 @@ class RangeAnalyzer:
 
 | BC 类型 | 对 accessible_range 的影响 | 原因 |
 |---------|--------------------------|------|
-| **Periodic** | 不收缩（恢复 logicalRange） | wraparound 使全域可访问 |
+| **Periodic** | 取消 operator 收缩（恢复到 mesh interior） | wraparound 使 ghost 数据可用，operator 无需收缩 |
 | **Dirichlet** | 由 operator 的 `range_effect` 收缩 | 边界值已知但 stencil 仍需 ghost |
 | **Neumann** | 不额外收缩（仅 operator 收缩） | 梯度已填入 ghost cell |
 | **Symmetric/Asymmetric** | 不额外收缩 | 镜像值已填入 ghost cell |
@@ -2802,18 +2857,19 @@ class RangeAnalyzer:
 
 **关键规则**：
 
-1. **Periodic BC 恢复全域**：若某轴为 Periodic BC，该轴 `accessible_range` 不应用 operator 收缩（因为 wraparound 提供了越界数据）：
+1. **Periodic BC 取消 operator 收缩**：若某轴为 Periodic BC，该轴 `accessible_range` 不应用 operator 收缩（因为 wraparound 提供了越界数据），但**不会恢复到 `logical_range`**。`accessible_range` 始终不含 ghost cell，即保持为 mesh interior `[0, N)`：
 
 ```python
 def _apply_bc_range_adjustment(self, ir: IRNode, field: FieldNode):
     """BC 类型对 Range 的修正（在 operator 收缩之后执行）"""
     for axis in range(field.mesh.dim):
-        bc_start = field.get_bc(axis, "start")
-        bc_end = field.get_bc(axis, "end")
+        bc_start = field.get_bc(axis, DimPos.START)
+        bc_end = field.get_bc(axis, DimPos.END)
         if bc_start and bc_start.bc_type == BCType.PERIODIC:
-            # Periodic: 恢复该轴到 logicalRange（不收缩）
-            ir.accessible_range.start[axis] = field.logical_range.start[axis]
-            ir.accessible_range.end[axis] = field.logical_range.end[axis]
+            # Periodic: 取消 operator 收缩，恢复到 mesh interior（不含 ghost）
+            # 注意: 不能恢复到 logical_range，否则 ghost 区会被误当成有效域
+            ir.accessible_range.start[axis] = 0
+            ir.accessible_range.end[axis] = field.mesh.shape[axis]
 ```
 
 2. **Stencil 宽度 vs halo 编译期校验**：
@@ -2925,6 +2981,7 @@ class CppCodeGen:
         """生成 ghost cell 填充代码（在 kernel 主循环之前执行）"""
         bc_codes = []
         for (axis, side), bc in field.bc.items():
+            # side 为 DimPos 枚举，codegen 内部转换为 C++ 索引
             bc_codes.append(self._gen_ghost_fill(field, axis, side, bc))
         return "\n".join(bc_codes)
 
@@ -2954,10 +3011,10 @@ class FieldNode(IRNode):
     halo: List[Tuple[int, int]]  # per-dim per-side [(start, end), ...]
     loc: List[LocOnMesh]
 
-    # 边界条件字典: key = (axis, side)
-    bc: Dict[Tuple[int, str], BCNode] = field(default_factory=dict)
+    # 边界条件字典: key = (axis, DimPos)
+    bc: Dict[Tuple[int, DimPos], BCNode] = field(default_factory=dict)
 
-    def set_bc(self, axis: int, side: str, bc_type: BCType, value=None):
+    def set_bc(self, axis: int, side: DimPos, bc_type: BCType, value=None):
         """设置边界条件"""
         bc_node = BCNode(
             op=OpType.FIELD_REF,  # BC 节点挂载在 FieldNode 下
@@ -2985,14 +3042,20 @@ class CppCodeGen:
     def __init__(self):
         self.indent = "    "
 
-    def generate(self, ir: IRNode, func_name: str) -> str:
-        """生成完整的 C++ 源文件"""
+    def generate(self, ir: IRNode, func_name: str) -> Tuple[str, "ABIMetadata"]:
+        """生成完整的 C++ 源文件和 ABI 元数据
+
+        返回:
+            (cpp_code, abi_metadata) 元组。
+            - cpp_code: 完整的 C++ 源文件字符串
+            - abi_metadata: ABI 描述，供 CppJITCompiler 构造 ctypes 签名
+        """
         includes = self._gen_includes()
         field_decls = self._gen_field_declarations(ir)
         kernel = self._gen_kernel(ir, func_name)
         launcher = self._gen_launcher(ir, func_name)
 
-        return f'''// Auto-generated by OpFlow Python DSL JIT
+        cpp_code = f'''// Auto-generated by OpFlow Python DSL JIT
 // DO NOT EDIT - Generated from IR hash: {ir.hash()}
 
 {includes}
@@ -3008,12 +3071,86 @@ extern "C" {{
 }}  // extern "C"
 '''
 
+        # 构造 ABI 元数据（从 IR 提取，供 compile() 使用）
+        abi = self._build_abi_metadata(ir, func_name)
+
+        return cpp_code, abi
+
+    def _build_abi_metadata(self, ir: IRNode, func_name: str) -> "ABIMetadata":
+        """从 IR 提取 ABI 描述
+
+        将编译器需要的类型信息从 IR 中提取出来，
+        使得 CppJITCompiler.compile() 不需要直接访问 IR。
+        """
+        dst_fields = self._collect_dst_fields(ir)
+        src_fields = self._collect_src_fields(ir)
+        all_fields = self._collect_all_fields(ir)
+        mesh_dim = ir.mesh_dim if hasattr(ir, 'mesh_dim') else len(ir.shape)
+
+        return ABIMetadata(
+            func_name=func_name,
+            dst_dtypes=[f.dtype for f in dst_fields],
+            src_dtypes=[f.dtype for f in src_fields],
+            mesh_dim=mesh_dim,
+            field_dims=[(f.name, mesh_dim) for f in all_fields],
+        )
+
+
+@dataclass
+class ABIMetadata:
+    """C 函数的 ABI 描述（由 CppCodeGen 生成，供 CppJITCompiler 使用）
+
+    将 IR 中的类型信息提取为独立的、可序列化的描述，
+    使 compile() 不需要回看 IR 树。
+
+    数据流: IR → CppCodeGen → (cpp_code, ABIMetadata) → CppJITCompiler
+    """
+    func_name: str
+    dst_dtypes: List[DType]      # 输出字段的 dtype 列表
+    src_dtypes: List[DType]      # 输入字段的 dtype 列表
+    mesh_dim: int                # 网格维度
+    field_dims: List[Tuple[str, int]]  # (field_name, ndim) 用于 stride 参数
+
+    def build_argtypes(self) -> list:
+        """根据 ABI 元数据构造 ctypes 函数签名
+
+        @op.kernel 编译产物的 C 函数签名为:
+          void kernel_func(
+              T_dst_0* dst_0, ...,         // 输出字段指针
+              const T_src_0* src_0, ...,   // 输入字段指针
+              const double* dx_0, ...,     // 网格 dx 数组（始终 double）
+              int i_start, int i_end, ..., // 各轴循环范围
+              int stride_0, ...            // 各字段 stride
+          )
+        """
+        argtypes = []
+        # 输出字段: T*
+        for dtype in self.dst_dtypes:
+            argtypes.append(ctypes.POINTER(DTYPE_CTYPES_MAP[dtype]))
+        # 输入字段: const T*
+        for dtype in self.src_dtypes:
+            argtypes.append(ctypes.POINTER(DTYPE_CTYPES_MAP[dtype]))
+        # 网格 dx: const double*（网格坐标始终为 double）
+        for _ in range(self.mesh_dim):
+            argtypes.append(ctypes.POINTER(ctypes.c_double))
+        # 循环范围: int * 2 * dim
+        for _ in range(self.mesh_dim * 2):
+            argtypes.append(ctypes.c_int)
+        # stride: int per field per dim (dim-1 strides per field)
+        for _, ndim in self.field_dims:
+            for _ in range(1, ndim):
+                argtypes.append(ctypes.c_int)
+        return argtypes
+
     def _gen_kernel(self, ir: IRNode, func_name: str) -> str:
         """生成核心 kernel 函数"""
 
-        # 收集所有字段引用
+        # 收集所有字段引用，使用 DTYPE_CTYPE 获取类型化指针
         fields = self._collect_fields(ir)
-        params = ", ".join([f"const double* __restrict__ {f.name}" for f in fields])
+        params = ", ".join([
+            f"const {DTYPE_CTYPE[f.dtype]}* __restrict__ {f.name}" for f in fields
+        ])
+        out_type = DTYPE_CTYPE[ir.dtype]
 
         # 生成循环嵌套
         loops = self._gen_nested_loops(ir)
@@ -3023,7 +3160,7 @@ extern "C" {{
 
         return f'''
 OPFLOW_STRONG_INLINE void {func_name}_kernel(
-    double* __restrict__ output,
+    {out_type}* __restrict__ output,
     {params},
     int i_start, int i_end, int j_start, int j_end
 ) {{
@@ -3132,12 +3269,21 @@ OPFLOW_STRONG_INLINE void {func_name}_kernel(
             expr = f"({expr}) * {stride_name} + {terms[d]}"
         return expr
 
-    def _format_scalar(self, value) -> str:
-        """格式化标量常量为 C++ 字面量"""
-        if isinstance(value, float):
+    def _format_scalar(self, value, dtype: DType = None) -> str:
+        """格式化标量常量为 C++ 字面量（类型感知）"""
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        elif isinstance(value, complex):
+            ctype = DTYPE_CTYPE.get(dtype, "std::complex<double>")
+            return f"{ctype}({value.real}, {value.imag})"
+        elif isinstance(value, float):
+            if dtype == DType.FLOAT32:
+                return f"{value}f"
             return f"{value}"
         elif isinstance(value, int):
-            return f"{value}.0"  # 确保浮点运算
+            if dtype in (DType.FLOAT64, DType.FLOAT32, None):
+                return f"{value}.0" + ("f" if dtype == DType.FLOAT32 else "")
+            return str(value)
         return str(value)
 
     # ---- ConvNode 代码生成 ----
@@ -3177,20 +3323,22 @@ OPFLOW_STRONG_INLINE void {func_name}_kernel(
         """ReduceNode → 独立归约循环 + OpenMP parallel reduction
 
         ReduceNode 不可内联到赋值表达式中，必须作为独立循环：
-        1. 声明归约临时变量
+        1. 声明类型化归约临时变量
         2. OpenMP parallel for reduction
         3. 结果存入 scalar 变量供后续使用
         """
         child_expr = self._gen_expr(ir.child, "i", "j")
-        reduce_op = {OpType.REDUCE_SUM: "+", OpType.REDUCE_MAX: "max",
-                     OpType.REDUCE_MIN: "min"}[ir.reduce_op]
-        init_val = {OpType.REDUCE_SUM: "0.0", OpType.REDUCE_MAX: "-INFINITY",
-                    OpType.REDUCE_MIN: "INFINITY"}[ir.reduce_op]
+        ctype = DTYPE_CTYPE[ir.dtype]
+
+        # ir.reduce_op 是 str: "sum" | "max" | "min"
+        CPP_REDUCE_OP = {"sum": "+", "max": "max", "min": "min"}
+        reduce_op = CPP_REDUCE_OP[ir.reduce_op]
+        init_val = REDUCE_INIT[ir.reduce_op][ir.dtype]
 
         omp_clause = f"reduction({reduce_op}: _reduce_val)"
 
         return f'''
-    double _reduce_val = {init_val};
+    {ctype} _reduce_val = {init_val};
     #pragma omp parallel for collapse(2) {omp_clause}
     for (int i = i_start; i < i_end; ++i) {{
         for (int j = j_start; j < j_end; ++j) {{
@@ -3213,12 +3361,13 @@ OPFLOW_STRONG_INLINE void {func_name}_kernel(
         别名检测在 Python 侧编译期完成（对比 FieldNode identity），
         仅在检测到别名时生成此代码段。
         """
+        ctype = DTYPE_CTYPE[dst.dtype]
         total_size = " * ".join(f"{dst.name}_total_shape_{d}" for d in range(dst.mesh_dim))
         return f'''
     // Alias detected: {dst.name} appears on both sides of assignment
     // Create temporary copy of destination field
-    double* {dst.name}_tmp = (double*)malloc(sizeof(double) * {total_size});
-    std::memcpy({dst.name}_tmp, {dst.name}, sizeof(double) * {total_size});
+    {ctype}* {dst.name}_tmp = ({ctype}*)malloc(sizeof({ctype}) * {total_size});
+    std::memcpy({dst.name}_tmp, {dst.name}, sizeof({ctype}) * {total_size});
     // Note: 后续表达式中的 {dst.name} 读取改为从 {dst.name}_tmp 读取
 '''
 
@@ -3237,6 +3386,7 @@ def _gen_update_padding(self, field: FieldNode) -> str:
     """
     bc_codes = []
     for (axis, side), bc in field.bc.items():
+        # side 为 DimPos 枚举；C++ 代码生成时转换为索引偏移
         if bc.bc_type == BCType.DIRC:
             bc_codes.append(self._gen_dirichlet_ghost(field, bc))
         elif bc.bc_type == BCType.NEUM:
@@ -3344,21 +3494,25 @@ class CppJITCompiler:
         self.cache_dir = Path(cache_dir).expanduser()
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
-    def compile(self, cpp_code: str, func_name: str) -> Callable:
-        """编译 C++ 代码并返回 Python 可调用函数"""
+    def compile(self, cpp_code: str, abi: "ABIMetadata", func_name: str) -> Callable:
+        """编译 C++ 代码并返回 Python 可调用函数
 
-        # 1. 计算代码哈希作为缓存键
-        # 注: 使用 C++ 代码哈希而非 IR 哈希。
-        # 在执行式 IR 构建中，相同的 Python 表达式总是生成相同的 IR 和 C++ 代码，
-        # 因此 C++ 代码哈希与 IR 哈希等价。
-        # 优势: 代码哈希更健壮（不依赖 IR 序列化稳定性），且可检测手动调优的 C++ 代码。
-        code_hash = hashlib.sha256(cpp_code.encode()).hexdigest()[:16]
+        参数:
+            cpp_code: CppCodeGen 生成的 C++ 源代码
+            abi: CppCodeGen 同步产出的 ABI 元数据（类型化签名描述）
+            func_name: C 函数导出名
+        """
+
+        # 1. 计算统一缓存键（code + compiler + flags）
+        cache_key = CompileCache.compute_cache_key(
+            cpp_code, self.compiler, self.flags
+        )
 
         # 2. 检查缓存
-        so_path = self.cache_dir / f"{func_name}_{code_hash}.so"
+        so_path = self.cache_dir / f"{func_name}_{cache_key}.so"
         if not so_path.exists():
             # 3. 写入源文件
-            src_path = self.cache_dir / f"{func_name}_{code_hash}.cpp"
+            src_path = self.cache_dir / f"{func_name}_{cache_key}.cpp"
             src_path.write_text(cpp_code)
 
             # 4. 编译
@@ -3374,43 +3528,12 @@ class CppJITCompiler:
         # 5. 加载共享库
         lib = ctypes.CDLL(str(so_path))
 
-        # 6. 设置函数签名
+        # 6. 设置函数签名（从 ABIMetadata 构造，不依赖 IR）
         func = getattr(lib, func_name)
-        func.argtypes = self._build_argtypes(ir)
+        func.argtypes = abi.build_argtypes()
         func.restype = None
 
         return func
-
-    def _build_argtypes(self, ir: IRNode) -> list:
-        """根据 IR 动态构造 ctypes 函数签名
-
-        @op.kernel 编译产物的 C 函数签名为:
-          void kernel_func(
-              double* dst_0, ..., double* dst_N,      // 输出字段指针
-              const double* src_0, ..., const double* src_M,  // 输入字段指针
-              const double* dx_0, ..., const double* dx_D,    // 网格 dx 数组
-              int i_start, int i_end, ...,             // 各轴循环范围
-              int stride_0, ...                        // 各字段 stride
-          )
-        """
-        argtypes = []
-        # 输出字段: double*
-        for dst in self._collect_dst_fields(ir):
-            argtypes.append(ctypes.POINTER(ctypes.c_double))
-        # 输入字段: const double* (ctypes 无 const 区分)
-        for src in self._collect_src_fields(ir):
-            argtypes.append(ctypes.POINTER(ctypes.c_double))
-        # 网格 dx: const double*
-        for axis in range(ir.mesh_dim):
-            argtypes.append(ctypes.POINTER(ctypes.c_double))
-        # 循环范围: int * 2 * dim (start, end per axis)
-        for _ in range(ir.mesh_dim * 2):
-            argtypes.append(ctypes.c_int)
-        # stride: int per field per dim
-        for f in self._collect_all_fields(ir):
-            for d in range(1, ir.mesh_dim):
-                argtypes.append(ctypes.c_int)
-        return argtypes
 ```
 
 ### 4.2 Phase 2: Taichi 后端
@@ -3733,11 +3856,11 @@ class BackendManager:
 
 | 后端                | CPU | CUDA GPU | 融合优化 | Stencil 优化 | MPI    |
 | ------------------- | --- | -------- | -------- | ------------ | ------ |
-| C++ (Phase 1)       | ✅   | ❌        | 基础     | ✅            | ✅      |
+| C++ (Phase 1)       | ✅   | ❌        | 基础     | ✅            | ❌      |
 | Taichi (Phase 2)    | ✅   | ✅        | ✅        | ✅            | ❌      |
 | MLIR/LLVM (Phase 3) | ✅   | ✅        | 高级     | 高级         | 计划中 |
 
-> **GPU 支持说明**: Phase 1 不直接支持 GPU，需要 GPU 时请使用 Phase 2 的 Taichi 后端。
+> **MPI 支持说明**: Phase 1 为单进程执行。`local_range` 与 `accessible_range` 相同，`FieldNode.offset` 仅为 MPI 预留字段。MPI 分布式执行列入后续扩展（Section 14）。
 
 ---
 
@@ -3747,24 +3870,41 @@ class BackendManager:
 
 ```python
 class CompileCache:
-    """编译结果缓存"""
+    """编译结果缓存
+
+    统一缓存键：使用 code_hash（生成的 C++ 代码 + 编译 flags + ABI 元数据的哈希）。
+    不使用 ir_hash，因为 code_hash 更健壮（不依赖 IR 序列化稳定性），
+    且当 codegen 模板或编译 flags 变化时能正确失效。
+
+    缓存键计算：hash(generated_code + compiler + flags + ABI metadata)
+    """
 
     def __init__(self, cache_dir: str = "~/.opflow/cache"):
         self.cache_dir = Path(cache_dir).expanduser()
         self.index_file = self.cache_dir / "index.json"
         self.index = self._load_index()
 
-    def get(self, ir_hash: str) -> Optional[Callable]:
+    @staticmethod
+    def compute_cache_key(cpp_code: str, compiler: str, flags: List[str]) -> str:
+        """计算统一缓存键
+
+        包含生成的 C++ 代码、编译器名称和编译 flags。
+        确保 codegen 模板、编译器版本或 flags 变化时缓存自动失效。
+        """
+        key_material = f"{cpp_code}\n---\n{compiler}\n{' '.join(sorted(flags))}"
+        return hashlib.sha256(key_material.encode()).hexdigest()[:16]
+
+    def get(self, cache_key: str) -> Optional[Callable]:
         """从缓存获取编译结果"""
-        if ir_hash in self.index:
-            so_path = self.cache_dir / self.index[ir_hash]["so_file"]
+        if cache_key in self.index:
+            so_path = self.cache_dir / self.index[cache_key]["so_file"]
             if so_path.exists():
-                return self._load_function(so_path, ir_hash)
+                return self._load_function(so_path, cache_key)
         return None
 
-    def put(self, ir_hash: str, so_path: Path, metadata: dict):
+    def put(self, cache_key: str, so_path: Path, metadata: dict):
         """存储编译结果到缓存"""
-        self.index[ir_hash] = {
+        self.index[cache_key] = {
             "so_file": str(so_path.relative_to(self.cache_dir)),
             **metadata
         }
@@ -3909,6 +4049,84 @@ def test_asymm_ghost_cell_fill():
 
     # ASymm → ghost cell = -mirror
     assert u.data[0] == -u.data[1]
+
+def test_set_bc_update_padding_key_roundtrip():
+    """测试 set_bc() 写入的 BC 能被 update_padding() 正确读取（H3g 回归防护）"""
+    mesh = CartesianMesh(shape=(10,), extent=(0, 1))
+    u = Field(mesh, halo=1, name="u")
+    u.fill(1.0)
+
+    # set_bc 使用 DimPos 枚举写入
+    u.set_bc(0, DimPos.START, BCType.DIRC, 0.0)
+    u.set_bc(0, DimPos.END, BCType.DIRC, 2.0)
+
+    # update_padding 必须用相同的 key 类型读取到 BC
+    u.update_padding()
+
+    # 若 key 类型不一致，ghost cell 不会被填充，值仍为初始的 1.0
+    assert u._buffer[0] != 1.0, "start ghost cell not filled — BC key mismatch"
+    assert u._buffer[-1] != 1.0, "end ghost cell not filled — BC key mismatch"
+
+def test_periodic_reduce_no_ghost_double_count():
+    """测试 Periodic BC + reduce 不会重复计入 ghost 值（H3h 回归防护）
+
+    若 accessible_range 错误恢复到 logical_range，reduce 会遍历 ghost 区域，
+    导致 sum 结果偏大。
+    """
+    mesh = CartesianMesh(shape=(10,), extent=(0, 1))
+    u = Field(mesh, halo=1, name="u")
+    u.fill(1.0)
+    u.set_bc(0, DimPos.START, BCType.PERIODIC)
+    u.set_bc(0, DimPos.END, BCType.PERIODIC)
+    u.update_padding()
+
+    # reduce 应只遍历 accessible_range [0, 10)，结果应为 10.0
+    # 若遍历 logical_range [-1, 11)，结果会是 12.0
+    total = Param(mesh, name="total")
+
+    @op.kernel
+    def sum_field(u: Field, total: Param):
+        total.assign(op.sum(u))
+
+    sum_field(u, total)
+    assert total._value == 10.0, f"Expected 10.0, got {total._value} — ghost cells included in reduce"
+
+def test_complex_field_roundtrip():
+    """测试 complex128 类型的字段创建、赋值和 codegen（H2g 类型系统覆盖）"""
+    mesh = CartesianMesh(shape=(10, 10), extent=(0, 1, 0, 1))
+    u = Field(mesh, halo=1, dtype=DType.COMPLEX128, name="u_complex")
+    v = Field(mesh, halo=1, dtype=DType.COMPLEX128, name="v_complex")
+
+    # 验证 buffer dtype 正确
+    assert u._buffer.dtype == np.complex128
+
+    # 填充复数值
+    u.fill(1.0 + 2.0j)
+
+    # 表达式赋值（触发 typed codegen）
+    v.assign(u * (1.0 + 0.5j))
+
+    # 验证结果（1+2j)*(1+0.5j) = 1+0.5j+2j+1j² = 0+2.5j
+    np.testing.assert_allclose(v.ndarray[0, 0], 0.0 + 2.5j)
+
+def test_int32_field_operations():
+    """测试 int32 类型的字段操作（H2g 类型系统覆盖）"""
+    mesh = CartesianMesh(shape=(10,), extent=(0, 1))
+    u = Field(mesh, dtype=DType.INT32, name="u_int")
+    v = Field(mesh, dtype=DType.INT32, name="v_int")
+
+    assert u._buffer.dtype == np.int32
+
+    # 整数运算
+    u.ndarray[:] = np.arange(10, dtype=np.int32)
+    v.assign(u + u)
+    np.testing.assert_array_equal(v.ndarray, np.arange(10) * 2)
+
+def test_bool_field_operations():
+    """测试 bool 类型的字段操作（H2g 类型系统覆盖）"""
+    mesh = CartesianMesh(shape=(10,), extent=(0, 1))
+    mask = Field(mesh, dtype=DType.BOOL, name="mask")
+    assert mask._buffer.dtype == np.bool_
 
 def test_assign_auto_update_padding():
     """测试 assign() 自动触发 ghost cell 填充"""
